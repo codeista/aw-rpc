@@ -1,0 +1,21 @@
+# vim turds
+*.swp
+*~
+
+# python cache
+__pycache__/
+
+# mac turds
+.DS_Store
+docs/
+*.db
+flask-env/
+
+scratch
+
+*.csv
+*.txt
+*.xcf
+*.nds
+*.z7
+*.log
