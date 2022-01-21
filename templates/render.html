@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" type="text/css" href="/static/css/modal.css">
+  </head>
+  <body>
+    <!-- create unit modal -->
+    <div id="modalcreate" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <select id="selectcreate">
+        </select>
+        <button type="button" id="buttoncreate">Create unit</button>
+      </div>
+    </div>
+    <!-- link to JSONRPC API doc -->
+    <a href="/api/browse">Browse API</a>
+    <!-- table to hold game board and game info -->
+    <table>
+        <tr>
+            <td style="vertical-align: top">
+                <div id="draw" x-token="{{token}}"></div>
+            </td>
+            <td style="vertical-align: top">
+                <div id="controls">
+                    <button type="button" id="buttonrerender">Re-render</button>
+                    <input type="checkbox" id="inputshowmap" checked>Show Map</button>
+                    <hr/>
+                    <div id="turn" id="game_active">
+                    </div>
+                    <button type="button" id="buttonendturn">End Turn</button>
+                    <hr/>
+                    <textarea id="textareachat" rows="10" cols="40"></textarea>
+                    <br/>
+                    <input type="text" id="inputchat"></input>
+                    <button type="button" id="buttonchat">Chat</button>
+                    <hr/>
+                    <textarea id="code" rows="10" cols="40"></textarea>
+                </div>
+            </td>
+        </tr>
+    </table>
+    <!-- JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+    <script src="/static/js/two.min.js"></script>
+    <script src="/static/js/render.js"></script>
+  </body>
+</html>
