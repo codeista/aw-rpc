@@ -5,7 +5,7 @@ Flask-SocketIO==4.3.2
 gevent==1.4.0
 gevent-websocket==0.10.1
 psycopg2-binary==2.8.2
-typing-extensions==3.7.4.2
+typing-extensions==3.7.4.3
 dataclasses==0.6
 configparser==5.0.0
 jsons==1.2.0
