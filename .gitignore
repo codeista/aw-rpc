@@ -9,7 +9,7 @@ __pycache__/
 .DS_Store
 docs/
 *.db
-flask-env
+flask-env/
 
 scratch
 
