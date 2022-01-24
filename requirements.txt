@@ -1,4 +1,4 @@
-flask==1.1.2
+flask==1.1.4
 Flask-JSONRPC==1.1.1
 Flask-SQLAlchemy==2.5.1
 Flask-SocketIO==4.3.2
