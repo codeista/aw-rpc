@@ -1,6 +1,7 @@
 '''[This module sets up the Database using SQLAlchemy]'''
 
 import os
+import re
 
 from flask import Flask
 from flask_jsonrpc import JSONRPC
