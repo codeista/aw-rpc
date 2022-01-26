@@ -9,8 +9,8 @@ Flask==1.1.4
 Flask-JSONRPC==1.1.1
 Flask-SocketIO==4.3.2
 Flask-SQLAlchemy==2.5.1
-gevent
-gevent-websocket
+gevent==21.12.0
+gevent-websocket==0.10.1
 greenlet==1.1.2
 idna==2.8
 itsdangerous==1.1.0
