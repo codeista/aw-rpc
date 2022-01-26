@@ -13,7 +13,10 @@ jsonrpc = JSONRPC(app, '/api', enable_web_browsable_api=True)
 socketio = SocketIO(app)
 
 if os.getenv('DATABASE_URL'):
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+    url = os.getenv('DATABASE_URL')
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql://", 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = url
 else:
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///aw-rpc.db'
 db = SQLAlchemy(app)
