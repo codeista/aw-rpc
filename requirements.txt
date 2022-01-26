@@ -18,7 +18,7 @@ Jinja2==2.11.3
 jsons==1.2.0
 MarkupSafe==2.0.1
 mypy-extensions==0.4.3
-psycopg2-binary==2.8.2
+psycopg2
 python-engineio==3.14.2
 python-socketio==4.6.1
 requests==2.21.0
