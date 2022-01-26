@@ -2,7 +2,7 @@
 
 ## Install venv
 
-'>python3 -m venv flask-env'
+'>python3.9 -m venv flask-env'
 
 ## start env
 
