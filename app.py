@@ -174,7 +174,7 @@ def game_board(token: str) -> dict:
 
 
 @jsonrpc.method('army_end_turn')
-def army_end_turn(token: str) -> dict:
+def army_end_turn(token: str) -> str:
     '''rpc end current turn.
     :return: [gameboard]
     '''
@@ -184,7 +184,7 @@ def army_end_turn(token: str) -> dict:
         mngr.army_end_turn()
         game_save(mngr, token)
         ws_board_update(token)
-        return jsons.dump(mngr.board)
+        return 'ok'
     except Exception as ex:
         return abort(400, ex)
 
@@ -219,8 +219,8 @@ def capture_tile(token: str, x: int, y: int) -> dict:
         return abort(400, ex)
 
 @jsonrpc.method('unit_wait')
-def capture_tile(token: str, x: int, y: int) -> dict:
-    '''rpc capture tile
+def unit_wait(token: str, x: int, y: int) -> dict:
+    '''rpc unit wait
     :return: [tile at coordinates given]
     '''
     logger.info(f'unit wait token={token}, x={x}, y={y}')
