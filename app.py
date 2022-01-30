@@ -146,7 +146,7 @@ def message(token: str, msg: str) -> str:
 @jsonrpc.method('game_delete')
 def game_delete_rpc(token: str) -> str:
     '''rpc delete game.
-    :return: [OK]
+    :return: [ok]
     '''
     logger.info(f'game_delete token={token}')
     game_delete(token)
@@ -176,7 +176,7 @@ def game_board(token: str) -> dict:
 @jsonrpc.method('army_end_turn')
 def army_end_turn(token: str) -> str:
     '''rpc end current turn.
-    :return: [gameboard]
+    :return: [ok]
     '''
     logger.info(f'army_end_turn token={token}')
     mngr = game_load(token)
@@ -252,7 +252,9 @@ def unit_select(token: str, x: int, y: int) -> dict:
 # move unit
 @jsonrpc.method('unit_move')
 def unit_move(token: str, x: int, y: int, x2: int, y2: int) -> dict:
-    '''rpc move unit from / to coordinates'''
+    '''rpc move unit from / to coordinates
+    :return: [tile at destination coordinates]
+    '''
     logger.info(f'unit_move token={token}, x={x}, y={y}, x2={x2}, y2={y2}')
     mngr = game_load(token)
     try:
@@ -266,7 +268,7 @@ def unit_move(token: str, x: int, y: int, x2: int, y2: int) -> dict:
 # move unit
 @jsonrpc.method('unit_move2')
 def unit_move2(token: str, id: str, x: int, y: int) -> dict:
-    '''rpc move unit gor given ID to the coordinates.
+    '''rpc move unit for given ID to the coordinates.
     :return: [tile at coordinates]
     '''
     logger.info(f'unit_move2 token={token}, id={id}, x={x}, y={y}')
@@ -299,7 +301,7 @@ def unit_create(token: str, army: str, unit_type: str, x: int, y: int) -> dict:
 @jsonrpc.method('damage_estimate')
 def damage_estimate(token: str, x: int, y: int, x2: int, y2: int) -> list:
     '''rpc estimates the damage for attacker and defender.
-    :return: [tile at coordinates given]
+    :return: [tuple (attacker hp, defender hp) ]
     '''
     logger.info(f'damage_estimate token={token}, x={x}, y={y}, x2={x2}, y2={y2}')
     mngr = game_load(token)
@@ -403,7 +405,7 @@ def unit_unload(token: str, x: int, y: int, x2: int, y2: int, index: int) -> dic
 @jsonrpc.method('launch_missile')
 def launch_missile(token: str, x: int, y: int, x2: int, y2: int) -> dict:
     '''launches missile from x,y to x2,y2.
-    :return: [tile at coordinate given]
+    :return: [tile at destination coordinate]
     '''
     logger.info(f'launch missile token={token}, x={x}, y={y}, x2={x2}, y2={y2}')
     mngr = game_load(token)
@@ -418,7 +420,7 @@ def launch_missile(token: str, x: int, y: int, x2: int, y2: int) -> dict:
 @jsonrpc.method('unit_resupply')
 def unit_resupply(token: str, x: int, y: int, x2: int, y2: int) -> dict:
     '''rpc resupply unit from x,y to x2,y2.
-    :return: [tile at coordinates given]
+    :return: [tile at destination coordinates]
     '''
     logger.info(f'resupply token={token}, x={x}, y={y}, x2={x2}, y2={y2}')
     mngr = game_load(token)
