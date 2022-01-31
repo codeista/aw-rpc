@@ -18,7 +18,18 @@
 
 ## Test
 
-'./test.sh'
+python test_unittest.py
+
+  Unittest tests the folling:
+
+    app.py "RPC game engine"
+
+      capture property
+      end turn
+      unit creation
+      unit move(with x, y coord's)
+      unit move2(with unit ID)
+
 
 
 ### View api doc/test
