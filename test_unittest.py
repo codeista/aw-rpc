@@ -20,9 +20,12 @@ class Test_RPC_unit_create(unittest.TestCase):
 
     def setUp(self):
         app.game_create_rpc(game)
+        '''setup for unit_create'''
         app.unit_create(game, 'RED', 'INFANTRY', 1, 1)
+        '''setup for unit move and unit move2'''
         global unit_id
         unit_id = app.unit_create(game, 'RED', 'INFANTRY', 4, 12)['unit']['id']
+        '''end turn twice so created units can take turn again'''
         app.army_end_turn(game)
         app.army_end_turn(game)
 
@@ -49,6 +52,7 @@ class Test_RPC_capture_property(unittest.TestCase):
 
     def setUp(self):
         app.game_create_rpc(game)
+        '''setup for capture property'''
         global tile_hp
         tile_hp = app.tile(game, 1, 1)['capture_hp']
         app.unit_create(game, 'RED', 'INFANTRY', 1, 1)
@@ -72,6 +76,7 @@ class Test_RPC_end_turn(unittest.TestCase):
 
     def setUp(self):
         app.game_create_rpc(game)
+        '''Setup for end turn'''
         global current_turn
         current_turn = app.check_turn(game)
         app.army_end_turn(game)
