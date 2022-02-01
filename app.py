@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-'''[This is a RPC game engine for Advance war]'''
+'''[This is a RPC game engine for Advance wars]'''
 
 import os
 import logging
@@ -138,6 +138,9 @@ def troop_info() -> dict:
 
 @jsonrpc.method('message')
 def message(token: str, msg: str) -> str:
+    '''rpc chat.
+    :return: [ok]
+    '''
     logger.info('msg')
     ws_msg(token, msg)
     return 'ok'
@@ -162,7 +165,6 @@ def game_create_rpc(token: str) -> str:
     return 'ok'
 
 
-# return the gameboard
 @jsonrpc.method('game_board')
 def game_board(token: str) -> dict:
     '''rpc return game board.
