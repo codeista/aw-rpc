@@ -165,7 +165,6 @@ def game_create_rpc(token: str) -> str:
     return 'ok'
 
 
-# return the gameboard
 @jsonrpc.method('game_board')
 def game_board(token: str) -> dict:
     '''rpc return game board.

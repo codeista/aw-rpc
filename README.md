@@ -20,7 +20,7 @@
 
 python test_unittest.py
 
-  Unittest tests the folling:
+  Unittest tests the following:
 
     app.py "RPC game engine"
 
