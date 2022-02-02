@@ -162,7 +162,7 @@ class GameManager():
         '''Remove the unit at the given coordinates.'''
         tile = self.tile_at(x, y)
         unit = tile.unit
-        self.check_turn_and_raise(unit)
+        # self.check_turn_and_raise(unit)
         tile.unit = None
         return unit
 
