@@ -2,16 +2,14 @@
 
 
 import math
-import configparser
-config = configparser.ConfigParser()
-config.read('config.ini')
-
 from gameboard import GameBoard, GameTile
 from unit import Army, UnitType, Unit, UnitClass
 from dijkstra import dijkstra
 from mapping import MapType, movement_cost, INF
 from config import Config
-
+import configparser
+config = configparser.ConfigParser()
+config.read('config.ini')
 
 
 REPAIR_CLASSES = {
@@ -33,7 +31,8 @@ class GameManager():
         self.board = board
 
     def coord_valid(self, x: int, y: int) -> bool:
-        '''Returns true if the coordinate is within the board width and hight.'''
+        '''Returns true if the coordinate is
+           within the board width and hight.'''
         return x in range(self.board.width) and y in range(self.board.width)
 
     def check_turn_and_raise(self, unit):
@@ -68,7 +67,7 @@ class GameManager():
 
     def unit_resupply(self, x: int, y: int, x2: int, y2: int):
         '''Resupplys the given unit from the unit specified.'''
-        if self.board.game_active == False:
+        if not self.board.game_active:
             raise Exception("tried to resupply but Game Over")
         if not self.coord_valid(x, y):
             raise Exception('coordinate out of range')
@@ -125,7 +124,8 @@ class GameManager():
 
 # only call this from unit_load
     def _unit_can_load_to(self, unit: Unit, x: int, y: int) -> bool:
-        '''Returns true if the unit can be loaded to the transport specified.'''
+        '''Returns true if the unit can be loaded
+           to the transport specified.'''
         tile = self.tile_from_unit(unit)
         if tile.x == x and tile.y == y:
             return False
@@ -220,7 +220,8 @@ class GameManager():
 
     def launch_missile(self, x: int, y: int, x2: int, y2: int) -> Unit:
         '''Launch missile from the silo at the given coordinate.  The damage
-        will reach 2 tiles out for N-E-S-W directions and 1 for each diagonal'''
+           will reach 2 tiles out for N-E-S-W directions
+           and 1 for each diagonal'''
         # if self.board.game_active == False:
         #     raise Exception("tried to launch missile but Game Over")
         if not self.coord_valid(x, y):
@@ -385,8 +386,8 @@ class GameManager():
                 if unit.fuel_daily_use() and unit.status.fuel <= 0:
                     tile = self.tile_from_unit(unit)
                     self.unit_remove(tile.x, tile.y)
-                if (unit.army == tile.mapTile.army and
-                        unit.status.cls in REPAIR_CLASSES[tile.mapTile.type]):
+                if (unit.army == tile.mapTile.army and unit.status.cls
+                        in REPAIR_CLASSES[tile.mapTile.type]):
                     unit.status.hp = min(100, unit.status.hp + 20)
                     self.resupply_unit(unit)
                 # Refuel units adjacent APC
@@ -434,16 +435,17 @@ class GameManager():
             self.check_turn_and_raise(tile.unit)
             self.board.selected = tile
             unit = tile.unit
-            tile_to_attack = False
             for tile in self.board.grid:
                 if unit.can_move:
-                    tile.can_be_moved_to = self.unit_can_move_to(unit, tile.x, tile.y)
+                    tile.can_be_moved_to = self.unit_can_move_to(unit,
+                                                                 tile.x,
+                                                                 tile.y)
                 else:
                     tile.can_be_moved_to = False
                 if unit.can_attack:
-                    tile.can_be_attacked = self.unit_can_attack(unit, tile.x, tile.y)
-                    if tile.can_be_attacked:
-                        tile_to_attack = True
+                    tile.can_be_attacked = self.unit_can_attack(unit,
+                                                                tile.x,
+                                                                tile.y)
                 else:
                     tile.can_be_attacked = False
         return tile.unit
@@ -486,7 +488,8 @@ class GameManager():
         return self.unit_move(tile.x, tile.y, x, y)
 
     def unit_create(self, army: str, unit_type: str, x: int, y: int) -> Unit:
-        '''Create a unit given the unit type and army at the coordinate given.'''
+        '''Create a unit given the unit type
+           and army at the coordinate given.'''
         army = army.upper()
         unit_type = unit_type.upper()
         try:
@@ -570,7 +573,8 @@ class GameManager():
         return unit
 
     def damage_estimate(self, x: int, y: int, x2: int, y2: int) -> list:
-        '''Returns the estimate damage for the units at the given coordinates.'''
+        '''Returns the estimate damage
+           for the units at the given coordinates.'''
         if not self.coord_valid(x, y):
             raise Exception('coordinate out of range')
         if not self.coord_valid(x2, y2):
@@ -586,14 +590,14 @@ class GameManager():
         if not defender:
             raise Exception('unit does not exist at target tile')
         if attacker.is_direct() and defender.is_direct():
-            defender_hp = defender.status.hp - attacker.attack_damage(defender,
-                                                         defender_tile)
+            defender_hp = defender.status.hp
+            - attacker.attack_damage(defender, defender_tile)
             if defender.status.hp >= 1:
-                attacker_hp = attacker.status.hp - defender.attack_damage(attacker,
-                                                             attacker_tile)
+                attacker_hp = attacker.status.hp
+                - defender.attack_damage(attacker, attacker_tile)
         if attacker.is_direct() and defender.is_indirect():
-            defender_hp = defender.status.hp - attacker.attack_damage(defender,
-                                                         defender_tile)
+            defender_hp = defender.status.hp
+            - attacker.attack_damage(defender, defender_tile)
         if attacker.is_indirect():
             defender.status.hp -= attacker.attack_damage(defender,
                                                          defender_tile)
@@ -663,7 +667,8 @@ class GameManager():
         self.unit_deselect()
         return transport
 
-    def unit_unload(self, x: int, y: int, x2: int, y2: int, index: int) -> Unit:
+    def unit_unload(
+            self, x: int, y: int, x2: int, y2: int, index: int) -> Unit:
         '''Unloads the unit from / to the coordinates.'''
         if not self.coord_valid(x, y):
             raise Exception('coordinate out of range')

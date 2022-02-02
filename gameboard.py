@@ -1,13 +1,14 @@
 '''[This module defines and creates the gameboard ]'''
 
 from dataclasses import dataclass, field
-from typing import List, Tuple
+from typing import List
 from unit import Army, Unit
 from mapping import MapTile, Map
 
 import configparser
 config = configparser.ConfigParser()
 config.read('config.ini')
+
 
 @dataclass
 class GameTile():
@@ -18,6 +19,7 @@ class GameTile():
     can_be_moved_to: bool = False
     can_be_attacked: bool = False
     capture_hp: int = 20
+
 
 @dataclass
 class GameBoard():

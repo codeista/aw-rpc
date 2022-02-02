@@ -8,19 +8,18 @@ import datetime
 import secrets
 
 from flask import redirect, render_template, abort, request
-from flask_socketio import Namespace, emit, join_room, leave_room
+from flask_socketio import Namespace, join_room, leave_room
 import jsons
 
 from manager import GameManager
-from gameboard import GameTile, GameBoard
-from unit import Army, UnitType, Unit
+from gameboard import GameBoard
 from config import Config
 from app_core import app, jsonrpc, db, socketio
 from models import Game
 from mapping import Map, MAP1
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(filename='app.log',level=logging.INFO)
+logging.basicConfig(filename='app.log', level=logging.INFO)
 
 config_game = Config()
 
@@ -63,6 +62,7 @@ def game_delete(token):
     if game:
         db.session.delete(game)
         db.session.commit()
+
 
 def game_create(token):
     '''Creates a new game with token specified'''
@@ -155,6 +155,7 @@ def game_delete_rpc(token: str) -> str:
     game_delete(token)
     return 'ok'
 
+
 @jsonrpc.method('game_create')
 def game_create_rpc(token: str) -> str:
     '''rpc-create game.
@@ -220,6 +221,7 @@ def capture_tile(token: str, x: int, y: int) -> dict:
     except Exception as ex:
         return abort(400, ex)
 
+
 @jsonrpc.method('unit_wait')
 def unit_wait(token: str, x: int, y: int) -> dict:
     '''rpc unit wait
@@ -251,7 +253,7 @@ def unit_select(token: str, x: int, y: int) -> dict:
     except Exception as ex:
         return abort(400, ex)
 
-# move unit
+
 @jsonrpc.method('unit_move')
 def unit_move(token: str, x: int, y: int, x2: int, y2: int) -> dict:
     '''rpc move unit from / to coordinates
@@ -267,7 +269,7 @@ def unit_move(token: str, x: int, y: int, x2: int, y2: int) -> dict:
     except Exception as ex:
         return abort(400, ex)
 
-# move unit
+
 @jsonrpc.method('unit_move2')
 def unit_move2(token: str, id: str, x: int, y: int) -> dict:
     '''rpc move unit for given ID to the coordinates.
@@ -299,6 +301,7 @@ def unit_create(token: str, army: str, unit_type: str, x: int, y: int) -> dict:
     except Exception as ex:
         return abort(400, ex)
 
+
 # need to return both attacker and defender
 @jsonrpc.method('damage_estimate')
 def damage_estimate(token: str, x: int, y: int, x2: int, y2: int) -> list:
@@ -312,6 +315,7 @@ def damage_estimate(token: str, x: int, y: int, x2: int, y2: int) -> list:
         return jsons.dump(tup)
     except Exception as ex:
         return abort(400, ex)
+
 
 # need to return both attacker and defender
 @jsonrpc.method('unit_attack')
@@ -345,6 +349,7 @@ def unit_delete(token: str, x: int, y: int) -> dict:
     except Exception as ex:
         return abort(400, ex)
 
+
 @jsonrpc.method('check_turn')
 def check_turn(token: str) -> str:
     '''rpc checks the current army turn.
@@ -374,6 +379,7 @@ def unit_join(token: str, x: int, y: int, x2: int, y2: int) -> dict:
     except Exception as ex:
         return abort(400, ex)
 
+
 @jsonrpc.method('unit_load')
 def unit_load(token: str, x: int, y: int, x2: int, y2: int) -> dict:
     '''rpc loads the unit from x,y to x2,y2.
@@ -389,12 +395,14 @@ def unit_load(token: str, x: int, y: int, x2: int, y2: int) -> dict:
     except Exception as ex:
         return abort(400, ex)
 
+
 @jsonrpc.method('unit_unload')
 def unit_unload(token: str, x: int, y: int, x2: int, y2: int, index: int) -> dict:
     '''rpc umloads the unit from x,y to x2,y2.
     :return: [Tile at x2,y2]
     '''
-    logger.info(f'unit_unload token={token}, x={x}, y={y}, x2={x2}, y2={y2}, index={index}')
+    logger.info(
+        f'unit_unload token={token}, x={x}, y={y}, x2={x2}, y2={y2}, index={index}')
     mngr = game_load(token)
     try:
         mngr.unit_unload(x, y, x2, y2, index)
@@ -404,12 +412,14 @@ def unit_unload(token: str, x: int, y: int, x2: int, y2: int, index: int) -> dic
     except Exception as ex:
         return abort(400, ex)
 
+
 @jsonrpc.method('launch_missile')
 def launch_missile(token: str, x: int, y: int, x2: int, y2: int) -> dict:
     '''launches missile from x,y to x2,y2.
     :return: [tile at destination coordinate]
     '''
-    logger.info(f'launch missile token={token}, x={x}, y={y}, x2={x2}, y2={y2}')
+    logger.info(
+        f'launch missile token={token}, x={x}, y={y}, x2={x2}, y2={y2}')
     mngr = game_load(token)
     try:
         mngr.launch_missile(x, y, x2, y2)
@@ -418,6 +428,7 @@ def launch_missile(token: str, x: int, y: int, x2: int, y2: int) -> dict:
         return jsons.dump(mngr.tile_get(x, y))
     except Exception as ex:
         return abort(400, ex)
+
 
 @jsonrpc.method('unit_resupply')
 def unit_resupply(token: str, x: int, y: int, x2: int, y2: int) -> dict:
@@ -433,6 +444,7 @@ def unit_resupply(token: str, x: int, y: int, x2: int, y2: int) -> dict:
         return jsons.dump(mngr.tile_get(x2, y2))
     except Exception as ex:
         return abort(400, ex)
+
 
 if __name__ == '__main__':
     setup_logging(logging.DEBUG)

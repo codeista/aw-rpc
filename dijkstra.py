@@ -7,7 +7,7 @@ the algorithm once the shortest path to the destination node has been
 determined
 '''
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import List
 from mapping import movement_cost
 
@@ -58,25 +58,25 @@ def node_at(area, x, y):
 def calc_neighbor_distances(area, current_node):
     '''East, West, North, South nodes'''
     # West
-    node = node_at(area, current_node.x-1, current_node.y)
+    node = node_at(area, current_node.x - 1, current_node.y)
     if node and not node.occupied:
         new_dist = current_node.distance + node.cost
         if new_dist < node.distance:
             node.distance = new_dist
     # North node
-    node = node_at(area, current_node.x, current_node.y-1)
+    node = node_at(area, current_node.x, current_node.y - 1)
     if node and not node.occupied:
         new_dist = current_node.distance + node.cost
         if new_dist < node.distance:
             node.distance = new_dist
-    #East node
-    node = node_at(area, current_node.x+1, current_node.y)
+    # East node
+    node = node_at(area, current_node.x + 1, current_node.y)
     if node and not node.occupied:
         new_dist = current_node.distance + node.cost
         if new_dist < node.distance:
             node.distance = new_dist
     # South node
-    node = node_at(area, current_node.x, current_node.y+1)
+    node = node_at(area, current_node.x, current_node.y + 1)
     if node and not node.occupied:
         new_dist = current_node.distance + node.cost
         if new_dist < node.distance:
@@ -84,8 +84,9 @@ def calc_neighbor_distances(area, current_node):
 
 
 def dijkstra(board: GameBoard, source: GameTile, target: GameTile) -> int:
-    """Dijkstra's Path Finding Algorithm for a rectangular grid where the distance between each adjacent
-    (non-diagonal) node is given by the variable cost"""
+    """Dijkstra's Path Finding Algorithm for a rectangular grid where the
+       distance between each adjacent (non-diagonal) node is given by the
+       variable cost"""
     # mark all nodes unvisited
     # set the distance to 0 for initial node and infinity for others
     nodes = []
@@ -101,10 +102,12 @@ def dijkstra(board: GameBoard, source: GameTile, target: GameTile) -> int:
     area = Area(nodes, board.width, board.height)
     destination = node_at(area, target.x, target.y)
     while True:
-        # select the unvisited node with the smallest distance, make it the current node
+        # select the unvisited node with the smallest distance,
+        #  make it the current node
         current_node = least_unvisited_distance(area)
-        #print(current_node, current_node.x, current_node.y)
-        # find unvisited neighbours and calc distances, compare to assigned distance and save if is smaller
+        # print(current_node, current_node.x, current_node.y)
+        # find unvisited neighbours and calc distances,
+        # compare to assigned distance and save if is smaller
         calc_neighbor_distances(area, current_node)
         # set current node as visited
         current_node.visited = True

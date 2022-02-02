@@ -1,7 +1,7 @@
 '''[This sets up map and methods for map tiles ]'''
 
-from dataclasses import dataclass, field
-from typing import List, Tuple
+from dataclasses import dataclass
+from typing import List
 from enum import Enum
 
 from army import Army
@@ -165,6 +165,7 @@ class MapTile():
         '''Returns true if the terrain type is a HQ.'''
         return self.type in ({MapType.BASE_TOWER_0, MapType.BASE_TOWER_1,
                               MapType.BASE_TOWER_2, MapType.BASE_TOWER_3})
+
 
 @dataclass
 class Map():

@@ -31,7 +31,8 @@ class Test_RPC_unit_create(unittest.TestCase):
 
     def test_unit_create(self):
         print('Testing unit creation')
-        self.assertEqual(app.unit_create(game, 'RED', 'INFANTRY', 9, 12), app.tile(game, 9, 12))
+        self.assertEqual(app.unit_create(game, 'RED', 'INFANTRY', 9, 12),
+                         app.tile(game, 9, 12))
 
     def test_unit_move(self):
         print('Testing unit move')
@@ -39,7 +40,8 @@ class Test_RPC_unit_create(unittest.TestCase):
 
     def test_unit_move2(self):
         print('Testing unit move2')
-        self.assertEqual(app.unit_move2(game, unit_id, 4, 10)['unit']['id'], app.tile(game, 4, 10)['unit']['id'])
+        self.assertEqual(app.unit_move2(game, unit_id, 4, 10)['unit']['id'],
+                         app.tile(game, 4, 10)['unit']['id'])
 
     def tearDown(self):
         app.game_delete_rpc(game)
@@ -59,11 +61,12 @@ class Test_RPC_capture_property(unittest.TestCase):
         app.army_end_turn(game)
         app.army_end_turn(game)
         global troop_hp
-        troop_hp = int(app.tile(game, 1, 1)['unit']['status']['hp'] /10)
+        troop_hp = int(app.tile(game, 1, 1)['unit']['status']['hp'] / 10)
 
     def test_capture_property(self):
         print('Testing capture property')
-        self.assertEqual(app.capture_tile(game, 1, 1)['capture_hp'], (tile_hp - troop_hp))
+        self.assertEqual(app.capture_tile(game, 1, 1)['capture_hp'],
+                                         (tile_hp - troop_hp))
 
     def tearDown(self):
         app.game_delete_rpc(game)
@@ -83,10 +86,11 @@ class Test_RPC_end_turn(unittest.TestCase):
 
     def test_army_end_turn(self):
         print('Testing ending turn')
-        self.assertNotEqual(current_turn,app.check_turn(game))
+        self.assertNotEqual(current_turn, app.check_turn(game))
 
     def tearDown(self):
         app.game_delete_rpc(game)
+
 
 if __name__ == '__main__':
     unittest.main()

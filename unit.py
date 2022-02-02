@@ -36,62 +36,63 @@ class UnitType(Enum):
     TCOPTER = 23
     TANK = 24
 
+
 ''' damage table for the primary weapon.'''
+
+
 DAMAGE_TABLE = {
-    UnitType.ANTIAIR:    ([45,  50,  50,  120,  0,  0,  120,  75,  0,  0,  65,
-                           105, 0,  10,  105, 1, 55, 5, 25, 60, 55, 75, 0, 120,
-                           25]),
-    UnitType.APC:        ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                           0, 0, 0, 0, 0, 0, 0, 0]),
-    UnitType.ARTILLERY:   ([75, 70, 75, 0, 40, 55, 0, 0, 45, 65, 0, 90, 55, 45,
-                           85, 15, 80, 40, 70, 80, 80, 0, 60, 0, 70]),
-    UnitType.BCOPTER:    ([25, 60, 65, 65, 25, 25, 0, 0, 25, 55, 0, 75, 25,
-                           25, 75, 10, 65, 20, 55, 55, 65, 0, 25, 95, 55]),
-    UnitType.BATTLESHIP: ([85, 80, 80, 0, 50, 95, 0, 0, 60, 95, 0, 95, 95,
-                           55, 90, 25, 90, 50, 80, 90, 85, 0, 95, 0, 80]),
-    UnitType.BLACKBOAT:  ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                           0, 0, 0, 0, 0, 0, 0, 0]),
-    UnitType.BLACKBOMB:  ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                           0, 0, 0, 0, 0, 0, 0, 0]),
-    UnitType.BOMBER:     ([95, 105, 105, 0, 75, 95, 0, 0, 75, 85, 0, 110,
-                           95, 95, 110, 35, 105, 90, 105, 105, 105, 0, 95,
-                           0, 105, ]),
-    UnitType.CARRIER:    ([0, 0, 0, 115, 0, 0, 120, 100, 0, 0, 100,
-                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 0, 115, 0]),
-    UnitType.CRUISER:    ([0, 0, 0, 115, 0, 25, 120, 65, 5, 0, 55, 0, 0, 0,
-                           0, 0, 0, 0, 0, 0, 0, 100, 90, 115, 0]),
-    UnitType.FIGHTER:    ([0, 0, 0, 100, 0, 0, 120, 100, 0, 0, 55,
-                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 85, 0, 100, 0]),
-    UnitType.INFANTRY:   ([5, 14, 15, 7, 0, 0, 0, 0, 0, 0,
-                           0, 55, 0, 1, 45, 1, 26, 1, 5, 12, 25, 0, 0, 30, 5]),
-    UnitType.LANDER:     ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                           0, 0, 0, 0, 0, 0, 0, 0, 0]),
+    UnitType.ANTIAIR: ([45, 50, 50, 120, 0, 0, 120, 75, 0, 0, 65, 105, 0, 10,
+                        105, 1, 55, 5, 25, 60, 55, 75, 0, 120, 25]),
+    UnitType.APC: ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0]),
+    UnitType.ARTILLERY: ([75, 70, 75, 0, 40, 55, 0, 0, 45, 65, 0, 90, 55, 45,
+                          85, 15, 80, 40, 70, 80, 80, 0, 60, 0, 70]),
+    UnitType.BCOPTER: ([25, 60, 65, 65, 25, 25, 0, 0, 25, 55, 0, 75, 25, 25,
+                        75, 10, 65, 20, 55, 55, 65, 0, 25, 95, 55]),
+    UnitType.BATTLESHIP: ([85, 80, 80, 0, 50, 95, 0, 0, 60, 95, 0, 95, 95, 55,
+                           90, 25, 90, 50, 80, 90, 85, 0, 95, 0, 80]),
+    UnitType.BLACKBOAT: ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                          0, 0, 0, 0, 0, 0, 0, 0]),
+    UnitType.BLACKBOMB: ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                          0, 0, 0, 0, 0, 0, 0, 0]),
+    UnitType.BOMBER: ([95, 105, 105, 0, 75, 95, 0, 0, 75, 85, 0, 110, 95, 95,
+                       110, 35, 105, 90, 105, 105, 105, 0, 95, 0, 105, ]),
+    UnitType.CARRIER: ([0, 0, 0, 115, 0, 0, 120, 100, 0, 0, 100, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 100, 0, 115, 0]),
+    UnitType.CRUISER: ([0, 0, 0, 115, 0, 25, 120, 65, 5, 0, 55, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 100, 90, 115, 0]),
+    UnitType.FIGHTER: ([0, 0, 0, 100, 0, 0, 120, 100, 0, 0, 55, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 85, 0, 100, 0]),
+    UnitType.INFANTRY: ([5, 14, 15, 7, 0, 0, 0, 0, 0, 0, 0, 55, 0, 1, 45, 1,
+                         26, 1, 5, 12, 25, 0, 0, 30, 5]),
+    UnitType.LANDER: ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                       0, 0, 0, 0, 0, 0]),
     UnitType.MEDIUMTANK: ([105, 105, 105, 12, 10, 35, 0, 0, 10, 45, 0, 105, 35,
                            55, 95, 25, 105, 45, 85, 105, 105, 0, 10, 45, 85]),
-    UnitType.MECH:       ([65, 75, 70, 9, 0, 0, 0, 0, 0, 0, 0, 65, 0, 15, 55,
-                           5, 85, 15, 55, 85, 85, 0, 0, 35, 55]),
-    UnitType.MEGATANK:   ([195, 195, 195, 22, 45, 105, 0, 0, 45, 65, 0, 135,
-                           75, 125, 125, 65, 195, 115, 180, 195, 195, 0, 45,
-                           55, 180]),
-    UnitType.MISSILE:    ([0, 0, 0, 120, 0, 0, 120, 100, 0, 0, 100, 0, 0, 0,
-                           0, 0, 0, 0, 0, 0, 0, 100, 0, 120, 0]),
-    UnitType.NEOTANK:    ([115, 125, 115, 22, 15, 40, 0, 0, 15, 50, 0, 125,
-                           50, 75, 115, 35, 125, 55, 105, 125, 125, 0, 15,
-                           55, 105]),
-    UnitType.PIPERUNNER: ([85, 80, 80, 105, 55, 60, 120, 75, 60, 85, 65, 95, 60,
-                           55, 90, 25, 90, 50, 80, 90, 85, 75, 85, 105, 80]),
-    UnitType.RECON:      ([4, 45, 45, 12, 0, 0, 0, 0, 0, 0, 0, 70, 0, 1, 65, 1,
-                           28, 1, 6, 35, 55, 0, 0, 35, 6]),
-    UnitType.ROCKET:    ([85, 80, 80, 0, 55, 60, 0, 0, 60, 85, 0, 95, 60, 55,
-                           90, 25, 90, 50, 80, 90, 85, 0, 85, 0, 80]),
-    UnitType.STEALTH:    ([50, 85, 75, 85, 45, 65, 120, 70, 45, 35, 45, 90, 65,
-                           70, 90, 15, 85, 60, 80, 85, 85, 55, 55, 95, 75]),
-    UnitType.SUB:        ([0, 0, 0, 0, 55, 95, 0, 0, 75, 25, 0, 0, 95, 0, 0,
-                           0, 0, 0, 0, 0, 0, 0, 55, 0, 0]),
-    UnitType.TCOPTER:    ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
-    UnitType.TANK:       ([65, 75, 70, 10, 1, 10, 0, 0, 1, 5, 0, 75, 10,
-                           15, 70, 10, 85, 15, 55, 85, 85, 0, 1, 40, 55]),
+    UnitType.MECH: ([65, 75, 70, 9, 0, 0, 0, 0, 0, 0, 0, 65, 0, 15, 55, 5, 85,
+                     15, 55, 85, 85, 0, 0, 35, 55]),
+    UnitType.MEGATANK: ([195, 195, 195, 22, 45, 105, 0, 0, 45, 65, 0, 135, 75,
+                         125, 125, 65, 195, 115, 180, 195, 195, 0, 45, 55,
+                         180]),
+    UnitType.MISSILE: ([0, 0, 0, 120, 0, 0, 120, 100, 0, 0, 100, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 100, 0, 120, 0]),
+    UnitType.NEOTANK: ([115, 125, 115, 22, 15, 40, 0, 0, 15, 50, 0, 125, 50,
+                        75, 115, 35, 125, 55, 105, 125, 125, 0, 15, 55, 105]),
+    UnitType.PIPERUNNER: ([85, 80, 80, 105, 55, 60, 120, 75, 60, 85, 65, 95,
+                           60, 55, 90, 25, 90, 50, 80, 90, 85, 75, 85, 105,
+                           80]),
+    UnitType.RECON: ([4, 45, 45, 12, 0, 0, 0, 0, 0, 0, 0, 70, 0, 1, 65, 1, 28,
+                      1, 6, 35, 55, 0, 0, 35, 6]),
+    UnitType.ROCKET: ([85, 80, 80, 0, 55, 60, 0, 0, 60, 85, 0, 95, 60, 55, 90,
+                       25, 90, 50, 80, 90, 85, 0, 85, 0, 80]),
+    UnitType.STEALTH: ([50, 85, 75, 85, 45, 65, 120, 70, 45, 35, 45, 90, 65,
+                        70, 90, 15, 85, 60, 80, 85, 85, 55, 55, 95, 75]),
+    UnitType.SUB: ([0, 0, 0, 0, 55, 95, 0, 0, 75, 25, 0, 0, 95, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 55, 0, 0]),
+    UnitType.TCOPTER: ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0]),
+    UnitType.TANK: ([65, 75, 70, 10, 1, 10, 0, 0, 1, 5, 0, 75, 10, 15, 70, 10,
+                     85, 15, 55, 85, 85, 0, 1, 40, 55]),
 }
 
 
@@ -157,8 +158,8 @@ class Unit:
                               UnitType.MEGATANK, UnitType.NEOTANK,
                               UnitType.MEDIUMTANK, UnitType.BCOPTER,
                               UnitType.CRUISER, UnitType.FIGHTER,
-                              UnitType.RECON, UnitType.SUB},
-                              UnitType.ANTIAIR)
+                              UnitType.RECON, UnitType.SUB,
+                              UnitType.ANTIAIR})
 
     def is_attackable(self, defender):
         '''Returns true if the unit is able to attack this type of unit.'''
@@ -182,6 +183,7 @@ class Unit:
         '''Returns true if the unit is an air unit.'''
         return self.type in ({UnitType.FIGHTER, UnitType.BOMBER,
                               UnitType.BLACKBOMB})
+
     def is_land_unit(self):
         '''Returns true if the unit is an air unit.'''
         return self.type in ({UnitType.INFANTRY, UnitType.MECH, UnitType.TANK,
@@ -229,24 +231,29 @@ class Unit:
         return 0
 
     def can_carry(self, unit):
-         '''Returns true if the transport unit can carry the unit.'''
-         if self.type in {UnitType.TCOPTER, UnitType.APC, UnitType.BLACKBOAT}:
-             if unit.type in {UnitType.INFANTRY, UnitType.MECH}:
-                 return True
-         if self.type in {UnitType.LANDER}:
-             if unit.type in {UnitType.INFANTRY, UnitType.MECH, UnitType.APC, UnitType.TANK, UnitType.MEDIUMTANK, UnitType.NEOTANK, UnitType.ANTIAIR, UnitType.RECON, UnitType.ARTILLERY, UnitType.MISSILE, UnitType.ROCKET}:
-                 return True
-         if self.type in {UnitType.CRUISER}:
-             if unit.type in {UnitType.BCOPTER, UnitType.TCOPTER}:
-                 return True
-         if self.type in {UnitType.CARRIER}:
-             if unit.type in {UnitType.FIGHTER, UnitType.BOMBER, UnitType.BLACKBOMB, UnitType.BCOPTER, UnitType.TCOPTER}:
-                 return True
+        '''Returns true if the transport unit can carry the unit.'''
+        if self.type in {UnitType.TCOPTER, UnitType.APC, UnitType.BLACKBOAT}:
+            if unit.type in {UnitType.INFANTRY, UnitType.MECH}:
+                return True
+        if self.type in {UnitType.LANDER}:
+            if unit.type in {UnitType.INFANTRY, UnitType.MECH, UnitType.APC,
+                             UnitType.TANK, UnitType.MEDIUMTANK, UnitType.NEOTANK,
+                             UnitType.ANTIAIR, UnitType.RECON, UnitType.ARTILLERY,
+                             UnitType.MISSILE, UnitType.ROCKET}:
+                return True
+        if self.type in {UnitType.CRUISER}:
+            if unit.type in {UnitType.BCOPTER, UnitType.TCOPTER}:
+                return True
+        if self.type in {UnitType.CARRIER}:
+            if unit.type in {UnitType.FIGHTER, UnitType.BOMBER,
+                             UnitType.BLACKBOMB, UnitType.BCOPTER,
+                             UnitType.TCOPTER}:
+                return True
 
     def can_resupply(self):
-         '''Returns true if the unit can resuppy.'''
-         if self.type in {UnitType.APC, UnitType.BLACKBOAT}:
-             return True
+        '''Returns true if the unit can resuppy.'''
+        if self.type in {UnitType.APC, UnitType.BLACKBOAT}:
+            return True
 
     @classmethod
     def create(cls, army: Army, unit_type: UnitType, unit_config: UnitConfig):
