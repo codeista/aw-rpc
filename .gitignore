@@ -8,6 +8,7 @@ __pycache__/
 # mac turds
 .DS_Store
 docs/
+*.db
 flask-env/
 
 scratch
