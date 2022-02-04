@@ -32,9 +32,13 @@ unit move2(with unit ID),
 
 
 
-### View api doc/test
+## View api
 
     http://localhost:5000/api/browse
+
+## Start a game/view game
+
+    http://localhost:5000/(game)
 
 
 ##TODO
