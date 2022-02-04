@@ -6,8 +6,8 @@ import sqlite3
 from sqlite3 import Error
 
 
-def create_connection(db_file):
-    """ create a database connection to a SQLite database """
+def create_database(db_file):
+    """Create a database with tables."""
     conn = None
     try:
         conn = sqlite3.connect(db_file)
@@ -17,7 +17,6 @@ def create_connection(db_file):
 
     cursor = conn.cursor()
 
-    # create table
     cursor.execute('''CREATE TABLE game (
     	id INTEGER NOT NULL,
     	token VARCHAR NOT NULL,
@@ -33,4 +32,4 @@ def create_connection(db_file):
 
 
 if __name__ == '__main__':
-    create_connection('aw-rpc.db')
+    create_database('aw-rpc.db')
