@@ -1,4 +1,4 @@
-'''[This is a unittest ]'''
+'''[This is a suite of tests using unittest ]'''
 
 import unittest
 import app

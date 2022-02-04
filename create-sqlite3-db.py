@@ -1,3 +1,7 @@
+'''This script sets up the test database for the unittests
+   in the github CI/CD runner virtual environment.'''
+
+
 import sqlite3
 from sqlite3 import Error
 
