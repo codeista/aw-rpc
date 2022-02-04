@@ -24,11 +24,11 @@
 
 Tests the following RPC methods in the app.py module:
 
-capture property
-end turn
-unit creation
-unit move(with x, y coord's)
-unit move2(with unit ID)
+capture property,
+end turn,
+unit creation,
+unit move(with x, y coord's),
+unit move2(with unit ID),
 
 
 
@@ -47,7 +47,7 @@ Create all the tiles available in tile.png
 
 CO's and powers
 
-**nice to have**
+##**nice to have**
 
 Create resupply on demand via context menu for APC and Blackboat
 
