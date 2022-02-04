@@ -10,9 +10,21 @@ def create_connection(db_file):
         print(sqlite3.version)
     except Error as e:
         print(e)
-    # create table
+
     cursor = conn.cursor()
-    cursor.execute('''CREATE TABLE game(tid int NOT NULL, ttoken VARCHAR NOT NULL, tdate DATETIME, tupdated DATETIME, tboard VARCHAR)''')
+
+    # create table
+    cursor.execute('''CREATE TABLE game (
+    	id INTEGER NOT NULL,
+    	token VARCHAR NOT NULL,
+    	date DATETIME,
+    	updated DATETIME,
+    	board VARCHAR,
+    	PRIMARY KEY (id),
+    	UNIQUE (token)
+        )''')
+
+
     conn.commit()
 
 
