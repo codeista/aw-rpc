@@ -28,7 +28,7 @@ jobs:
     - name: Create sqlite3 db
       run: |
         python create-sqlite3-db.py
-      working-directory: ./scripts
+      working-directory: /home/runner/work/aw-rpc/aw-rpc/scripts
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
