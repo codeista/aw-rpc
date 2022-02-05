@@ -191,6 +191,21 @@ def army_end_turn(token: str) -> str:
     except Exception as ex:
         return abort(400, ex)
 
+@jsonrpc.method('end_game')
+def end_game(token: str) -> str:
+    '''rpc end game.
+    :return: [ok]
+    '''
+    logger.info(f'end game token={token}')
+    mngr = game_load(token)
+    try:
+        mngr.end_game()
+        game_save(mngr, token)
+        ws_board_update(token)
+        return 'ok'
+    except Exception as ex:
+        return abort(400, ex)
+
 
 # return the game tile for the coord(x, y)
 @jsonrpc.method('tile')

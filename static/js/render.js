@@ -20,6 +20,8 @@ var inputshowmap = document.getElementById('inputshowmap');
 inputshowmap.onchange = rerender;
 var buttonendturn = document.getElementById('buttonendturn');
 buttonendturn.onclick = armyEndTurn;
+var buttonendgame = document.getElementById('buttonendgame');
+buttonendgame.onclick = endGame;
 var buttonchat = document.getElementById('buttonchat');
 buttonchat.onclick = chat;
 var inputchat = document.getElementById('inputchat');
@@ -154,6 +156,10 @@ function chat(ev) {
 
 function armyEndTurn() {
     jsonrpc('army_end_turn', {});
+}
+
+function endGame() {
+    jsonrpc('end_game', {});
 }
 
 function unitCreate(tile) {

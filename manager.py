@@ -338,12 +338,16 @@ class GameManager():
     # Public functions
     #
 
+    def end_game(self):
+        '''Ends the game'''
+        self.board.game_active = False
+
     def army_end_turn(self):
         '''Ends the armys turn.
            consumes fuel if nessessary and repairs/resupplys if on a
            corosponding repair tile.'''
-        # if self.board.game_active == False:
-        #     raise Exception("tried to end turn but Game Over")
+        if self.board.game_active == False:
+            raise Exception("tried to end turn but Game Over")
         self.unit_deselect()
         # remove move/attack statuses from units
         self.board.total_blue_troops = 0
