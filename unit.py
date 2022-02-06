@@ -159,7 +159,7 @@ class Unit:
                               UnitType.MEDIUMTANK, UnitType.BCOPTER,
                               UnitType.CRUISER, UnitType.FIGHTER,
                               UnitType.RECON, UnitType.SUB,
-                              UnitType.ANTIAIR})
+                              UnitType.ANTIAIR, UnitType.BOMBER})
 
     def is_attackable(self, defender):
         '''Returns true if the unit is able to attack this type of unit.'''
