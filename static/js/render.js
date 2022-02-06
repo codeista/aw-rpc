@@ -108,6 +108,7 @@ function update() {
             var canvas = draw.children[0];
             canvas.onmousemove = canvasMove;
             canvas.onclick = canvasClick;
+            canvas.ondblclick = canvasdblClick;
         }
         // render
         two.clear();
@@ -238,6 +239,10 @@ function unitSelect(tile) {
     jsonrpc('unit_select', {x: tile.x, y: tile.y});
 }
 
+function unitCapture(tile) {
+    jsonrpc('capture_tile', {x: tile.x, y: tile.y});
+}
+
 function unitAttack(tile) {
     jsonrpc('unit_attack', {x: board.selected.x, y: board.selected.y, x2: tile.x, y2: tile.y});
 }
@@ -294,6 +299,22 @@ function canvasClick(ev) {
         airunitCreate(tile);
     else if (tile.mapTile.type == 'PORT' && tile.mapTile.army == board.current_turn)
         seaunitCreate(tile);
+}
+
+function canvasdblClick(ev) {
+    var x = ev.offsetX;
+    var y = ev.offsetY;
+    var tile = tileAt(x, y);
+    if (tile.unit.type == 'INFANTRY' && tile.mapTile.type == 'CITY')
+        unitCapture(tile);
+    else if (tile.unit.type == 'INFANTRY' && tile.mapTile.type == 'BASE_TOWER_1')
+        unitCapture(tile);
+    else if (tile.unit.type == 'INFANTRY' && tile.mapTile.type == 'FACTORY')
+        unitCapture(tile);
+    else if (tile.unit.type == 'INFANTRY' && tile.mapTile.type == 'PORT')
+        unitCapture(tile);
+    else if (tile.unit.type == 'INFANTRY' && tile.mapTile.type == 'AIRPORT')
+        unitCapture(tile);
 }
 
 var textureLoadId = null;

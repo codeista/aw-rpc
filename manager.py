@@ -163,6 +163,8 @@ class GameManager():
         tile = self.tile_at(x, y)
         unit = tile.unit
         # self.check_turn_and_raise(unit)
+        tile.mapTile.is_capturable == True
+        tile.capture_hp = 20
         tile.unit = None
         return unit
 
@@ -171,6 +173,8 @@ class GameManager():
         for tile in self.board.grid:
             if tile.unit and tile.unit.id == id:
                 unit = tile.unit
+                tile.mapTile.is_capturable == True
+                tile.capture_hp = 20
                 tile.unit = None
                 return unit
 
