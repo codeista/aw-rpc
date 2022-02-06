@@ -299,13 +299,16 @@ function canvasClick(ev) {
              tile.unit.can_move)
              unitSelect(tile);
     else if (tile.mapTile.type == 'FACTORY' &&
-             tile.mapTile.army == board.current_turn)
+             tile.mapTile.army == board.current_turn &&
+             tile.unit == null)
              unitCreate(tile);
     else if (tile.mapTile.type == 'AIRPORT' &&
-             tile.mapTile.army == board.current_turn)
+             tile.mapTile.army == board.current_turn &&
+             tile.unit == null)
              airunitCreate(tile);
     else if (tile.mapTile.type == 'PORT' &&
-             tile.mapTile.army == board.current_turn)
+             tile.mapTile.army == board.current_turn &&
+             tile.unit == null)
              seaunitCreate(tile);
 }
 
@@ -313,7 +316,7 @@ function canvasdblClick(ev) {
     var x = ev.offsetX;
     var y = ev.offsetY;
     var tile = tileAt(x, y);
-    if (tile.unit){
+    if (tile.unit && tile.mapTile.army != tile.unit.army){
       if (tile.unit.type == 'INFANTRY' ||
           tile.unit.type == 'MECH') {
         if (tile.mapTile.type === 'CITY' ||
