@@ -269,7 +269,7 @@ function canvasMove(ev) {
     var y = ev.offsetY;
     var tile = tileAt(x, y);
     draw.style.cursor = 'default';
-    if (tile.can_be_moved_to)
+    if (tile && tile.can_be_moved_to)
         draw.style.cursor = 'pointer';
     else if (tile.can_be_attacked)
         draw.style.cursor = 'crosshair';
