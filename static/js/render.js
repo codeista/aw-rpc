@@ -305,16 +305,16 @@ function canvasdblClick(ev) {
     var x = ev.offsetX;
     var y = ev.offsetY;
     var tile = tileAt(x, y);
-    if (tile.unit.type == 'INFANTRY' && tile.mapTile.type == 'CITY')
-        unitCapture(tile);
-    else if (tile.unit.type == 'INFANTRY' && tile.mapTile.type == 'BASE_TOWER_1')
-        unitCapture(tile);
-    else if (tile.unit.type == 'INFANTRY' && tile.mapTile.type == 'FACTORY')
-        unitCapture(tile);
-    else if (tile.unit.type == 'INFANTRY' && tile.mapTile.type == 'PORT')
-        unitCapture(tile);
-    else if (tile.unit.type == 'INFANTRY' && tile.mapTile.type == 'AIRPORT')
-        unitCapture(tile);
+    if (tile.unit.type == 'INFANTRY' ||
+        tile.unit.type == 'MECH') {
+      if (tile.mapTile.type === 'CITY' ||
+          tile.mapTile.type === 'BASE_TOWER_1' ||
+          tile.mapTile.type === 'FACTORY' ||
+          tile.mapTile.type === 'PORT' ||
+          tile.mapTile.type ==='AIRPORT') {
+      unitCapture(tile);
+      }
+    }
 }
 
 var textureLoadId = null;
