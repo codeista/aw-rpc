@@ -95,7 +95,7 @@ ws_games = {}
 
 
 def ws_board_update(token):
-    socketio.emit('update', 'yo', room=token)
+    socketio.emit('update', 'room', room=token)
 
 
 def ws_msg(token, msg):
