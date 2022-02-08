@@ -320,12 +320,14 @@ function canvasdblClick(ev) {
     if (tile.unit && tile.mapTile.army != tile.unit.army){
       if (tile.unit.type == 'INFANTRY' ||
           tile.unit.type == 'MECH') {
-        if (tile.mapTile.type === 'CITY' ||
-            tile.mapTile.type === 'BASE_TOWER_1' ||
-            tile.mapTile.type === 'FACTORY' ||
-            tile.mapTile.type === 'PORT' ||
-            tile.mapTile.type ==='AIRPORT') {
-        unitCapture(tile);
+        if (tile.unit.can_attack) {
+          if (tile.mapTile.type === 'CITY' ||
+              tile.mapTile.type === 'BASE_TOWER_1' ||
+              tile.mapTile.type === 'FACTORY' ||
+              tile.mapTile.type === 'PORT' ||
+              tile.mapTile.type ==='AIRPORT') {
+          unitCapture(tile);
+          }
         }
       }
     }
