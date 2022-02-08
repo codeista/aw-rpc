@@ -272,18 +272,14 @@ function canvasMove(ev) {
     if (tile && tile.can_be_moved_to)
         draw.style.cursor = 'pointer';
     else if (tile.can_be_attacked)
-        draw.style.cursor = 'crosshair';
+             draw.style.cursor = 'crosshair';
     else if (tile.unit != null && tile.unit.army == board.current_turn)
-        draw.style.cursor = 'pointer';
-    else if (tile.mapTile.type == 'FACTORY' &&
-             tile.mapTile.army == board.current_turn)
-        draw.style.cursor = 'pointer';
-    else if (tile.mapTile.type == 'AIRPORT' &&
-             tile.mapTile.army == board.current_turn)
-        draw.style.cursor = 'pointer';
-    else if (tile.mapTile.type == 'PORT' &&
-             tile.mapTile.army == board.current_turn)
-        draw.style.cursor = 'pointer';
+             draw.style.cursor = 'pointer';
+    else if (tile.mapTile.army == board.current_turn)
+             if (tile.mapTile.type == 'FACTORY' ||
+                 tile.mapTile.type == 'AIRPORT' ||
+                 tile.mapTile.type == 'PORT')
+                 draw.style.cursor = 'pointer';
 }
 
 function canvasClick(ev) {
