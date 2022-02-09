@@ -558,11 +558,11 @@ function makeMapTile(tile) {
                 x = x - 420;
                 y = y - 111;
                 break;
-            case 'RIVER_NW':
+            case 'RIVER_NE':
                 x = x - 369;
                 y = y - 94;
                 break;
-            case 'RIVER_NE':
+            case 'RIVER_NW':
                 x = x - 403;
                 y = y - 94;
                 break;
