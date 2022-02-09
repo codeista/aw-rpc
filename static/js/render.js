@@ -287,9 +287,7 @@ function canvasClick(ev) {
     var y = ev.offsetY;
     var tile = tileAt(x, y);
     if (ev.detail === 1)
-      if (tile.can_be_moved_to)
-          unitMove(tile);
-      else if (tile.can_be_attacked)
+      if (tile.can_be_attacked)
                unitAttack(tile);
       else if (tile.unit != null &&
                tile.unit.army == board.current_turn &&
@@ -313,20 +311,18 @@ function canvasdblClick(ev) {
     var x = ev.offsetX;
     var y = ev.offsetY;
     var tile = tileAt(x, y);
-    if (tile.unit && tile.mapTile.army != tile.unit.army){
+    if (tile.can_be_moved_to)
+        unitMove(tile);
+    else if (tile.unit && tile.mapTile.army != tile.unit.army)
       if (tile.unit.type == 'INFANTRY' ||
-          tile.unit.type == 'MECH') {
-        if (tile.unit.can_attack) {
+          tile.unit.type == 'MECH')
+        if (tile.unit.can_attack)
           if (tile.mapTile.type === 'CITY' ||
               tile.mapTile.type === 'BASE_TOWER_1' ||
               tile.mapTile.type === 'FACTORY' ||
               tile.mapTile.type === 'PORT' ||
-              tile.mapTile.type ==='AIRPORT') {
+              tile.mapTile.type ==='AIRPORT')
           unitCapture(tile);
-          }
-        }
-      }
-    }
 }
 
 var textureLoadId = null;
