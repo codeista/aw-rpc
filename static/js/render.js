@@ -116,27 +116,14 @@ function update() {
         two.update();
         // update info
         var turn = document.getElementById('turn');
-        turn.innerText = 'Day: ' + board.days
-                       + "\n"
-                       + '-Current Turn: ' + board.current_turn
-                       + "\n"
-                       + '-Game Active: ' + board.game_active
-                       + "\n"
-                       + "Blue:"
-                       + "\n"
-                       + '-Troops: ' + board.total_blue_troops
-                       + "  "
-                       + '-Properties: ' + board.total_blue_properties
-                       + "  "
-                       + '-Funds: ' + board.blue_funds
-                       + "\n"
-                       + "Red:"
-                       + "\n"
-                       + '-Troops: ' + board.total_red_troops
-                       + "  "
-                       + '-Properties: ' + board.total_red_properties
-                       + "  "
-                       + '-Funds: ' + board.red_funds;
+        turn.innerText =
+          `Day: ${board.days}
+          Current Turn: ${board.current_turn}
+          Game Active: ${board.game_active}
+          Blue:
+          - Troops: ${board.total_blue_troops} Properties: ${board.total_blue_properties} Funds: ${board.blue_funds}
+          Red:
+          - Troops: ${board.total_red_troops} Properties: ${board.total_red_properties} Funds: ${board.red_funds}`;
 
         // update code
         var code = document.getElementById('code');
