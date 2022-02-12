@@ -286,38 +286,47 @@ function canvasClick(ev) {
     var x = ev.offsetX;
     var y = ev.offsetY;
     var tile = tileAt(x, y);
-    if (ev.ctrlKey)
-      unitLoad(tile);
-    else if (ev.altKey)
-      unitUnload(tile);
-    if (tile.can_be_attacked)
-             unitAttack(tile);
-    else if (tile.unit != null &&
-             tile.unit.army == board.current_turn)
-             if (tile.unit.can_attack ||
-                 tile.unit.can_move)
-                 unitSelect(tile);
-    if     (tile.mapTile.type == 'FACTORY' &&
-            tile.mapTile.army == board.current_turn &&
-            tile.unit == null)
-            unitCreate(tile);
-    else if (tile.mapTile.type == 'AIRPORT' &&
-            tile.mapTile.army == board.current_turn &&
-            tile.unit == null)
-            airunitCreate(tile);
-    else if (tile.mapTile.type == 'PORT' &&
-            tile.mapTile.army == board.current_turn &&
-            tile.unit == null)
-            seaunitCreate(tile);
+    if (ev.detail == 1){
+      if (ev.ctrlKey) {
+        unitLoad(tile);
+      } else if (ev.altKey) {
+        unitUnload(tile);
+      }
+      if (tile.can_be_attacked) {
+               unitAttack(tile);
+      }
+      else if (tile.unit != null &&
+               tile.unit.army == board.current_turn) {
+               if (tile.unit.can_attack ||
+                   tile.unit.can_move) {
+                   unitSelect(tile);
+                   }
+              }
+      if (tile.mapTile.type == 'FACTORY' &&
+               tile.mapTile.army == board.current_turn &&
+               tile.unit == null) {
+               unitCreate(tile);
+               }
+      else if (tile.mapTile.type == 'AIRPORT' &&
+              tile.mapTile.army == board.current_turn &&
+              tile.unit == null) {
+              airunitCreate(tile);
+              }
+      else if (tile.mapTile.type == 'PORT' &&
+              tile.mapTile.army == board.current_turn &&
+              tile.unit == null) {
+              seaunitCreate(tile);
+              }
+    }
 }
 
 function canvasdblClick(ev) {
     var x = ev.offsetX;
     var y = ev.offsetY;
     var tile = tileAt(x, y);
-    if (tile.can_be_moved_to)
+    if (tile.can_be_moved_to){
         unitMove(tile);
-    else if (tile.unit && tile.mapTile.army != tile.unit.army)
+    } else if (tile.unit && tile.mapTile.army != tile.unit.army) {
       if (tile.unit.type == 'INFANTRY' ||
           tile.unit.type == 'MECH')
         if (tile.unit.can_attack)
@@ -326,9 +335,10 @@ function canvasdblClick(ev) {
               tile.mapTile.type === 'FACTORY' ||
               tile.mapTile.type === 'PORT' ||
               tile.mapTile.type ==='AIRPORT')
-          unitCapture(tile);
-    else
+              unitCapture(tile);
+    } else {
       unitWait(tile);
+    }
 }
 
 var textureLoadId = null;
