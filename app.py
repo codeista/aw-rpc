@@ -248,7 +248,7 @@ def unit_wait(token: str, x: int, y: int) -> dict:
         mngr.unit_wait(x, y)
         game_save(mngr, token)
         ws_board_update(token)
-        return jsons.dump(mngr.tile_get(x, y))
+        return jsons.dump(mngr.unit_at(x, y))
     except Exception as ex:
         return abort(400, ex)
 

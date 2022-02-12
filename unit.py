@@ -131,6 +131,7 @@ class Unit:
     id: str
     can_move: bool
     can_attack: bool
+    can_capture: bool
 
     def attack_damage(self, target, tile):
         '''Returns the attack damamge from the attacker to the defender
@@ -192,7 +193,7 @@ class Unit:
                               UnitType.ARTILLERY, UnitType.MISSILE,
                               UnitType.ROCKET, UnitType.PIPERUNNER})
 
-    def can_capture(self):
+    def type_can_capture(self):
         '''Returns true if the unit can capture.'''
         return self.type in {UnitType.INFANTRY, UnitType.MECH}
 
@@ -259,4 +260,4 @@ class Unit:
     def create(cls, army: Army, unit_type: UnitType, unit_config: UnitConfig):
         '''Creates the unit.'''
         return Unit(army, unit_type, unit_config,
-                    uuid.uuid4(), False, False)
+                    uuid.uuid4(), False, False ,True)

@@ -210,7 +210,7 @@ class GameManager():
             raise Exception('cannot capture tile')
         unit = tile.unit
         self.check_turn_and_raise(unit)
-        if not unit.can_capture():
+        if not unit.type_can_capture():
             raise Exception('Unit cannot capture')
         tile.capture_hp -= math.ceil(unit.status.hp / 10)
         if tile.capture_hp <= 0:
@@ -220,6 +220,7 @@ class GameManager():
                 self.board.game_active = False
         unit.can_move = False
         unit.can_attack = False
+        unit.can_capture = False
         self.unit_deselect()
         return self.tile_at(x, y)
 
@@ -337,6 +338,7 @@ class GameManager():
         self.check_turn_and_raise(unit)
         unit.can_move = False
         unit.can_attack = False
+        unit.can_capture = False
         self.unit_deselect()
         return self.tile_at(x, y)
 
@@ -392,6 +394,7 @@ class GameManager():
                 tile.unit.can_move = True
                 tile.unit.can_attack = True
                 unit = tile.unit
+                unit.can_capture = True
                 unit.status.fuel -= unit.fuel_use()
                 if unit.fuel_daily_use() and unit.status.fuel <= 0:
                     tile = self.tile_from_unit(unit)
@@ -576,6 +579,7 @@ class GameManager():
                 self.unit_remove(x2, y2)
         if attacker.status.hp < 1:
             self.unit_remove(x, y)
+        attacker.can_capture = False
         attacker.can_move = False
         attacker.can_attack = False
         self.unit_deselect()
@@ -638,6 +642,9 @@ class GameManager():
         if not self.unit_can_join_to(unit, x2, y2):
             raise Exception('target tile too far')
         unit2.status.hp = min(100, unit2.status.hp + unit.status.hp)
+        unit2.can_capture = False
+        unit2.can_attack = False
+        unit2.can_move = False
         self.unit_remove(x, y)
         return unit2
 

@@ -288,21 +288,25 @@ function canvasClick(ev) {
     var tile = tileAt(x, y);
     if (ev.detail == 1){
       if (ev.ctrlKey) {
-        unitLoad(tile);
+          unitLoad(tile);
       } else if (ev.altKey) {
-        unitUnload(tile);
+                 unitUnload(tile);
       }
       if (tile.can_be_attacked) {
-               unitAttack(tile);
+          unitAttack(tile);
       }
       else if (tile.unit != null &&
                tile.unit.army == board.current_turn) {
                if (tile.unit.can_attack ||
-                   tile.unit.can_move) {
+                   tile.unit.can_move ||
+                   tile.unit.can_capture) {
                    unitSelect(tile);
                    }
               }
-      if (tile.mapTile.type == 'FACTORY' &&
+      if (tile.can_be_moved_to) {
+          unitMove(tile);
+        }
+      else if (tile.mapTile.type == 'FACTORY' &&
                tile.mapTile.army == board.current_turn &&
                tile.unit == null) {
                unitCreate(tile);
@@ -324,21 +328,21 @@ function canvasdblClick(ev) {
     var x = ev.offsetX;
     var y = ev.offsetY;
     var tile = tileAt(x, y);
-    if (tile.can_be_moved_to){
-        unitMove(tile);
-    } else if (tile.unit && tile.mapTile.army != tile.unit.army) {
-      if (tile.unit.type == 'INFANTRY' ||
-          tile.unit.type == 'MECH')
-        if (tile.unit.can_attack)
-          if (tile.mapTile.type === 'CITY' ||
-              tile.mapTile.type === 'BASE_TOWER_1' ||
-              tile.mapTile.type === 'FACTORY' ||
-              tile.mapTile.type === 'PORT' ||
-              tile.mapTile.type ==='AIRPORT')
-              unitCapture(tile);
-    } else {
-      unitWait(tile);
-    }
+    if (tile.mapTile.type === 'CITY' ||
+               tile.mapTile.type === 'BASE_TOWER_1' ||
+               tile.mapTile.type === 'FACTORY' ||
+               tile.mapTile.type === 'PORT' ||
+               tile.mapTile.type ==='AIRPORT') {
+               if (tile.unit &&
+                   tile.unit.can_capture) {
+                   if (tile.unit.type == 'INFANTRY' ||
+                       tile.unit.type == 'MECH') {
+                       unitCapture(tile);
+                       }
+                   }
+    } else if (tile.unit) {
+            unitWait(tile);
+            }
 }
 
 var textureLoadId = null;
