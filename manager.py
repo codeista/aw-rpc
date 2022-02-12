@@ -220,6 +220,7 @@ class GameManager():
                 self.board.game_active = False
         unit.can_move = False
         unit.can_attack = False
+        self.unit_deselect()
         return self.tile_at(x, y)
 
     def launch_missile(self, x: int, y: int, x2: int, y2: int) -> Unit:
@@ -336,6 +337,7 @@ class GameManager():
         self.check_turn_and_raise(unit)
         unit.can_move = False
         unit.can_attack = False
+        self.unit_deselect()
         return self.tile_at(x, y)
 
     #

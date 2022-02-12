@@ -261,10 +261,10 @@ def unit_select(token: str, x: int, y: int) -> dict:
     logger.info(f'unit_select token={token}, x={x}, y={y}')
     mngr = game_load(token)
     try:
-        mngr.unit_select(x, y)
+        unit = mngr.unit_select(x, y)
         game_save(mngr, token)
         ws_board_update(token)
-        return jsons.dump(mngr.board)
+        return jsons.dump(mngr.unit_at(x, y))
     except Exception as ex:
         return abort(400, ex)
 

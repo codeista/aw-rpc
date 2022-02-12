@@ -230,8 +230,21 @@ function unitCapture(tile) {
     jsonrpc('capture_tile', {x: tile.x, y: tile.y});
 }
 
+function unitWait(tile) {
+    jsonrpc('unit_wait', {x: tile.x, y: tile.y});
+}
+
 function unitAttack(tile) {
     jsonrpc('unit_attack', {x: board.selected.x, y: board.selected.y, x2: tile.x, y2: tile.y});
+}
+
+function unitLoad(tile) {
+    jsonrpc('unit_load', {x: board.selected.x, y: board.selected.y, x2: tile.x, y2: tile.y});
+}
+
+function unitUnload(tile) {
+    idx = 0
+    jsonrpc('unit_unload', {x: board.selected.x, y: board.selected.y, x2: tile.x, y2: tile.y , index: idx});
 }
 
 function unitMove(tile) {
@@ -273,25 +286,29 @@ function canvasClick(ev) {
     var x = ev.offsetX;
     var y = ev.offsetY;
     var tile = tileAt(x, y);
-    if (ev.detail === 1)
-      if (tile.can_be_attacked)
-               unitAttack(tile);
-      else if (tile.unit != null &&
-               tile.unit.army == board.current_turn &&
-               tile.unit.can_move)
-               unitSelect(tile);
-      else if (tile.mapTile.type == 'FACTORY' &&
-               tile.mapTile.army == board.current_turn &&
-               tile.unit == null)
-               unitCreate(tile);
-      else if (tile.mapTile.type == 'AIRPORT' &&
-               tile.mapTile.army == board.current_turn &&
-               tile.unit == null)
-               airunitCreate(tile);
-      else if (tile.mapTile.type == 'PORT' &&
-               tile.mapTile.army == board.current_turn &&
-               tile.unit == null)
-               seaunitCreate(tile);
+    if (ev.ctrlKey)
+      unitLoad(tile);
+    else if (ev.altKey)
+      unitUnload(tile);
+    if (tile.can_be_attacked)
+             unitAttack(tile);
+    else if (tile.unit != null &&
+             tile.unit.army == board.current_turn)
+             if (tile.unit.can_attack ||
+                 tile.unit.can_move)
+                 unitSelect(tile);
+    if     (tile.mapTile.type == 'FACTORY' &&
+            tile.mapTile.army == board.current_turn &&
+            tile.unit == null)
+            unitCreate(tile);
+    else if (tile.mapTile.type == 'AIRPORT' &&
+            tile.mapTile.army == board.current_turn &&
+            tile.unit == null)
+            airunitCreate(tile);
+    else if (tile.mapTile.type == 'PORT' &&
+            tile.mapTile.army == board.current_turn &&
+            tile.unit == null)
+            seaunitCreate(tile);
 }
 
 function canvasdblClick(ev) {
@@ -310,6 +327,8 @@ function canvasdblClick(ev) {
               tile.mapTile.type === 'PORT' ||
               tile.mapTile.type ==='AIRPORT')
           unitCapture(tile);
+    else
+      unitWait(tile);
 }
 
 var textureLoadId = null;
