@@ -55,7 +55,9 @@ CO's and powers
 
 Create resupply on demand via context menu for APC and Blackboat
 
-Select option to attack, capture, wait, destroy, join
+fix loading loading multiple units to index value
+
+mouse or select option to join troops together
 
 Weather inc fog
 
