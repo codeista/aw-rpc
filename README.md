@@ -55,12 +55,12 @@ CO's and powers
 
 Create resupply on demand via context menu for APC and Blackboat
 
-fix loading loading multiple units to index value
+Fix loading multiple units to cargo index value
 
-mouse or select option to join troops together
+Mouse or select option to join troops together
 
 Weather inc fog
 
 Stealth mechanic for subs and stealth
 
-fix fuel consumption for hidden stealth and dived sub units
+Fix fuel consumption for hidden stealth and dived sub units
