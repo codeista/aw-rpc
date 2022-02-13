@@ -115,20 +115,23 @@ function update() {
         createScene();
         two.update();
         // update info
-        var turn = document.getElementById('turn');
-        turn.innerText =
-          `Game info - Day: ${board.days} Current Turn: ${board.current_turn} Game Active: ${board.game_active}
 
-          Blue:
-          - Troops: ${board.total_blue_troops} Properties: ${board.total_blue_properties} Funds: ${board.blue_funds}
-          Red:
-          - Troops: ${board.total_red_troops} Properties: ${board.total_red_properties} Funds: ${board.red_funds}
+        var gamebox = document.getElementById('gamebox');
+        gamebox.innerText =
+                           `Game info - Day: ${board.days} Current Turn: ${board.current_turn} Game Active: ${board.game_active}
+                            Blue:
+                            - Troops: ${board.total_blue_troops} Properties: ${board.total_blue_properties} Funds: ${board.blue_funds}
+                            Red:
+                            - Troops: ${board.total_red_troops} Properties: ${board.total_red_properties} Funds: ${board.red_funds}
+                            `;
 
-          Instructions:
-          - Single click: move, attack
-          -  + ctrl: load unit
-          -  + alt: unload unit
-          - Double click: capture, wait`;
+        var infobox = document.getElementById('turn');
+        infobox.innerText =
+                        `Instructions:
+                        - Single click: move, attack
+                        -  + ctrl: load unit
+                        -  + alt: unload unit
+                        - Double click: capture, wait`;
         // update code
         var code = document.getElementById('code');
         code.value = JSON.stringify(board, null, 2);
