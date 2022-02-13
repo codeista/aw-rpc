@@ -117,14 +117,18 @@ function update() {
         // update info
         var turn = document.getElementById('turn');
         turn.innerText =
-          `Day: ${board.days}
-          Current Turn: ${board.current_turn}
-          Game Active: ${board.game_active}
+          `Game info - Day: ${board.days} Current Turn: ${board.current_turn} Game Active: ${board.game_active}
+
           Blue:
           - Troops: ${board.total_blue_troops} Properties: ${board.total_blue_properties} Funds: ${board.blue_funds}
           Red:
-          - Troops: ${board.total_red_troops} Properties: ${board.total_red_properties} Funds: ${board.red_funds}`;
+          - Troops: ${board.total_red_troops} Properties: ${board.total_red_properties} Funds: ${board.red_funds}
 
+          Instructions:
+          - Single click: move, attack
+          -  + ctrl: load unit
+          -  + alt: unload unit
+          - Double click: capture, wait`;
         // update code
         var code = document.getElementById('code');
         code.value = JSON.stringify(board, null, 2);
@@ -245,6 +249,10 @@ function unitLoad(tile) {
 function unitUnload(tile) {
     idx = 0
     jsonrpc('unit_unload', {x: board.selected.x, y: board.selected.y, x2: tile.x, y2: tile.y , index: idx});
+}
+
+function unitJoin(tile) {
+    jsonrpc('unit_join', {x: board.selected.x, y: board.selected.y, x2: tile.x, y2: tile.y});
 }
 
 function unitMove(tile) {
