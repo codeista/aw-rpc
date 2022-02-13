@@ -187,7 +187,9 @@ def army_end_turn(token: str) -> str:
         mngr.army_end_turn()
         game_save(mngr, token)
         ws_board_update(token)
-        return 'ok'
+        turn = mngr.check_turn()
+        logger.info(f'army_end_turn={turn.name}')
+        return jsons.dump(turn)
     except Exception as ex:
         return abort(400, ex)
 
@@ -202,7 +204,10 @@ def end_game(token: str) -> str:
         mngr.end_game()
         game_save(mngr, token)
         ws_board_update(token)
-        return 'ok'
+        turn = mngr.check_turn()
+        text = turn.name + ' is the winner!'
+        logger.info(f'{turn.name} is the winner')
+        return jsons.dump(text)
     except Exception as ex:
         return abort(400, ex)
 
