@@ -125,7 +125,7 @@ function update() {
                             - Troops: ${board.total_red_troops} Properties: ${board.total_red_properties} Funds: ${board.red_funds}
                             `;
 
-        var infobox = document.getElementById('turn');
+        var infobox = document.getElementById('infobox');
         infobox.innerText =
                         `Instructions:
                         - Single click: move, attack
