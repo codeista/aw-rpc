@@ -59,4 +59,6 @@ class GameBoard():
         for i in board.grid:
             if i.mapTile.army and i.mapTile.army.name == "RED":
                 board.red_funds += int(config['FUNDS']['income'])
+                board.total_red_properties += int(config['FUNDS']['income'])
+                board.total_blue_properties += int(config['FUNDS']['income'])
         return board
