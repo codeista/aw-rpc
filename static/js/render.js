@@ -26,6 +26,10 @@ var buttonchat = document.getElementById('buttonchat');
 buttonchat.onclick = chat;
 var inputchat = document.getElementById('inputchat');
 inputchat.onkeypress = chat;
+var inputshowchat = document.getElementById('inputshowchat');
+inputshowchat.onchange = showChat;
+var inputshowjson = document.getElementById('inputshowjson');
+inputshowjson.onchange = showJson;
 
 // init socket.io
 setTimeout(function() {
@@ -364,6 +368,29 @@ function ontextureLoad(src) {
     }
     textureLoadId = setTimeout(() => two.update(), 100);
 }
+
+function showJson() {
+  var showJsonArea = document.getElementById('inputshowjson').checked;
+  if (showJsonArea) {
+    code.hidden = "";
+  } else {
+    code.hidden = "true";
+  }
+}
+
+function showChat() {
+  var showChatArea = document.getElementById('inputshowchat').checked;
+  if (showChatArea) {
+    textareachat.hidden = "";
+    inputchat.hidden = "";
+    buttonchat.hidden = "";
+  } else {
+    textareachat.hidden = "true";
+    inputchat.hidden = "true";
+    buttonchat.hidden = "true";
+  }
+}
+
 
 function makeMapTile(tile) {
     var showMapTiles = document.getElementById('inputshowmap').checked;
