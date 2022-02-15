@@ -963,7 +963,7 @@ function makeSprite(tile) {
         flag.fill = flagTexture;
         flag.stroke = 'transparent';
     }
-    if (tile.unit.status.cargo[0]) ||
+    if (tile.unit.status.cargo[0] ||
         tile.unit.status.cargo[1]) {
         const LOADSIZE = SPRITESIZE/2;
         x = spriteSheetWidth/2 - LOADSIZE/2;
