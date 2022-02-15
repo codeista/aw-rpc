@@ -47,7 +47,19 @@
   cursor: pointer;
 }
 
+
+.buttonendturn:hover {
+  background-color: #4CAF50; /* Green */
+}
+.buttonendgame:hover {
+  background-color: #4CAF50; /* Green */
+}
+.buttonrerender:hover {
+  background-color: #4CAF50; /* Green */
+}
+
 .buttonendturn {
+  transition-duration: 0.4s;
   font-family: sans-serif;
   border-radius:2em;
   box-sizing: border-box;
@@ -55,6 +67,7 @@
   border-color: inherit;
 }
 .buttonendgame {
+  transition-duration: 0.4s;
   font-family: sans-serif;
   border-radius:2em;
   box-sizing: border-box;
@@ -62,9 +75,13 @@
   border-color: inherit;
 }
 .buttonrerender {
+  transition-duration: 0.4s;
   font-family: sans-serif;
   border-radius:2em;
   box-sizing: border-box;
   background-color: #008CBA91;/* Blue */
   border-color: inherit;
+}
+.header {
+  text-align: center;
 }
