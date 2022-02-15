@@ -28,6 +28,9 @@
                 <div id="infobox"></div>
             </td>
             <td style="vertical-align: top">
+                <div id="gamebox">
+                </div>
+                <hr>
                 <div id="controls">
                     <button class="buttonendturn" onclick="armyEndTurn();">End Turn</button>
                     <button class="buttonendgame" onclick="endGame();">End Game</button>
@@ -36,15 +39,15 @@
                     <input type="checkbox" id="inputshowchat" checked>Show Chat</button>
                     <input type="checkbox" id="inputshowjson" checked>Show JSON</button>
                     <hr/>
-                    <div id="gamebox">
-                    </div>
-                    <hr/>
-                    <textarea id="textareachat" rows="10" cols="40"></textarea>
-                    <br/>
-                    <input type="text" id="inputchat"></input>
-                    <button type="button" id="buttonchat">Chat</button>
-                    <hr/>
-                    <textarea id="code" rows="10" cols="40"></textarea>
+                </div>
+                <div id="chatbox">
+                  <textarea id="textareachat" rows="10" cols="40"></textarea>
+                  <button type="button" id="buttonchat">Chat</button>
+                  <input type="text" id="inputchat"></input>
+                </div>
+                <div id="jsonbox">
+                  <textarea id="code" rows="10" cols="40"></textarea>
+
                 </div>
             </td>
         </tr>

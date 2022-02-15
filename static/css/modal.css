@@ -9,6 +9,11 @@
   padding-left: 10px;
 }
 
+#chatbox {
+  background-color: whitesmoke;
+  display: grid;
+}
+
  /* The Modal (background) */
 .modal {
   display: none; /* Hidden by default */
@@ -55,7 +60,7 @@
   background-color: #4CAF50; /* Green */
 }
 .buttonrerender:hover {
-  background-color: #4CAF50; /* Green */
+  background-color:  #008CBA4A; /* Green */
 }
 
 .buttonendturn {
@@ -71,7 +76,7 @@
   font-family: sans-serif;
   border-radius:2em;
   box-sizing: border-box;
-  background-color: #3AAA3C80;;/* Blue */
+  background-color: #3AAA3C80;;/* Green */
   border-color: inherit;
 }
 .buttonrerender {
