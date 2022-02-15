@@ -951,6 +951,31 @@ function makeSprite(tile) {
         ammo.fill = ammoTexture;
         ammo.stroke = 'transparent';
     }
+    if (tile.capture_hp <= 19) {
+        const FLAGSIZE = SPRITESIZE/2;
+        x = spriteSheetWidth/2 - FLAGSIZE/2;
+        y = spriteSheetHeight/2 - FLAGSIZE/2;
+        x = x - 530;
+        y = y - 1233;
+        var flagTexture = new Two.Texture(unitsSrc, () => ontextureLoad(unitsSrc));
+        flagTexture.offset = new Two.Vector(x, y);
+        flag = two.makeRectangle(tile.x * TILESIZE + TILESIZE - FLAGSIZE/2 - 8, tile.y * TILESIZE + TILESIZE - FLAGSIZE/2, FLAGSIZE, FLAGSIZE);
+        flag.fill = flagTexture;
+        flag.stroke = 'transparent';
+    }
+    if (tile.unit.status.cargo[0]) ||
+        tile.unit.status.cargo[1]) {
+        const LOADSIZE = SPRITESIZE/2;
+        x = spriteSheetWidth/2 - LOADSIZE/2;
+        y = spriteSheetHeight/2 - LOADSIZE/2;
+        x = x - 520;
+        y = y - 1233;
+        var loadTexture = new Two.Texture(unitsSrc, () => ontextureLoad(unitsSrc));
+        loadTexture.offset = new Two.Vector(x, y);
+        load = two.makeRectangle(tile.x * TILESIZE + TILESIZE - LOADSIZE/2 - 8, tile.y * TILESIZE + TILESIZE - LOADSIZE/2, LOADSIZE, LOADSIZE);
+        load.fill = loadTexture;
+        load.stroke = 'transparent';
+    }
     return rect;
 }
 
