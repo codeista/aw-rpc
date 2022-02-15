@@ -51,13 +51,20 @@
   font-family: sans-serif;
   border-radius:2em;
   box-sizing: border-box;
-  background-color: #4CAF50; /*Green*/
+  background-color: #3AAA3C80; /*Green*/
   border-color: inherit;
 }
 .buttonendgame {
   font-family: sans-serif;
   border-radius:2em;
   box-sizing: border-box;
-  background-color: #008CBA;/* Blue */
+  background-color: #3AAA3C80;;/* Blue */
+  border-color: inherit;
+}
+.buttonrerender {
+  font-family: sans-serif;
+  border-radius:2em;
+  box-sizing: border-box;
+  background-color: #008CBA91;/* Blue */
   border-color: inherit;
 }

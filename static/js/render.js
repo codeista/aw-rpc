@@ -14,7 +14,7 @@ var two = null;
 update();
 
 // init controls
-var buttonrerender = document.getElementById('buttonrerender');
+var buttonrerender = document.getElementsByClassName('buttonrerender');
 buttonrerender.onclick = rerender;
 var inputshowmap = document.getElementById('inputshowmap');
 inputshowmap.onchange = rerender;
