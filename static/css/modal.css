@@ -90,3 +90,21 @@
 .header {
   text-align: center;
 }
+
+h2 {
+    width: 16px; height: 16px;
+    background: url("/static/img/man2.png") no-repeat;
+    margin: auto;
+    position: relative;}
+h2:hover {
+    background: transparent url("/static/img/man3.png") no-repeat;
+    0px -16px no-repeat;}
+
+a {
+  padding-left: 100px
+}
+
+table {
+	margin-left: auto;
+	margin-right: auto;
+}

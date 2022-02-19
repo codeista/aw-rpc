@@ -5,6 +5,7 @@
     <link rel="stylesheet" type="text/css" href="/static/css/modal.css">
     <div class="header">
     <h1>AW-RPC</h1>
+      <h2></h2>
     <p>Front end to aw-rpc</p>
     </div>
   </head>
@@ -22,6 +23,9 @@
     <a href="/api/browse">Browse API</a>
     <!-- table to hold game board and game info -->
     <table>
+      <tr>
+        <th>Game:  {{token}} </th>
+      </tr>
         <tr>
             <td style="vertical-align: top">
                 <div id="draw" x-token="{{token}}"></div>
