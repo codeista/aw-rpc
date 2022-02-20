@@ -7,6 +7,8 @@
     <h1>AW-RPC</h1>
       <h2></h2>
     <p>Front end to aw-rpc</p>
+    <a href="/api/browse">Browse API</a>
+    <!-- table to hold game board and game info -->
     </div>
   </head>
   <body>
@@ -20,8 +22,7 @@
       </div>
     </div>
     <!-- link to JSONRPC API doc -->
-    <a href="/api/browse">Browse API</a>
-    <!-- table to hold game board and game info -->
+
     <table>
       <tr>
         <th>Game:  {{token}} </th>
@@ -35,23 +36,25 @@
                 <div id="gamebox">
                 </div>
                 <hr>
-                <div id="controls">
-                    <button class="buttonendturn" onclick="armyEndTurn();">End Turn</button>
-                    <button class="buttonendgame" onclick="endGame();">End Game</button>
-                    <button class="buttonrerender" onclick="rerender();">Re-render</button>
-                    <input type="checkbox" id="inputshowmap" checked>Show Map</button>
-                    <input type="checkbox" id="inputshowchat" checked>Show Chat</button>
-                    <input type="checkbox" id="inputshowjson" checked>Show JSON</button>
-                    <hr/>
+                <div id="showbox">
+                <input type="checkbox" id="inputshowmap" checked>Show Map</button>
+                <input type="checkbox" id="inputshowchat" unchecked>Show Chat</button>
+                <input type="checkbox" id="inputshowjson" unchecked>Show JSON</button>
                 </div>
+                <hr>
+                <div id="controls">
+                <button class="buttonendturn" onclick="armyEndTurn();">End Turn</button>
+                <button class="buttonendgame" onclick="endGame();">End Game</button>
+                <button class="buttonrerender" onclick="rerender();">Re-render</button>
+                </div>
+                <hr/>
                 <div id="chatbox">
-                  <textarea id="textareachat" rows="10" cols="40"></textarea>
-                  <button type="button" id="buttonchat">Chat</button>
-                  <input type="text" id="inputchat"></input>
+                <textarea id="textareachat" rows="10" cols="40"></textarea>
+                <button type="button" id="buttonchat">Chat</button>
+                <input type="text" id="inputchat"></input>
                 </div>
                 <div id="jsonbox">
-                  <textarea id="code" rows="10" cols="40"></textarea>
-
+                <textarea id="code" rows="10" cols="40"></textarea>
                 </div>
             </td>
         </tr>

@@ -11,7 +11,10 @@
 
 #chatbox {
   background-color: whitesmoke;
-  display: grid;
+  display: inline-grid;
+}
+
+#showbox {
 }
 
  /* The Modal (background) */
@@ -99,10 +102,6 @@ h2 {
 h2:hover {
     background: transparent url("/static/img/man3.png") no-repeat;
     0px -16px no-repeat;}
-
-a {
-  padding-left: 100px
-}
 
 table {
 	margin-left: auto;

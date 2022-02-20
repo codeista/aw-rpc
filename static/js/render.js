@@ -122,11 +122,18 @@ function update() {
 
         var gamebox = document.getElementById('gamebox');
         gamebox.innerText =
-                           `Game info - Day: ${board.days} Current Turn: ${board.current_turn} Game Active: ${board.game_active}
-                            Blue:
-                            - Troops: ${board.total_blue_troops} Income: ${board.total_blue_properties} Funds: ${board.blue_funds}
+                           `Game info:
+                             - Day: ${board.days}
+                             - Current Turn: ${board.current_turn}
+                             - Game Active: ${board.game_active}
+                             Blue:
+                             - Troops: ${board.total_blue_troops}
+                             - Income: ${board.total_blue_properties}
+                             - Funds: ${board.blue_funds}
                             Red:
-                            - Troops: ${board.total_red_troops} Income: ${board.total_red_properties} Funds: ${board.red_funds}
+                            - Troops: ${board.total_red_troops}
+                            - Income: ${board.total_red_properties}
+                            - Funds: ${board.red_funds}
                             `;
 
         var infobox = document.getElementById('infobox');
