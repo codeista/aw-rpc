@@ -9,7 +9,7 @@ import secrets
 
 from flask import redirect, render_template, abort, request, url_for
 from flask_socketio import Namespace, join_room, leave_room
-import flask_login
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 import jsons
 
 from manager import GameManager
@@ -24,12 +24,12 @@ logging.basicConfig(filename='app.log', level=logging.INFO)
 
 config_game = Config()
 
-login_manager = flask_login.LoginManager()
+login_manager = LoginManager()
 login_manager.init_app(app)
 
 users = {'RED': {'password': ''}, 'BLUE': {'password': ''}}
 
-class User(flask_login.UserMixin):
+class User(UserMixin):
     pass
 
 
@@ -93,7 +93,7 @@ def index():
 
 
 @app.route('/game/<token>')
-@flask_login.login_required
+@login_required
 def game(token: str):
     return render_template('render.html', token=token)
 
@@ -132,21 +132,26 @@ def login():
     if request.form['password'] == users[email]['password']:
         user = User()
         user.id = email
-        flask_login.login_user(user)
+        login_user(user)
         return redirect(url_for('protected'))
 
     return 'Bad login'
 
 
 @app.route('/protected')
-@flask_login.login_required
+@login_required
 def protected():
     return redirect('/game/' + secrets.token_urlsafe(4))
 
 @app.route('/logout')
 def logout():
-    flask_login.logout_user()
+    logout_user()
     return 'Logged out'
+
+@app.route('/home')
+@login_required
+def home():
+    return 'The current user is ' + str(current_user.id)
 
 @login_manager.unauthorized_handler
 def unauthorized_handler():
