@@ -89,7 +89,7 @@ def game_create(token):
 
 @app.route('/')
 def index():
-    return redirect('/login')
+    return redirect('/home')
 
 
 @app.route('/game/<token>')
@@ -146,12 +146,11 @@ def protected():
 @app.route('/logout')
 def logout():
     logout_user()
-    return 'Logged out'
+    return redirect('/home')
 
 @app.route('/home')
-@login_required
 def home():
-    return 'The current user is ' + str(current_user.id)
+    return render_template('home.html')
 
 @login_manager.unauthorized_handler
 def unauthorized_handler():
