@@ -132,11 +132,12 @@ def login():
                </form>
                '''
     team = request.form['team'].upper()
-    if team:
-        user = User()
-        user.id = team
-        login_user(user)
-        return redirect('/')
+    for i in Army:
+        if team == i.name:
+            user = User()
+            user.id = team
+            login_user(user)
+            return redirect('/')
 
     return 'Bad login'
 
