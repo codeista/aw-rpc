@@ -12,6 +12,7 @@ from flask_socketio import Namespace, join_room, leave_room
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 import jsons
 
+from army import Army
 from manager import GameManager
 from gameboard import GameBoard
 from config import Config
@@ -27,10 +28,8 @@ config_game = Config()
 login_manager = LoginManager()
 login_manager.init_app(app)
 
-users = {'RED': {'password': ''}, 'BLUE': {'password': ''}}
-
 class User(UserMixin):
-    pass
+    id = id
 
 
 
@@ -98,40 +97,41 @@ def game(token: str):
     return render_template('render.html', token=token)
 
 @login_manager.user_loader
-def user_loader(email):
-    if email not in users:
-        return
+def user_loader(team):
+    for i in Army:
+        if team == i.name:
+            user = User()
+            user.id = team
+            return user
 
-    user = User()
-    user.id = email
-    return user
+    return
+
 
 
 @login_manager.request_loader
 def request_loader(request):
-    email = request.form.get('email')
-    if email not in users:
-        return
+    team = request.form.get('team')
+    for i in Army:
+        if team == i.name:
+            user = User()
+            user.id = team
+            return user
 
-    user = User()
-    user.id = email
-    return user
+    return
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'GET':
         return '''
                <form action='login' method='POST'>
-                <input type='text' name='email' id='email' placeholder='email'/>
-                <input type='password' name='password' id='password' placeholder='password'/>
-                <input type='submit' name='submit'/>
+                <input type='text' name='team' id='team' placeholder='RED or BLUE'/>
+                <input type='submit' name='enter'/>
                </form>
                '''
-
-    email = request.form['email']
-    if request.form['password'] == users[email]['password']:
+    team = request.form['team'].upper()
+    if team:
         user = User()
-        user.id = email
+        user.id = team
         login_user(user)
         return redirect(url_for('protected'))
 
@@ -154,7 +154,7 @@ def home():
 
 @login_manager.unauthorized_handler
 def unauthorized_handler():
-    return 'Unauthorized'
+    return 'Choose RED or BLUE'
 
 #
 # Websocket
@@ -251,17 +251,18 @@ def army_end_turn(token: str) -> str:
     '''rpc end current turn.
     :return: [ok]
     '''
-    logger.info(f'army_end_turn token={token}')
     mngr = game_load(token)
-    try:
-        mngr.army_end_turn()
-        game_save(mngr, token)
-        ws_board_update(token)
-        turn = mngr.check_turn()
-        logger.info(f'army_end_turn={turn.name}')
-        return jsons.dump(turn)
-    except Exception as ex:
-        return abort(400, ex)
+    turn = mngr.check_turn()
+    user = current_user.id
+    if turn.name == user:
+        try:
+            mngr.army_end_turn()
+            game_save(mngr, token)
+            ws_board_update(token)
+            logger.info(f'army_end_turn token={token} user={user} turn={turn.name}')
+            return jsons.dump(turn)
+        except Exception as ex:
+            return abort(400, ex)
 
 @jsonrpc.method('end_game')
 def end_game(token: str) -> str:
@@ -270,16 +271,19 @@ def end_game(token: str) -> str:
     '''
     logger.info(f'end game token={token}')
     mngr = game_load(token)
-    try:
-        mngr.end_game()
-        game_save(mngr, token)
-        ws_board_update(token)
-        turn = mngr.check_turn()
-        text = turn.name + ' is the winner!'
-        logger.info(f'{turn.name} is the winner')
-        return jsons.dump(text)
-    except Exception as ex:
-        return abort(400, ex)
+    turn = mngr.check_turn()
+    user = current_user.id
+    if turn.name == user:
+        try:
+            mngr.end_game()
+            game_save(mngr, token)
+            ws_board_update(token)
+            turn = mngr.check_turn()
+            text = turn.name + ' is the winner!'
+            logger.info(f'{turn.name} is the winner')
+            return jsons.dump(text)
+        except Exception as ex:
+            return abort(400, ex)
 
 
 # return the game tile for the coord(x, y)
@@ -303,13 +307,16 @@ def capture_tile(token: str, x: int, y: int) -> dict:
     '''
     logger.info(f'capture_city token={token}, x={x}, y={y}')
     mngr = game_load(token)
-    try:
-        mngr.capture_tile(x, y)
-        game_save(mngr, token)
-        ws_board_update(token)
-        return jsons.dump(mngr.tile_get(x, y))
-    except Exception as ex:
-        return abort(400, ex)
+    turn = mngr.check_turn()
+    user = current_user.id
+    if turn.name == user:
+        try:
+            mngr.capture_tile(x, y)
+            game_save(mngr, token)
+            ws_board_update(token)
+            return jsons.dump(mngr.tile_get(x, y))
+        except Exception as ex:
+            return abort(400, ex)
 
 
 @jsonrpc.method('unit_wait')
@@ -319,13 +326,16 @@ def unit_wait(token: str, x: int, y: int) -> dict:
     '''
     logger.info(f'unit wait token={token}, x={x}, y={y}')
     mngr = game_load(token)
-    try:
-        mngr.unit_wait(x, y)
-        game_save(mngr, token)
-        ws_board_update(token)
-        return jsons.dump(mngr.unit_at(x, y))
-    except Exception as ex:
-        return abort(400, ex)
+    turn = mngr.check_turn()
+    user = current_user.id
+    if turn.name == user:
+        try:
+            mngr.unit_wait(x, y)
+            game_save(mngr, token)
+            ws_board_update(token)
+            return jsons.dump(mngr.unit_at(x, y))
+        except Exception as ex:
+            return abort(400, ex)
 
 
 @jsonrpc.method('unit_select')
@@ -335,13 +345,16 @@ def unit_select(token: str, x: int, y: int) -> dict:
     '''
     logger.info(f'unit_select token={token}, x={x}, y={y}')
     mngr = game_load(token)
-    try:
-        unit = mngr.unit_select(x, y)
-        game_save(mngr, token)
-        ws_board_update(token)
-        return jsons.dump(mngr.unit_at(x, y))
-    except Exception as ex:
-        return abort(400, ex)
+    turn = mngr.check_turn()
+    user = current_user.id
+    if turn.name == user:
+        try:
+            unit = mngr.unit_select(x, y)
+            game_save(mngr, token)
+            ws_board_update(token)
+            return jsons.dump(mngr.unit_at(x, y))
+        except Exception as ex:
+            return abort(400, ex)
 
 
 @jsonrpc.method('unit_move')
@@ -383,13 +396,16 @@ def unit_create(token: str, army: str, unit_type: str, x: int, y: int) -> dict:
     '''
     logger.info(f'unit_create token={token}, army={army}, x={x}, y={y}')
     mngr = game_load(token)
-    try:
-        mngr.unit_create(army, unit_type, x, y)
-        game_save(mngr, token)
-        ws_board_update(token)
-        return jsons.dump(mngr.tile_get(x, y))
-    except Exception as ex:
-        return abort(400, ex)
+    turn = mngr.check_turn()
+    user = current_user.id
+    if turn.name == user:
+        try:
+            mngr.unit_create(army, unit_type, x, y)
+            game_save(mngr, token)
+            ws_board_update(token)
+            return jsons.dump(mngr.tile_get(x, y))
+        except Exception as ex:
+            return abort(400, ex)
 
 
 # need to return both attacker and defender
@@ -527,13 +543,16 @@ def unit_resupply(token: str, x: int, y: int, x2: int, y2: int) -> dict:
     '''
     logger.info(f'resupply token={token}, x={x}, y={y}, x2={x2}, y2={y2}')
     mngr = game_load(token)
-    try:
-        mngr.unit_resupply(x, y, x2, y2)
-        game_save(mngr, token)
-        ws_board_update(token)
-        return jsons.dump(mngr.tile_get(x2, y2))
-    except Exception as ex:
-        return abort(400, ex)
+    turn = mngr.check_turn()
+    user = current_user.id
+    if turn.name == user:
+        try:
+            mngr.unit_resupply(x, y, x2, y2)
+            game_save(mngr, token)
+            ws_board_update(token)
+            return jsons.dump(mngr.tile_get(x2, y2))
+        except Exception as ex:
+            return abort(400, ex)
 
 
 if __name__ == '__main__':
