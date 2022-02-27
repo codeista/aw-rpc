@@ -4,14 +4,12 @@
     <meta charset="utf-8">
     <link rel="stylesheet" type="text/css" href="/static/css/modal.css">
     <div class="header">
+    {% include 'navigation.html' %}
     <h1>AW-RPC</h1>
       <h2></h2>
       <p>TEAM: {{current_user.id}}</p>
     <p>Front end to aw-rpc</p>
-    <!-- link to JSONRPC API doc -->
-    <a href="/api/browse" target="_blank" >Browse API</a>
     <ul></ul>
-    <a href="/logout" target="_blank" >Logout</a>
     </div>
   </head>
   <body>

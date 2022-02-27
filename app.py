@@ -81,20 +81,10 @@ def game_create(token):
     db.session.add(game)
     db.session.commit()
 
+
 #
-# REST
+# login manager
 #
-
-
-@app.route('/')
-def index():
-    return redirect('/home')
-
-
-@app.route('/game/<token>')
-@login_required
-def game(token: str):
-    return render_template('render.html', token=token)
 
 @login_manager.user_loader
 def user_loader(team):
@@ -103,10 +93,7 @@ def user_loader(team):
             user = User()
             user.id = team
             return user
-
     return
-
-
 
 @login_manager.request_loader
 def request_loader(request):
@@ -116,8 +103,24 @@ def request_loader(request):
             user = User()
             user.id = team
             return user
-
     return
+
+@login_manager.unauthorized_handler
+def unauthorized_handler():
+    return 'Choose RED or BLUE'
+
+#
+# REST
+#
+
+@app.route('/')
+def index():
+    return redirect('/game/' + secrets.token_urlsafe(4))
+
+
+@app.route('/game/<token>')
+def game(token: str):
+    return render_template('render.html', token=token)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -133,28 +136,15 @@ def login():
         user = User()
         user.id = team
         login_user(user)
-        return redirect(url_for('protected'))
+        return redirect('/')
 
     return 'Bad login'
-
-
-@app.route('/protected')
-@login_required
-def protected():
-    return redirect('/game/' + secrets.token_urlsafe(4))
 
 @app.route('/logout')
 def logout():
     logout_user()
-    return redirect('/home')
+    return redirect('/')
 
-@app.route('/home')
-def home():
-    return render_template('home.html')
-
-@login_manager.unauthorized_handler
-def unauthorized_handler():
-    return 'Choose RED or BLUE'
 
 #
 # Websocket
