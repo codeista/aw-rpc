@@ -15,7 +15,7 @@ from manager import GameManager
 from gameboard import GameBoard
 from config import Config
 from app_core import app, jsonrpc, db, socketio
-from models import Game
+from models import Game, Player
 from mapping import Map, MAP1
 
 logger = logging.getLogger(__name__)

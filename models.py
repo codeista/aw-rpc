@@ -28,3 +28,26 @@ class Game(db.Model):
     @classmethod
     def from_token(cls, session, token):
         return session.query(cls).filter(cls.token == token).first()
+
+class Player(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    colour = db.Column(db.String())
+    troops = db.Column(db.Integer)
+    cities = db.Column(db.Integer)
+    stars = db.Column(db.Integer)
+    co = db.Column(db.String())
+    troop_value = db.Column(db.Integer)
+    wallet = db.Column(db.Integer)
+
+    def __init__(self, colour, co):
+        self.colour = colour
+        self.troops = 0
+        self.cities = 0
+        self.stars= 0
+        self.co = co
+        self.troops_value = 0
+        self.wallet = 0
+
+    @classmethod
+    def from_id(cls, session, id):
+        return session.query(cls).filter(cls.id == id).first()
