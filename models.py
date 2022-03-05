@@ -31,20 +31,22 @@ class Game(db.Model):
 
 class Player(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    colour = db.Column(db.String())
+    colour = db.Column(db.String(), nullable=False)
+    co = db.Column(db.String(), nullable=False)
+    token = db.Column(db.String(), nullable=False)
     troops = db.Column(db.Integer)
     cities = db.Column(db.Integer)
     stars = db.Column(db.Integer)
-    co = db.Column(db.String())
     troop_value = db.Column(db.Integer)
     wallet = db.Column(db.Integer)
 
-    def __init__(self, colour, co):
+    def __init__(self, colour, co, token):
         self.colour = colour
+        self.co = co
+        self.token = token
         self.troops = 0
         self.cities = 0
         self.stars= 0
-        self.co = co
         self.troops_value = 0
         self.wallet = 0
 
