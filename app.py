@@ -72,6 +72,14 @@ def game_create(token):
     db.session.commit()
 
 
+def player_create(token, colour, co):
+    '''Creates a player for the game'''
+    player = Player(token, colour, co)
+    db.session.add(player)
+    db.session.commit()
+    return player
+
+
 #
 # REST
 #
@@ -164,6 +172,16 @@ def game_create_rpc(token: str) -> str:
     logger.info(f'game_create token={token}')
     game_create(token)
     return 'ok'
+
+@jsonrpc.method('player_create')
+def player_create_rpc(token: str, colour: str, co: str) -> int:
+    '''rpc-create player.
+    :return: [ok]
+    '''
+
+    player = player_create(token, colour, co)
+    logger.info(f'player_create token={token}, colour:{colour}, co:{co}, player id:{player.id}')
+    return jsons.dump(player.id)
 
 
 @jsonrpc.method('game_board')
