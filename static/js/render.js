@@ -14,18 +14,22 @@ var two = null;
 update();
 
 // init controls
-var buttonrerender = document.getElementById('buttonrerender');
+var buttonrerender = document.getElementsByClassName('buttonrerender');
 buttonrerender.onclick = rerender;
 var inputshowmap = document.getElementById('inputshowmap');
 inputshowmap.onchange = rerender;
-var buttonendturn = document.getElementById('buttonendturn');
+var buttonendturn = document.getElementsByClassName('buttonendturn');
 buttonendturn.onclick = armyEndTurn;
-var buttonendgame = document.getElementById('buttonendgame');
+var buttonendgame = document.getElementsByClassName('buttonendgame');
 buttonendgame.onclick = endGame;
 var buttonchat = document.getElementById('buttonchat');
 buttonchat.onclick = chat;
 var inputchat = document.getElementById('inputchat');
 inputchat.onkeypress = chat;
+var inputshowchat = document.getElementById('inputshowchat');
+inputshowchat.onchange = showChat;
+var inputshowjson = document.getElementById('inputshowjson');
+inputshowjson.onchange = showJson;
 
 // init socket.io
 setTimeout(function() {
@@ -115,16 +119,30 @@ function update() {
         createScene();
         two.update();
         // update info
-        var turn = document.getElementById('turn');
-        turn.innerText =
-          `Day: ${board.days}
-          Current Turn: ${board.current_turn}
-          Game Active: ${board.game_active}
-          Blue:
-          - Troops: ${board.total_blue_troops} Properties: ${board.total_blue_properties} Funds: ${board.blue_funds}
-          Red:
-          - Troops: ${board.total_red_troops} Properties: ${board.total_red_properties} Funds: ${board.red_funds}`;
 
+        var gamebox = document.getElementById('gamebox');
+        gamebox.innerText =
+                           `Game info:
+                             - Day: ${board.days}
+                             - Current Turn: ${board.current_turn}
+                             - Game Active: ${board.game_active}
+                             Blue:
+                             - Troops: ${board.total_blue_troops}
+                             - Income: ${board.total_blue_properties}
+                             - Funds: ${board.blue_funds}
+                            Red:
+                            - Troops: ${board.total_red_troops}
+                            - Income: ${board.total_red_properties}
+                            - Funds: ${board.red_funds}
+                            `;
+
+        var infobox = document.getElementById('infobox');
+        infobox.innerText =
+                        `Instructions:
+                        - Single click: move, attack
+                        -  + ctrl: load unit
+                        -  + alt: unload unit
+                        - Double click: capture, wait`;
         // update code
         var code = document.getElementById('code');
         code.value = JSON.stringify(board, null, 2);
@@ -247,6 +265,10 @@ function unitUnload(tile) {
     jsonrpc('unit_unload', {x: board.selected.x, y: board.selected.y, x2: tile.x, y2: tile.y , index: idx});
 }
 
+function unitJoin(tile) {
+    jsonrpc('unit_join', {x: board.selected.x, y: board.selected.y, x2: tile.x, y2: tile.y});
+}
+
 function unitMove(tile) {
     var source = board.selected;
     var target = tile;
@@ -353,6 +375,29 @@ function ontextureLoad(src) {
     }
     textureLoadId = setTimeout(() => two.update(), 100);
 }
+
+function showJson() {
+  var showJsonArea = document.getElementById('inputshowjson').checked;
+  if (showJsonArea) {
+    code.hidden = "";
+  } else {
+    code.hidden = "true";
+  }
+}
+
+function showChat() {
+  var showChatArea = document.getElementById('inputshowchat').checked;
+  if (showChatArea) {
+    textareachat.hidden = "";
+    inputchat.hidden = "";
+    buttonchat.hidden = "";
+  } else {
+    textareachat.hidden = "true";
+    inputchat.hidden = "true";
+    buttonchat.hidden = "true";
+  }
+}
+
 
 function makeMapTile(tile) {
     var showMapTiles = document.getElementById('inputshowmap').checked;
@@ -912,6 +957,31 @@ function makeSprite(tile) {
         ammo = two.makeRectangle(tile.x * TILESIZE + TILESIZE - AMMOSIZE/2, tile.y * TILESIZE + TILESIZE - AMMOSIZE/2 - 8, AMMOSIZE -2, AMMOSIZE -2);
         ammo.fill = ammoTexture;
         ammo.stroke = 'transparent';
+    }
+    if (tile.capture_hp <= 19) {
+        const FLAGSIZE = SPRITESIZE/2;
+        x = spriteSheetWidth/2 - FLAGSIZE/2;
+        y = spriteSheetHeight/2 - FLAGSIZE/2;
+        x = x - 530;
+        y = y - 1233;
+        var flagTexture = new Two.Texture(unitsSrc, () => ontextureLoad(unitsSrc));
+        flagTexture.offset = new Two.Vector(x, y);
+        flag = two.makeRectangle(tile.x * TILESIZE + TILESIZE - FLAGSIZE/2 - 8, tile.y * TILESIZE + TILESIZE - FLAGSIZE/2, FLAGSIZE, FLAGSIZE);
+        flag.fill = flagTexture;
+        flag.stroke = 'transparent';
+    }
+    if (tile.unit.status.cargo[0] ||
+        tile.unit.status.cargo[1]) {
+        const LOADSIZE = SPRITESIZE/2;
+        x = spriteSheetWidth/2 - LOADSIZE/2;
+        y = spriteSheetHeight/2 - LOADSIZE/2;
+        x = x - 520;
+        y = y - 1233;
+        var loadTexture = new Two.Texture(unitsSrc, () => ontextureLoad(unitsSrc));
+        loadTexture.offset = new Two.Vector(x, y);
+        load = two.makeRectangle(tile.x * TILESIZE + TILESIZE - LOADSIZE/2 - 8, tile.y * TILESIZE + TILESIZE - LOADSIZE/2, LOADSIZE, LOADSIZE);
+        load.fill = loadTexture;
+        load.stroke = 'transparent';
     }
     return rect;
 }

@@ -368,11 +368,11 @@ class GameManager():
             if tile.unit and tile.unit.army.value == 1:
                 self.board.total_blue_troops += 1
             if tile.mapTile.army and tile.mapTile.army.name == "BLUE":
-                self.board.total_blue_properties += 1
+                self.board.total_blue_properties += 1000
                 if self.board.current_turn.name == "RED":
                     self.board.blue_funds += int(config['FUNDS']['income'])
             if tile.mapTile.army and tile.mapTile.army.name == "RED":
-                self.board.total_red_properties += 1
+                self.board.total_red_properties += 1000
                 if self.board.current_turn.name == "BLUE":
                     self.board.red_funds += int(config['FUNDS']['income'])
             if tile.unit and tile.unit.army == self.board.current_turn:
