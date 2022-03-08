@@ -8,8 +8,12 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_socketio import SocketIO
 
 app = Flask(__name__)
+<<<<<<< HEAD
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 app.secret_key =b'rsgrgewjglwjglwkjgw'
+=======
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+>>>>>>> test
 jsonrpc = JSONRPC(app, '/api', enable_web_browsable_api=True)
 socketio = SocketIO(app)
 
