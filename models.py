@@ -12,6 +12,8 @@ class Game(db.Model):
     date = db.Column(db.DateTime())
     updated = db.Column(db.DateTime())
     board = db.Column(db.String())
+    player_one = db.Column(db.String(), unique=True)
+    player_two = db.Column(db.String(), unique=True)
 
     def __init__(self, board, token=None):
         if not token:
@@ -34,16 +36,18 @@ class Player(db.Model):
     colour = db.Column(db.String(), nullable=False)
     co = db.Column(db.String(), nullable=False)
     token = db.Column(db.String(), nullable=False)
+    pos = db.Column(db.Integer,nullable=False)
     troops = db.Column(db.Integer)
     cities = db.Column(db.Integer)
     stars = db.Column(db.Integer)
     troop_value = db.Column(db.Integer)
     wallet = db.Column(db.Integer)
 
-    def __init__(self, colour, co, token):
+    def __init__(self, token, colour, co, pos):
+        self.token = token
         self.colour = colour
         self.co = co
-        self.token = token
+        self.pos = pos
         self.troops = 0
         self.cities = 0
         self.stars= 0

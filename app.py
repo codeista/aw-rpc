@@ -19,7 +19,7 @@ from models import Game, Player
 from mapping import Map, MAP1
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(filename='app.log', level=logging.INFO)
+logging.basicConfig(filename='app.log', level=logging.ERROR)
 
 config_game = Config()
 
@@ -72,13 +72,12 @@ def game_create(token):
     db.session.commit()
 
 
-def player_create(token, colour, co):
+def player_create(token, colour, co, pos):
     '''Creates a player for the game'''
-    player = Player(token, colour, co)
+    player = Player(token, colour, co, pos)
     db.session.add(player)
     db.session.commit()
     return player
-
 
 #
 # REST
@@ -115,7 +114,7 @@ class SocketIoNamespace(Namespace):
         logger.error(e)
 
     def on_connect(self):
-        logger.info('socketio - connect sid: %s' % request.sid)
+        logger.debug('socketio - connect sid: %s' % request.sid)
 
     def on_game(self, token):
         logger.info('socketio - game sid: %s, token: %s' % (request.sid, token))
@@ -123,7 +122,7 @@ class SocketIoNamespace(Namespace):
         ws_games[request.sid] = token
 
     def on_disconnect(self):
-        logger.info('socketio - disconnect sid: %s' % request.sid)
+        logger.debug('socketio - disconnect sid: %s' % request.sid)
         if request.sid in ws_games:
             leave_room(ws_games[request.sid])
             del ws_games[request.sid]
@@ -174,15 +173,33 @@ def game_create_rpc(token: str) -> str:
     return 'ok'
 
 @jsonrpc.method('player_create')
-def player_create_rpc(token: str, colour: str, co: str) -> int:
+def player_create_rpc(token: str, colour: str, co: str, pos: int) -> str:
     '''rpc-create player.
     :return: [ok]
     '''
+    player = player_create(token, colour, co, pos)
+    logger.info(f'player_create token={player.token}, colour:{player.colour}, co:{player.co}, pos:{player.pos}, id:{player.id}')
+    return 'ok'
 
-    player = player_create(token, colour, co)
-    logger.info(f'player_create token={token}, colour:{colour}, co:{co}, player id:{player.id}')
-    return jsons.dump(player.id)
+@jsonrpc.method('player_one')
+def player_one(token: str) -> str:
+    '''rpc return player one.
+    :return: [player one]
+    '''
+    mngr = game_load(token)
+    game = Game(mngr.board, token)
+    logger.info(f'player one ={game.player_one}')
+    return 'ok'
 
+@jsonrpc.method('player_two')
+def player_one(token: str) -> str:
+    '''rpc return player two.
+    :return: [player two]
+    '''
+    mngr = game_load(token)
+    game = Game(mngr.board, token)
+    logger.info(f'player two={game.player_two}')
+    return 'ok'
 
 @jsonrpc.method('game_board')
 def game_board(token: str) -> dict:
@@ -192,7 +209,6 @@ def game_board(token: str) -> dict:
     logger.info(f'game_board token={token}')
     mngr = game_load(token)
     return jsons.dump(mngr.board)
-
 
 @jsonrpc.method('army_end_turn')
 def army_end_turn(token: str) -> str:
