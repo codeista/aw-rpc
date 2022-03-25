@@ -222,12 +222,15 @@ def players_info(token: str) -> str:
     '''rpc-players info.
     :return: [ok]
     '''
-    game = Game.from_token(db.session, token)
-    logger.info(f'player info game={game.token}, game id ={game.id}, p1:{game.player_one}, p2:{game.player_two}, players:{game.players}')
-    return 'ok'
+    try:
+        game = Game.from_token(db.session, token)
+        logger.info(f'player info game={game.token}, p1 id:{game.player_one}, p2 id:{game.player_two}, players:{game.players} player_one:{game.players[0].co} player_two:{game.players[1].co}')
+        return jsons.dump(f'player info game={game.token}, p1 id:{game.player_one}, p2 id:{game.player_two}, player_one:{game.players[0].co} player_two:{game.players[1].co}')
+    except Exception as ex:
+        return abort(400, ex)
 
 @jsonrpc.method('game_board')
-def game_board(token: str) -> dict:
+def game_board(token: str) -> dict: 
     '''rpc return game board.
     :return: [gameboard]
     '''
