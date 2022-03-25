@@ -12,16 +12,18 @@ class Game(db.Model):
     date = db.Column(db.DateTime())
     updated = db.Column(db.DateTime())
     board = db.Column(db.String())
-    player_one = db.Column(db.String(), unique=True)
-    player_two = db.Column(db.String(), unique=True)
+    player_one = db.Column(db.Integer)
+    player_two = db.Column(db.Integer)
 
-    def __init__(self, board, token=None):
+    def __init__(self, board, token=None, player=None):
         if not token:
             token = secrets.token_urlsafe(4)
         self.token = token
         self.date = datetime.datetime.now()
         self.update = self.date
         self.board = jsons.dumps(board)
+        self.player_one = 0
+        self.player_two = 0
 
     @classmethod
     def from_id(cls, session, id):

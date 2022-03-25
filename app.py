@@ -55,7 +55,6 @@ def game_save(mngr, token):
     db.session.add(game)
     db.session.commit()
 
-
 def game_delete(token):
     '''Deletes the game token specified.'''
     game = Game.from_token(db.session, token)
@@ -70,6 +69,7 @@ def game_create(token):
     game = Game(mngr.board, token)
     db.session.add(game)
     db.session.commit()
+    logger.info(game.id)
 
 
 def player_create(token, colour, co, pos):
@@ -78,6 +78,23 @@ def player_create(token, colour, co, pos):
     db.session.add(player)
     db.session.commit()
     return player
+
+def player_load(id):
+    '''Loads a player from the player id'''
+    player = Player.from_id(db.session, id)
+    return player
+
+def game_join(token, pos, id):
+    '''Join a game with token and position(pos) specified '''
+    game = Game.from_token(db.session, token)
+    player = Player.from_id(db.session, id)
+    if pos == 1:
+        game.player_one = player.id
+    if pos == 2:
+        game.player_two = player.id
+    mngr = game_load(token)
+    game_save(mngr, token)
+
 
 #
 # REST
@@ -182,23 +199,30 @@ def player_create_rpc(token: str, colour: str, co: str, pos: int) -> str:
     return 'ok'
 
 @jsonrpc.method('player_one')
-def player_one(token: str) -> str:
+def player_one(id: int) -> str:
     '''rpc return player one.
     :return: [player one]
     '''
-    mngr = game_load(token)
-    game = Game(mngr.board, token)
-    logger.info(f'player one ={game.player_one}')
+    player = player_load(id)
+    logger.info(f'player token={player.token}, colour:{player.colour}, co:{player.co}, pos:{player.pos}, id:{player.id}')
     return 'ok'
 
-@jsonrpc.method('player_two')
-def player_one(token: str) -> str:
-    '''rpc return player two.
-    :return: [player two]
+@jsonrpc.method('join_game')
+def join_game_rpc(token: str, pos: int, id: int) -> str:
+    '''rpc-join game.
+    :return: [ok]
     '''
-    mngr = game_load(token)
-    game = Game(mngr.board, token)
-    logger.info(f'player two={game.player_two}')
+    game_join(token, pos, id)
+    logger.info(f'rpc Joined game={token}, pos:{pos}, id:{id}')
+    return 'ok'
+
+@jsonrpc.method('p1_p2')
+def players_info(token: str) -> str:
+    '''rpc-players info.
+    :return: [ok]
+    '''
+    game = Game.from_token(db.session, token)
+    logger.info(f'player info game={game.token}, game id ={game.id}, p1:{game.player_one}, p2:{game.player_two}')
     return 'ok'
 
 @jsonrpc.method('game_board')
