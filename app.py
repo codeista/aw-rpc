@@ -92,6 +92,7 @@ def game_join(token, pos, id):
         game.player_one = player.id
     if pos == 2:
         game.player_two = player.id
+    game.players.append(player)
     mngr = game_load(token)
     game_save(mngr, token)
 
