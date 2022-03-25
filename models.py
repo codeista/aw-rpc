@@ -12,10 +12,11 @@ class Game(db.Model):
     date = db.Column(db.DateTime())
     updated = db.Column(db.DateTime())
     board = db.Column(db.String())
-    player_one = db.Column(db.Integer)
-    player_two = db.Column(db.Integer)
+    player_one = db.Column(db.Integer, nullable=False, unique=True)
+    player_two = db.Column(db.Integer, nullable=False, unique=True)
+    players = db.relationship('Player', backref='game', lazy=True)
 
-    def __init__(self, board, token=None, player=None):
+    def __init__(self, board, token=None):
         if not token:
             token = secrets.token_urlsafe(4)
         self.token = token
@@ -44,6 +45,7 @@ class Player(db.Model):
     stars = db.Column(db.Integer)
     troop_value = db.Column(db.Integer)
     wallet = db.Column(db.Integer)
+    game_id = db.Column(db.Integer, db.ForeignKey('game.id'))
 
     def __init__(self, token, colour, co, pos):
         self.token = token
