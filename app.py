@@ -222,7 +222,7 @@ def players_info(token: str) -> str:
     :return: [ok]
     '''
     game = Game.from_token(db.session, token)
-    logger.info(f'player info game={game.token}, game id ={game.id}, p1:{game.player_one}, p2:{game.player_two}')
+    logger.info(f'player info game={game.token}, game id ={game.id}, p1:{game.player_one}, p2:{game.player_two}, players:{game.players}')
     return 'ok'
 
 @jsonrpc.method('game_board')
