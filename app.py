@@ -225,7 +225,7 @@ def join_game_rpc(token: str, pos: int, id: int) -> str:
     logger.info(f'rpc Joined game={token}, pos:{pos}, id:{id}')
     return 'ok'
 
-@jsonrpc.method('p1_p2')
+@jsonrpc.method('game_p1_p2')
 def players_info(token: str) -> str:
     '''rpc-players info.
     :return: [player one id, player two id]
