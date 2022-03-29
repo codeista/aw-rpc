@@ -39,7 +39,6 @@ class Player(db.Model):
     colour = db.Column(db.String(), nullable=False)
     co = db.Column(db.String(), nullable=False)
     token = db.Column(db.String(), nullable=False)
-    pos = db.Column(db.Integer,nullable=False)
     troops = db.Column(db.Integer)
     cities = db.Column(db.Integer)
     stars = db.Column(db.Integer)
@@ -47,11 +46,10 @@ class Player(db.Model):
     wallet = db.Column(db.Integer)
     game_id = db.Column(db.Integer, db.ForeignKey('game.id'))
 
-    def __init__(self, token, colour, co, pos):
+    def __init__(self, token, colour, co):
         self.token = token
         self.colour = colour
         self.co = co
-        self.pos = pos
         self.troops = 0
         self.cities = 0
         self.stars= 0
