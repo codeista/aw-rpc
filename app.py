@@ -227,6 +227,10 @@ def join_game_rpc(token: str, pos: int, id: int) -> str:
     logger.info(f'rpc Joined game={token}, pos:{pos}, id:{id}')
     return 'ok'
 
+@app.errorhandler(404)
+def resource_not_found(e):
+    return jsonify(error=str(e)), 404
+
 @jsonrpc.method('game_p1_p2')
 def players_info(token: str) -> str:
     '''rpc-players info.
@@ -234,6 +238,8 @@ def players_info(token: str) -> str:
     '''
     try:
         game = Game.from_token(db.session, token)
+        if game is None:
+            abort(404, description="game not found")
         logger.info(f'player info game={game.token}, p1 id:{game.player_one}, p2 id:{game.player_two}, players:{game.players}')
         return jsons.dump(f'p1:{game.player_one}, p2:{game.player_two}')
     except Exception as ex:
