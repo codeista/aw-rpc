@@ -86,25 +86,29 @@ def player_load(id):
 
 def game_join(token, pos, id):
     '''Join a game with token and position(pos) specified '''
-    game = Game.from_token(db.session, token)
-    player = Player.from_id(db.session, id)
-    if game and player:
-        if pos == 1:
-            if game.player_one or player.token:
-                return
-            else:
-                game.player_one = player.id
-                game.players.append(player)
-                player.token = game.token
-        if pos == 2:
-            if game.player_two or player.token:
-                return
-            else:
-                game.player_two = player.id
-                game.players.append(player)
-                player.token = game.token
-        mngr = game_load(token)
-        game_save(mngr, token)
+    try:
+        game = Game.from_token(db.session, token)
+        player = Player.from_id(db.session, id)
+        if game and player:
+            if pos == 1:
+                if game.player_one or player.token:
+                    abort(404, description="cannot join game")
+                else:
+                    game.player_one = player.id
+                    game.players.append(player)
+                    player.token = game.token
+            if pos == 2:
+                if game.player_two or player.token:
+                    abort(404, description="cannot join game")
+                else:
+                    game.player_two = player.id
+                    game.players.append(player)
+                    player.token = game.token
+            mngr = game_load(token)
+            game_save(mngr, token)
+        abort(404, description='no game or player')
+    except Exception as ex:
+        return abort(404, ex)
 
 
 #
@@ -162,6 +166,10 @@ socketio.on_namespace(SocketIoNamespace('/'))
 # JSONRPC
 #
 
+
+@app.errorhandler(404)
+def resource_not_found(e):
+    return jsonify(error=str(e)), 404
 
 @jsonrpc.method('troop_info')
 def troop_info() -> dict:
@@ -226,10 +234,6 @@ def join_game_rpc(token: str, pos: int, id: int) -> str:
     game_join(token, pos, id)
     logger.info(f'rpc Joined game={token}, pos:{pos}, id:{id}')
     return 'ok'
-
-@app.errorhandler(404)
-def resource_not_found(e):
-    return jsonify(error=str(e)), 404
 
 @jsonrpc.method('game_p1_p2')
 def players_info(token: str) -> str:
