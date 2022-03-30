@@ -106,7 +106,6 @@ def game_join(token, pos, id):
                     player.token = game.token
             mngr = game_load(token)
             game_save(mngr, token)
-        abort(404, description='no game or player')
     except Exception as ex:
         return abort(404, ex)
 
