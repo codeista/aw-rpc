@@ -72,9 +72,9 @@ def game_create(token):
     logger.info(game.id)
 
 
-def player_create(token, colour, co):
+def player_create(colour, co):
     '''Creates a player for the game'''
-    player = Player(token, colour, co)
+    player = Player(colour, co)
     db.session.add(player)
     db.session.commit()
     return player
@@ -90,17 +90,19 @@ def game_join(token, pos, id):
     player = Player.from_id(db.session, id)
     if game and player:
         if pos == 1:
-            if game.player_one:
+            if game.player_one or player.token:
                 return
             else:
                 game.player_one = player.id
                 game.players.append(player)
+                player.token = game.token
         if pos == 2:
-            if game.player_two:
+            if game.player_two or player.token:
                 return
             else:
                 game.player_two = player.id
                 game.players.append(player)
+                player.token = game.token
         mngr = game_load(token)
         game_save(mngr, token)
 
@@ -199,13 +201,13 @@ def game_create_rpc(token: str) -> str:
     return 'ok'
 
 @jsonrpc.method('player_create')
-def player_create_rpc(token: str, colour: str, co: str) -> str:
+def player_create_rpc(colour: str, co: str) -> str:
     '''rpc-create player.
     :return: [ok]
     '''
-    player = player_create(token, colour, co)
-    logger.info(f'player_create token={player.token}, colour:{player.colour}, co:{player.co}, id:{player.id}')
-    return jsons.dump(f'player_created game={player.token}, colour:{player.colour}, co:{player.co}, id:{player.id}')
+    player = player_create(colour, co)
+    logger.info(f'player_create colour:{player.colour}, co:{player.co}, id:{player.id}')
+    return jsons.dump(f'player_created colour:{player.colour}, co:{player.co}, id:{player.id}')
 
 @jsonrpc.method('player_info')
 def player_info(id: int) -> str:

@@ -12,8 +12,8 @@ class Game(db.Model):
     date = db.Column(db.DateTime())
     updated = db.Column(db.DateTime())
     board = db.Column(db.String())
-    player_one = db.Column(db.Integer, nullable=False, unique=True)
-    player_two = db.Column(db.Integer, nullable=False, unique=True)
+    player_one = db.Column(db.Integer, nullable=False)
+    player_two = db.Column(db.Integer, nullable=False)
     players = db.relationship('Player', backref='game', lazy=True)
 
     def __init__(self, board, token=None):
@@ -38,7 +38,7 @@ class Player(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     colour = db.Column(db.String(), nullable=False)
     co = db.Column(db.String(), nullable=False)
-    token = db.Column(db.String(), nullable=False)
+    token = db.Column(db.String())
     troops = db.Column(db.Integer)
     cities = db.Column(db.Integer)
     stars = db.Column(db.Integer)
@@ -46,10 +46,10 @@ class Player(db.Model):
     wallet = db.Column(db.Integer)
     game_id = db.Column(db.Integer, db.ForeignKey('game.id'))
 
-    def __init__(self, token, colour, co):
-        self.token = token
+    def __init__(self, colour, co, token=None,):
         self.colour = colour
         self.co = co
+        self.token = token
         self.troops = 0
         self.cities = 0
         self.stars= 0
