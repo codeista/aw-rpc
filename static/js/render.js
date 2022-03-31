@@ -187,7 +187,7 @@ function unitCreate(tile) {
         modal.style.display = 'none';
         var unitType = select.options[select.selectedIndex].value;;
         var army = tile.mapTile.army;
-        jsonrpc('unit_create', {army: army, unit_type: unitType, x: tile.x, y: tile.y});
+        jsonrpc('unit_create_rpc', {army: army, unit_type: unitType, x: tile.x, y: tile.y});
     };
     modal.style.display = 'block';
 }
@@ -211,7 +211,7 @@ function airunitCreate(tile) {
         modal.style.display = 'none';
         var unitType = select.options[select.selectedIndex].value;;
         var army = tile.mapTile.army;
-        jsonrpc('unit_create', {army: army, unit_type: unitType, x: tile.x, y: tile.y});
+        jsonrpc('unit_create_rpc', {army: army, unit_type: unitType, x: tile.x, y: tile.y});
     };
     modal.style.display = 'block';
 }
@@ -235,7 +235,7 @@ function seaunitCreate(tile) {
         modal.style.display = 'none';
         var unitType = select.options[select.selectedIndex].value;;
         var army = tile.mapTile.army;
-        jsonrpc('unit_create', {army: army, unit_type: unitType, x: tile.x, y: tile.y});
+        jsonrpc('unit_create_rpc', {army: army, unit_type: unitType, x: tile.x, y: tile.y});
     };
     modal.style.display = 'block';
 }
