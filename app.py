@@ -19,7 +19,7 @@ from models import Game, Player
 from mapping import Map, MAP1
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(filename='app.log', level=logging.ERROR)
+logging.basicConfig(filename='app.log', level=logging.INFO)
 
 config_game = Config()
 
@@ -235,7 +235,7 @@ def join_game_rpc(token: str, pos: int, id: int) -> str:
     return 'ok'
 
 @jsonrpc.method('game_p1_p2')
-def players_info(token: str) -> str:
+def game_p1_p2(token: str) -> str:
     '''rpc-players info.
     :return: [player one id, player two id]
     '''
@@ -387,8 +387,8 @@ def unit_move2(token: str, id: str, x: int, y: int) -> dict:
         return abort(400, ex)
 
 
-@jsonrpc.method('unit_create')
-def unit_create(token: str, army: str, unit_type: str, x: int, y: int) -> dict:
+@jsonrpc.method('unit_create_rpc')
+def unit_create_rpc(token: str, army: str, unit_type: str, x: int, y: int) -> dict:
     '''rpc create a unit at the coordinates given
     :return: [tile at coordinates]
     '''
