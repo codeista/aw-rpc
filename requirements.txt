@@ -14,6 +14,7 @@ Flask==2.0.2
 Flask-JSONRPC==2.1.0
 Flask-SocketIO==4.3.2
 Flask-SQLAlchemy==2.5.1
+Flask_Login-0.6.0
 gevent==21.12.0
 gevent-websocket==0.10.1
 greenlet==1.1.2
