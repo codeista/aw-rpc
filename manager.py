@@ -505,36 +505,41 @@ class GameManager():
            and army at the coordinate given.'''
         army = army.upper()
         unit_type = unit_type.upper()
-        try:
-            Army[army]
-        except KeyError:
-            raise Exception('invalid "army" parameter')
-        try:
-            UnitType[unit_type]
-        except KeyError:
-            raise Exception('invalid "unit_type" parameter')
-        if not self.coord_valid(x, y):
-            raise Exception('coordinate out of range')
-        if self.unit_at(x, y):
-            raise Exception('unit already exists at this tile')
-        unit = Unit.create(Army[army], UnitType[unit_type],
-                           self.config.units[unit_type])
+        tile = self.tile_at(x, y)
+        if self.board.current_turn.name != tile.mapTile.army.name:
+                raise Exception('can only create troops on captured tiles')
+        if tile.mapTile.can_create_unit():
+            try:
+                Army[army]
+            except KeyError:
+                raise Exception('invalid "army" parameter')
+            try:
+                UnitType[unit_type]
+            except KeyError:
+                raise Exception('invalid "unit_type" parameter')
+            if not self.coord_valid(x, y):
+                raise Exception('coordinate out of range')
+            if self.unit_at(x, y):
+                raise Exception('unit already exists at this tile')
+            unit = Unit.create(Army[army], UnitType[unit_type],
+                               self.config.units[unit_type])
 
-        if self.board.current_turn.name == 'RED':
-            wallet = self.board.red_funds
-            if int(config[unit.type.name]['cost']) <= wallet:
-                self.board.red_funds -= int(config[unit.type.name]['cost'])
-            else:
-                raise Exception('not enough funds for this unit')
-        if self.board.current_turn.name == 'BLUE':
-            wallet = self.board.blue_funds
-            if int(config[unit.type.name]['cost']) <= wallet:
-                self.board.blue_funds -= int(config[unit.type.name]['cost'])
-            else:
-                raise Exception('not enough funds for this unit')
-        self.unit_place(unit, x, y)
-        self.check_turn_and_raise(unit)
-        return unit
+            if self.board.current_turn.name == 'RED':
+                wallet = self.board.red_funds
+                if int(config[unit.type.name]['cost']) <= wallet:
+                    self.board.red_funds -= int(config[unit.type.name]['cost'])
+                else:
+                    raise Exception('not enough funds for this unit')
+            if self.board.current_turn.name == 'BLUE':
+                wallet = self.board.blue_funds
+                if int(config[unit.type.name]['cost']) <= wallet:
+                    self.board.blue_funds -= int(config[unit.type.name]['cost'])
+                else:
+                    raise Exception('not enough funds for this unit')
+            self.unit_place(unit, x, y)
+            self.check_turn_and_raise(unit)
+            return unit
+        raise Exception('cannot create unit from this tile')
 
     def unit_attack(self, x: int, y: int, x2: int, y2: int) -> Unit:
         '''Attacks from/to the cordinates given.'''
@@ -620,6 +625,9 @@ class GameManager():
     def unit_delete(self, x: int, y: int) -> Unit:
         '''Deletes the unit at the given cordinates.'''
         unit = self.unit_remove(x, y)
+        self.check_turn_and_raise(unit)
+        if unit.can_move == False or unit.can_attack == False or unit.can_capture == False:
+            raise Exception('Unit has moved already')
         return unit
 
     def unit_join(self, x: int, y: int, x2: int, y2: int) -> Unit:

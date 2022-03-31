@@ -42,7 +42,7 @@ class Player(db.Model):
     troops = db.Column(db.Integer)
     cities = db.Column(db.Integer)
     stars = db.Column(db.Integer)
-    troop_value = db.Column(db.Integer)
+    troops_value = db.Column(db.Integer)
     wallet = db.Column(db.Integer)
     game_id = db.Column(db.Integer, db.ForeignKey('game.id'))
 

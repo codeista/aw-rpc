@@ -394,11 +394,18 @@ def unit_create(token: str, army: str, unit_type: str, x: int, y: int) -> dict:
     '''
     logger.info(f'unit_create token={token}, army={army}, x={x}, y={y}')
     mngr = game_load(token)
+    game = Game.from_token(db.session, token)
+    if army == 'RED':
+        player = game.players[0]
+    if army == 'BLUE':
+        player = game.players[1]
     try:
-        mngr.unit_create(army, unit_type, x, y)
+        unit = mngr.unit_create(army, unit_type, x, y)
+        player.troops += 1
+        player.troops_value += unit.status.cost
         game_save(mngr, token)
         ws_board_update(token)
-        return jsons.dump(mngr.tile_get(x, y))
+        return jsons.dump(unit)
     except Exception as ex:
         return abort(400, ex)
 
@@ -442,8 +449,16 @@ def unit_delete(token: str, x: int, y: int) -> dict:
     '''
     logger.info(f'unit_delete token={token}, x={x}, y={y}')
     mngr = game_load(token)
+    game = Game.from_token(db.session, token)
+    turn = check_turn(token)
     try:
-        mngr.unit_delete(x, y)
+        if turn == 'RED':
+            player = game.players[0]
+        if turn == 'BLUE':
+            player = game.players[1]
+        player.troops -= 1
+        unit = mngr.unit_delete(x, y)
+        player.troops_value -= unit.status.cost
         game_save(mngr, token)
         ws_board_update(token)
         return jsons.dump(mngr.tile_get(x, y))

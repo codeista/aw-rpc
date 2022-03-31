@@ -165,6 +165,10 @@ class MapTile():
         '''Returns true if the terrain type is a HQ.'''
         return self.type in ({MapType.BASE_TOWER_0, MapType.BASE_TOWER_1,
                               MapType.BASE_TOWER_2, MapType.BASE_TOWER_3})
+    def can_create_unit(self):
+        '''Returns true if the tile can create units.'''
+        return self.type in ({MapType.FACTORY, MapType.AIRPORT,
+                              MapType.PORT})
 
 
 @dataclass
