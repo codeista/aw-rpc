@@ -27,6 +27,23 @@ def create_database(db_file):
     	UNIQUE (token)
         )''')
 
+    conn.commit()
+
+    cursor.execute('''CREATE TABLE player (
+    	id INTEGER NOT NULL,
+    	colour VARCHAR,
+        co VARCHAR,
+        token VARCHAR,
+        troops INTEGER,
+        cities INTEGER,
+        stars INTEGER,
+        troops_value INTEGER,
+        wallet INTEGER,
+        game_id INTEGER,
+        PRIMARY KEY (id),
+        FOREIGN KEY(game_id) REFERENCES game (id)
+        )''')
+
 
     conn.commit()
 
