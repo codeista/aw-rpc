@@ -76,14 +76,16 @@ def game_create(token):
 
 def player_create(colour, co):
     '''Creates a player for the game'''
+    colour = colour.upper()
+    co = co.upper()
     try:
         Army[colour]
     except KeyError:
-        raise Exception('invalid "Colour" parameter RED/BLUE')
+        raise Exception('Invalid colour parameter RED/BLUE')
     try:
         Co[co]
     except KeyError:
-        raise Exception('invalid "Co" parameter MAX/ANDY/JESS/GRIMM/ADDER')
+        raise Exception('Invalid co parameter MAX/ANDY/JESS/GRIMM/ADDER')
     player = Player(colour, co)
     db.session.add(player)
     db.session.commit()
