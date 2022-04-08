@@ -76,6 +76,14 @@ def game_create(token):
 
 def player_create(colour, co):
     '''Creates a player for the game'''
+    try:
+        Army[colour]
+    except KeyError:
+        raise Exception('invalid "Colour" parameter RED/BLUE')
+    try:
+        Co[co]
+    except KeyError:
+        raise Exception('invalid "Co" parameter MAX/ANDY/JESS/GRIMM/ADDER')
     player = Player(colour, co)
     db.session.add(player)
     db.session.commit()
@@ -250,14 +258,6 @@ def player_create_rpc(colour: str, co: str) -> int:
     '''rpc-create player.
     :return: [player.id]
     '''
-    try:
-        Army[colour]
-    except KeyError:
-        raise Exception('invalid "Colour" parameter RED/BLUE')
-    try:
-        Co[co]
-    except KeyError:
-        raise Exception('invalid "Co" parameter MAX/ANDY/JESS/GRIMM/ADDER')
     player = player_create(colour, co)
     logger.info(f'player_create colour:{player.colour}, co:{player.co}, id:{player.id}')
     return player.id
