@@ -124,23 +124,27 @@ def p_1(token):
     game = Game.from_token(db.session, token)
     p1 = 'Join Game'
     p1_co = ''
+    p1_id = None
     try:
         p1 = game.players[0].colour
         p1_co = game.players[0].co
+        p1_id = game.players[0].id
     except:
         pass
-    return f'{p1} : {p1_co}'
+    return f'ID: {p1_id} {p1} : {p1_co}'
 
 def p_2(token):
     game = Game.from_token(db.session, token)
     p2 = 'Join Game'
     p2_co = ''
+    p2_id = None
     try:
         p2 = game.players[1].colour
         p2_co = game.players[1].co
+        p2_id = game.players[1].id
     except:
         pass
-    return f'{p2} : {p2_co}'
+    return f'ID: {p2_id} {p2} : {p2_co}'
 
 #
 # REST
@@ -274,9 +278,10 @@ def game_p1_p2(token: str) -> str:
     try:
         game = Game.from_token(db.session, token)
         if game is None:
-            abort(404, description="game not found")
+            return 'Game not found'
+            # abort(404, description="game not found")
         logger.info(f'player info game={game.token}, p1 id:{game.player_one}, p2 id:{game.player_two}, players:{game.players}')
-        return jsons.dump(f'p1:{game.player_one}, p2:{game.player_two}')
+        return jsons.dump(p_1(token) + " " + p_2(token))
     except Exception as ex:
         return abort(400, ex)
 
