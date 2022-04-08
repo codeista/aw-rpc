@@ -285,7 +285,6 @@ def game_board(token: str) -> dict:
     '''rpc return game board.
     :return: [gameboard]
     '''
-    logger.info(f'game_board token={token}')
     mngr = game_load(token)
     return jsons.dump(mngr.board)
 
