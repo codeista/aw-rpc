@@ -19,7 +19,7 @@ from models import Game, Player
 from mapping import Map, MAP1
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(filename='app.log', level=logging.DEBUG)
+logging.basicConfig(filename='app.log', level=logging.ERROR)
 
 config_game = Config()
 
@@ -294,7 +294,6 @@ def army_end_turn(token: str) -> str:
     '''rpc end current turn.
     :return: [ok]
     '''
-    logger.info(f'army_end_turn token={token}')
     mngr = game_load(token)
     try:
         mngr.army_end_turn()
