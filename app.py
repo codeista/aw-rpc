@@ -81,8 +81,15 @@ def player_create(colour, co):
 
 def player_load(id):
     '''Loads a player from the player id'''
-    player = Player.from_id(db.session, id)
-    return player
+    try:
+        player = Player.from_id(db.session, id)
+        if player:
+            return player
+        else:
+            abort(404, description="Player doesn't exist")
+    except Exception as ex:
+        return abort(404, ex)
+
 
 def game_join(token, pos, id):
     '''Join a game with token and position(pos) specified '''
@@ -91,15 +98,19 @@ def game_join(token, pos, id):
         player = Player.from_id(db.session, id)
         if game and player:
             if pos == 1:
-                if game.player_one or player.token:
-                    abort(404, description="cannot join game")
+                if game.player_one:
+                    abort(404, description="Player one taken")
+                elif player.token:
+                    abort(404, description="Player already joined game")
                 else:
                     game.player_one = player.id
                     game.players.append(player)
                     player.token = game.token
             if pos == 2:
-                if game.player_two or player.token:
-                    abort(404, description="cannot join game")
+                if game.player_two:
+                    abort(404, description="Player two taken")
+                elif player.token:
+                    abort(404, description="Player already joined game")
                 else:
                     game.player_two = player.id
                     game.players.append(player)
@@ -109,6 +120,27 @@ def game_join(token, pos, id):
     except Exception as ex:
         return abort(404, ex)
 
+def p_1(token):
+    game = Game.from_token(db.session, token)
+    p1 = 'Join Game'
+    p1_co = ''
+    try:
+        p1 = game.players[0].colour
+        p1_co = game.players[0].co
+    except:
+        pass
+    return f'{p1} : {p1_co}'
+
+def p_2(token):
+    game = Game.from_token(db.session, token)
+    p2 = 'Join Game'
+    p2_co = ''
+    try:
+        p2 = game.players[1].colour
+        p2_co = game.players[1].co
+    except:
+        pass
+    return f'{p2} : {p2_co}'
 
 #
 # REST
@@ -122,18 +154,7 @@ def index():
 
 @app.route('/game/<token>')
 def game(token: str):
-    game = Game.from_token(db.session, token)
-    p1 = 'Join Game'
-    p2 = 'Join Game'
-    try:
-        p1 = game.players[0].colour
-    except:
-        pass
-    try:
-        p2 = game.players[1].colour
-    except:
-        pass
-    return render_template('render.html', token=token, p1=p1, p2=p2)
+    return render_template('render.html', token=token, p1=p_1(token), p2=p_2(token))
 
 #
 # Websocket
@@ -234,7 +255,7 @@ def player_info(id: int) -> str:
     '''
     player = player_load(id)
     logger.info(f'player token={player.token}, colour:{player.colour}, co:{player.co}, id:{player.id}')
-    return 'ok'
+    return f'ID: {player.id} : {player.co} : {player.colour} token={player.token}'
 
 @jsonrpc.method('join_game')
 def join_game_rpc(token: str, pos: int, id: int) -> str:
