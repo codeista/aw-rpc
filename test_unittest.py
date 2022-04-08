@@ -10,6 +10,16 @@ print('Running unit tests....')
 # vars
 letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 token = ''.join(random.choice(letters) for i in range(10))
+colour = 'RED'
+type = 'INFANTRY'
+# base one
+x = 9
+y = 12
+#base two
+x1 = 18
+y1 = 10
+
+
 
 ''' Test class with mutiple tests;
     unit create and unit move rpc call'''
@@ -19,32 +29,39 @@ class Test_RPC_unit_create(unittest.TestCase):
 
     def setUp(self):
         app.game_create_rpc(token)
-        p1 = int(app.player_create_rpc('RED', 'MAX')[-2:])
-        p2 = int(app.player_create_rpc('BLUE', 'ANDY')[-2:])
+        p1 = int(app.player_create_rpc('RED', 'MAX'))
+        p2 = int(app.player_create_rpc('BLUE', 'ANDY'))
         app.join_game_rpc(token, 1, p1)
         app.join_game_rpc(token, 2, p2)
         '''setup for unit_create'''
-        # app.unit_create_rpc(token, 'RED', 'INFANTRY', 9, 12)
+        global unit_id
+        unit_id = app.unit_create_rpc(token, colour, type, x, y)['id']
+        app.unit_create_rpc(token, colour, type, x1, y1)
         # '''setup for unit move and unit move2'''
         # global unit_id
         # unit_id = app.unit_create(token, 'RED', 'INFANTRY', 4, 12)['unit']['id']
         # '''end turn twice so created units can take turn again'''
 
-    def test_unit_create(self):
-        print('Testing unit creation')
-        self.assertEqual(app.unit_create_rpc(token, 'RED', 'INFANTRY', 9, 12),
-                         app.tile(token, 9, 12)['unit'])
-    #
-    # def test_unit_move(self):
-    #     print('Testing unit move')
+    # def test_unit_create(self):
+    #     print(f'Testing unit creation on {token} x:{x1} y:{y1} {colour} {type}')
+    #     self.assertEqual(app.unit_create_rpc(token, colour, type, x1, y1),
+    #                      app.tile(token, x1, y1)['unit'])
     #     app.army_end_turn(token)
-    #     app.army_end_turn(token)
-    #     self.assertEqual(app.unit_move(token, 9, 12, 9, 13), app.tile(token, 9, 13))
-    #
-    # def test_unit_move2(self):
-    #     print('Testing unit move2')
-    #     self.assertEqual(app.unit_move2(game, unit_id, 4, 10)['unit']['id'],
-    #                      app.tile(game, 4, 10)['unit']['id'])
+
+    def test_unit_move(self):
+        print(f'Testing unit move on {token} x:{x1} y:{y1} {colour} {type}')
+        if app.army_end_turn(token) != colour:
+            app.army_end_turn(token)
+        self.assertEqual(app.unit_move(token, x1, y1, 19, 10), app.tile(token, 19, 10))
+        app.army_end_turn(token)
+
+    def test_unit_move2(self):
+        print(f'Testing unit move2 game {token} id {unit_id}')
+        if app.army_end_turn(token) != colour:
+            app.army_end_turn(token)
+        self.assertEqual(app.unit_move2(token, unit_id, 9, 13)['unit']['id'],
+                         app.tile(token, 9, 13)['unit']['id'])
+        app.army_end_turn(token)
     #
     def tearDown(self):
         app.game_delete_rpc(token)

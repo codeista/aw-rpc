@@ -19,7 +19,7 @@ from models import Game, Player
 from mapping import Map, MAP1
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(filename='app.log', level=logging.INFO)
+logging.basicConfig(filename='app.log', level=logging.DEBUG)
 
 config_game = Config()
 
@@ -122,7 +122,18 @@ def index():
 
 @app.route('/game/<token>')
 def game(token: str):
-    return render_template('render.html', token=token)
+    game = Game.from_token(db.session, token)
+    p1 = 'Join Game'
+    p2 = 'Join Game'
+    try:
+        p1 = game.players[0].colour
+    except:
+        pass
+    try:
+        p2 = game.players[1].colour
+    except:
+        pass
+    return render_template('render.html', token=token, p1=p1, p2=p2)
 
 #
 # Websocket
@@ -208,13 +219,13 @@ def game_create_rpc(token: str) -> str:
     return 'ok'
 
 @jsonrpc.method('player_create')
-def player_create_rpc(colour: str, co: str) -> str:
+def player_create_rpc(colour: str, co: str) -> int:
     '''rpc-create player.
-    :return: [ok]
+    :return: [player.id]
     '''
     player = player_create(colour, co)
     logger.info(f'player_create colour:{player.colour}, co:{player.co}, id:{player.id}')
-    return jsons.dump(f'player_created colour:{player.colour}, co:{player.co}, id:{player.id}')
+    return player.id
 
 @jsonrpc.method('player_info')
 def player_info(id: int) -> str:
