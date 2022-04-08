@@ -17,6 +17,8 @@ from config import Config
 from app_core import app, jsonrpc, db, socketio
 from models import Game, Player
 from mapping import Map, MAP1
+from army import Army
+from cos import Co
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename='app.log', level=logging.ERROR)
@@ -248,6 +250,14 @@ def player_create_rpc(colour: str, co: str) -> int:
     '''rpc-create player.
     :return: [player.id]
     '''
+    try:
+        Army[colour]
+    except KeyError:
+        raise Exception('invalid "Colour" parameter RED/BLUE')
+    try:
+        Co[co]
+    except KeyError:
+        raise Exception('invalid "Co" parameter MAX/ANDY/JESS/GRIMM/ADDER')
     player = player_create(colour, co)
     logger.info(f'player_create colour:{player.colour}, co:{player.co}, id:{player.id}')
     return player.id
