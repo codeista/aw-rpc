@@ -478,17 +478,19 @@ def damage_estimate(token: str, x: int, y: int, x2: int, y2: int) -> list:
 
 # need to return both attacker and defender
 @jsonrpc.method('unit_attack')
-def unit_attack(token: str, x: int, y: int, x2: int, y2: int) -> dict:
+def unit_attack(token: str, x: int, y: int, x2: int, y2: int) -> str:
     '''rpc attacks the unit from x,y to x2,y2
     :return: [tile at given coordinate]
     '''
-    logger.info(f'unit_attack token={token}, x={x}, y={y}, x2={x2}, y2={y2}')
+    if Game.from_token(db.session, token) == None:
+        return "Game does not exist"
     mngr = game_load(token)
     try:
         mngr.unit_attack(x, y, x2, y2)
         game_save(mngr, token)
         ws_board_update(token)
-        return jsons.dump(mngr.tile_get(x2, y2))
+        logger.info(f'unit_attack token={token}, x={x}, y={y}, x2={x2}, y2={y2}')
+        return 'OK'
     except Exception as ex:
         return abort(400, ex)
 

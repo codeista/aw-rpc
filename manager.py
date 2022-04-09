@@ -541,21 +541,21 @@ class GameManager():
             return unit
         raise Exception('cannot create unit from this tile')
 
-    def unit_attack(self, x: int, y: int, x2: int, y2: int) -> Unit:
+    def unit_attack(self, x: int, y: int, x2: int, y2: int):
         '''Attacks from/to the cordinates given.'''
         if not self.coord_valid(x, y):
             raise Exception('coordinate out of range')
         if not self.coord_valid(x2, y2):
             raise Exception('coordinate out of range')
         attacker = self.unit_at(x, y)
+        if not attacker:
+            raise Exception('unit does not exist at source tile')
         attacker_tile = self.tile_at(x, y)
         self.check_turn_and_raise(attacker)
         defender = self.unit_at(x2, y2)
         if not attacker.can_attack:
             raise Exception('unit can not attack')
         defender_tile = self.tile_at(x2, y2)
-        if not attacker:
-            raise Exception('unit does not exist at source tile')
         if not defender:
             raise Exception('unit does not exist at target tile')
         if not self.unit_can_attack(attacker, x2, y2):
@@ -588,8 +588,6 @@ class GameManager():
         attacker.can_move = False
         attacker.can_attack = False
         self.unit_deselect()
-        unit = self.unit_at(x, y)
-        return unit
 
     def damage_estimate(self, x: int, y: int, x2: int, y2: int) -> list:
         '''Returns the estimate damage
