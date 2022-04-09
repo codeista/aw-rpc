@@ -467,10 +467,12 @@ def damage_estimate(token: str, x: int, y: int, x2: int, y2: int) -> list:
     '''rpc estimates the damage for attacker and defender.
     :return: [tuple (attacker hp, defender hp) ]
     '''
-    logger.info(f'damage_estimate token={token}, x={x}, y={y}, x2={x2}, y2={y2}')
+    if Game.from_token(db.session, token) == None:
+        return ["Game does not exist"]
     mngr = game_load(token)
     try:
         tup = mngr.damage_estimate(x, y, x2, y2)
+        logger.info(f'damage_estimate token={token}, x={x}, y={y}, x2={x2}, y2={y2}')
         return jsons.dump(tup)
     except Exception as ex:
         return abort(400, ex)
