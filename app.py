@@ -69,7 +69,7 @@ def game_create(token):
     '''Creates a new game with token specified'''
     game = Game.from_token(db.session, token)
     if game:
-        return "Game already exists"
+        return game.token
     mngr = game_load(token)
     game = Game(mngr.board, token)
     db.session.add(game)
@@ -254,7 +254,7 @@ def game_delete_rpc(token: str) -> str:
 def game_create_rpc(token: str) -> str:
     '''rpc-create game.
     :return: [game token]
-    '''    
+    '''
     return jsons.dump(game_create(token))
 
 @jsonrpc.method('player_create')
@@ -494,27 +494,21 @@ def unit_attack(token: str, x: int, y: int, x2: int, y2: int) -> dict:
 
 
 @jsonrpc.method('unit_delete')
-def unit_delete(token: str, x: int, y: int) -> dict:
+def unit_delete(token: str, x: int, y: int) -> str:
     '''rpc deletes unit at given coordinate.
     :return: [tile at coordinates]
     '''
-    logger.info(f'unit_delete token={token}, x={x}, y={y}')
+    if Game.from_token(db.session, token) == None:
+        return "Game does not exist"
     mngr = game_load(token)
-    game = Game.from_token(db.session, token)
-    turn = check_turn(token)
-    try:
-        if turn == 'RED':
-            player = game.players[0]
-        if turn == 'BLUE':
-            player = game.players[1]
-        player.troops -= 1
-        unit = mngr.unit_delete(x, y)
-        player.troops_value -= unit.status.cost
-        game_save(mngr, token)
-        ws_board_update(token)
-        return jsons.dump(mngr.tile_get(x, y))
-    except Exception as ex:
-        return abort(400, ex)
+    if mngr.unit_at(x, y) == None:
+        return "Unit does not exist"
+    mngr.unit_delete(x, y)
+    logger.info(f'unit_delete token={token}, x={x}, y={y}')
+    game_save(mngr, token)
+    ws_board_update(token)
+    return "unit deleted"
+
 
 
 @jsonrpc.method('check_turn')
