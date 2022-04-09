@@ -506,9 +506,11 @@ class GameManager():
         army = army.upper()
         unit_type = unit_type.upper()
         tile = self.tile_at(x, y)
-        if self.board.current_turn.name != tile.mapTile.army.name:
+        if tile.mapTile.army == None:
+            raise Exception('Tile not owned')
+        elif self.board.current_turn.name != tile.mapTile.army.name:
                 raise Exception('can only create troops on captured tiles')
-        if tile.mapTile.can_create_unit():
+        elif tile.mapTile.can_create_unit():
             try:
                 Army[army]
             except KeyError:
@@ -523,7 +525,6 @@ class GameManager():
                 raise Exception('unit already exists at this tile')
             unit = Unit.create(Army[army], UnitType[unit_type],
                                self.config.units[unit_type])
-
             if self.board.current_turn.name == 'RED':
                 wallet = self.board.red_funds
                 if int(config[unit.type.name]['cost']) <= wallet:
@@ -539,7 +540,6 @@ class GameManager():
             self.unit_place(unit, x, y)
             self.check_turn_and_raise(unit)
             return unit
-        raise Exception('cannot create unit from this tile')
 
     def unit_attack(self, x: int, y: int, x2: int, y2: int):
         '''Attacks from/to the cordinates given.'''
