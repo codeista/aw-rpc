@@ -21,7 +21,7 @@ from army import Army
 from cos import Co
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(filename='app.log', level=logging.ERROR)
+logging.basicConfig(filename='app.log', level=logging.INFO)
 
 config_game = Config()
 
@@ -67,11 +67,15 @@ def game_delete(token):
 
 def game_create(token):
     '''Creates a new game with token specified'''
+    game = Game.from_token(db.session, token)
+    if game:
+        return "Game already exists"
     mngr = game_load(token)
     game = Game(mngr.board, token)
     db.session.add(game)
     db.session.commit()
-    logger.info(game.id)
+    logger.info(f'game_created token={token}')
+    return game.token
 
 
 def player_create(colour, co):
@@ -130,7 +134,7 @@ def game_join(token, pos, id):
             mngr = game_load(token)
             game_save(mngr, token)
     except Exception as ex:
-        return abort(404, ex)
+        return abort(400, ex)
 
 def p_1(token):
     game = Game.from_token(db.session, token)
@@ -249,11 +253,9 @@ def game_delete_rpc(token: str) -> str:
 @jsonrpc.method('game_create')
 def game_create_rpc(token: str) -> str:
     '''rpc-create game.
-    :return: [ok]
-    '''
-    logger.info(f'game_create token={token}')
-    game_create(token)
-    return 'ok'
+    :return: [game token]
+    '''    
+    return jsons.dump(game_create(token))
 
 @jsonrpc.method('player_create')
 def player_create_rpc(colour: str, co: str) -> int:
@@ -290,7 +292,9 @@ def game_p1_p2(token: str) -> str:
     try:
         game = Game.from_token(db.session, token)
         if game is None:
-            return 'Game not found'
+            # game = game_create(token)
+            logger.info(f'Game not found {token}')
+            return f'Game not found {token}'
             # abort(404, description="game not found")
         logger.info(f'player info game={game.token}, p1 id:{game.player_one}, p2 id:{game.player_two}, players:{game.players}')
         return jsons.dump(p_1(token) + " " + p_2(token))
