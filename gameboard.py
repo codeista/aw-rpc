@@ -29,7 +29,7 @@ class GameBoard():
     selected: GameTile = None
     turn_order: List[Army] = field(default_factory=list)
     current_turn: Army = None
-    game_active: bool = True
+    game_active: bool = False
     total_red_troops: int = 0
     total_red_properties: int = 0
     red_funds: int = 0

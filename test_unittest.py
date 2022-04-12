@@ -31,8 +31,9 @@ class Test_RPC_unit_create(unittest.TestCase):
         app.game_create_rpc(token)
         p1 = int(app.player_create_rpc('RED', 'MAX'))
         p2 = int(app.player_create_rpc('BLUE', 'ANDY'))
-        app.join_game_rpc(token, 1, p1)
-        app.join_game_rpc(token, 2, p2)
+        app.join_game(token, 1, p1)
+        app.join_game(token, 2, p2)
+        app.start_game(token)
         '''setup for unit_create'''
         global unit_id
         unit_id = app.unit_create_rpc(token, colour, type, x, y)['id']

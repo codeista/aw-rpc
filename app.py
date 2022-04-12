@@ -102,65 +102,25 @@ def player_load(id):
         if player:
             return player
         else:
-            abort(404, description="Player doesn't exist")
+            abort(404, description='Player doesnt exist')
     except Exception as ex:
         return abort(404, ex)
 
-
-def game_join(token, pos, id):
-    '''Join a game with token and position(pos) specified '''
-    try:
-        game = Game.from_token(db.session, token)
-        player = Player.from_id(db.session, id)
-        if game and player:
-            if pos == 1:
-                if game.player_one:
-                    abort(404, description="Player one taken")
-                elif player.token:
-                    abort(404, description="Player already joined game")
-                else:
-                    game.player_one = player.id
-                    game.players.append(player)
-                    player.token = game.token
-            if pos == 2:
-                if game.player_two:
-                    abort(404, description="Player two taken")
-                elif player.token:
-                    abort(404, description="Player already joined game")
-                else:
-                    game.player_two = player.id
-                    game.players.append(player)
-                    player.token = game.token
-            mngr = game_load(token)
-            game_save(mngr, token)
-    except Exception as ex:
-        return abort(400, ex)
-
 def p_1(token):
     game = Game.from_token(db.session, token)
-    p1 = 'Join Game'
-    p1_co = ''
-    p1_id = None
-    try:
-        p1 = game.players[0].colour
-        p1_co = game.players[0].co
-        p1_id = game.players[0].id
-    except:
-        pass
-    return f'ID: {p1_id} {p1} : {p1_co}'
+    if game and game.player_one:
+        player = game.players[0]
+        return f'{player.colour} {player.co}'
+    else:
+        return 'Join Game'
 
 def p_2(token):
     game = Game.from_token(db.session, token)
-    p2 = 'Join Game'
-    p2_co = ''
-    p2_id = None
-    try:
-        p2 = game.players[1].colour
-        p2_co = game.players[1].co
-        p2_id = game.players[1].id
-    except:
-        pass
-    return f'ID: {p2_id} {p2} : {p2_co}'
+    if game and game.player_two:
+        player = game.players[1]
+        return f'{player.colour} {player.co}'
+    else:
+        return 'Join game'
 
 #
 # REST
@@ -276,13 +236,42 @@ def player_info(id: int) -> str:
     return f'ID: {player.id} : {player.co} : {player.colour} token={player.token}'
 
 @jsonrpc.method('join_game')
-def join_game_rpc(token: str, pos: int, id: int) -> str:
+def join_game(token: str, pos: int, id: int) -> str:
     '''rpc-join game.
     :return: [ok]
     '''
-    game_join(token, pos, id)
-    logger.info(f'rpc Joined game={token}, pos:{pos}, id:{id}')
-    return 'ok'
+    try:
+        game = Game.from_token(db.session, token)
+        player = Player.from_id(db.session, id)
+        if game == None:
+            abort(404, description="game not found")
+        elif player == None:
+            abort('player not found')
+        elif pos == 1:
+            if game.player_one:
+                abort(404, description="Player one taken")
+            elif player.token:
+                abort(404, description="Player already joined game")
+            else:
+                game.player_one = player.id
+                game.players.append(player)
+                player.token = game.token
+        elif pos == 2:
+            if game.player_two:
+                abort(404, description="Player two taken")
+            elif player.token:
+                abort(404, description="Player already joined game")
+            else:
+                game.player_two = player.id
+                game.players.append(player)
+                player.token = game.token
+        mngr = game_load(token)
+        game_save(mngr, token)
+        logger.info(f'rpc Joined game={token}, pos:{pos}, id:{id}')
+        message(token, f'rpc Joined game={token}, pos:{pos}, id:{id}')
+        return 'ok'
+    except Exception as ex:
+        return abort(400, ex)
 
 @jsonrpc.method('game_p1_p2')
 def game_p1_p2(token: str) -> str:
@@ -292,10 +281,7 @@ def game_p1_p2(token: str) -> str:
     try:
         game = Game.from_token(db.session, token)
         if game is None:
-            # game = game_create(token)
-            logger.info(f'Game not found {token}')
-            return f'Game not found {token}'
-            # abort(404, description="game not found")
+            abort(404, description="game not found")
         logger.info(f'player info game={game.token}, p1 id:{game.player_one}, p2 id:{game.player_two}, players:{game.players}')
         return jsons.dump(p_1(token) + " " + p_2(token))
     except Exception as ex:
@@ -332,16 +318,42 @@ def end_game(token: str) -> str:
     '''
     logger.info(f'end game token={token}')
     mngr = game_load(token)
-    try:
-        mngr.end_game()
-        game_save(mngr, token)
-        ws_board_update(token)
-        turn = mngr.check_turn()
-        text = turn.name + ' is the winner!'
-        logger.info(f'{turn.name} is the winner')
-        return jsons.dump(text)
-    except Exception as ex:
-        return abort(400, ex)
+    if mngr.board.game_active == False:
+        text = 'game is not active'
+    else:
+        try:
+            mngr.end_game()
+            game_save(mngr, token)
+            ws_board_update(token)
+            text = 'Game ended'
+        except Exception as ex:
+            return abort(400, ex)
+    logger.info(text)
+    ws_msg(token, text)
+    return jsons.dump(text)
+
+@jsonrpc.method('start_game')
+def start_game(token: str) -> str:
+    '''rpc start game.
+    :return: [ok]
+    '''
+    game = Game.from_token(db.session, token)
+    if game == None:
+        abort(404, description="game not found")
+    elif game.player_one and game.player_two:
+        mngr = game_load(token)
+        try:
+            mngr.start_game()
+            game_save(mngr, token)
+            ws_board_update(token)
+            logger.info(f'started game {game.token}')
+            ws_msg(token, f'started game {game.token}')
+            return 'ok'
+        except Exception as ex:
+            return abort(400, ex)
+    else:
+        ws_msg(token, 'join players to start')
+        abort(404, description="players not found")
 
 
 # return the game tile for the coord(x, y)
@@ -443,19 +455,12 @@ def unit_create_rpc(token: str, army: str, unit_type: str, x: int, y: int) -> di
     '''rpc create a unit at the coordinates given
     :return: [tile at coordinates]
     '''
-    logger.info(f'unit_create token={token}, army={army}, x={x}, y={y}')
     mngr = game_load(token)
-    game = Game.from_token(db.session, token)
-    if army == 'RED':
-        player = game.players[0]
-    if army == 'BLUE':
-        player = game.players[1]
     try:
         unit = mngr.unit_create(army, unit_type, x, y)
-        player.troops += 1
-        player.troops_value += unit.status.cost
         game_save(mngr, token)
         ws_board_update(token)
+        logger.info(f'unit_create token={token}, army={army}, x={x}, y={y}')
         return jsons.dump(unit)
     except Exception as ex:
         return abort(400, ex)

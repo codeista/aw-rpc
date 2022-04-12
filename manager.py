@@ -350,12 +350,19 @@ class GameManager():
         '''Ends the game'''
         self.board.game_active = False
 
+    def start_game(self):
+        '''Starts the game'''
+        if self.board.days == False:
+            self.board.game_active = True
+        else:
+            raise Exception("game already started")
+
     def army_end_turn(self):
         '''Ends the armys turn.
            consumes fuel if nessessary and repairs/resupplys if on a
            corosponding repair tile.'''
         if self.board.game_active == False:
-            raise Exception("tried to end turn but Game Over")
+            raise Exception("tried to end turn but is not active")
         self.unit_deselect()
         # remove move/attack statuses from units
         self.board.total_blue_troops = 0
