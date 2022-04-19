@@ -243,9 +243,9 @@ def join_game(token: str, pos: int, id: int) -> str:
     try:
         game = Game.from_token(db.session, token)
         player = Player.from_id(db.session, id)
-        if game == None:
+        if game is None:
             abort(404, description="game not found")
-        elif player == None:
+        elif player is None:
             abort('player not found')
         elif pos == 1:
             if game.player_one:
@@ -301,15 +301,19 @@ def army_end_turn(token: str) -> str:
     :return: [ok]
     '''
     mngr = game_load(token)
-    try:
-        mngr.army_end_turn()
-        game_save(mngr, token)
-        ws_board_update(token)
-        turn = mngr.check_turn()
-        logger.info(f'army_end_turn={turn.name}')
-        return jsons.dump(turn)
-    except Exception as ex:
-        return abort(400, ex)
+    if mngr:
+        if mngr.board.game_active == False:
+            text = 'game is not active'
+        else:
+            try:
+                mngr.army_end_turn()
+                game_save(mngr, token)
+                ws_board_update(token)
+                turn = mngr.check_turn()
+                logger.info(f'army_end_turn={turn.name}')
+                return jsons.dump(turn)
+            except Exception as ex:
+                return abort(400, ex)
 
 @jsonrpc.method('end_game')
 def end_game(token: str) -> str:
@@ -338,7 +342,7 @@ def start_game(token: str) -> str:
     :return: [ok]
     '''
     game = Game.from_token(db.session, token)
-    if game == None:
+    if game is None:
         abort(404, description="game not found")
     elif game.player_one and game.player_two:
         mngr = game_load(token)
@@ -472,7 +476,7 @@ def damage_estimate(token: str, x: int, y: int, x2: int, y2: int) -> list:
     '''rpc estimates the damage for attacker and defender.
     :return: [tuple (attacker hp, defender hp) ]
     '''
-    if Game.from_token(db.session, token) == None:
+    if Game.from_token(db.session, token) is None:
         return ["Game does not exist"]
     mngr = game_load(token)
     try:
@@ -489,7 +493,7 @@ def unit_attack(token: str, x: int, y: int, x2: int, y2: int) -> str:
     '''rpc attacks the unit from x,y to x2,y2
     :return: [tile at given coordinate]
     '''
-    if Game.from_token(db.session, token) == None:
+    if Game.from_token(db.session, token) is None:
         return "Game does not exist"
     mngr = game_load(token)
     try:
@@ -507,10 +511,10 @@ def unit_delete(token: str, x: int, y: int) -> str:
     '''rpc deletes unit at given coordinate.
     :return: [tile at coordinates]
     '''
-    if Game.from_token(db.session, token) == None:
+    if Game.from_token(db.session, token) is None:
         return "Game does not exist"
     mngr = game_load(token)
-    if mngr.unit_at(x, y) == None:
+    if mngr.unit_at(x, y) is None:
         return "Unit does not exist"
     mngr.unit_delete(x, y)
     logger.info(f'unit_delete token={token}, x={x}, y={y}')
