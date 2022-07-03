@@ -7,7 +7,7 @@ import logging
 import datetime
 import secrets
 
-from flask import redirect, render_template, abort, request
+from flask import redirect, render_template, abort, request, jsonify
 from flask_socketio import Namespace, join_room, leave_room
 import jsons
 
