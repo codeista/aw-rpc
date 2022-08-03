@@ -19,4 +19,8 @@ scratch
 *.z7
 *.log
 bot.py
+<<<<<<< Updated upstream
 jeskstra.py
+=======
+.vscode/
+>>>>>>> Stashed changes
