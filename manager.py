@@ -30,6 +30,9 @@ class GameManager():
         self.config = config
         self.board = board
 
+    def __repr__(self):
+        return f"{self.__class__.__name__}"
+
     def coord_valid(self, x: int, y: int) -> bool:
         '''Returns true if the coordinate is
            within the board width and hight.'''
@@ -197,17 +200,20 @@ class GameManager():
 
     def capture_tile(self, x: int, y: int):
         '''Capture the tile at the given coordinate.'''
-        # if self.board.game_active == False:
-        #     raise Exception("treid to capture but Game Over")
         if not self.coord_valid(x, y):
             raise Exception('coordinate out of range')
         tile = self.tile_get(x, y)
+        if tile.unit is None:
+            raise Exception(f'No unit at {x} , {y}')
         if not tile.unit.can_attack:
             raise Exception('Unit cannot capture this turn')
         if not tile.unit:
             raise Exception('unit does not exist at coordinate')
-        if not tile.mapTile.is_capturable:
+        if tile.mapTile.is_capturable() == False:
             raise Exception('cannot capture tile')
+        if not tile.mapTile.army is None:
+            if tile.mapTile.army.name == tile.unit.army.name:
+                raise Exception('cannot capture tile your own property')
         unit = tile.unit
         self.check_turn_and_raise(unit)
         if not unit.type_can_capture():
