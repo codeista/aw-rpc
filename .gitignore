@@ -10,7 +10,7 @@ __pycache__/
 docs/
 *.db
 flask-env/
-
+.vscode/
 scratch
 
 *.csv
@@ -19,3 +19,4 @@ scratch
 *.z7
 *.log
 bot.py
+jeskstra.py
