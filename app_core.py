@@ -3,7 +3,7 @@
 import os
 
 from flask import Flask
-from flask_jsonrpc import JSONRPC
+from flask_jsonrpc.app import JSONRPC
 from flask_sqlalchemy import SQLAlchemy
 from flask_socketio import SocketIO
 
