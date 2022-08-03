@@ -167,7 +167,7 @@ def game_create_rpc(token: str) -> str:
 
 
 @jsonrpc.method('game_board')
-def game_board(token: str) -> dict:
+def game_board_rpc(token: str) -> dict:
     '''rpc return game board.
     :return: [gameboard]
     '''
@@ -177,24 +177,25 @@ def game_board(token: str) -> dict:
 
 
 @jsonrpc.method('army_end_turn')
-def army_end_turn(token: str) -> str:
+def army_end_turn_rpc(token: str) -> str:
     '''rpc end current turn.
     :return: [ok]
     '''
-    logger.info(f'army_end_turn token={token}')
     mngr = game_load(token)
     try:
         mngr.army_end_turn()
+    except Exception as ex:
+        return abort(400, ex)
+    else:
         game_save(mngr, token)
         ws_board_update(token)
         turn = mngr.check_turn()
         logger.info(f'army_end_turn={turn.name}')
         return jsons.dump(turn)
-    except Exception as ex:
-        return abort(400, ex)
+
 
 @jsonrpc.method('end_game')
-def end_game(token: str) -> str:
+def end_game_rpc(token: str) -> str:
     '''rpc end game.
     :return: [ok]
     '''
@@ -214,7 +215,7 @@ def end_game(token: str) -> str:
 
 # return the game tile for the coord(x, y)
 @jsonrpc.method('tile')
-def tile(token: str, x: int, y: int) -> dict:
+def tile_rpc(token: str, x: int, y: int) -> dict:
     '''rpc return tile at coordinates
     :return: [tile at coordinates given]
     '''
@@ -227,7 +228,7 @@ def tile(token: str, x: int, y: int) -> dict:
 
 
 @jsonrpc.method('capture_tile')
-def capture_tile(token: str, x: int, y: int) -> dict:
+def capture_tile_rpc(token: str, x: int, y: int) -> dict:
     '''rpc capture tile
     :return: [tile at coordinates given]
     '''
@@ -243,7 +244,7 @@ def capture_tile(token: str, x: int, y: int) -> dict:
 
 
 @jsonrpc.method('unit_wait')
-def unit_wait(token: str, x: int, y: int) -> dict:
+def unit_wait_rpc(token: str, x: int, y: int) -> dict:
     '''rpc unit wait
     :return: [tile at coordinates given]
     '''
@@ -259,7 +260,7 @@ def unit_wait(token: str, x: int, y: int) -> dict:
 
 
 @jsonrpc.method('unit_select')
-def unit_select(token: str, x: int, y: int) -> dict:
+def unit_select_rpc(token: str, x: int, y: int) -> dict:
     '''rpc select unit at coordinate.
     :return: [gameboard]
     '''
@@ -275,7 +276,7 @@ def unit_select(token: str, x: int, y: int) -> dict:
 
 
 @jsonrpc.method('unit_move')
-def unit_move(token: str, x: int, y: int, x2: int, y2: int) -> dict:
+def unit_move_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
     '''rpc move unit from / to coordinates
     :return: [tile at destination coordinates]
     '''
@@ -291,7 +292,7 @@ def unit_move(token: str, x: int, y: int, x2: int, y2: int) -> dict:
 
 
 @jsonrpc.method('unit_move2')
-def unit_move2(token: str, id: str, x: int, y: int) -> dict:
+def unit_move2_rpc(token: str, id: str, x: int, y: int) -> dict:
     '''rpc move unit for given ID to the coordinates.
     :return: [tile at coordinates]
     '''
@@ -307,7 +308,7 @@ def unit_move2(token: str, id: str, x: int, y: int) -> dict:
 
 
 @jsonrpc.method('unit_create')
-def unit_create(token: str, army: str, unit_type: str, x: int, y: int) -> dict:
+def unit_create_rpc(token: str, army: str, unit_type: str, x: int, y: int) -> dict:
     '''rpc create a unit at the coordinates given
     :return: [tile at coordinates]
     '''
@@ -324,7 +325,7 @@ def unit_create(token: str, army: str, unit_type: str, x: int, y: int) -> dict:
 
 # need to return both attacker and defender
 @jsonrpc.method('damage_estimate')
-def damage_estimate(token: str, x: int, y: int, x2: int, y2: int) -> list:
+def damage_estimate_rpc(token: str, x: int, y: int, x2: int, y2: int) -> list:
     '''rpc estimates the damage for attacker and defender.
     :return: [tuple (attacker hp, defender hp) ]
     '''
@@ -339,7 +340,7 @@ def damage_estimate(token: str, x: int, y: int, x2: int, y2: int) -> list:
 
 # need to return both attacker and defender
 @jsonrpc.method('unit_attack')
-def unit_attack(token: str, x: int, y: int, x2: int, y2: int) -> dict:
+def unit_attack_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
     '''rpc attacks the unit from x,y to x2,y2
     :return: [tile at given coordinate]
     '''
@@ -355,7 +356,7 @@ def unit_attack(token: str, x: int, y: int, x2: int, y2: int) -> dict:
 
 
 @jsonrpc.method('unit_delete')
-def unit_delete(token: str, x: int, y: int) -> dict:
+def unit_delete_rpc(token: str, x: int, y: int) -> dict:
     '''rpc deletes unit at given coordinate.
     :return: [tile at coordinates]
     '''
@@ -371,7 +372,7 @@ def unit_delete(token: str, x: int, y: int) -> dict:
 
 
 @jsonrpc.method('check_turn')
-def check_turn(token: str) -> str:
+def check_turn_rpc(token: str) -> str:
     '''rpc checks the current army turn.
     :return: [The current turn]
     '''
@@ -385,7 +386,7 @@ def check_turn(token: str) -> str:
 
 
 @jsonrpc.method('unit_join')
-def unit_join(token: str, x: int, y: int, x2: int, y2: int) -> dict:
+def unit_join_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
     '''rpc joins the unit from x,y to x2,y2.
     :return: [Tile at x2,y2]
     '''
@@ -401,7 +402,7 @@ def unit_join(token: str, x: int, y: int, x2: int, y2: int) -> dict:
 
 
 @jsonrpc.method('unit_load')
-def unit_load(token: str, x: int, y: int, x2: int, y2: int) -> dict:
+def unit_load_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
     '''rpc loads the unit from x,y to x2,y2.
     :return: [Tile at x2,y2]
     '''
@@ -417,7 +418,7 @@ def unit_load(token: str, x: int, y: int, x2: int, y2: int) -> dict:
 
 
 @jsonrpc.method('unit_unload')
-def unit_unload(token: str, x: int, y: int, x2: int, y2: int, index: int) -> dict:
+def unit_unload_rpc(token: str, x: int, y: int, x2: int, y2: int, index: int) -> dict:
     '''rpc umloads the unit from x,y to x2,y2.
     :return: [Tile at x2,y2]
     '''
@@ -434,7 +435,7 @@ def unit_unload(token: str, x: int, y: int, x2: int, y2: int, index: int) -> dic
 
 
 @jsonrpc.method('launch_missile')
-def launch_missile(token: str, x: int, y: int, x2: int, y2: int) -> dict:
+def launch_missile_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
     '''launches missile from x,y to x2,y2.
     :return: [tile at destination coordinate]
     '''
@@ -451,7 +452,7 @@ def launch_missile(token: str, x: int, y: int, x2: int, y2: int) -> dict:
 
 
 @jsonrpc.method('unit_resupply')
-def unit_resupply(token: str, x: int, y: int, x2: int, y2: int) -> dict:
+def unit_resupply_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
     '''rpc resupply unit from x,y to x2,y2.
     :return: [tile at destination coordinates]
     '''
