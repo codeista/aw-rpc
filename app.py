@@ -470,8 +470,9 @@ def unit_resupply_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
 if __name__ == '__main__':
     setup_logging(logging.DEBUG)
     # create tables
-    db.create_all()
-    db.session.commit()
+    with app.app_context():
+        db.create_all()
+        db.session.commit()
     # Bind to PORT if defined, otherwise default to 5000.
     port = int(os.environ.get('PORT', 5000))
     logging.info(f'binding to port: {port}')
