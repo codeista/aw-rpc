@@ -530,12 +530,14 @@ class GameManager():
             wallet = self.board.red_funds
             if int(config[unit.type.name]['cost']) <= wallet:
                 self.board.red_funds -= int(config[unit.type.name]['cost'])
+                self.board.total_red_troops += 1
             else:
                 raise Exception('not enough funds for this unit')
         if self.board.current_turn.name == 'BLUE':
             wallet = self.board.blue_funds
             if int(config[unit.type.name]['cost']) <= wallet:
                 self.board.blue_funds -= int(config[unit.type.name]['cost'])
+                self.board.total_blue_troops += 1
             else:
                 raise Exception('not enough funds for this unit')
         self.unit_place(unit, x, y)

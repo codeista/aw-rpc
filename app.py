@@ -184,14 +184,14 @@ def army_end_turn_rpc(token: str) -> str:
     mngr = game_load(token)
     try:
         mngr.army_end_turn()
-    except Exception as ex:
-        return abort(400, ex)
-    else:
         game_save(mngr, token)
         ws_board_update(token)
         turn = mngr.check_turn()
         logger.info(f'army_end_turn={turn.name}')
         return jsons.dump(turn)
+    except Exception as ex:
+        return abort(400, ex)
+        
 
 
 @jsonrpc.method('end_game')
