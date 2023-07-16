@@ -1,10 +1,13 @@
 # aw-rpc
 
-## Install venv
+Turn based stratergy game clone 
+with api interface using Flask.
 
-    python3.9 -m venv flask-env
+## Setup virtual environment
 
-## start env
+    python -m venv flask-env
+
+## start virtual environment
 
     . flask-env/bin/activate
 
@@ -24,10 +27,12 @@
 
 Tests the following RPC methods in the app.py module:
 
+unit creation,
+unit move(with x, y coord's)
+
+**Needs updating**
 capture property,
 end turn,
-unit creation,
-unit move(with x, y coord's),
 unit move2(with unit ID),
 
 
