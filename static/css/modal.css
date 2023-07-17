@@ -98,7 +98,7 @@ h2 {
     position: relative;}
 h2:hover {
     background: transparent url("/static/img/man3.png") no-repeat;
-    0px -16px no-repeat;}
+    }
 
 table {
 	margin-left: auto;
