@@ -220,10 +220,19 @@ class GameManager():
             raise Exception('Unit cannot capture')
         tile.capture_hp -= math.ceil(unit.status.hp / 10)
         if tile.capture_hp <= 0:
+            if not tile.mapTile.army is None:
+                if tile.mapTile.army.name == 'RED':
+                    self.board.total_red_properties -= int(config['FUNDS']['income'])
+                elif tile.mapTile.army.name == 'BLUE':
+                    self.board.total_blue_properties -= int(config['FUNDS']['income'])
             tile.mapTile.army = unit.army
             tile.capture_hp = 20
             if tile.mapTile.type == MapType.BASE_TOWER_1:
                 self.board.game_active = False
+            if self.board.current_turn.name == 'RED':
+                self.board.total_red_properties += int(config['FUNDS']['income'])
+            if self.board.current_turn.name == 'BLUE':
+                self.board.total_blue_properties += int(config['FUNDS']['income'])
         unit.can_move = False
         unit.can_attack = False
         unit.can_capture = False
