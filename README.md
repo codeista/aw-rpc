@@ -43,9 +43,13 @@ unit move2(with unit ID),
 
 ##TODO
 
+create flow diagram to visualise game flow
+
+Create user/player to join games 
+
 Create secondary weapon and damage table
 
-Add damage calculation to include COM_TOWER
+Add damage calculation to include COM_TOWER (+10% per com tower)
 
 Create all the tiles available in tile.png
 
