@@ -69,3 +69,14 @@ Weather inc fog
 Stealth mechanic for subs and stealth
 
 Fix fuel consumption for hidden stealth and dived sub units
+
+## vc-code Mermaid Extension
+
+Markdown Preview Mermaid Support
+https://marketplace.visualstudio.com/items?itemName=bierner.markdown-mermaid
+
+Installation:
+    Launch VS Code Quick Open (Ctrl+P), paste the following command, and press enter.
+    'ext install bierner.markdown-mermaid'
+
+preview flowchart.md
