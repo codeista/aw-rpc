@@ -197,7 +197,7 @@ def game(token: str):
     return render_template('render.html', token=token)
 
 
-@app.route('/api/browse-docs')
+@app.route('/api/browse-api')
 def api_browse():
     """API documentation endpoint."""
     # TODO: Add proper API documentation
