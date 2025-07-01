@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AW-RPC API Documentation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .endpoint {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .method {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 12px;
+            margin-right: 10px;
+        }
+        .post { background-color: #28a745; color: white; }
+        .get { background-color: #007bff; color: white; }
+        .endpoint-path {
+            font-family: monospace;
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+        .description {
+            margin: 10px 0;
+            color: #666;
+        }
+        .parameters {
+            margin-top: 15px;
+        }
+        .param {
+            background-color: #f8f9fa;
+            padding: 8px;
+            margin: 5px 0;
+            border-left: 3px solid #007bff;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        .example {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>AW-RPC API Documentation</h1>
+        <p>Turn-based Strategy Game RPC API</p>
+    </div>
+
+    <div class="endpoint">
+        <span class="method post">POST</span>
+        <span class="endpoint-path">/api/game/create</span>
+        <div class="description">Create a new game session</div>
+        <div class="parameters">
+            <strong>Parameters:</strong>
+            <div class="param">
+                <code>player_name</code> (string) - Name of the player creating the game
+            </div>
+            <div class="param">
+                <code>map_size</code> (string) - Size of the game map (small, medium, large)
+            </div>
+        </div>
+        <div class="example">
+            <strong>Example Request:</strong>
+            <pre><code>{
+  "player_name": "Player1",
+  "map_size": "medium"
+}</code></pre>
+        </div>
+    </div>
+
+    <div class="endpoint">
+        <span class="method post">POST</span>
+        <span class="endpoint-path">/api/unit/create</span>
+        <div class="description">Create a new unit on the battlefield</div>
+        <div class="parameters">
+            <strong>Parameters:</strong>
+            <div class="param">
+                <code>unit_type</code> (string) - Type of unit to create
+            </div>
+            <div class="param">
+                <code>x</code> (integer) - X coordinate on the map
+            </div>
+            <div class="param">
+                <code>y</code> (integer) - Y coordinate on the map
+            </div>
+            <div class="param">
+                <code>player_id</code> (string) - ID of the player creating the unit
+            </div>
+        </div>
+        <div class="example">
+            <strong>Example Request:</strong>
+            <pre><code>{
+  "unit_type": "infantry",
+  "x": 5,
+  "y": 3,
+  "player_id": "player_123"
+}</code></pre>
+        </div>
+    </div>
+
+    <div class="endpoint">
+        <span class="method post">POST</span>
+        <span class="endpoint-path">/api/unit/move</span>
+        <div class="description">Move a unit to new coordinates</div>
+        <div class="parameters">
+            <strong>Parameters:</strong>
+            <div class="param">
+                <code>unit_id</code> (string) - ID of the unit to move
+            </div>
+            <div class="param">
+                <code>target_x</code> (integer) - Target X coordinate
+            </div>
+            <div class="param">
+                <code>target_y</code> (integer) - Target Y coordinate
+            </div>
+        </div>
+        <div class="example">
+            <strong>Example Request:</strong>
+            <pre><code>{
+  "unit_id": "unit_456",
+  "target_x": 7,
+  "target_y": 4
+}</code></pre>
+        </div>
+    </div>
+
+    <div class="endpoint">
+        <span class="method post">POST</span>
+        <span class="endpoint-path">/api/unit/move2</span>
+        <div class="description">Alternative unit movement method using unit ID</div>
+        <div class="parameters">
+            <strong>Parameters:</strong>
+            <div class="param">
+                <code>unit_id</code> (string) - ID of the unit to move
+            </div>
+            <div class="param">
+                <code>direction</code> (string) - Direction to move (north, south, east, west)
+            </div>
+            <div class="param">
+                <code>distance</code> (integer) - Number of tiles to move
+            </div>
+        </div>
+    </div>
+
+    <div class="endpoint">
+        <span class="method post">POST</span>
+        <span class="endpoint-path">/api/property/capture</span>
+        <div class="description">Capture a property on the map</div>
+        <div class="parameters">
+            <strong>Parameters:</strong>
+            <div class="param">
+                <code>unit_id</code> (string) - ID of the unit capturing the property
+            </div>
+            <div class="param">
+                <code>property_id</code> (string) - ID of the property to capture
+            </div>
+        </div>
+    </div>
+
+    <div class="endpoint">
+        <span class="method post">POST</span>
+        <span class="endpoint-path">/api/turn/end</span>
+        <div class="description">End the current player's turn</div>
+        <div class="parameters">
+            <strong>Parameters:</strong>
+            <div class="param">
+                <code>player_id</code> (string) - ID of the player ending their turn
+            </div>
+            <div class="param">
+                <code>game_id</code> (string) - ID of the game session
+            </div>
+        </div>
+    </div>
+
+    <div class="endpoint">
+        <span class="method get">GET</span>
+        <span class="endpoint-path">/api/game/status</span>
+        <div class="description">Get current game status and state</div>
+        <div class="parameters">
+            <strong>Parameters:</strong>
+            <div class="param">
+                <code>game_id</code> (string) - ID of the game session
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top: 40px; padding: 20px; background-color: white; border-radius: 8px;">
+        <h3>Response Format</h3>
+        <p>All API responses follow this format:</p>
+        <div class="example">
+            <pre><code>{
+  "success": true,
+  "data": { ... },
+  "message": "Operation completed successfully"
+}</code></pre>
+        </div>
+        
+        <h3>Error Format</h3>
+        <div class="example">
+            <pre><code>{
+  "success": false,
+  "error": "Error description",
+  "code": "ERROR_CODE"
+}</code></pre>
+        </div>
+    </div>
+</body>
+</html>

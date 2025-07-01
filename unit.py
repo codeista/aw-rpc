@@ -4,8 +4,8 @@ import math
 from dataclasses import dataclass
 from enum import Enum
 import uuid
-from mapping import terrain_star
-from army import Army
+from map_system import TERRAIN_DEFENSE
+from map_system import Army
 from typing import List
 
 
@@ -137,7 +137,7 @@ class Unit:
         '''Returns the attack damamge from the attacker to the defender
             taking into account the terrain.'''
         damage_const = DAMAGE_TABLE[self.type][target.type.value]
-        def_const = terrain_star[tile.mapTile.type]
+        def_const = TERRAIN_DEFENSE[tile.mapTile.type]
         atk_hp = math.ceil(self.status.hp / 10)
         # The displayed HP of the defender, from 1 through 10.
         def_hp = math.ceil(target.status.hp / 10)

@@ -17,7 +17,7 @@ from gameboard import GameBoard
 from config import Config
 from app_core import app, jsonrpc, db, socketio
 from models import Game
-from mapping import Map, MAP1
+from map_system import Map, map_repository
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -63,23 +63,49 @@ def setup_logging(level: int) -> None:
     """Setup logging with specified level."""
     logger.setLevel(level)
     
-
-def game_load(token: str) -> GameManager:
-    """Load the game with specified token or create new one."""
+def game_load(token):
+    '''Loads the game token specified'''
+    game = Game.from_token(db.session, token)
+    if game:
+        mngr = GameManager(config_game, jsons.loads(game.board, GameBoard))
+        return mngr
+    
+    # Get default map from repository
     try:
-        game = Game.from_token(db.session, token)
-        if game:
-            board = jsons.loads(game.board, GameBoard)
-            return GameManager(config_game, board)
+        default_map = map_repository.get_map('test')
+        if not default_map:
+            default_map = map_repository.get_map('scorpion')
         
-        # Create new game if token doesn't exist
-        board = GameBoard.create(Map.parse(MAP1))
-        return GameManager(config_game, board)
+        if default_map:
+            board = GameBoard.create(default_map)
+            mngr = GameManager(config_game, board)
+            return mngr
+            
     except Exception as e:
-        logger.error(f"Error loading game {token}: {e}")
-        # Fallback to new game
-        board = GameBoard.create(Map.parse(MAP1))
-        return GameManager(config_game, board)
+        print(f"Error loading map: {e}")
+    
+    # Fallback - create a simple test map
+    from map_system import Map, MapType, Army, MapTile
+    
+    # Create a 3x3 map manually
+    tiles = []
+    for i in range(9):
+        if i == 4:  # Center tile
+            tiles.append(MapTile(MapType.CITY))
+        else:
+            tiles.append(MapTile(MapType.PLAIN))
+    
+    fallback_map = Map(
+        width=3, 
+        height=3, 
+        tiles=tiles, 
+        turn_order=[Army.RED, Army.BLUE],
+        name="Fallback Map"
+    )
+    
+    board = GameBoard.create(fallback_map)
+    mngr = GameManager(config_game, board)
+    return mngr
 
 
 def game_save(mngr: GameManager, token: str) -> bool:
@@ -171,7 +197,7 @@ def game(token: str):
     return render_template('render.html', token=token)
 
 
-@app.route('/api/browse')
+@app.route('/api/browse-docs')
 def api_browse():
     """API documentation endpoint."""
     # TODO: Add proper API documentation

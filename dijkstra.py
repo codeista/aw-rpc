@@ -9,7 +9,7 @@ determined
 
 from dataclasses import dataclass
 from typing import List
-from mapping import movement_cost
+from map_system import MOVEMENT_COST
 
 from gameboard import GameTile, GameBoard
 
@@ -91,7 +91,7 @@ def dijkstra(board: GameBoard, source: GameTile, target: GameTile) -> int:
     # set the distance to 0 for initial node and infinity for others
     nodes = []
     for tile in board.grid:
-        cost = movement_cost[tile.mapTile.type][source.unit.status.cls.value]
+        cost = MOVEMENT_COST[tile.mapTile.type][source.unit.status.cls.value]
         occupied = tile.unit != None and tile.unit.army != source.unit.army
         visited = False
         dist = INF

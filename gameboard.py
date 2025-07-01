@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 from typing import List
 from unit import Army, Unit
-from mapping import MapTile, Map
+from map_system import MapTile, Map
 
 import configparser
 config = configparser.ConfigParser()

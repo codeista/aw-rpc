@@ -5,7 +5,7 @@ import math
 from gameboard import GameBoard, GameTile
 from unit import Army, UnitType, Unit, UnitClass
 from dijkstra import dijkstra
-from mapping import MapType, movement_cost, INF
+from map_system import MapType, MOVEMENT_COST, INF
 from config import Config
 import configparser
 config = configparser.ConfigParser()
@@ -712,7 +712,7 @@ class GameManager():
             raise Exception('cargo is empty')
         unit = transport.status.cargo[index]
         target_tile = self.tile_get(x2, y2)
-        if movement_cost[target_tile.mapTile.type][unit.status.cls.value] == INF:
+        if MOVEMENT_COST[target_tile.mapTile.type][unit.status.cls.value] == INF:
             raise Exception('unit cannot unload to tile')
         unit = transport.status.cargo.pop(index)
         self.unit_place(unit, x2, y2)

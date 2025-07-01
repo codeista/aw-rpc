@@ -67,9 +67,14 @@ function uuidv4() {
 
 function rerender() {
     console.time('rerender');
-    two.clear();
-    createScene();
-    two.update();
+    if (two) {
+        two.clear();
+        createScene();
+        two.update();
+    } else {
+        console.error('Two.js not initialized - calling update()');
+        update();
+    }
     console.timeEnd('rerender');
 }
 
@@ -103,16 +108,29 @@ function update() {
         // init globals
         board = res
         if (two === null) {
-            // make an instance of two and place it on the page.
-            var elem = document.getElementById('draw');
-            var params = { type: Two.Types.canvas, width: board.width * TILESIZE, height: board.height * TILESIZE };
-            two = new Two(params).appendTo(elem);
-            // canvas mouse handling
-            var draw = document.getElementById('draw');
-            var canvas = draw.children[0];
-            canvas.onmousemove = canvasMove;
-            canvas.onclick = canvasClick;
-            canvas.ondblclick = canvasdblClick;
+            try {
+                // make an instance of two and place it on the page.
+                var elem = document.getElementById('draw');
+                if (!elem) {
+                    console.error('Draw element not found');
+                    return;
+                }
+                var params = { type: Two.Types.canvas, width: board.width * TILESIZE, height: board.height * TILESIZE };
+                two = new Two(params).appendTo(elem);
+                console.log('Two.js initialized successfully');
+                
+                // canvas mouse handling
+                var draw = document.getElementById('draw');
+                var canvas = draw.children[0];
+                if (canvas) {
+                    canvas.onmousemove = canvasMove;
+                    canvas.onclick = canvasClick;
+                    canvas.ondblclick = canvasdblClick;
+                }
+            } catch (error) {
+                console.error('Error initializing Two.js:', error);
+                return;
+            }
         }
         // render
         two.clear();
