@@ -19,6 +19,14 @@ from app_core import app, jsonrpc, db, socketio
 from models import Game
 from map_system import Map, map_repository
 
+from error_handling import (
+    setup_error_handlers, setup_logging, validate_rpc_params,
+    validate_token, validate_coordinates, validate_army, validate_unit_type,
+    safe_rpc_call, log_game_event, AWRPCError, ValidationError, 
+    GameStateError, UnitError, MovementError, CombatError, TurnError, NotFoundError
+)
+
+
 # Configure logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -28,6 +36,9 @@ logging.basicConfig(
 )
 
 config_game = Config()
+setup_error_handlers(app)
+game_logger = setup_logging()
+
 
 #
 # Constants
@@ -412,21 +423,48 @@ def unit_move2_rpc(token: str, unit_id: str, x: int, y: int) -> dict:
         handle_rpc_error('unit_move2', token, e)
         return abort(400, str(e))
 
-
 @jsonrpc.method('unit_create')
 def unit_create_rpc(token: str, army: str, unit_type: str, x: int, y: int) -> dict:
-    """Create unit at specified coordinates."""
-    logger.info(f'unit_create - token: {token}, army: {army}, type: {unit_type}, coords: ({x},{y})')
+    '''rpc create a unit at the coordinates given'''
+    logger.info(f'unit_create token={token}, army={army}, unit_type={unit_type}, x={x}, y={y}')
+    
     try:
+        # Validate inputs
+        validate_token(token)
+        validate_army(army)
+        validate_unit_type(unit_type)
+        
         mngr = game_load(token)
+        
+        # Validate coordinates
+        validate_coordinates(x, y, mngr.board.width, mngr.board.height)
+        
+        # Create the unit
         mngr.unit_create(army, unit_type, x, y)
         game_save(mngr, token)
         ws_board_update(token)
+        
         return jsons.dump(mngr.tile_get(x, y))
+        
+    except (ValidationError, GameStateError, UnitError, MovementError, AWRPCError) as e:
+        # Return error as JSON response
+        logger.error(f"Validation error in unit_create: {str(e)}")
+        return {
+            "error": True,
+            "error_code": getattr(e, 'error_code', 'VALIDATION_ERROR'),
+            "message": str(e),
+            "details": getattr(e, 'details', {})
+        }
+        
     except Exception as e:
-        handle_rpc_error('unit_create', token, e)
-        return abort(400, str(e))
-
+        # Convert other exceptions
+        logger.error(f"Unexpected error in unit_create: {str(e)}")
+        return {
+            "error": True,
+            "error_code": "INTERNAL_ERROR",
+            "message": f"Failed to create unit: {str(e)}",
+            "details": {}
+        }
 
 @jsonrpc.method('damage_estimate')
 def damage_estimate_rpc(token: str, x: int, y: int, x2: int, y2: int) -> list:
