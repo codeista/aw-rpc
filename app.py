@@ -393,22 +393,53 @@ def unit_select_rpc(token: str, x: int, y: int) -> dict:
         handle_rpc_error('unit_select', token, e)
         return abort(400, str(e))
 
-
 @jsonrpc.method('unit_move')
 def unit_move_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
-    """Move unit from source to destination coordinates."""
-    logger.info(f'unit_move - token: {token}, from: ({x},{y}), to: ({x2},{y2})')
+    '''rpc move unit from / to coordinates with enhanced validation'''
+    logger.info(f'unit_move token={token}, x={x}, y={y}, x2={x2}, y2={y2}')
+    
     try:
+        # Validate inputs
+        validate_token(token)
+        
         mngr = game_load(token)
+        
+        # Validate all coordinates
+        validate_coordinates(x, y, mngr.board.width, mngr.board.height)
+        validate_coordinates(x2, y2, mngr.board.width, mngr.board.height)
+        
+        # Perform the move
         mngr.unit_move(x, y, x2, y2)
         game_save(mngr, token)
         ws_board_update(token)
+        
+        # Log successful move
+        log_game_event(game_logger, "UNIT_MOVED", {
+            "token": token,
+            "from": {"x": x, "y": y},
+            "to": {"x": x2, "y": y2}
+        })
+        
         return jsons.dump(mngr.tile_get(x2, y2))
+        
+    except (ValidationError, GameStateError, UnitError, MovementError, TurnError, AWRPCError) as e:
+        logger.error(f"Movement error: {str(e)}")
+        return {
+            "error": True,
+            "error_code": getattr(e, 'error_code', 'MOVEMENT_ERROR'),
+            "message": str(e),
+            "details": getattr(e, 'details', {})
+        }
+        
     except Exception as e:
-        handle_rpc_error('unit_move', token, e)
-        return abort(400, str(e))
-
-
+        logger.error(f"Unexpected error in unit_move: {str(e)}")
+        return {
+            "error": True,
+            "error_code": "INTERNAL_ERROR",
+            "message": f"Failed to move unit: {str(e)}",
+            "details": {}
+        }
+    
 @jsonrpc.method('unit_move2')
 def unit_move2_rpc(token: str, unit_id: str, x: int, y: int) -> dict:
     """Move unit by ID to specified coordinates."""

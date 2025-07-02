@@ -470,33 +470,89 @@ class GameManager():
         return tile.unit
 
     def unit_move(self, x: int, y: int, x2: int, y2: int) -> Unit:
-        '''Move the unit to / from the coordinates given.'''
-        if not self.coord_valid(x, y):
-            raise Exception('coordinate out of range')
-        if not self.coord_valid(x2, y2):
-            raise Exception('coordinate out of range')
-        unit = self.unit_at(x, y)
-        if not unit:
-            raise Exception('unit does not exist at source tile')
-        self.check_turn_and_raise(unit)
-        if not unit.can_move:
-            raise Exception('unit can not move')
-        if self.unit_at(x2, y2):
-            raise Exception('unit already exists at target tile')
-        if not self.unit_can_move_to(unit, x2, y2):
-            raise Exception('target tile too far')
+        '''Enhanced unit movement with comprehensive validation'''
+        
+        # Validate coordinates are in bounds
+        if not (0 <= x < self.board.width and 0 <= y < self.board.height):
+            raise MovementError(
+                f"Source coordinates out of bounds: ({x}, {y})",
+                from_pos=(x, y),
+                details={"board_size": {"width": self.board.width, "height": self.board.height}}
+            )
+        
+        if not (0 <= x2 < self.board.width and 0 <= y2 < self.board.height):
+            raise MovementError(
+                f"Target coordinates out of bounds: ({x2}, {y2})",
+                to_pos=(x2, y2),
+                details={"board_size": {"width": self.board.width, "height": self.board.height}}
+            )
+        
+        # Check if game is active
+        if not self.board.game_active:
+            raise GameStateError("Game has ended, movement not allowed")
+        
+        # Get source unit
+        source_unit = self.unit_at(x, y)
+        if not source_unit:
+            raise UnitError(f"No unit found at position ({x}, {y})")
+        
+        # Validate unit ownership
+        if source_unit.army != self.board.current_turn:
+            raise TurnError(
+                f"Unit belongs to {source_unit.army.name}, but it's {self.board.current_turn.name}'s turn",
+                current_army=self.board.current_turn.name,
+                details={"unit_army": source_unit.army.name}
+            )
+        
+        # Validate unit can move
+        if not source_unit.can_move:
+            raise UnitError(
+                "Unit has already moved this turn",
+                unit_id=str(source_unit.id),
+                details={"action": "move"}
+            )
+        
+        # Check target tile
+        target_unit = self.unit_at(x2, y2)
+        if target_unit:
+            if target_unit.army == source_unit.army:
+                raise MovementError(
+                    f"Target position ({x2}, {y2}) occupied by friendly unit",
+                    from_pos=(x, y),
+                    to_pos=(x2, y2),
+                    details={"target_unit_type": target_unit.type.name}
+                )
+            else:
+                raise MovementError(
+                    f"Target position ({x2}, {y2}) occupied by enemy unit",
+                    from_pos=(x, y),
+                    to_pos=(x2, y2),
+                    details={"target_unit_type": target_unit.type.name, "target_army": target_unit.army.name}
+                )
+        
+        # Validate movement is possible (use your existing pathfinding)
+        if not self.unit_can_move_to(source_unit, x2, y2):
+            raise MovementError(
+                f"Unit cannot reach position ({x2}, {y2})",
+                from_pos=(x, y),
+                to_pos=(x2, y2),
+                details={"unit_type": source_unit.type.name, "movement_range": source_unit.status.move}
+            )
+        
+        # Perform the move
         unit = self.unit_remove(x, y)
         self.unit_place(unit, x2, y2)
         unit.can_move = False
-        if unit.is_indirect():
-            unit.can_attack = False
-        tile = self.tile_from_unit(unit)
-        dist = abs(x - tile.x) + abs(y - tile.y)
-        unit.status.fuel -= dist
-        self.unit_deselect()
-        self.unit_select(x2, y2)
-        return unit
 
+        # Handle post-move effects
+        distance = abs(x2 - x) + abs(y2 - y)  # Manhattan distance
+        unit.status.fuel = max(0, unit.status.fuel - distance)
+
+        # Clear selection
+        self.unit_deselect()
+
+        return unit
+    
     def unit_move2(self, id: str, x: int, y: int) -> Unit:
         '''Move a unit with ID to the coordinate given.'''
         unit = self.unit_from_id(id)
