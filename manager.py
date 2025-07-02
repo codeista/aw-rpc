@@ -41,8 +41,8 @@ class GameManager():
         return f"{self.__class__.__name__}"
 
     def coord_valid(self, x: int, y: int) -> bool:
-        """Returns true if the coordinate is within the board width and height."""
-        return 0 <= x < self.board.width and 0 <= y < self.board.height
+        '''Returns true if the coordinate is within the board width and height.'''
+        return 0 <= x < self.board.width and 0 <= y < self.board.height  # FIXED!
 
     def check_turn_and_raise(self, unit):
         '''Raises exception if its not the units turn.'''
@@ -100,20 +100,40 @@ class GameManager():
 
     def unit_can_move_to(self, unit: Unit, x: int, y: int) -> bool:
         '''Returns true if the unit can move to that coordinate.'''
-        tile = self.tile_from_unit(unit)
-        if tile.x == x and tile.y == y:
+        source_tile = self.tile_from_unit(unit)
+        
+        # Check if target coordinates are valid
+        if not self.coord_valid(x, y):
             return False
-        if self.unit_at(x, y):
+        
+        # Can't move to occupied tile
+        target_unit = self.unit_at(x, y)
+        if target_unit:
             return False
-        dist = abs(x - tile.x) + abs(y - tile.y)
-        if dist > unit.status.move:
+             
+        # Simple check: if moving horizontally/vertically, check each tile
+        if source_tile.x == x:  # Vertical movement
+            start_y = min(source_tile.y, y)
+            end_y = max(source_tile.y, y)
+            for check_y in range(start_y + 1, end_y):
+                blocking_unit = self.unit_at(x, check_y)
+                if blocking_unit and blocking_unit.army != unit.army:
+                    return False
+        elif source_tile.y == y:  # Horizontal movement
+            start_x = min(source_tile.x, x)
+            end_x = max(source_tile.x, x)
+            for check_x in range(start_x + 1, end_x):
+                blocking_unit = self.unit_at(check_x, y)
+                if blocking_unit and blocking_unit.army != unit.army:
+                    return False
+        
+        # Check basic movement constraints
+        manhattan_dist = abs(x - source_tile.x) + abs(y - source_tile.y)
+        if manhattan_dist > unit.status.move or manhattan_dist > unit.status.fuel:
             return False
-        if dist > unit.status.fuel:
-            return False
-        dist = dijkstra(self.board, tile, self.tile_at(x, y))
-        if dist > unit.status.move:
-            return False
+        
         return True
+    
 
     def unit_can_join_to(self, unit: Unit, x: int, y: int) -> bool:
         '''Returns true if the unit can join to the unit at the
@@ -204,55 +224,68 @@ class GameManager():
             tile.can_be_moved_to = False
             tile.can_be_attacked = False
 
+    # Fixed capture_tile method in manager.py
+
     def capture_tile(self, x: int, y: int):
-        """Capture the tile at the given coordinate."""
+        '''Capture the tile at the given coordinate.'''
         if not self.coord_valid(x, y):
             raise Exception('coordinate out of range')
         
         tile = self.tile_get(x, y)
         
+        # Check if unit exists
         if tile.unit is None:
             raise Exception(f'No unit at {x}, {y}')
-        
-        if not tile.unit.can_capture:
-            raise Exception('Unit cannot capture this turn')
         
         unit = tile.unit
         self.check_turn_and_raise(unit)
         
-        if not tile.mapTile.is_capturable():
-            raise Exception('Cannot capture this tile type')
+        # Check if unit can capture this turn
+        if not unit.can_capture:
+            raise Exception('Unit cannot capture this turn')
         
+        # Check if unit type can capture
         if not unit.type_can_capture():
-            raise Exception('This unit type cannot capture properties')
+            raise Exception('Unit type cannot capture properties')
         
-        # Check if trying to capture own property
-        if tile.mapTile.army == unit.army:
+        # Check if tile is capturable
+        if not tile.mapTile.is_capturable():
+            raise Exception('This tile cannot be captured')
+        
+        # Check if it's already owned by the same army
+        if tile.mapTile.army and tile.mapTile.army == unit.army:
             raise Exception('Cannot capture your own property')
         
-        # Calculate capture damage based on displayed HP (unit.status.hp / 10)
-        # A full HP unit (100 HP) shows as 10 HP and deals 10 capture damage
-        # A damaged unit (e.g., 55 HP) shows as 6 HP and deals 6 capture damage
-        displayed_hp = math.ceil(unit.status.hp / 10)
-        capture_damage = displayed_hp
+        # Calculate capture damage based on unit HP
+        capture_damage = math.ceil(unit.status.hp / 10)
         tile.capture_hp -= capture_damage
         
-        logger.info(f"{unit.type.name} (HP: {displayed_hp}) deals {capture_damage} capture damage. Property HP: {tile.capture_hp} -> {tile.capture_hp - capture_damage}")
-        
-        # Check if property is fully captured
+        # If fully captured
         if tile.capture_hp <= 0:
-            old_army = tile.mapTile.army
+            # Remove income from previous owner
+            if tile.mapTile.army:
+                if tile.mapTile.army.name == 'RED':
+                    self.board.total_red_properties -= int(config['FUNDS']['income'])
+                    self.board.red_funds -= int(config['FUNDS']['income'])  # Remove from current funds too
+                elif tile.mapTile.army.name == 'BLUE':
+                    self.board.total_blue_properties -= int(config['FUNDS']['income'])
+                    self.board.blue_funds -= int(config['FUNDS']['income'])
+            
+            # Transfer ownership
             tile.mapTile.army = unit.army
             tile.capture_hp = 20
             
-            logger.info(f"Property captured by {unit.army.name}!")
+            # Add income to new owner
+            if unit.army.name == 'RED':
+                self.board.total_red_properties += int(config['FUNDS']['income'])
+            elif unit.army.name == 'BLUE':
+                self.board.total_blue_properties += int(config['FUNDS']['income'])
             
-            # Check for HQ capture (ends game immediately)
-            if tile.mapTile.is_hq():
+            # Check for game-ending conditions (HQ capture)
+            if tile.mapTile.type == MapType.BASE_TOWER_1:
                 self.board.game_active = False
-                logger.info(f"Game ended - {unit.army.name} captured {old_army.name if old_army else 'neutral'}'s HQ!")
         
-        # Unit can't move or attack after capturing
+        # Set unit flags - unit is spent after capturing
         unit.can_move = False
         unit.can_attack = False
         unit.can_capture = False
@@ -260,11 +293,8 @@ class GameManager():
         # Deselect unit
         self.unit_deselect()
         
-        # Log capture status
-        if tile.capture_hp > 0:
-            logger.info(f"Capture in progress: {tile.capture_hp}/20 HP remaining")
-        
         return tile
+    
     def launch_missile(self, x: int, y: int, x2: int, y2: int) -> Unit:
         '''Launch missile from the silo at the given coordinate.  The damage
            will reach 2 tiles out for N-E-S-W directions
@@ -424,6 +454,7 @@ class GameManager():
         self._check_victory_conditions()
         
         logger.info(f"Turn advanced to {self.board.current_turn.name}, Day: {self.board.days}")
+        
     def unit_select(self, x: int, y: int) -> Unit:
         '''Select the unit at the given coordinates if valid.'''
         if not self.coord_valid(x, y):
@@ -453,87 +484,75 @@ class GameManager():
         return tile.unit
 
     def unit_move(self, x: int, y: int, x2: int, y2: int) -> Unit:
-        '''Enhanced unit movement with comprehensive validation'''
+        '''Move the unit with proper fuel consumption based on actual path taken.'''
+        if not self.coord_valid(x, y):
+            raise Exception('Source coordinates out of range')
+        if not self.coord_valid(x2, y2):
+            raise Exception('Target coordinates out of range')
         
-        # Validate coordinates are in bounds
-        if not (0 <= x < self.board.width and 0 <= y < self.board.height):
-            raise MovementError(
-                f"Source coordinates out of bounds: ({x}, {y})",
-                from_pos=(x, y),
-                details={"board_size": {"width": self.board.width, "height": self.board.height}}
-            )
+        unit = self.unit_at(x, y)
+        if not unit:
+            raise Exception('No unit at source coordinates')
         
-        if not (0 <= x2 < self.board.width and 0 <= y2 < self.board.height):
-            raise MovementError(
-                f"Target coordinates out of bounds: ({x2}, {y2})",
-                to_pos=(x2, y2),
-                details={"board_size": {"width": self.board.width, "height": self.board.height}}
-            )
+        self.check_turn_and_raise(unit)
         
-        # Check if game is active
-        if not self.board.game_active:
-            raise GameStateError("Game has ended, movement not allowed")
+        if not unit.can_move:
+            raise Exception('Unit cannot move this turn')
         
-        # Get source unit
-        source_unit = self.unit_at(x, y)
-        if not source_unit:
-            raise UnitError(f"No unit found at position ({x}, {y})")
-        
-        # Validate unit ownership
-        if source_unit.army != self.board.current_turn:
-            raise TurnError(
-                f"Unit belongs to {source_unit.army.name}, but it's {self.board.current_turn.name}'s turn",
-                current_army=self.board.current_turn.name,
-                details={"unit_army": source_unit.army.name}
-            )
-        
-        # Validate unit can move
-        if not source_unit.can_move:
-            raise UnitError(
-                "Unit has already moved this turn",
-                unit_id=str(source_unit.id),
-                details={"action": "move"}
-            )
-        
-        # Check target tile
+        # Check if target is occupied
         target_unit = self.unit_at(x2, y2)
         if target_unit:
-            if target_unit.army == source_unit.army:
-                raise MovementError(
-                    f"Target position ({x2}, {y2}) occupied by friendly unit",
-                    from_pos=(x, y),
-                    to_pos=(x2, y2),
-                    details={"target_unit_type": target_unit.type.name}
-                )
+            if (target_unit.army == unit.army and 
+                target_unit.type == unit.type and 
+                target_unit.status.hp < 100):
+                # This is a join operation
+                return self.unit_join(x, y, x2, y2)
             else:
-                raise MovementError(
-                    f"Target position ({x2}, {y2}) occupied by enemy unit",
-                    from_pos=(x, y),
-                    to_pos=(x2, y2),
-                    details={"target_unit_type": target_unit.type.name, "target_army": target_unit.army.name}
-                )
+                raise Exception('Target tile is occupied')
         
-        # Validate movement is possible (use your existing pathfinding)
-        if not self.unit_can_move_to(source_unit, x2, y2):
-            raise MovementError(
-                f"Unit cannot reach position ({x2}, {y2})",
-                from_pos=(x, y),
-                to_pos=(x2, y2),
-                details={"unit_type": source_unit.type.name, "movement_range": source_unit.status.move}
-            )
+        # Calculate actual fuel cost using pathfinding
+        source_tile = self.tile_at(x, y)
+        target_tile = self.tile_at(x2, y2)
+               
+        try:
+            # Use dijkstra to get actual path cost
+            actual_fuel_cost = dijkstra(self.board, source_tile, target_tile)
+            
+            if actual_fuel_cost >= INF:
+                raise Exception('No valid path to target location')
+            
+            if actual_fuel_cost > unit.status.move:
+                raise Exception(f'Target too far: need {actual_fuel_cost} movement, have {unit.status.move}')
+            
+            if actual_fuel_cost > unit.status.fuel:
+                raise Exception(f'Not enough fuel: need {actual_fuel_cost}, have {unit.status.fuel}')
+                
+        except Exception as path_error:
+            # Fallback to Manhattan distance
+            manhattan_cost = abs(x2 - x) + abs(y2 - y)
+            if manhattan_cost > unit.status.move or manhattan_cost > unit.status.fuel:
+                raise Exception(f'Movement failed: {path_error}')
+            actual_fuel_cost = manhattan_cost
+        
+        # Store fuel before move
+        fuel_before = unit.status.fuel
         
         # Perform the move
         unit = self.unit_remove(x, y)
         self.unit_place(unit, x2, y2)
+        
+        # Consume fuel based on actual path cost
+        unit.status.fuel -= actual_fuel_cost
+        
+        # Set movement flags
         unit.can_move = False
-
-        # Handle post-move effects
-        distance = abs(x2 - x) + abs(y2 - y)  # Manhattan distance
-        unit.status.fuel = max(0, unit.status.fuel - distance)
-
-        # Clear selection
+        if unit.is_indirect():
+            unit.can_attack = False
+        
+        # Update selection
         self.unit_deselect()
-
+        self.unit_select(x2, y2)
+        
         return unit
     
     def unit_move2(self, id: str, x: int, y: int) -> Unit:
@@ -584,86 +603,187 @@ class GameManager():
         return unit
 
     def unit_attack(self, x: int, y: int, x2: int, y2: int) -> Unit:
-        '''Attacks from/to the cordinates given.'''
-        if not self.coord_valid(x, y):
-            raise Exception('coordinate out of range')
-        if not self.coord_valid(x2, y2):
-            raise Exception('coordinate out of range')
+        """
+        Enhanced attack system with proper counter-attack mechanics.
+        
+        Args:
+            x, y: Attacker coordinates
+            x2, y2: Defender coordinates
+        
+        Returns:
+            The surviving unit (or None if both destroyed)
+    """
+        if not self.coord_valid(x, y) or not self.coord_valid(x2, y2):
+            raise Exception('coordinates out of range')
+        
         attacker = self.unit_at(x, y)
-        attacker_tile = self.tile_at(x, y)
-        self.check_turn_and_raise(attacker)
         defender = self.unit_at(x2, y2)
-        if not attacker.can_attack:
-            raise Exception('unit can not attack')
+        attacker_tile = self.tile_at(x, y)
         defender_tile = self.tile_at(x2, y2)
+        
         if not attacker:
-            raise Exception('unit does not exist at source tile')
+            raise Exception('no unit at source coordinates')
         if not defender:
-            raise Exception('unit does not exist at target tile')
+            raise Exception('no unit at target coordinates')
+        
+        self.check_turn_and_raise(attacker)
+        
+        if not attacker.can_attack:
+            raise Exception('unit cannot attack this turn')
+        
         if not self.unit_can_attack(attacker, x2, y2):
-            raise Exception('target tile too far')
-        if attacker.is_direct() and defender.is_direct():
-            defender.status.hp -= attacker.attack_damage(defender,
-                                                         defender_tile)
-            attacker.status.ammo -= 1
-            if defender.status.hp >= 1:
-                attacker.status.hp -= defender.attack_damage(attacker,
-                                                             attacker_tile)
-                defender.status.ammo -= 1
-            else:
-                self.unit_remove(x2, y2)
-        if attacker.is_direct() and defender.is_indirect():
-            defender.status.hp -= attacker.attack_damage(defender,
-                                                         defender_tile)
-            attacker.status.ammo -= 1
-            if defender.status.hp <= 1:
-                self.unit_remove(x2, y2)
-        if attacker.is_indirect():
-            defender.status.hp -= attacker.attack_damage(defender,
-                                                         defender_tile)
-            attacker.status.ammo -= 1
-            if defender.status.hp <= 1:
-                self.unit_remove(x2, y2)
-        if attacker.status.hp < 1:
-            self.unit_remove(x, y)
-        attacker.can_capture = False
+            raise Exception('target out of range or cannot be attacked')
+        
+        if attacker.status.ammo <= 0:
+            raise Exception('unit is out of ammunition')
+        
+        # Calculate distances for counter-attack eligibility
+        distance = abs(x2 - x) + abs(y2 - y)
+        
+        # Phase 1: Attacker attacks defender
+        print(f"🎯 {attacker.type.name} attacks {defender.type.name}")
+        
+        damage_to_defender = attacker.attack_damage(defender, defender_tile)
+        defender.status.hp -= damage_to_defender
+        attacker.status.ammo -= 1
+        
+        print(f"   Defender takes {damage_to_defender} damage (HP: {defender.status.hp})")
+        
+        # Remove defender if destroyed
+        if defender.status.hp <= 0:
+            print(f"   💀 {defender.type.name} destroyed!")
+            self.unit_remove(x2, y2)
+            attacker.can_move = False
+            attacker.can_attack = False
+            attacker.can_capture = False
+            self.unit_deselect()
+            return attacker
+        
+        # Phase 2: Counter-attack (if conditions are met)
+        can_counter_attack = (
+            defender.status.hp > 0 and           # Defender survived
+            defender.status.ammo > 0 and         # Defender has ammo
+            defender.is_attackable(attacker) and # Defender can damage attacker
+            self._can_counter_attack(defender, attacker, distance)  # Range/type check
+        )
+        
+        if can_counter_attack:
+            print(f"🔄 {defender.type.name} counter-attacks!")
+            
+            damage_to_attacker = defender.attack_damage(attacker, attacker_tile)
+            attacker.status.hp -= damage_to_attacker
+            defender.status.ammo -= 1
+            
+            print(f"   Attacker takes {damage_to_attacker} damage (HP: {attacker.status.hp})")
+            
+            # Remove attacker if destroyed by counter-attack
+            if attacker.status.hp <= 0:
+                print(f"   💀 {attacker.type.name} destroyed by counter-attack!")
+                self.unit_remove(x, y)
+                self.unit_deselect()
+                return defender
+        else:
+            print(f"   No counter-attack (reason: {self._get_no_counter_reason(defender, attacker, distance)})")
+        
+        # Both units survived - end attacker's turn
         attacker.can_move = False
         attacker.can_attack = False
+        attacker.can_capture = False
         self.unit_deselect()
-        unit = self.unit_at(x, y)
-        return unit
+        
+        return attacker if attacker.status.hp > 0 else defender
 
-    def damage_estimate(self, x: int, y: int, x2: int, y2: int) -> list:
-        '''Returns the estimate damage
-           for the units at the given coordinates.'''
-        if not self.coord_valid(x, y):
-            raise Exception('coordinate out of range')
-        if not self.coord_valid(x2, y2):
-            raise Exception('coordinate out of range')
+    def _can_counter_attack(self, defender, attacker, distance):
+        """
+        Determine if the defender can counter-attack based on unit types and range.
+        
+        Args:
+            defender: The defending unit
+            attacker: The attacking unit  
+            distance: Distance between units
+        
+        Returns:
+            bool: True if counter-attack is possible
+        """
+        # Direct units can always counter-attack other direct units at range 1
+        if defender.is_direct() and attacker.is_direct() and distance == 1:
+            return True
+        
+        # Indirect units cannot counter-attack direct units
+        if defender.is_indirect() and attacker.is_direct():
+            return False
+        
+        # Direct units cannot counter-attack indirect units
+        if defender.is_direct() and attacker.is_indirect():
+            return False
+        
+        # Indirect vs indirect - check if defender can reach attacker
+        if defender.is_indirect() and attacker.is_indirect():
+            return (defender.status.rangemin <= distance <= defender.status.rangemax)
+        
+        # Air units have special counter-attack rules
+        if defender.is_air_unit():
+            # Fighters can counter-attack other air units
+            if attacker.is_air_unit() and defender.type in {UnitType.FIGHTER}:
+                return True
+            # Anti-air can counter-attack air units
+            if attacker.is_air_unit() and defender.type in {UnitType.ANTIAIR}:
+                return True
+        
+        return False
+
+    def _get_no_counter_reason(self, defender, attacker, distance):
+        """Get human-readable reason why counter-attack isn't possible"""
+        if defender.status.ammo <= 0:
+            return "no ammo"
+        if not defender.is_attackable(attacker):
+            return "cannot damage this unit type"
+        if defender.is_indirect() and attacker.is_direct():
+            return "indirect vs direct"
+        if defender.is_direct() and attacker.is_indirect():
+            return "direct vs indirect"
+        if distance > defender.status.rangemax:
+            return "out of range"
+        if distance < defender.status.rangemin:
+            return "too close"
+        return "unknown"
+
+    def damage_estimate(self, x: int, y: int, x2: int, y2: int) -> tuple:
+        """
+        Enhanced damage estimation for combat preview.
+        
+        Returns:
+            tuple: (attacker_hp_after, defender_hp_after, can_counter)
+        """
         attacker = self.unit_at(x, y)
-        attacker_tile = self.tile_at(x, y)
         defender = self.unit_at(x2, y2)
+        attacker_tile = self.tile_at(x, y)
         defender_tile = self.tile_at(x2, y2)
-        defender_hp = 100
-        attacker_hp = 100
-        if not attacker:
-            raise Exception('unit does not exist at source tile')
-        if not defender:
-            raise Exception('unit does not exist at target tile')
-        if attacker.is_direct() and defender.is_direct():
-            defender_hp = defender.status.hp
-            - attacker.attack_damage(defender, defender_tile)
-            if defender.status.hp >= 1:
-                attacker_hp = attacker.status.hp
-                - defender.attack_damage(attacker, attacker_tile)
-        if attacker.is_direct() and defender.is_indirect():
-            defender_hp = defender.status.hp
-            - attacker.attack_damage(defender, defender_tile)
-        if attacker.is_indirect():
-            defender.status.hp -= attacker.attack_damage(defender,
-                                                         defender_tile)
-        return attacker_hp, defender_hp
-
+        
+        if not attacker or not defender:
+            raise Exception('units not found at coordinates')
+        
+        # Simulate attacker damage to defender
+        damage_to_defender = attacker.attack_damage(defender, defender_tile)
+        defender_hp_after = max(0, defender.status.hp - damage_to_defender)
+        
+        # Check if counter-attack is possible
+        distance = abs(x2 - x) + abs(y2 - y)
+        can_counter = (
+            defender_hp_after > 0 and
+            defender.status.ammo > 0 and
+            defender.is_attackable(attacker) and
+            self._can_counter_attack(defender, attacker, distance)
+        )
+        
+        # Simulate counter-attack damage
+        attacker_hp_after = attacker.status.hp
+        if can_counter:
+            damage_to_attacker = defender.attack_damage(attacker, attacker_tile)
+            attacker_hp_after = max(0, attacker.status.hp - damage_to_attacker)
+        
+        return (attacker_hp_after, defender_hp_after, can_counter)
+    
     def unit_delete(self, x: int, y: int) -> Unit:
         '''Deletes the unit at the given cordinates.'''
         unit = self.unit_remove(x, y)

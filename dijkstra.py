@@ -9,7 +9,7 @@ determined
 
 from dataclasses import dataclass
 from typing import List
-from map_system import MOVEMENT_COST
+from map_system import MOVEMENT_COST, INF
 
 from gameboard import GameTile, GameBoard
 
@@ -45,15 +45,15 @@ def least_unvisited_distance(area):
             candidate = node
     return candidate
 
-
 def node_at(area, x, y):
+    '''Get node at coordinates with bounds checking'''
     if x < 0 or y < 0 or x >= area.width or y >= area.height:
         return None
+    
     index = x + y * area.width
     if index >= 0 and index < len(area.nodes):
         return area.nodes[index]
     return None
-
 
 def calc_neighbor_distances(area, current_node):
     '''East, West, North, South nodes'''
@@ -84,6 +84,15 @@ def calc_neighbor_distances(area, current_node):
 
 
 def dijkstra(board: GameBoard, source: GameTile, target: GameTile) -> int:
+    """Enhanced dijkstra with better error handling"""
+    
+    # Validate inputs
+    if not source or not target:
+        return INF
+    
+    if not source.unit:
+        return INF
+    
     """Dijkstra's Path Finding Algorithm for a rectangular grid where the
        distance between each adjacent (non-diagonal) node is given by the
        variable cost"""
@@ -92,15 +101,21 @@ def dijkstra(board: GameBoard, source: GameTile, target: GameTile) -> int:
     nodes = []
     for tile in board.grid:
         cost = MOVEMENT_COST[tile.mapTile.type][source.unit.status.cls.value]
-        occupied = tile.unit != None and tile.unit.army != source.unit.army
-        visited = False
-        dist = INF
-        if source.x == tile.x and source.y == tile.y:
-            dist = 0
-        node = Node(tile.x, tile.y, cost, occupied, visited, dist)
-        nodes.append(node)
+        
+        # Determine if tile blocks movement
+        occupied = False
+        if tile.unit and tile.unit.army != source.unit.army:
+            # Enemy unit blocks movement
+            occupied = True
+        elif tile.unit and tile.unit.army == source.unit.army:
+            # Friendly unit - only blocks if can't join
+            if (tile.unit.type != source.unit.type or 
+                tile.unit.status.hp >= 100):
+                occupied = True
     area = Area(nodes, board.width, board.height)
     destination = node_at(area, target.x, target.y)
+    if not destination:
+        return INF
     while True:
         # select the unvisited node with the smallest distance,
         #  make it the current node
