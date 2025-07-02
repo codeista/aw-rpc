@@ -41,14 +41,13 @@ class GameManager():
         return f"{self.__class__.__name__}"
 
     def coord_valid(self, x: int, y: int) -> bool:
-        '''Returns true if the coordinate is
-           within the board width and hight.'''
-        return x in range(self.board.width) and y in range(self.board.width)
+        """Returns true if the coordinate is within the board width and height."""
+        return 0 <= x < self.board.width and 0 <= y < self.board.height
 
     def check_turn_and_raise(self, unit):
         '''Raises exception if its not the units turn.'''
         if unit.army != self.board.current_turn:
-            raise Exception('is not the units turn')
+            raise Exception(f'Not {unit.army.name}\'s turn (current: {self.board.current_turn.name})')
 
     def check_turn(self) -> str:
         '''Returns the units turn.'''
@@ -248,10 +247,10 @@ class GameManager():
             
             logger.info(f"Property captured by {unit.army.name}!")
             
-            # Check for HQ capture (ends game)
+            # Check for HQ capture (ends game immediately)
             if tile.mapTile.is_hq():
                 self.board.game_active = False
-                logger.info(f"Game ended - {unit.army.name} captured the HQ!")
+                logger.info(f"Game ended - {unit.army.name} captured {old_army.name if old_army else 'neutral'}'s HQ!")
         
         # Unit can't move or attack after capturing
         unit.can_move = False
@@ -377,6 +376,7 @@ class GameManager():
         if not tile.unit:
             raise Exception('unit does not exist at coordinate')
         unit = tile.unit
+        logger.debug(f'unit_wait: unit={unit.army.name}, turn={self.board.current_turn.name}')
         self.check_turn_and_raise(unit)
         unit.can_move = False
         unit.can_attack = False
@@ -873,16 +873,15 @@ class GameManager():
         if self.board.days < 1:
             return
         
-        # Check if any HQ has been captured
+        # Check if any HQ has been captured (ownership changed, not just occupied)
+        # An HQ is captured when its army ownership has changed from the original
+        # We don't check for unit occupation here, only actual ownership change
         for tile in self.board.grid:
-            if (tile.mapTile.is_hq() and 
-                tile.mapTile.army is not None and 
-                tile.unit and 
-                tile.unit.army != tile.mapTile.army):
-                # HQ captured by enemy army
-                self.board.game_active = False
-                logger.info(f"Game ended - {tile.unit.army.name} captured {tile.mapTile.army.name}'s HQ!")
-                return
+            if tile.mapTile.is_hq():
+                # Check if this HQ was captured by looking at ownership vs original
+                # This should only trigger when capture_tile actually changes ownership
+                # The capture_tile method will set game_active = False when HQ is captured
+                pass  # Victory condition is handled in capture_tile method
 
         # Count units for each army
         army_unit_counts = {}

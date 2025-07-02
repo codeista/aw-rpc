@@ -19,4 +19,5 @@ if os.getenv('DATABASE_URL'):
     app.config['SQLALCHEMY_DATABASE_URI'] = url
 else:
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///aw-rpc.db'
+from database_optimization import init_database_pool, create_indexes
 db = SQLAlchemy(app)

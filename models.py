@@ -28,3 +28,26 @@ class Game(db.Model):
     @classmethod
     def from_token(cls, session, token):
         return session.query(cls).filter(cls.token == token).first()
+    def save_optimized(self, board_data):
+        """Optimized save using database pool"""
+        from database_optimization import optimize_game_save
+        import jsons
+        
+        serialized_board = jsons.dumps(board_data)
+        return optimize_game_save(serialized_board, self.token)
+    
+    @classmethod
+    def load_optimized(cls, session, token):
+        """Optimized load using database pool"""
+        from database_optimization import optimize_game_load
+        import jsons
+        
+        result = optimize_game_load(token)
+        if result:
+            # Create a model instance
+            game = cls.__new__(cls)
+            game.token = token
+            game.board = result['board']
+            game.updated = result['updated']
+            return game
+        return None
