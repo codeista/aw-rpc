@@ -351,18 +351,52 @@ def tile_rpc(token: str, x: int, y: int) -> dict:
 
 @jsonrpc.method('capture_tile')
 def capture_tile_rpc(token: str, x: int, y: int) -> dict:
-    """Capture tile at specified coordinates."""
-    logger.info(f'capture_tile - token: {token}, coords: ({x},{y})')
+    '''rpc capture tile with enhanced validation'''
+    logger.info(f'capture_tile token={token}, x={x}, y={y}')
+    
     try:
+        # Validate inputs
+        validate_token(token)
+        
         mngr = game_load(token)
-        mngr.capture_tile(x, y)
+        
+        # Validate coordinates
+        validate_coordinates(x, y, mngr.board.width, mngr.board.height)
+        
+        # Perform capture
+        tile = mngr.capture_tile(x, y)
         game_save(mngr, token)
         ws_board_update(token)
+        
+        # Log successful capture
+        log_game_event(game_logger, "PROPERTY_CAPTURED", {
+            "token": token,
+            "position": {"x": x, "y": y},
+            "property_type": tile.mapTile.type.name,
+            "army": tile.mapTile.army.name if tile.mapTile.army else "Neutral",
+            "capture_hp_remaining": tile.capture_hp
+        })
+        
         return jsons.dump(mngr.tile_get(x, y))
+        
+    except (ValidationError, GameStateError, UnitError, TurnError, AWRPCError) as e:
+        logger.error(f"Capture error: {str(e)}")
+        return {
+            "error": True,
+            "error_code": getattr(e, 'error_code', 'CAPTURE_ERROR'),
+            "message": str(e),
+            "details": getattr(e, 'details', {})
+        }
+        
     except Exception as e:
-        handle_rpc_error('capture_tile', token, e)
-        return abort(400, str(e))
-
+        logger.error(f"Unexpected error in capture_tile: {str(e)}")
+        return {
+            "error": True,
+            "error_code": "INTERNAL_ERROR",
+            "message": f"Failed to capture property: {str(e)}",
+            "details": {}
+        }
+        
 
 @jsonrpc.method('unit_wait')
 def unit_wait_rpc(token: str, x: int, y: int) -> dict:
