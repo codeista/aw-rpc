@@ -641,46 +641,6 @@ def unit_move_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
             "details": {"from": {"x": x, "y": y}, "to": {"x": x2, "y": y2}}
         }
 
-# @jsonrpc.method('unit_move')
-# @log_rpc_performance
-# def unit_move_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
-#     """Move a unit with enhanced validation"""
-    
-#     try:
-#         from error_handling import validate_coordinates, ValidationError
-        
-#         # Validate coordinates  
-#         validate_coordinates(x, y, 50, 50)
-#         validate_coordinates(x2, y2, 50, 50)
-        
-#         # Execute move
-#         mngr = game_load(token)
-#         unit = mngr.unit_move(x, y, x2, y2)
-        
-#         # Save and return
-#         game_save(mngr, token)
-#         ws_board_update(token)
-        
-#         return jsons.dump(mngr.tile_get(x2, y2))
-        
-#     except ValidationError as e:
-#         app_logger.error(f"Validation error in unit_move: {e.message}")
-#         return {
-#             "error": True,
-#             "error_code": "VALIDATION_ERROR",
-#             "message": e.message,
-#             "details": getattr(e, 'details', {})
-#         }
-        
-#     except Exception as e:
-#         app_logger.error(f"unit_move failed for {token}: ({x},{y}) -> ({x2},{y2}): {str(e)}")
-#         return {
-#             "error": True,
-#             "error_code": "INTERNAL_ERROR",
-#             "message": "Movement failed",
-#             "details": {}
-#         }
-
 @jsonrpc.method('unit_select')
 @log_rpc_performance
 def unit_select_rpc(token: str, x: int, y: int) -> dict:
@@ -703,23 +663,55 @@ def unit_select_rpc(token: str, x: int, y: int) -> dict:
 @jsonrpc.method('unit_attack')
 @log_rpc_performance
 def unit_attack_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
-    '''rpc attacks the unit from x,y to x2,y2'''
+    """Attack with enhanced validation and error handling"""
     try:
+        from error_handling import ValidationError
+        
+        # Load game first to get actual board dimensions
         mngr = game_load(token)
+        
+        # Dynamic coordinate validation using actual board size
+        board_width = mngr.board.width
+        board_height = mngr.board.height
+        
+        # Validate source coordinates
+        if not (0 <= x < board_width and 0 <= y < board_height):
+            raise ValidationError(
+                f"Attacker coordinates ({x}, {y}) are out of bounds. Board size: {board_width}x{board_height}",
+                details={"attacker_pos": {"x": x, "y": y}, "board_size": {"width": board_width, "height": board_height}}
+            )
+        
+        # Validate target coordinates
+        if not (0 <= x2 < board_width and 0 <= y2 < board_height):
+            raise ValidationError(
+                f"Target coordinates ({x2}, {y2}) are out of bounds. Board size: {board_width}x{board_height}",
+                details={"target_pos": {"x": x2, "y": y2}, "board_size": {"width": board_width, "height": board_height}}
+            )
         
         # Get unit info before attack
         attacker = mngr.unit_at(x, y)
         defender = mngr.unit_at(x2, y2)
         
-        if attacker and defender:
-            attacker_info = f"{attacker.army.name}:{attacker.type.name}"
-            defender_info = f"{defender.army.name}:{defender.type.name}"
-            defender_hp_before = defender.status.hp
-        else:
-            attacker_info = "unknown"
-            defender_info = "unknown"
-            defender_hp_before = 0
+        # Validate attacker exists
+        if not attacker:
+            raise ValidationError(
+                f"No attacking unit found at position ({x}, {y})",
+                details={"attacker_pos": {"x": x, "y": y}}
+            )
         
+        # Validate defender exists
+        if not defender:
+            raise ValidationError(
+                f"No target unit found at position ({x2}, {y2})",
+                details={"target_pos": {"x": x2, "y": y2}}
+            )
+        
+        # Get unit info for logging
+        attacker_info = f"{attacker.army.name}:{attacker.type.name}"
+        defender_info = f"{defender.army.name}:{defender.type.name}"
+        defender_hp_before = defender.status.hp
+        
+        # Execute attack
         mngr.unit_attack(x, y, x2, y2)
         
         # Calculate damage dealt
@@ -727,7 +719,7 @@ def unit_attack_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
         damage_dealt = defender_hp_before - (defender_after.status.hp if defender_after else 0)
         
         # Enhanced logging
-        if ENHANCED_LOGGING and attacker and defender:
+        if ENHANCED_LOGGING:
             game_event_logger.log_unit_attack(
                 token, attacker.army.name, attacker.type.name, (x, y),
                 defender.army.name, defender.type.name, (x2, y2), damage_dealt
@@ -738,9 +730,66 @@ def unit_attack_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
         game_save(mngr, token)
         ws_board_update(token)
         return jsons.dump(mngr.tile_get(x2, y2))
-    except Exception as ex:
-        app_logger.error(f'unit_attack failed for {token}: ({x},{y}) -> ({x2},{y2}): {str(ex)}')
-        return handle_rpc_error('unit_attack', token, ex)
+        
+    except ValidationError as e:
+        app_logger.error(f"Validation error in unit_attack: {e.message}")
+        return {
+            "error": True,
+            "error_code": "VALIDATION_ERROR",
+            "message": e.message,
+            "details": getattr(e, 'details', {})
+        }
+        
+    except Exception as e:
+        app_logger.error(f'unit_attack failed for {token}: ({x},{y}) -> ({x2},{y2}): {str(e)}')
+        return {
+            "error": True,
+            "error_code": "COMBAT_ERROR",
+            "message": "Attack failed",
+            "details": {"attacker_pos": {"x": x, "y": y}, "target_pos": {"x": x2, "y": y2}}
+        }
+
+# @jsonrpc.method('unit_attack')
+# @log_rpc_performance
+# def unit_attack_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
+#     '''rpc attacks the unit from x,y to x2,y2'''
+#     try:
+#         mngr = game_load(token)
+        
+#         # Get unit info before attack
+#         attacker = mngr.unit_at(x, y)
+#         defender = mngr.unit_at(x2, y2)
+        
+#         if attacker and defender:
+#             attacker_info = f"{attacker.army.name}:{attacker.type.name}"
+#             defender_info = f"{defender.army.name}:{defender.type.name}"
+#             defender_hp_before = defender.status.hp
+#         else:
+#             attacker_info = "unknown"
+#             defender_info = "unknown"
+#             defender_hp_before = 0
+        
+#         mngr.unit_attack(x, y, x2, y2)
+        
+#         # Calculate damage dealt
+#         defender_after = mngr.unit_at(x2, y2)
+#         damage_dealt = defender_hp_before - (defender_after.status.hp if defender_after else 0)
+        
+#         # Enhanced logging
+#         if ENHANCED_LOGGING and attacker and defender:
+#             game_event_logger.log_unit_attack(
+#                 token, attacker.army.name, attacker.type.name, (x, y),
+#                 defender.army.name, defender.type.name, (x2, y2), damage_dealt
+#             )
+        
+#         app_logger.info(f'Unit attack: {token} - {attacker_info}@({x},{y}) attacked {defender_info}@({x2},{y2}) damage={damage_dealt}')
+        
+#         game_save(mngr, token)
+#         ws_board_update(token)
+#         return jsons.dump(mngr.tile_get(x2, y2))
+#     except Exception as ex:
+#         app_logger.error(f'unit_attack failed for {token}: ({x},{y}) -> ({x2},{y2}): {str(ex)}')
+#         return handle_rpc_error('unit_attack', token, ex)
 
 @jsonrpc.method('damage_estimate')
 @log_rpc_performance
