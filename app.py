@@ -264,21 +264,22 @@ def game_board_rpc(token: str) -> dict:
     return jsons.dump(mngr.board)
 
 @jsonrpc.method('army_end_turn')
-def army_end_turn_rpc(token: str) -> str:
-    '''rpc end current turn'''
+def army_end_turn_rpc(token: str) -> dict:
+    '''rpc end current turn.
+    :return: [current turn info]
+    '''
+    mngr = game_load(token)
     try:
-        mngr = game_load(token)
-        mngr.current_token = token
         mngr.army_end_turn()
         game_save(mngr, token)
         ws_board_update(token)
         turn = mngr.check_turn()
         logger.info(f'army_end_turn={turn.name}')
-        return jsons.dump(turn)
-    except Exception as ex:
+        return {'current_turn': turn.name, 'status': 'success'}
+    except (ValueError, Exception) as ex:
         logger.error(f'army_end_turn error: {ex}')
-        raise Exception( str(ex))
-
+        return {'error': str(ex), 'status': 'failed'}
+    
 @jsonrpc.method('tile')
 def tile_rpc(token: str, x: int, y: int) -> dict:
     '''rpc return tile at coordinates'''
@@ -292,6 +293,26 @@ def tile_rpc(token: str, x: int, y: int) -> dict:
         logger.error(f'tile error: {ex}')
         raise Exception( str(ex))
     
+@jsonrpc.method('capture_tile')
+def capture_tile_rpc(token: str, x: int, y: int) -> dict:
+    '''rpc capture tile
+    :return: [tile at coordinates given]
+    '''
+    logger.info(f'capture_tile token={token}, x={x}, y={y}')
+    mngr = game_load(token)
+    try:
+        mngr.capture_tile(x, y)
+        # Log the capture event
+        tile = mngr.tile_get(x, y)
+        logger.info(f'CAPTURE_PROGRESS | {token} | x:{x}, y:{y}, capture_hp:{tile.capture_hp if "tile" in locals() else "unknown"}')
+
+        game_save(mngr, token)
+        ws_board_update(token)
+        return jsons.dump(mngr.tile_get(x, y))
+    except Exception as ex:
+        logger.error(f'capture_tile error: {str(ex)}')
+        return {"error": str(ex), "success": False}
+
 @jsonrpc.method('capture_tile')
 def capture_tile_rpc(token: str, x: int, y: int) -> dict:
     logger.info(f'capture_tile token={token}, x={x}, y={y}')
@@ -314,11 +335,7 @@ def capture_tile_rpc(token: str, x: int, y: int) -> dict:
                 'new_owner': tile.unit.army.name
             })
         else:
-            log_game_event('CAPTURE_PROGRESS', token, {
-                'position': {'x': x, 'y': y},
-                'capture_hp': new_tile.capture_hp,
-                'damage': old_hp - new_tile.capture_hp
-            })
+            logger.info(f'CAPTURE_PROGRESS | {token} | x:{x}, y:{y}')
         
         game_save(mngr, token)
         ws_board_update(token)
@@ -329,58 +346,34 @@ def capture_tile_rpc(token: str, x: int, y: int) -> dict:
 
 @jsonrpc.method('unit_create')
 def unit_create_rpc(token: str, army: str, unit_type: str, x: int, y: int) -> dict:
-    '''rpc create a unit at the coordinates given'''
+    '''rpc create a unit at the coordinates given
+    :return: [tile at coordinates]
+    '''
     logger.info(f'unit_create token={token}, army={army}, unit_type={unit_type}, x={x}, y={y}')
-    
+    mngr = game_load(token)
     try:
-        mngr = game_load(token)
-        mngr.current_token = token
-        # Basic validation
-        army = army.upper()
-        unit_type = unit_type.upper()
-        
-        valid_armies = ['RED', 'BLUE', 'GREEN', 'YELLOW', 'GREY']
-        if army not in valid_armies:
-            raise Exception( f'invalid army: {army}')
-        
-        # Validate unit_type parameter
-        unit_type = unit_type.upper()
-        try:
-            from unit import UnitType
-            UnitType[unit_type]
-        except KeyError:
-            valid_types = ', '.join([ut.name for ut in UnitType])
-            raise Exception(f'invalid unit_type parameter: {unit_type}. Valid types: {valid_types}')
-        
-        # Check coordinates
-        if x < 0 or y < 0 or x >= mngr.board.width or y >= mngr.board.height:
-            raise Exception( f'coordinates out of range')
-        
         mngr.unit_create(army, unit_type, x, y)
         game_save(mngr, token)
         ws_board_update(token)
         return jsons.dump(mngr.tile_get(x, y))
     except Exception as ex:
-        logger.error(f'unit_create error: {ex}')
-        raise Exception( str(ex))
-
+        logger.error(f'unit_create error: {str(ex)}')
+        return {"error": str(ex), "success": False}
+ 
 @jsonrpc.method('unit_move')
-@validate_all_params
 def unit_move_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
+    '''rpc move unit from / to coordinates'''
+    logger.info(f'unit_move token={token}, x={x}, y={y}, x2={x2}, y2={y2}')
+    mngr = game_load(token)
     try:
-        mngr = game_load(token)
-        # Make sure token is set
-        mngr.current_token = token
         mngr.unit_move(x, y, x2, y2)
         game_save(mngr, token)
         ws_board_update(token)
         return jsons.dump(mngr.tile_get(x2, y2))
-    except ValidationError as e:
-        return abort(400, str(e))
-    except Exception as e:
-        log_error(token, 'unit_move', str(e), traceback.format_exc())
-        return abort(500, "Internal server error")
-
+    except (ValueError, Exception) as ex:
+        logger.error(f'unit_move error: {ex}')
+        return {'error': str(ex), 'success': False}
+    
 @jsonrpc.method('unit_select')
 def unit_select_rpc(token: str, x: int, y: int) -> dict:
     try:
@@ -396,45 +389,38 @@ def unit_select_rpc(token: str, x: int, y: int) -> dict:
 
 @jsonrpc.method('unit_attack')
 def unit_attack_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
+    '''rpc attacks the unit from x,y to x2,y2
+    :return: [tile at given coordinate]
+    '''
     try:
         mngr = game_load(token)
-        # Make sure token is set
         mngr.current_token = token
         mngr.unit_attack(x, y, x2, y2)
         game_save(mngr, token)
         ws_board_update(token)
+        logger.info(f'unit_attack token={token}, x={x}, y={y}, x2={x2}, y2={y2}')
         return jsons.dump(mngr.tile_get(x2, y2))
     except Exception as ex:
-        logger.error(f'unit_move error: {ex}')
-        return {'success': False, 'error': str(ex)}  # ✅ Clean JSON response)
-
+        logger.error(f'unit_attack error: {str(ex)}')
+        return {"error": str(ex), "success": False}
+    
 @jsonrpc.method('damage_estimate')
-def damage_estimate_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
+def damage_estimate_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:  # Changed from list to dict
+    '''rpc estimates the damage for attacker and defender.
+    :return: [damage estimate data]
+    '''
+    logger.info(f'damage_estimate token={token}, x={x}, y={y}, x2={x2}, y2={y2}')
     mngr = game_load(token)
     try:
-        attacker_hp, defender_hp, can_counter = mngr.damage_estimate(x, y, x2, y2)
+        attacker_hp, defender_hp = mngr.damage_estimate(x, y, x2, y2)
         return {
-            'attacker_hp_after': attacker_hp,
-            'defender_hp_after': defender_hp,
-            'can_counter_attack': can_counter
+            "attacker_hp_after": attacker_hp,
+            "defender_hp_after": defender_hp,
+            "success": True
         }
     except Exception as ex:
-        raise Exception(str(ex))
-
-@jsonrpc.method('army_end_turn')
-def army_end_turn_rpc(token: str) -> str:
-    '''rpc end turn'''
-    try:
-        mngr = game_load(token)
-        mngr.current_token = token
-        mngr.army_end_turn()
-        game_save(mngr, token)
-        ws_board_update(token)
-        turn = mngr.check_turn()
-        return jsons.dump(turn)
-    except Exception as ex:
-        logger.error(f'unit_move error: {ex}')
-        return {'success': False, 'error': str(ex)}  # ✅ Clean JSON response
+        logger.error(f'damage_estimate error: {str(ex)}')
+        return {"error": str(ex), "success": False}
 
 @jsonrpc.method('check_turn')
 def check_turn_rpc(token: str) -> str:
@@ -448,6 +434,12 @@ def check_turn_rpc(token: str) -> str:
         return {'success': False, 'error': str(ex)}  # ✅ Clean JSON response
 
 # Add other essential RPC methods as needed...
+def handle_rpc_error(func_name, ex):
+    '''Centralized error handling for RPC methods'''
+    error_msg = str(ex)
+    logger.error(f'RPC Error in {func_name}: {error_msg}')
+    logger.error(traceback.format_exc())
+    return {"error": error_msg, "success": False}
 
 if __name__ == '__main__':
     setup_logging(logging.DEBUG)
