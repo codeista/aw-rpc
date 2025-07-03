@@ -10,6 +10,7 @@ from config import Config
 import configparser
 
 from error_handling import logging, AWRPCError, ValidationError, GameStateError, UnitError, MovementError, TurnError, NotFoundError
+from enhanced_logging import log_movement, log_attack, log_game_event, log_error
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -32,10 +33,10 @@ REPAIR_CLASSES = {
 logger = logging.getLogger(__name__)
 
 class GameManager():
-
-    def __init__(self, config: Config, board: GameBoard):
+    def __init__(self, config: Config, board: GameBoard, token: str = 'unknown'):
         self.config = config
         self.board = board
+        self.current_token = token
 
     def __repr__(self):
         return f"{self.__class__.__name__}"
@@ -422,39 +423,210 @@ class GameManager():
         '''Ends the game'''
         self.board.game_active = False
 
+    # def army_end_turn(self):
+    # '''Ends the army turn with proper repair timing.'''
+    # if self.board.game_active == False:
+    #     raise Exception("tried to end turn but Game Over")
+    
+    # self.unit_deselect()
+    # current_army = self.board.current_turn.name
+    
+    # # 1. FUEL CONSUMPTION (end of current turn)
+    # for tile in self.board.grid:
+    #     if tile.unit and tile.unit.army == self.board.current_turn:
+    #         unit = tile.unit
+    #         unit.can_move = False
+    #         unit.can_attack = False
+            
+    #         # Consume fuel for units that use fuel daily
+    #         unit.status.fuel -= unit.fuel_use()
+    #         if unit.fuel_daily_use() and unit.status.fuel <= 0:
+    #             self.unit_remove(tile.x, tile.y)
+    #             log_game_event(
+    #                 token=self.current_token,
+    #                 event_type="UNIT_DESTROYED",
+    #                 army=unit.army.name,
+    #                 details=f"{unit.type.name} ran out of fuel at ({tile.x},{tile.y})"
+    #             )
+    
     def army_end_turn(self):
-        """Enhanced turn ending with proper unit management and fuel consumption."""
-        if not self.board.game_active:
-            raise Exception("Cannot end turn - game is over")
+        '''Ends the army turn with proper repair timing.'''
+        if self.board.game_active == False:
+            raise Exception("tried to end turn but Game Over")
         
-        logger.info(f"Ending turn for {self.board.current_turn.name}")
-        
-        # Clear selection and movement flags
         self.unit_deselect()
+        current_army = self.board.current_turn.name
         
-        # Process current turn's units before switching
-        self._process_current_turn_units()
+        # 1. FUEL CONSUMPTION (end of current turn)
+        for tile in self.board.grid:
+            if tile.unit and tile.unit.army == self.board.current_turn:
+                unit = tile.unit
+                unit.can_move = False
+                unit.can_attack = False
+                
+                # Consume fuel for units that use fuel daily
+                unit.status.fuel -= unit.fuel_use()
+                if unit.fuel_daily_use() and unit.status.fuel <= 0:
+                    self.unit_remove(tile.x, tile.y)
+                    log_game_event(
+                        token=self.current_token,
+                        event_type="UNIT_DESTROYED",
+                        army=unit.army.name,
+                        details=f"{unit.type.name} ran out of fuel at ({tile.x},{tile.y})"
+                    )
         
-        # Update army totals and funds
-        self._update_army_totals()
+        # 2. CHANGE TURNS
+        log_game_event(
+            token=self.current_token,
+            event_type="TURN_END",
+            army=current_army,
+            details=f"Turn ended for {current_army}"
+        )
         
-        # Switch to next army
-        self._advance_turn()
+        # Change current_turn
+        idx = None
+        for i in range(len(self.board.turn_order)):
+            if self.board.turn_order[i] == self.board.current_turn:
+                idx = i
+                break
+        idx += 1
+        if idx >= len(self.board.turn_order):
+            idx = 0
+        self.board.current_turn = self.board.turn_order[idx]
         
-        # Distribute income to the new current army
-        self._distribute_income()
+        # Increment day counter when RED's turn starts
+        if self.board.current_turn.name == "RED":
+            self.board.days += 1
         
-        # Setup next turn's units
-        self._setup_next_turn_units()
+        # 3. START OF NEW TURN - REPAIRS AND ACTIVATION
+        for tile in self.board.grid:
+            if tile.unit and tile.unit.army == self.board.current_turn:
+                unit = tile.unit
+                unit.can_move = True
+                unit.can_attack = True
+                unit.can_capture = True
+                
+                # REPAIR UNITS ON OWNED PROPERTIES (start of turn)
+                if (tile.mapTile.army == unit.army and 
+                    tile.mapTile.type in [MapType.CITY, MapType.FACTORY, MapType.AIRPORT, 
+                                        MapType.PORT, MapType.BASE_TOWER_1, MapType.BASE_TOWER_2]):
+                    old_hp = unit.status.hp
+                    unit.status.hp = min(100, unit.status.hp + 20)
+                    self.resupply_unit(unit)
+                    
+                    # Log the repair
+                    if unit.status.hp > old_hp:
+                        log_game_event(
+                            token=self.current_token,
+                            event_type="UNIT_REPAIRED",
+                            army=unit.army.name,
+                            details=f"{unit.type.name} repaired from {old_hp} to {unit.status.hp} HP at ({tile.x},{tile.y})"
+                        )
         
-        # Reset capture progress for unoccupied properties
-        self._reset_capture_progress()
+        # 4. RESUPPLY FROM APC/BLACK BOAT (start of turn)
+        for tile in self.board.grid:
+            if tile.unit and tile.unit.army == self.board.current_turn:
+                unit = tile.unit
+                if unit.type in {UnitType.APC, UnitType.BLACKBOAT}:
+                    # Resupply adjacent units
+                    for dx, dy in [(0,1), (0,-1), (1,0), (-1,0)]:
+                        adj_x, adj_y = tile.x + dx, tile.y + dy
+                        if self.coord_valid(adj_x, adj_y):
+                            adj_tile = self.tile_at(adj_x, adj_y)
+                            if (adj_tile.unit and 
+                                adj_tile.unit.army == unit.army and
+                                adj_tile.unit != unit):
+                                self.resupply_unit(adj_tile.unit)
+                                log_game_event(
+                                    token=self.current_token,
+                                    event_type="UNIT_RESUPPLIED",
+                                    army=unit.army.name,
+                                    details=f"{adj_tile.unit.type.name} resupplied by {unit.type.name}"
+                                )
         
-        # Check for victory conditions
-        self._check_victory_conditions()
+        log_game_event(
+            token=self.current_token,
+            event_type="TURN_START",
+            army=self.board.current_turn.name,
+            details=f"Turn started for {self.board.current_turn.name}, Day {self.board.days}"
+        )
         
-        logger.info(f"Turn advanced to {self.board.current_turn.name}, Day: {self.board.days}")
+        # 2. CHANGE TURNS
+        log_game_event(
+            token=self.current_token,
+            event_type="TURN_END",
+            army=current_army,
+            details=f"Turn ended for {current_army}"
+        )
         
+        # Change current_turn
+        idx = None
+        for i in range(len(self.board.turn_order)):
+            if self.board.turn_order[i] == self.board.current_turn:
+                idx = i
+                break
+        idx += 1
+        if idx >= len(self.board.turn_order):
+            idx = 0
+        self.board.current_turn = self.board.turn_order[idx]
+        
+        # Increment day counter when RED's turn starts
+        if self.board.current_turn.name == "RED":
+            self.board.days += 1
+        
+        # 3. START OF NEW TURN - REPAIRS AND ACTIVATION
+        for tile in self.board.grid:
+            if tile.unit and tile.unit.army == self.board.current_turn:
+                unit = tile.unit
+                unit.can_move = True
+                unit.can_attack = True
+                unit.can_capture = True
+                
+                # REPAIR UNITS ON OWNED PROPERTIES (start of turn)
+                if (tile.mapTile.army == unit.army and 
+                    tile.mapTile.type in [MapType.CITY, MapType.FACTORY, MapType.AIRPORT, 
+                                        MapType.PORT, MapType.BASE_TOWER_1, MapType.BASE_TOWER_2]):
+                    old_hp = unit.status.hp
+                    unit.status.hp = min(100, unit.status.hp + 20)
+                    self.resupply_unit(unit)
+                    
+                    # Log the repair
+                    if unit.status.hp > old_hp:
+                        log_game_event(
+                            token=self.current_token,
+                            event_type="UNIT_REPAIRED",
+                            army=unit.army.name,
+                            details=f"{unit.type.name} repaired from {old_hp} to {unit.status.hp} HP at ({tile.x},{tile.y})"
+                        )
+        
+        # 4. RESUPPLY FROM APC/BLACK BOAT (start of turn)
+        for tile in self.board.grid:
+            if tile.unit and tile.unit.army == self.board.current_turn:
+                unit = tile.unit
+                if unit.type in {UnitType.APC, UnitType.BLACKBOAT}:
+                    # Resupply adjacent units
+                    for dx, dy in [(0,1), (0,-1), (1,0), (-1,0)]:
+                        adj_x, adj_y = tile.x + dx, tile.y + dy
+                        if self.coord_valid(adj_x, adj_y):
+                            adj_tile = self.tile_at(adj_x, adj_y)
+                            if (adj_tile.unit and 
+                                adj_tile.unit.army == unit.army and
+                                adj_tile.unit != unit):
+                                self.resupply_unit(adj_tile.unit)
+                                log_game_event(
+                                    token=self.current_token,
+                                    event_type="UNIT_RESUPPLIED",
+                                    army=unit.army.name,
+                                    details=f"{adj_tile.unit.type.name} resupplied by {unit.type.name}"
+                                )
+        
+        log_game_event(
+            token=self.current_token,
+            event_type="TURN_START",
+            army=self.board.current_turn.name,
+            details=f"Turn started for {self.board.current_turn.name}, Day {self.board.days}"
+        )
+       
     def unit_select(self, x: int, y: int) -> Unit:
         '''Select the unit at the given coordinates if valid.'''
         if not self.coord_valid(x, y):
@@ -491,6 +663,7 @@ class GameManager():
             raise Exception('Target coordinates out of range')
         
         unit = self.unit_at(x, y)
+        distance = abs(x2 - x) + abs(y2 - y)
         if not unit:
             raise Exception('No unit at source coordinates')
         
@@ -553,6 +726,20 @@ class GameManager():
         self.unit_deselect()
         self.unit_select(x2, y2)
         
+        try:
+            from enhanced_logging import log_movement
+            log_movement(
+                token=self.current_token,
+                army=unit.army.name,
+                unit_type=unit.type.name,
+                from_x=x, from_y=y,
+                to_x=x2, to_y=y2,
+                fuel_used=distance,
+                fuel_remaining=unit.status.fuel
+            )
+        except Exception as e:
+            print(f"Logging error: {e}")  # Don't crash if logging fails
+        
         return unit
     
     def unit_move2(self, id: str, x: int, y: int) -> Unit:
@@ -612,7 +799,12 @@ class GameManager():
         
         Returns:
             The surviving unit (or None if both destroyed)
-    """
+        """
+        # Debug logging
+        attacker = self.unit_at(x, y)
+        print(f"DEBUG: Attack by {attacker.army.name}, token: {self.current_token}")
+        
+        # Validation
         if not self.coord_valid(x, y) or not self.coord_valid(x2, y2):
             raise Exception('coordinates out of range')
         
@@ -637,6 +829,16 @@ class GameManager():
         if attacker.status.ammo <= 0:
             raise Exception('unit is out of ammunition')
         
+        # Store unit info BEFORE combat (in case they get destroyed)
+        attacker_army = attacker.army.name
+        attacker_type = attacker.type.name
+        defender_army = defender.army.name
+        defender_type = defender.type.name
+        
+        # Store original HP for damage calculation
+        defender_original_hp = defender.status.hp
+        attacker_original_hp = attacker.status.hp
+        
         # Calculate distances for counter-attack eligibility
         distance = abs(x2 - x) + abs(y2 - y)
         
@@ -649,50 +851,113 @@ class GameManager():
         
         print(f"   Defender takes {damage_to_defender} damage (HP: {defender.status.hp})")
         
-        # Remove defender if destroyed
-        if defender.status.hp <= 0:
+        # Phase 2: Counter-attack (if conditions are met)
+        damage_to_attacker = 0
+        defender_destroyed = defender.status.hp <= 0
+        
+        if not defender_destroyed:
+            can_counter_attack = (
+                defender.status.ammo > 0 and         # Defender has ammo
+                defender.is_attackable(attacker) and # Defender can damage attacker
+                self._can_counter_attack(defender, attacker, distance) if hasattr(self, '_can_counter_attack') else True
+            )
+            
+            if can_counter_attack:
+                print(f"🔄 {defender.type.name} counter-attacks!")
+                
+                damage_to_attacker = defender.attack_damage(attacker, attacker_tile)
+                attacker.status.hp -= damage_to_attacker
+                defender.status.ammo -= 1
+                
+                print(f"   Attacker takes {damage_to_attacker} damage (HP: {attacker.status.hp})")
+            else:
+                print(f"   No counter-attack possible")
+        else:
             print(f"   💀 {defender.type.name} destroyed!")
+        
+        # Determine final status
+        attacker_destroyed = attacker.status.hp <= 0
+        
+        if attacker_destroyed:
+            print(f"   💀 {attacker.type.name} destroyed!")
+        
+        # Prepare logging information
+        damage_dealt = defender_original_hp - max(0, defender.status.hp)
+        counter_damage = attacker_original_hp - max(0, attacker.status.hp)
+        
+        result_parts = []
+        if defender_destroyed:
+            result_parts.append("Defender DESTROYED")
+        elif damage_dealt > 0:
+            result_parts.append(f"Defender HP: {defender.status.hp}")
+        
+        if counter_damage > 0:
+            result_parts.append(f"Counter: {counter_damage}")
+        
+        if attacker_destroyed:
+            result_parts.append("Attacker DESTROYED")
+        
+        result_summary = ", ".join(result_parts) if result_parts else "No damage"
+        
+        # LOG THE COMBAT
+        try:
+            from enhanced_logging import log_attack, log_game_event
+            log_attack(
+                token=self.current_token,
+                attacker_army=attacker_army,
+                attacker_type=attacker_type,
+                att_x=x, att_y=y,
+                defender_army=defender_army,
+                defender_type=defender_type,
+                def_x=x2, def_y=y2,
+                damage=damage_dealt,
+                result=result_summary
+            )
+            
+            # Log unit destruction as separate events
+            if defender_destroyed:
+                log_game_event(
+                    token=self.current_token,
+                    event_type="UNIT_DESTROYED",
+                    army=defender_army,
+                    details=f"{defender_type} destroyed at ({x2},{y2}) by {attacker_army} {attacker_type}"
+                )
+            
+            if attacker_destroyed:
+                log_game_event(
+                    token=self.current_token,
+                    event_type="UNIT_DESTROYED", 
+                    army=attacker_army,
+                    details=f"{attacker_type} destroyed at ({x},{y}) by counter-attack from {defender_army} {defender_type}"
+                )
+                
+        except Exception as e:
+            print(f"Combat logging error: {e}")
+        
+        # Remove destroyed units from the board
+        if defender_destroyed:
             self.unit_remove(x2, y2)
+        
+        if attacker_destroyed:
+            self.unit_remove(x, y)
+        
+        # Update attacker status if it survived
+        if not attacker_destroyed:
             attacker.can_move = False
             attacker.can_attack = False
             attacker.can_capture = False
-            self.unit_deselect()
-            return attacker
         
-        # Phase 2: Counter-attack (if conditions are met)
-        can_counter_attack = (
-            defender.status.hp > 0 and           # Defender survived
-            defender.status.ammo > 0 and         # Defender has ammo
-            defender.is_attackable(attacker) and # Defender can damage attacker
-            self._can_counter_attack(defender, attacker, distance)  # Range/type check
-        )
-        
-        if can_counter_attack:
-            print(f"🔄 {defender.type.name} counter-attacks!")
-            
-            damage_to_attacker = defender.attack_damage(attacker, attacker_tile)
-            attacker.status.hp -= damage_to_attacker
-            defender.status.ammo -= 1
-            
-            print(f"   Attacker takes {damage_to_attacker} damage (HP: {attacker.status.hp})")
-            
-            # Remove attacker if destroyed by counter-attack
-            if attacker.status.hp <= 0:
-                print(f"   💀 {attacker.type.name} destroyed by counter-attack!")
-                self.unit_remove(x, y)
-                self.unit_deselect()
-                return defender
-        else:
-            print(f"   No counter-attack (reason: {self._get_no_counter_reason(defender, attacker, distance)})")
-        
-        # Both units survived - end attacker's turn
-        attacker.can_move = False
-        attacker.can_attack = False
-        attacker.can_capture = False
+        # Deselect unit
         self.unit_deselect()
         
-        return attacker if attacker.status.hp > 0 else defender
-
+        # Return the surviving unit (or None if both destroyed)
+        if not attacker_destroyed:
+            return attacker
+        elif not defender_destroyed:
+            return defender
+        else:
+            return None  # Both destroyed
+        
     def _can_counter_attack(self, defender, attacker, distance):
         """
         Determine if the defender can counter-attack based on unit types and range.

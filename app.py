@@ -20,6 +20,10 @@ from app_core import app, jsonrpc, db, socketio
 from models import Game
 import json
 
+from enhanced_logging import log_game_event, log_error
+from input_validation import validate_all_params, ValidationError
+import traceback
+
 # Game event logger setup
 game_logger = logging.getLogger('game_events')
 game_logger.setLevel(logging.INFO)
@@ -102,6 +106,16 @@ config_game = Config()
 def setup_logging(level):
     '''Setup logging.'''
     logger.setLevel(level)
+
+def game_load(token):
+    '''Loads the game token specified'''
+    game = Game.from_token(db.session, token)
+    if game:
+        mngr = GameManager(config_game, jsons.loads(game.board, GameBoard), token)
+        return mngr
+    board = GameBoard.create(Map.parse(MAP1))
+    mngr = GameManager(config_game, board, token)
+    return mngr
 
 def game_load(token):
     '''Loads the game token specified'''
@@ -252,8 +266,9 @@ def game_board_rpc(token: str) -> dict:
 @jsonrpc.method('army_end_turn')
 def army_end_turn_rpc(token: str) -> str:
     '''rpc end current turn'''
-    mngr = game_load(token)
     try:
+        mngr = game_load(token)
+        mngr.current_token = token
         mngr.army_end_turn()
         game_save(mngr, token)
         ws_board_update(token)
@@ -280,8 +295,9 @@ def tile_rpc(token: str, x: int, y: int) -> dict:
 @jsonrpc.method('capture_tile')
 def capture_tile_rpc(token: str, x: int, y: int) -> dict:
     logger.info(f'capture_tile token={token}, x={x}, y={y}')
-    mngr = game_load(token)
     try:
+        mngr = game_load(token)
+        mngr.current_token = token
         # Get info before capture
         tile = mngr.tile_get(x, y)
         old_hp = tile.capture_hp
@@ -315,8 +331,10 @@ def capture_tile_rpc(token: str, x: int, y: int) -> dict:
 def unit_create_rpc(token: str, army: str, unit_type: str, x: int, y: int) -> dict:
     '''rpc create a unit at the coordinates given'''
     logger.info(f'unit_create token={token}, army={army}, unit_type={unit_type}, x={x}, y={y}')
-    mngr = game_load(token)
+    
     try:
+        mngr = game_load(token)
+        mngr.current_token = token
         # Basic validation
         army = army.upper()
         unit_type = unit_type.upper()
@@ -347,40 +365,27 @@ def unit_create_rpc(token: str, army: str, unit_type: str, x: int, y: int) -> di
         raise Exception( str(ex))
 
 @jsonrpc.method('unit_move')
+@validate_all_params
 def unit_move_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
-    '''rpc move unit from / to coordinates'''
-    logger.info(f'unit_move token={token}, x={x}, y={y}, x2={x2}, y2={y2}')
-    mngr = game_load(token)
     try:
-        # Get info before move
-        unit = mngr.unit_at(x, y)
-        fuel_before = unit.status.fuel
-        
-        # Perform move
-        result_unit = mngr.unit_move(x, y, x2, y2)
-        
-        # Log the movement event
-        log_game_event('UNIT_MOVE', token, {
-            'unit_type': unit.type.name,
-            'army': unit.army.name,
-            'from': {'x': x, 'y': y},
-            'to': {'x': x2, 'y': y2},
-            'fuel_before': fuel_before,
-            'fuel_after': result_unit.status.fuel,
-            'fuel_consumed': fuel_before - result_unit.status.fuel
-        })
-        
+        mngr = game_load(token)
+        # Make sure token is set
+        mngr.current_token = token
+        mngr.unit_move(x, y, x2, y2)
         game_save(mngr, token)
         ws_board_update(token)
         return jsons.dump(mngr.tile_get(x2, y2))
-    except Exception as ex:
-        logger.error(f'unit_move error: {ex}')
-        return {'success': False, 'error': str(ex)}
+    except ValidationError as e:
+        return abort(400, str(e))
+    except Exception as e:
+        log_error(token, 'unit_move', str(e), traceback.format_exc())
+        return abort(500, "Internal server error")
 
 @jsonrpc.method('unit_select')
 def unit_select_rpc(token: str, x: int, y: int) -> dict:
-    mngr = game_load(token)
     try:
+        mngr = game_load(token)
+        mngr.current_token = token
         unit = mngr.unit_select(x, y)
         game_save(mngr, token)
         ws_board_update(token)
@@ -391,8 +396,10 @@ def unit_select_rpc(token: str, x: int, y: int) -> dict:
 
 @jsonrpc.method('unit_attack')
 def unit_attack_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
-    mngr = game_load(token)
     try:
+        mngr = game_load(token)
+        # Make sure token is set
+        mngr.current_token = token
         mngr.unit_attack(x, y, x2, y2)
         game_save(mngr, token)
         ws_board_update(token)
@@ -417,8 +424,9 @@ def damage_estimate_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
 @jsonrpc.method('army_end_turn')
 def army_end_turn_rpc(token: str) -> str:
     '''rpc end turn'''
-    mngr = game_load(token)
     try:
+        mngr = game_load(token)
+        mngr.current_token = token
         mngr.army_end_turn()
         game_save(mngr, token)
         ws_board_update(token)
@@ -431,8 +439,8 @@ def army_end_turn_rpc(token: str) -> str:
 @jsonrpc.method('check_turn')
 def check_turn_rpc(token: str) -> str:
     '''rpc check current turn'''
-    mngr = game_load(token)
     try:
+        mngr = game_load(token)
         turn = mngr.check_turn()
         return jsons.dump(turn)
     except Exception as ex:
