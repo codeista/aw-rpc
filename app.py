@@ -44,6 +44,13 @@ except ImportError:
     
     ENHANCED_LOGGING = False
 
+from error_handling import (
+    setup_error_handlers, setup_logging, validate_rpc_params,
+    validate_token, validate_coordinates, validate_army, 
+    validate_unit_type, safe_rpc_call, log_game_event, AWRPCError,
+    ValidationError, GameStateError, UnitError, MovementError
+)
+
 # Enhanced logging decorators
 def log_rpc_performance(func):
     """Decorator to log RPC call performance"""
@@ -511,76 +518,130 @@ def capture_tile_rpc(token: str, x: int, y: int) -> dict:
 @jsonrpc.method('unit_create')
 @log_rpc_performance
 def unit_create_rpc(token: str, army: str, unit_type: str, x: int, y: int) -> dict:
-    '''rpc create a unit at the coordinates given'''
+    """Create a unit with enhanced error handling and validation"""
+    
     try:
+        # Import validation functions
+        from error_handling import validate_army, validate_unit_type, validate_coordinates, ValidationError
+        
+        # Validate inputs
+        army = validate_army(army)
+        unit_type = validate_unit_type(unit_type)
+        validate_coordinates(x, y, 50, 50)
+        
+        # Load game and create unit
         mngr = game_load(token)
+        unit = mngr.unit_create(army, unit_type, x, y)
         
-        # Get cost for logging
-        cost = 0
-        try:
-            cost = getattr(config_game.units.get(unit_type.upper(), {}), 'cost', 0)
-        except:
-            pass
+        # Log successful creation
+        if ENHANCED_LOGGING:
+            game_event_logger.log_unit_created(token, army, unit_type, x, y)
         
-        mngr.unit_create(army, unit_type, x, y)
-        
-        # Enhanced logging
-        log_game_event('UNIT_CREATED', token, {
-            'army': army.upper(),
-            'unit_type': unit_type.upper(),
-            'x': x,
-            'y': y,
-            'cost': cost
-        })
-        app_logger.info(f'Unit created: {token} - {army}:{unit_type} at ({x},{y}) cost={cost}')
-        
+        # Save and return
         game_save(mngr, token)
         ws_board_update(token)
+        
         return jsons.dump(mngr.tile_get(x, y))
-    except Exception as ex:
-        app_logger.error(f'unit_create failed for {token}: {army}:{unit_type} at ({x},{y}): {str(ex)}')
-        return handle_rpc_error('unit_create', token, ex)
+        
+    except ValidationError as e:
+        # Return error as a dict instead of raising
+        app_logger.error(f"Validation error in unit_create: {e.message}")
+        return {
+            "error": True,
+            "error_code": "VALIDATION_ERROR",
+            "message": e.message,
+            "details": getattr(e, 'details', {})
+        }
+        
+    except Exception as e:
+        app_logger.error(f"unit_create failed for {token}: {army}:{unit_type} at ({x},{y}): {str(e)}")
+        return {
+            "error": True,
+            "error_code": "INTERNAL_ERROR", 
+            "message": "Internal server error",
+            "details": {}
+        }
 
 @jsonrpc.method('unit_move')
 @log_rpc_performance
 def unit_move_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
-    '''rpc move unit from / to coordinates'''
+    """Move a unit with enhanced validation"""
+    
     try:
+        from error_handling import validate_coordinates, ValidationError
+        
+        # Validate coordinates  
+        validate_coordinates(x, y, 50, 50)
+        validate_coordinates(x2, y2, 50, 50)
+        
+        # Execute move
         mngr = game_load(token)
+        unit = mngr.unit_move(x, y, x2, y2)
         
-        # Get unit info before move
-        unit = mngr.unit_at(x, y)
-        if unit:
-            army = unit.army.name
-            unit_type = unit.type.name
-            fuel_before = unit.status.fuel
-        else:
-            army = "unknown"
-            unit_type = "unknown"
-            fuel_before = 0
-        
-        mngr.unit_move(x, y, x2, y2)
-        
-        # Calculate fuel used
-        unit_after = mngr.unit_at(x2, y2)
-        fuel_used = fuel_before - (unit_after.status.fuel if unit_after else 0)
-        
-        # Enhanced logging
-        log_game_event('UNIT_MOVED', token, {
-            'army': army,
-            'unit_type': unit_type,
-            'from_pos': (x, y),
-            'to_pos': (x2, y2),
-            'fuel_used': fuel_used
-        })
-        app_logger.info(f'Unit moved: {token} - {army}:{unit_type} from ({x},{y}) to ({x2},{y2}) fuel_used={fuel_used}')
-        
+        # Save and return
         game_save(mngr, token)
         ws_board_update(token)
+        
         return jsons.dump(mngr.tile_get(x2, y2))
-    except Exception as ex:
-        app_logger.error(f'unit_move failed for {token}: ({x},{y}) -> ({x2},{y2}): {str(ex)}')
-        return handle_rpc_error('unit_move', token, ex)
+        
+    except ValidationError as e:
+        app_logger.error(f"Validation error in unit_move: {e.message}")
+        return {
+            "error": True,
+            "error_code": "VALIDATION_ERROR",
+            "message": e.message,
+            "details": getattr(e, 'details', {})
+        }
+        
+    except Exception as e:
+        app_logger.error(f"unit_move failed for {token}: ({x},{y}) -> ({x2},{y2}): {str(e)}")
+        return {
+            "error": True,
+            "error_code": "INTERNAL_ERROR",
+            "message": "Movement failed",
+            "details": {}
+        }
+
+# @jsonrpc.method('unit_move')
+# @log_rpc_performance
+# def unit_move_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
+#     '''rpc move unit from / to coordinates'''
+#     try:
+#         mngr = game_load(token)
+        
+#         # Get unit info before move
+#         unit = mngr.unit_at(x, y)
+#         if unit:
+#             army = unit.army.name
+#             unit_type = unit.type.name
+#             fuel_before = unit.status.fuel
+#         else:
+#             army = "unknown"
+#             unit_type = "unknown"
+#             fuel_before = 0
+        
+#         mngr.unit_move(x, y, x2, y2)
+        
+#         # Calculate fuel used
+#         unit_after = mngr.unit_at(x2, y2)
+#         fuel_used = fuel_before - (unit_after.status.fuel if unit_after else 0)
+        
+#         # Enhanced logging
+#         log_game_event('UNIT_MOVED', token, {
+#             'army': army,
+#             'unit_type': unit_type,
+#             'from_pos': (x, y),
+#             'to_pos': (x2, y2),
+#             'fuel_used': fuel_used
+#         })
+#         app_logger.info(f'Unit moved: {token} - {army}:{unit_type} from ({x},{y}) to ({x2},{y2}) fuel_used={fuel_used}')
+        
+#         game_save(mngr, token)
+#         ws_board_update(token)
+#         return jsons.dump(mngr.tile_get(x2, y2))
+#     except Exception as ex:
+#         app_logger.error(f'unit_move failed for {token}: ({x},{y}) -> ({x2},{y2}): {str(ex)}')
+#         return handle_rpc_error('unit_move', token, ex)
 
 @jsonrpc.method('unit_select')
 @log_rpc_performance
