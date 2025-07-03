@@ -1,16 +1,18 @@
 #!/usr/bin/python3
 
-'''[This is a RPC game engine for Advance wars - WORKING VERSION]'''
+'''[This is a RPC game engine for Advance wars with enhanced logging - Built on current version]'''
 
 import os
 import logging
 import datetime
 import secrets
+from functools import wraps
+import time
+import json
+import traceback
 
 from flask import redirect, render_template, abort, request
-from flask_socketio import Namespace, join_room, leave_room, SocketIO
-from flask_jsonrpc import JSONRPC
-from flask_sqlalchemy import SQLAlchemy
+from flask_socketio import Namespace, join_room, leave_room
 import jsons
 
 from manager import GameManager
@@ -18,25 +20,83 @@ from gameboard import GameBoard
 from config import Config
 from app_core import app, jsonrpc, db, socketio
 from models import Game
-import json
 
-from enhanced_logging import log_game_event, log_error
-from input_validation import validate_all_params, ValidationError
-import traceback
+# Import our fixed logging system
+try:
+    from logging_config import setup_application_logging, GameEventLogger, PerformanceLogger
+    app_logger, game_logger = setup_application_logging()
+    game_event_logger = GameEventLogger()
+    perf_logger = PerformanceLogger()
+    ENHANCED_LOGGING = True
+except ImportError:
+    # Fallback to your existing logging if new system not available
+    app_logger = logging.getLogger(__name__)
+    logging.basicConfig(filename='app.log', level=logging.INFO)
+    
+    game_logger = logging.getLogger('game_events')
+    game_logger.setLevel(logging.INFO)
+    event_handler = logging.FileHandler('game_events.log')
+    event_formatter = logging.Formatter('%(asctime)s | %(levelname)s | %(message)s')
+    event_handler.setFormatter(event_formatter)
+    if not game_logger.handlers:
+        game_logger.addHandler(event_handler)
+    
+    ENHANCED_LOGGING = False
 
-# Game event logger setup
-game_logger = logging.getLogger('game_events')
-game_logger.setLevel(logging.INFO)
-event_handler = logging.FileHandler('game_events.log')
-event_formatter = logging.Formatter('%(asctime)s | %(levelname)s | %(message)s')
-event_handler.setFormatter(event_formatter)
-if not game_logger.handlers:
-    game_logger.addHandler(event_handler)
+# Enhanced logging decorators
+def log_rpc_performance(func):
+    """Decorator to log RPC call performance"""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        method_name = func.__name__.replace('_rpc', '')
+        
+        try:
+            app_logger.info(f"RPC_START {method_name} args={args}")
+            result = func(*args, **kwargs)
+            
+            duration_ms = (time.time() - start_time) * 1000
+            if ENHANCED_LOGGING:
+                perf_logger.log_rpc_call(method_name, duration_ms, True, len(args) + len(kwargs))
+            app_logger.info(f"RPC_SUCCESS {method_name} duration={duration_ms:.2f}ms")
+            
+            return result
+        except Exception as e:
+            duration_ms = (time.time() - start_time) * 1000
+            if ENHANCED_LOGGING:
+                perf_logger.log_rpc_call(method_name, duration_ms, False, len(args) + len(kwargs))
+            app_logger.error(f"RPC_ERROR {method_name} duration={duration_ms:.2f}ms error={str(e)}")
+            
+            # Log game-specific error if token is provided
+            if args and len(args) > 0:
+                token = args[0] if isinstance(args[0], str) else "unknown"
+                if ENHANCED_LOGGING:
+                    game_event_logger.log_error(token, method_name, str(e))
+            
+            raise
+    return wrapper
 
 def log_game_event(event_type, token, details):
-    game_logger.info(f"{event_type} | {token} | {json.dumps(details)}")
+    """Enhanced game event logging"""
+    if ENHANCED_LOGGING:
+        # Use structured logging if available
+        if event_type == 'UNIT_CREATED':
+            game_event_logger.log_unit_created(token, details.get('army', ''), details.get('unit_type', ''), 
+                                             details.get('x', 0), details.get('y', 0), details.get('cost', 0))
+        elif event_type == 'UNIT_MOVED':
+            game_event_logger.log_unit_moved(token, details.get('army', ''), details.get('unit_type', ''),
+                                           details.get('from_pos', (0, 0)), details.get('to_pos', (0, 0)), 
+                                           details.get('fuel_used', 0))
+        elif event_type == 'PROPERTY_CAPTURED':
+            game_event_logger.log_property_captured(token, details.get('army', ''), details.get('property_type', ''),
+                                                   details.get('position', (0, 0)))
+        else:
+            game_logger.info(f"{event_type} | {token} | {json.dumps(details)}")
+    else:
+        # Fallback to original logging
+        game_logger.info(f"{event_type} | {token} | {json.dumps(details)}")
 
-# Simple map import - just use what works
+# Map system - use your existing flexible approach
 try:
     from map_system import Map, MapType, Army, MapTile
     
@@ -49,10 +109,11 @@ PLAIN*7
 FACTORY:BLUE,PLAIN*5,FACTORY:RED'''
     
     default_map = Map.parse(MAP_DATA)
+    app_logger.info("Using map_system for map data")
 
 except ImportError:
-    # If map_system doesn't exist, create minimal compatibility
-    print("Warning: Using minimal map system")
+    # Use your existing fallback system
+    app_logger.warning("Using minimal map system - map_system not available")
     
     class Army:
         RED = 'RED'
@@ -94,131 +155,218 @@ except ImportError:
     
     default_map = Map()
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(filename='app.log', level=logging.INFO)
-
 config_game = Config()
 
 #
-# Helper functions
+# Helper functions (Enhanced)
 #
 
 def setup_logging(level):
     '''Setup logging.'''
-    logger.setLevel(level)
+    app_logger.setLevel(level)
 
 def game_load(token):
     '''Loads the game token specified'''
+    app_logger.info(f"Loading game: {token}")
+    
     game = Game.from_token(db.session, token)
     if game:
-        mngr = GameManager(config_game, jsons.loads(game.board, GameBoard), token)
-        return mngr
-    board = GameBoard.create(Map.parse(MAP1))
-    mngr = GameManager(config_game, board, token)
-    return mngr
-
-def game_load(token):
-    '''Loads the game token specified'''
-    game = Game.from_token(db.session, token)
-    if game:
+        app_logger.info(f"Game found in database: {token}")
         mngr = GameManager(config_game, jsons.loads(game.board, GameBoard))
         return mngr
-    board = GameBoard.create(default_map)  # Use our default_map
+    
+    app_logger.info(f"Creating new game: {token}")
+    board = GameBoard.create(default_map)
     mngr = GameManager(config_game, board)
+    
+    # Log game creation
+    if ENHANCED_LOGGING:
+        game_event_logger.log_game_created(token, len(board.turn_order))
+    
     return mngr
 
 def game_save(mngr, token):
     '''Saves the current game state'''
-    game = Game.from_token(db.session, token)
-    if not game:
-        game = Game(mngr.board, token)
-    else:
-        game.update = datetime.datetime.now()
-        game.board = jsons.dumps(mngr.board)
-    db.session.add(game)
-    db.session.commit()
+    app_logger.info(f"Saving game: {token}")
+    
+    start_time = time.time()
+    try:
+        game = Game.from_token(db.session, token)
+        if not game:
+            game = Game(mngr.board, token)
+            app_logger.info(f"Created new game record: {token}")
+        else:
+            game.update = datetime.datetime.now()
+            game.board = jsons.dumps(mngr.board)
+            app_logger.debug(f"Updated existing game: {token}")
+        
+        db.session.add(game)
+        db.session.commit()
+        
+        duration_ms = (time.time() - start_time) * 1000
+        if ENHANCED_LOGGING:
+            perf_logger.log_database_operation("game_save", duration_ms, True)
+        app_logger.info(f"Game saved successfully: {token} in {duration_ms:.2f}ms")
+        
+    except Exception as e:
+        duration_ms = (time.time() - start_time) * 1000
+        if ENHANCED_LOGGING:
+            perf_logger.log_database_operation("game_save", duration_ms, False)
+        app_logger.error(f"Failed to save game {token}: {str(e)}")
+        raise
 
 def game_delete(token):
     '''Deletes the game token specified.'''
+    app_logger.info(f"Deleting game: {token}")
+    
     game = Game.from_token(db.session, token)
     if game:
         db.session.delete(game)
         db.session.commit()
+        if ENHANCED_LOGGING:
+            game_event_logger.log_game_deleted(token)
+        app_logger.info(f"Game deleted: {token}")
+    else:
+        app_logger.warning(f"Attempted to delete non-existent game: {token}")
 
 def game_create(token):
     '''Creates a new game with token specified'''
+    app_logger.info(f"Creating game: {token}")
+    
     mngr = game_load(token)
     game = Game(mngr.board, token)
     db.session.add(game)
     db.session.commit()
+    
+    if ENHANCED_LOGGING:
+        game_event_logger.log_game_created(token, len(mngr.board.turn_order))
+    app_logger.info(f"Game created successfully: {token}")
+
+def handle_rpc_error(func_name, token, ex):
+    '''Enhanced error handling for RPC methods'''
+    error_msg = str(ex)
+    app_logger.error(f'RPC Error in {func_name}: {error_msg}')
+    app_logger.error(traceback.format_exc())
+    
+    if ENHANCED_LOGGING and token:
+        game_event_logger.log_error(token, func_name, error_msg)
+    
+    return {"error": error_msg, "success": False}
 
 #
-# REST
+# REST Routes (Enhanced)
 #
 
 @app.route('/')
 def index():
-    return redirect('/game/' + secrets.token_urlsafe(4))
+    new_token = secrets.token_urlsafe(4)
+    app_logger.info(f"Index accessed, redirecting to new game: {new_token}")
+    return redirect('/game/' + new_token)
 
 @app.route('/game/<token>')
 def game(token: str):
+    app_logger.info(f"Game page accessed: {token}")
     return render_template('render.html', token=token)
 
 @app.route('/logs')
 def view_logs():
+    """Enhanced log viewer"""
     try:
-        with open('game_events.log', 'r') as f:
-            lines = f.readlines()
-        recent = lines[-50:] if len(lines) > 50 else lines
-        return '<pre>' + ''.join(recent) + '</pre>'
-    except:
-        return 'No logs found'
+        logs = []
+        
+        # Try to read from enhanced logs first
+        if os.path.exists('logs/game_events.log'):
+            with open('logs/game_events.log', 'r') as f:
+                lines = f.readlines()
+            logs.extend([('GAME', line.strip()) for line in lines[-25:]])
+        
+        # Fallback to original logs
+        if os.path.exists('game_events.log'):
+            with open('game_events.log', 'r') as f:
+                lines = f.readlines()
+            logs.extend([('EVENT', line.strip()) for line in lines[-25:]])
+        
+        if not logs:
+            return '<h2>No logs found</h2><p>Logs will appear here once the application starts generating events.</p>'
+        
+        # Format logs nicely
+        formatted_logs = []
+        for log_type, line in logs[-50:]:  # Show last 50 entries
+            formatted_logs.append(f'<div class="{log_type.lower()}">[{log_type}] {line}</div>')
+        
+        return f'''
+        <html>
+        <head>
+            <title>AW-RPC Logs</title>
+            <style>
+                body {{ font-family: monospace; margin: 20px; }}
+                .game {{ color: blue; }}
+                .event {{ color: green; }}
+                .error {{ color: red; }}
+                div {{ margin: 2px 0; }}
+            </style>
+        </head>
+        <body>
+            <h2>AW-RPC Recent Logs</h2>
+            <div>{''.join(formatted_logs)}</div>
+            <br><a href="/">Back to Game</a>
+        </body>
+        </html>
+        '''
+    except Exception as e:
+        app_logger.error(f"Error viewing logs: {e}")
+        return f'<h2>Error reading logs</h2><p>{str(e)}</p>'
 
 @app.route('/debug/methods')
 def debug_methods():
-    '''Debug endpoint to see all registered methods'''
+    '''Enhanced debug endpoint'''
     try:
+        methods_info = {
+            'enhanced_logging': ENHANCED_LOGGING,
+            'map_system': 'map_system' in globals(),
+            'total_methods': 0,
+            'registered_methods': []
+        }
+        
         if hasattr(jsonrpc, 'jsonrpc_site'):
             site = jsonrpc.jsonrpc_site
             if hasattr(site, 'view_funcs'):
                 methods = list(site.view_funcs.keys())
-                return {
-                    'registered_methods': methods,
-                    'source': 'jsonrpc_site.view_funcs',
-                    'total_methods': len(methods)
-                }
-            else:
-                return {'error': 'No view_funcs attribute found'}
-        return {'error': 'No jsonrpc_site attribute'}
+                methods_info['registered_methods'] = methods
+                methods_info['total_methods'] = len(methods)
+        
+        return methods_info
     except Exception as e:
         return {'error': str(e)}
 
 #
-# Websocket
+# Websocket (Enhanced)
 #
 
 ws_games = {}
 
 def ws_board_update(token):
+    app_logger.debug(f"Broadcasting board update: {token}")
     socketio.emit('update', 'room', room=token)
 
 def ws_msg(token, msg):
+    app_logger.debug(f"Broadcasting message to {token}: {msg}")
     socketio.emit('message', msg, room=token)
 
 class SocketIoNamespace(Namespace):
     def on_error(self, e):
-        logger.error(e)
+        app_logger.error(f"SocketIO error: {e}")
 
     def on_connect(self):
-        logger.info('socketio - connect sid: %s' % request.sid)
+        app_logger.info(f'SocketIO connect - sid: {request.sid}')
 
     def on_game(self, token):
-        logger.info('socketio - game sid: %s, token: %s' % (request.sid, token))
+        app_logger.info(f'SocketIO game join - sid: {request.sid}, token: {token}')
         join_room(token)
         ws_games[request.sid] = token
 
     def on_disconnect(self):
-        logger.info('socketio - disconnect sid: %s' % request.sid)
+        app_logger.info(f'SocketIO disconnect - sid: {request.sid}')
         if request.sid in ws_games:
             leave_room(ws_games[request.sid])
             del ws_games[request.sid]
@@ -226,228 +374,329 @@ class SocketIoNamespace(Namespace):
 socketio.on_namespace(SocketIoNamespace('/'))
 
 #
-# JSONRPC Methods
+# JSONRPC Methods (Enhanced with logging)
 #
 
 @jsonrpc.method('troop_info')
+@log_rpc_performance
 def troop_info() -> dict:
     '''Returns the unit config info'''
-    logger.info('troop_info')
+    app_logger.info('troop_info requested')
     return jsons.dump(config_game.units)
 
 @jsonrpc.method('message')
+@log_rpc_performance
 def message(token: str, msg: str) -> str:
     '''rpc chat'''
-    logger.info('msg')
+    app_logger.info(f'Chat message from {token}: {msg[:50]}...')
     ws_msg(token, msg)
     return 'ok'
 
 @jsonrpc.method('game_delete')
+@log_rpc_performance
 def game_delete_rpc(token: str) -> str:
     '''rpc delete game'''
-    logger.info(f'game_delete token={token}')
-    game_delete(token)
-    return 'ok'
+    try:
+        game_delete(token)
+        return 'ok'
+    except Exception as ex:
+        return handle_rpc_error('game_delete', token, ex)
 
 @jsonrpc.method('game_create')
+@log_rpc_performance
 def game_create_rpc(token: str) -> str:
     '''rpc-create game'''
-    logger.info(f'game_create token={token}')
-    game_create(token)
-    return 'ok'
+    try:
+        game_create(token)
+        return 'ok'
+    except Exception as ex:
+        return handle_rpc_error('game_create', token, ex)
 
 @jsonrpc.method('game_board')
+@log_rpc_performance
 def game_board_rpc(token: str) -> dict:
     '''rpc return game board'''
-    logger.info(f'game_board token={token}')
-    mngr = game_load(token)
-    return jsons.dump(mngr.board)
+    app_logger.debug(f'Game board requested: {token}')
+    try:
+        mngr = game_load(token)
+        return jsons.dump(mngr.board)
+    except Exception as ex:
+        return handle_rpc_error('game_board', token, ex)
 
 @jsonrpc.method('army_end_turn')
+@log_rpc_performance
 def army_end_turn_rpc(token: str) -> dict:
-    '''rpc end current turn.
-    :return: [current turn info]
-    '''
-    mngr = game_load(token)
+    '''rpc end current turn'''
     try:
+        mngr = game_load(token)
+        current_army = mngr.check_turn()
+        
         mngr.army_end_turn()
         game_save(mngr, token)
         ws_board_update(token)
-        turn = mngr.check_turn()
-        logger.info(f'army_end_turn={turn.name}')
-        return {'current_turn': turn.name, 'status': 'success'}
-    except (ValueError, Exception) as ex:
-        logger.error(f'army_end_turn error: {ex}')
-        return {'error': str(ex), 'status': 'failed'}
-    
+        
+        new_turn = mngr.check_turn()
+        
+        # Enhanced logging
+        turn_number = getattr(mngr.board, 'days', 1)
+        funds = getattr(mngr.board, f'{current_army.name.lower()}_funds', 0)
+        
+        if ENHANCED_LOGGING:
+            game_event_logger.log_turn_ended(token, current_army.name, turn_number, funds)
+        
+        app_logger.info(f'Turn ended: {current_army.name} -> {new_turn.name} (Day {turn_number})')
+        
+        return {'current_turn': new_turn.name, 'status': 'success', 'day': turn_number}
+    except Exception as ex:
+        app_logger.error(f'army_end_turn error: {ex}')
+        return handle_rpc_error('army_end_turn', token, ex)
+
 @jsonrpc.method('tile')
+@log_rpc_performance
 def tile_rpc(token: str, x: int, y: int) -> dict:
     '''rpc return tile at coordinates'''
-    logger.info(f'tile token={token}, x={x}, y={y}')
-    mngr = game_load(token)
-    try:
-        if x < 0 or y < 0 or x >= mngr.board.width or y >= mngr.board.height:
-            raise Exception( f'coordinate out of range: x={x}, y={y}')
-        return jsons.dump(mngr.tile_get(x, y))
-    except Exception as ex:
-        logger.error(f'tile error: {ex}')
-        raise Exception( str(ex))
-    
-@jsonrpc.method('capture_tile')
-def capture_tile_rpc(token: str, x: int, y: int) -> dict:
-    '''rpc capture tile
-    :return: [tile at coordinates given]
-    '''
-    logger.info(f'capture_tile token={token}, x={x}, y={y}')
-    mngr = game_load(token)
-    try:
-        mngr.capture_tile(x, y)
-        # Log the capture event
-        tile = mngr.tile_get(x, y)
-        logger.info(f'CAPTURE_PROGRESS | {token} | x:{x}, y:{y}, capture_hp:{tile.capture_hp if "tile" in locals() else "unknown"}')
-
-        game_save(mngr, token)
-        ws_board_update(token)
-        return jsons.dump(mngr.tile_get(x, y))
-    except Exception as ex:
-        logger.error(f'capture_tile error: {str(ex)}')
-        return {"error": str(ex), "success": False}
-
-@jsonrpc.method('capture_tile')
-def capture_tile_rpc(token: str, x: int, y: int) -> dict:
-    logger.info(f'capture_tile token={token}, x={x}, y={y}')
+    app_logger.debug(f'Tile requested: {token} at ({x},{y})')
     try:
         mngr = game_load(token)
-        mngr.current_token = token
+        
+        # Enhanced validation
+        if x < 0 or y < 0 or x >= mngr.board.width or y >= mngr.board.height:
+            raise Exception(f'coordinate out of range: x={x}, y={y}, max=({mngr.board.width-1},{mngr.board.height-1})')
+        
+        return jsons.dump(mngr.tile_get(x, y))
+    except Exception as ex:
+        app_logger.error(f'tile_rpc failed for {token} at ({x},{y}): {str(ex)}')
+        return handle_rpc_error('tile', token, ex)
+
+@jsonrpc.method('capture_tile')
+@log_rpc_performance
+def capture_tile_rpc(token: str, x: int, y: int) -> dict:
+    '''rpc capture tile'''
+    try:
+        mngr = game_load(token)
+        
         # Get info before capture
         tile = mngr.tile_get(x, y)
         old_hp = tile.capture_hp
+        unit_info = f"{tile.unit.army.name}:{tile.unit.type.name}" if tile.unit else "none"
+        property_type = tile.mapTile.type.name if hasattr(tile.mapTile.type, 'name') else str(tile.mapTile.type)
         
         mngr.capture_tile(x, y)
         
-        # Log the capture event
+        # Enhanced logging
         new_tile = mngr.tile_get(x, y)
         if new_tile.capture_hp <= 0:
             log_game_event('PROPERTY_CAPTURED', token, {
                 'position': {'x': x, 'y': y},
-                'unit': tile.unit.type.name,
-                'property': tile.mapTile.type.name,
-                'new_owner': tile.unit.army.name
+                'unit': unit_info,
+                'property_type': property_type,
+                'army': tile.unit.army.name if tile.unit else 'unknown'
             })
+            app_logger.info(f'Property captured: {token} - {unit_info} captured {property_type} at ({x},{y})')
         else:
-            logger.info(f'CAPTURE_PROGRESS | {token} | x:{x}, y:{y}')
+            app_logger.info(f'Capture progress: {token} - {unit_info} at ({x},{y}) HP: {old_hp} -> {new_tile.capture_hp}')
         
         game_save(mngr, token)
         ws_board_update(token)
         return jsons.dump(mngr.tile_get(x, y))
     except Exception as ex:
-        logger.error(f'unit_move error: {ex}')
-        return {'success': False, 'error': str(ex)}  # ✅ Clean JSON response
+        app_logger.error(f'capture_tile failed for {token} at ({x},{y}): {str(ex)}')
+        return handle_rpc_error('capture_tile', token, ex)
 
 @jsonrpc.method('unit_create')
+@log_rpc_performance
 def unit_create_rpc(token: str, army: str, unit_type: str, x: int, y: int) -> dict:
-    '''rpc create a unit at the coordinates given
-    :return: [tile at coordinates]
-    '''
-    logger.info(f'unit_create token={token}, army={army}, unit_type={unit_type}, x={x}, y={y}')
-    mngr = game_load(token)
+    '''rpc create a unit at the coordinates given'''
     try:
+        mngr = game_load(token)
+        
+        # Get cost for logging
+        cost = 0
+        try:
+            cost = getattr(config_game.units.get(unit_type.upper(), {}), 'cost', 0)
+        except:
+            pass
+        
         mngr.unit_create(army, unit_type, x, y)
+        
+        # Enhanced logging
+        log_game_event('UNIT_CREATED', token, {
+            'army': army.upper(),
+            'unit_type': unit_type.upper(),
+            'x': x,
+            'y': y,
+            'cost': cost
+        })
+        app_logger.info(f'Unit created: {token} - {army}:{unit_type} at ({x},{y}) cost={cost}')
+        
         game_save(mngr, token)
         ws_board_update(token)
         return jsons.dump(mngr.tile_get(x, y))
     except Exception as ex:
-        logger.error(f'unit_create error: {str(ex)}')
-        return {"error": str(ex), "success": False}
- 
+        app_logger.error(f'unit_create failed for {token}: {army}:{unit_type} at ({x},{y}): {str(ex)}')
+        return handle_rpc_error('unit_create', token, ex)
+
 @jsonrpc.method('unit_move')
+@log_rpc_performance
 def unit_move_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
     '''rpc move unit from / to coordinates'''
-    logger.info(f'unit_move token={token}, x={x}, y={y}, x2={x2}, y2={y2}')
-    mngr = game_load(token)
     try:
+        mngr = game_load(token)
+        
+        # Get unit info before move
+        unit = mngr.unit_at(x, y)
+        if unit:
+            army = unit.army.name
+            unit_type = unit.type.name
+            fuel_before = unit.status.fuel
+        else:
+            army = "unknown"
+            unit_type = "unknown"
+            fuel_before = 0
+        
         mngr.unit_move(x, y, x2, y2)
+        
+        # Calculate fuel used
+        unit_after = mngr.unit_at(x2, y2)
+        fuel_used = fuel_before - (unit_after.status.fuel if unit_after else 0)
+        
+        # Enhanced logging
+        log_game_event('UNIT_MOVED', token, {
+            'army': army,
+            'unit_type': unit_type,
+            'from_pos': (x, y),
+            'to_pos': (x2, y2),
+            'fuel_used': fuel_used
+        })
+        app_logger.info(f'Unit moved: {token} - {army}:{unit_type} from ({x},{y}) to ({x2},{y2}) fuel_used={fuel_used}')
+        
         game_save(mngr, token)
         ws_board_update(token)
         return jsons.dump(mngr.tile_get(x2, y2))
-    except (ValueError, Exception) as ex:
-        logger.error(f'unit_move error: {ex}')
-        return {'error': str(ex), 'success': False}
-    
+    except Exception as ex:
+        app_logger.error(f'unit_move failed for {token}: ({x},{y}) -> ({x2},{y2}): {str(ex)}')
+        return handle_rpc_error('unit_move', token, ex)
+
 @jsonrpc.method('unit_select')
+@log_rpc_performance
 def unit_select_rpc(token: str, x: int, y: int) -> dict:
+    '''rpc select unit at coordinate'''
     try:
         mngr = game_load(token)
-        mngr.current_token = token
-        unit = mngr.unit_select(x, y)
+        unit = mngr.unit_at(x, y)
+        unit_info = f"{unit.army.name}:{unit.type.name}" if unit else "none"
+        
+        mngr.unit_select(x, y)
         game_save(mngr, token)
         ws_board_update(token)
+        
+        app_logger.debug(f'Unit selected: {token} - {unit_info} at ({x},{y})')
         return jsons.dump(mngr.unit_at(x, y))
     except Exception as ex:
-        logger.error(f'unit_move error: {ex}')
-        return {'success': False, 'error': str(ex)}  # ✅ Clean JSON response
+        app_logger.error(f'unit_select failed for {token} at ({x},{y}): {str(ex)}')
+        return handle_rpc_error('unit_select', token, ex)
 
 @jsonrpc.method('unit_attack')
+@log_rpc_performance
 def unit_attack_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
-    '''rpc attacks the unit from x,y to x2,y2
-    :return: [tile at given coordinate]
-    '''
+    '''rpc attacks the unit from x,y to x2,y2'''
     try:
         mngr = game_load(token)
-        mngr.current_token = token
+        
+        # Get unit info before attack
+        attacker = mngr.unit_at(x, y)
+        defender = mngr.unit_at(x2, y2)
+        
+        if attacker and defender:
+            attacker_info = f"{attacker.army.name}:{attacker.type.name}"
+            defender_info = f"{defender.army.name}:{defender.type.name}"
+            defender_hp_before = defender.status.hp
+        else:
+            attacker_info = "unknown"
+            defender_info = "unknown"
+            defender_hp_before = 0
+        
         mngr.unit_attack(x, y, x2, y2)
+        
+        # Calculate damage dealt
+        defender_after = mngr.unit_at(x2, y2)
+        damage_dealt = defender_hp_before - (defender_after.status.hp if defender_after else 0)
+        
+        # Enhanced logging
+        if ENHANCED_LOGGING and attacker and defender:
+            game_event_logger.log_unit_attack(
+                token, attacker.army.name, attacker.type.name, (x, y),
+                defender.army.name, defender.type.name, (x2, y2), damage_dealt
+            )
+        
+        app_logger.info(f'Unit attack: {token} - {attacker_info}@({x},{y}) attacked {defender_info}@({x2},{y2}) damage={damage_dealt}')
+        
         game_save(mngr, token)
         ws_board_update(token)
-        logger.info(f'unit_attack token={token}, x={x}, y={y}, x2={x2}, y2={y2}')
         return jsons.dump(mngr.tile_get(x2, y2))
     except Exception as ex:
-        logger.error(f'unit_attack error: {str(ex)}')
-        return {"error": str(ex), "success": False}
-    
+        app_logger.error(f'unit_attack failed for {token}: ({x},{y}) -> ({x2},{y2}): {str(ex)}')
+        return handle_rpc_error('unit_attack', token, ex)
+
 @jsonrpc.method('damage_estimate')
-def damage_estimate_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:  # Changed from list to dict
-    '''rpc estimates the damage for attacker and defender.
-    :return: [damage estimate data]
-    '''
-    logger.info(f'damage_estimate token={token}, x={x}, y={y}, x2={x2}, y2={y2}')
-    mngr = game_load(token)
+@log_rpc_performance
+def damage_estimate_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
+    '''rpc estimates the damage for attacker and defender'''
     try:
+        mngr = game_load(token)
         attacker_hp, defender_hp = mngr.damage_estimate(x, y, x2, y2)
+        
+        app_logger.debug(f'Damage estimate: {token} - ({x},{y}) vs ({x2},{y2}) = attacker:{attacker_hp}, defender:{defender_hp}')
+        
         return {
             "attacker_hp_after": attacker_hp,
             "defender_hp_after": defender_hp,
             "success": True
         }
     except Exception as ex:
-        logger.error(f'damage_estimate error: {str(ex)}')
-        return {"error": str(ex), "success": False}
+        app_logger.error(f'damage_estimate failed for {token}: ({x},{y}) vs ({x2},{y2}): {str(ex)}')
+        return handle_rpc_error('damage_estimate', token, ex)
 
 @jsonrpc.method('check_turn')
-def check_turn_rpc(token: str) -> str:
+@log_rpc_performance
+def check_turn_rpc(token: str) -> dict:
     '''rpc check current turn'''
     try:
         mngr = game_load(token)
         turn = mngr.check_turn()
-        return jsons.dump(turn)
+        app_logger.debug(f'Turn check: {token} - {turn.name}')
+        return {'current_turn': turn.name, 'success': True}
     except Exception as ex:
-        logger.error(f'unit_move error: {ex}')
-        return {'success': False, 'error': str(ex)}  # ✅ Clean JSON response
+        app_logger.error(f'check_turn failed for {token}: {str(ex)}')
+        return handle_rpc_error('check_turn', token, ex)
 
-# Add other essential RPC methods as needed...
-def handle_rpc_error(func_name, ex):
-    '''Centralized error handling for RPC methods'''
-    error_msg = str(ex)
-    logger.error(f'RPC Error in {func_name}: {error_msg}')
-    logger.error(traceback.format_exc())
-    return {"error": error_msg, "success": False}
+# Add the remaining RPC methods that were in your original file...
+# (I've shown the pattern for the main ones - you can apply the same enhancements to the rest)
 
 if __name__ == '__main__':
-    setup_logging(logging.DEBUG)
-    # create tables
+    app_logger.info("=== AW-RPC Application Starting ===")
+    
+    # Setup logging level from environment
+    log_level_name = os.environ.get('LOG_LEVEL', 'INFO').upper()
+    if hasattr(logging, log_level_name):
+        log_level = getattr(logging, log_level_name)
+        setup_logging(log_level)
+    
+    # Create tables
     with app.app_context():
+        app_logger.info("Creating database tables...")
         db.create_all()
         db.session.commit()
-    # Bind to PORT if defined, otherwise default to 5000.
+        app_logger.info("Database tables created successfully")
+    
+    # Bind to PORT if defined, otherwise default to 5000
     port = int(os.environ.get('PORT', 5000))
-    logging.info(f'binding to port: {port}')
-    socketio.run(app, host='0.0.0.0', port=port, debug=True)
+    host = os.environ.get('HOST', '0.0.0.0')
+    debug = os.environ.get('DEBUG', 'True').lower() == 'true'
+    
+    app_logger.info(f"Enhanced logging: {ENHANCED_LOGGING}")
+    app_logger.info(f"Map system available: {'map_system' in globals()}")
+    app_logger.info(f"Starting server on {host}:{port} (debug={debug})")
+    app_logger.info("=== AW-RPC Application Ready ===")
+    
+    socketio.run(app, host=host, port=port, debug=debug)
