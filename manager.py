@@ -1,5 +1,3 @@
-'''[This is a cleaned and optimized manager for the RPC game engine for Advance Wars]'''
-
 import math
 from typing import Tuple, Optional, List
 from gameboard import GameBoard, GameTile
@@ -8,6 +6,9 @@ from dijkstra import dijkstra
 from map_system import MapType, MOVEMENT_COST, INF, TERRAIN_DEFENSE
 from config import Config
 import configparser
+from enhanced_movement_validation import EnhancedMovementValidator, MovementValidationResult
+'''[This is a cleaned and optimized manager for the RPC game engine for Advance Wars]'''
+
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -255,26 +256,18 @@ class GameManager:
     # =============================================================================
     
     def unit_can_move_to(self, unit: Unit, x: int, y: int) -> bool:
-        """Returns true if the unit can move to that coordinate."""
+        """Enhanced movement validation for UI indicators"""
+        
+        # Get unit's current position
         tile = self.tile_from_unit(unit)
-        if not tile or (tile.x == x and tile.y == y):
+        if not tile:
             return False
-            
-        if self.unit_at(x, y):
-            return False
-            
-        # Check basic distance and fuel first
-        manhattan_dist = self._calculate_manhattan_distance(tile.x, tile.y, x, y)
-        if manhattan_dist > unit.status.move or manhattan_dist > unit.status.fuel:
-            return False
-            
-        # Check pathfinding distance for terrain compatibility
-        try:
-            pathfinding_dist = dijkstra(self.board, tile, self.tile_at(x, y))
-            return pathfinding_dist <= unit.status.move
-        except Exception as e:
-            # Fall back to simple distance check if pathfinding fails
-            return manhattan_dist <= unit.status.move
+        
+        # Use enhanced validator
+        validator = EnhancedMovementValidator(self.board)
+        result = validator.validate_movement(unit, tile.x, tile.y, x, y)
+        
+        return result.valid    
     
     def unit_can_attack(self, unit: Unit, x: int, y: int) -> bool:
         """Returns true if the unit can attack the target."""
@@ -436,31 +429,38 @@ class GameManager:
                 tile.can_be_attacked = False
 
     def unit_move(self, x: int, y: int, x2: int, y2: int) -> Unit:
-        """Move unit from (x,y) to (x2,y2)."""
+        """Enhanced unit movement with comprehensive validation"""
+        
+        # Basic validations
         self._validate_coordinates(x, y, x2, y2)
         unit = self._validate_unit_exists(x, y)
         self._validate_unit_turn(unit)
-        self._validate_unit_can_act(unit, 'move')
+        self._validate_game_active()
         
-        if self.unit_at(x2, y2):
-            raise ValueError('Target tile occupied')
-            
-        if not self.unit_can_move_to(unit, x2, y2):
-            raise ValueError('Cannot move to target tile')
+        # Enhanced movement validation
+        validator = EnhancedMovementValidator(self.board)
+        result = validator.validate_movement(unit, x, y, x2, y2)
         
-        # Execute move
-        distance = self._calculate_manhattan_distance(x, y, x2, y2)
+        if not result.valid:
+            raise ValueError(f"Invalid movement: {result.reason}")
+        
+        # Execute the movement
         unit = self.unit_remove(x, y)
         self.unit_place(unit, x2, y2)
-        self._consume_fuel(unit, distance)
+        
+        # Consume fuel based on actual pathfinding cost
+        fuel_cost = min(result.movement_cost, result.fuel_required)
+        self._consume_fuel(unit, fuel_cost)
         
         # Update unit state
         unit.can_move = False
         if unit.is_indirect():
             unit.can_attack = False
         
+        # Update selection
         self.unit_deselect()
         self.unit_select(x2, y2)
+        
         return unit
 
     def unit_create(self, army: str, unit_type: str, x: int, y: int) -> Unit:
@@ -716,3 +716,56 @@ class GameManager:
         
         self.resupply_unit(target)
         return target
+
+    # =============================================================================
+    # ENHANCED MOVEMENT METHODS
+    # =============================================================================
+    
+    def get_unit_valid_moves(self, unit: Unit) -> List[Tuple[int, int]]:
+        """Get all valid moves for a unit"""
+        
+        tile = self.tile_from_unit(unit)
+        if not tile:
+            return []
+        
+        validator = EnhancedMovementValidator(self.board)
+        return validator.get_valid_moves(unit, tile.x, tile.y)
+    
+    def get_movement_preview(self, x: int, y: int, x2: int, y2: int) -> dict:
+        """Get movement preview for UI"""
+        
+        self._validate_coordinates(x, y, x2, y2)
+        unit = self._validate_unit_exists(x, y)
+        validator = EnhancedMovementValidator(self.board)
+        
+        return validator.get_movement_preview(unit, x, y, x2, y2)
+    
+    def validate_movement_detailed(self, x: int, y: int, x2: int, y2: int):
+        """Get detailed movement validation result with safe error handling"""
+        from enhanced_movement_validation import MovementValidationResult
+        
+        # Safe coordinate checking without exceptions
+        if not (0 <= x < self.board.width and 0 <= y < self.board.height):
+            return MovementValidationResult(
+                False, 
+                f"Source coordinates ({x}, {y}) are out of bounds. Board size: {self.board.width}x{self.board.height}"
+            )
+        
+        if not (0 <= x2 < self.board.width and 0 <= y2 < self.board.height):
+            return MovementValidationResult(
+                False, 
+                f"Destination coordinates ({x2}, {y2}) are out of bounds. Board size: {self.board.width}x{self.board.height}"
+            )
+        
+        # Check if unit exists
+        unit = self.unit_at(x, y)
+        if not unit:
+            return MovementValidationResult(False, f"No unit found at coordinates ({x}, {y})")
+        
+        # Use the enhanced validator
+        try:
+            from enhanced_movement_validation import EnhancedMovementValidator
+            validator = EnhancedMovementValidator(self.board)
+            return validator.validate_movement(unit, x, y, x2, y2)
+        except Exception as e:
+            return MovementValidationResult(False, f"Validation error: {str(e)}")

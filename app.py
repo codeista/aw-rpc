@@ -673,6 +673,38 @@ def check_turn_rpc(token: str) -> dict:
 # Add the remaining RPC methods that were in your original file...
 # (I've shown the pattern for the main ones - you can apply the same enhancements to the rest)
 
+
+# Enhanced movement RPC methods
+@jsonrpc.method('movement_preview')
+def movement_preview_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
+    """Get movement preview information"""
+    mngr = game_load(token)
+    return mngr.get_movement_preview(x, y, x2, y2)
+
+@jsonrpc.method('unit_valid_moves')
+def unit_valid_moves_rpc(token: str, x: int, y: int) -> dict:
+    """Get all valid moves for a unit"""
+    mngr = game_load(token)
+    unit = mngr._validate_unit_exists(x, y)
+    valid_moves = mngr.get_unit_valid_moves(unit)
+    return {
+        'valid_moves': valid_moves,
+        'count': len(valid_moves)
+    }
+
+@jsonrpc.method('validate_movement')
+def validate_movement_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
+    """Validate movement and get detailed information"""
+    mngr = game_load(token)
+    result = mngr.validate_movement_detailed(x, y, x2, y2)
+    return {
+        'valid': result.valid,
+        'reason': result.reason,
+        'movement_cost': result.movement_cost,
+        'fuel_required': result.fuel_required,
+        'path_found': result.path_found,
+        'blocked_by': result.blocked_by
+    }
 if __name__ == '__main__':
     app_logger.info("=== AW-RPC Application Starting ===")
     
