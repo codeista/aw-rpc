@@ -565,23 +565,62 @@ def unit_create_rpc(token: str, army: str, unit_type: str, x: int, y: int) -> di
 @jsonrpc.method('unit_move')
 @log_rpc_performance
 def unit_move_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
-    """Move a unit with enhanced validation"""
-    
+    """Move unit with enhanced validation and error handling"""
     try:
-        from error_handling import validate_coordinates, ValidationError
+        from error_handling import ValidationError
         
-        # Validate coordinates  
-        validate_coordinates(x, y, 50, 50)
-        validate_coordinates(x2, y2, 50, 50)
+        # Load game first to get actual board dimensions
+        mngr = game_load(token)
+        
+        # Dynamic coordinate validation using actual board size
+        board_width = mngr.board.width
+        board_height = mngr.board.height
+        
+        # Validate coordinates against actual board
+        if not (0 <= x < board_width and 0 <= y < board_height):
+            raise ValidationError(
+                f"Source coordinates ({x}, {y}) are out of bounds. Board size: {board_width}x{board_height}",
+                details={"position": {"x": x, "y": y}, "board_size": {"width": board_width, "height": board_height}}
+            )
+        
+        if not (0 <= x2 < board_width and 0 <= y2 < board_height):
+            raise ValidationError(
+                f"Destination coordinates ({x2}, {y2}) are out of bounds. Board size: {board_width}x{board_height}",
+                details={"position": {"x": x2, "y": y2}, "board_size": {"width": board_width, "height": board_height}}
+            )
+        
+        # Get unit info before move
+        unit = mngr.unit_at(x, y)
+        if unit:
+            army = unit.army.name
+            unit_type = unit.type.name
+            fuel_before = unit.status.fuel
+        else:
+            army = "unknown"
+            unit_type = "unknown"  
+            fuel_before = 0
         
         # Execute move
-        mngr = game_load(token)
-        unit = mngr.unit_move(x, y, x2, y2)
+        mngr.unit_move(x, y, x2, y2)
         
-        # Save and return
+        # Calculate fuel used
+        unit_after = mngr.unit_at(x2, y2)
+        fuel_used = fuel_before - (unit_after.status.fuel if unit_after else 0)
+        
+        # Enhanced logging
+        log_game_event('UNIT_MOVED', token, {
+            'army': army,
+            'unit_type': unit_type,
+            'from_pos': (x, y),
+            'to_pos': (x2, y2),
+            'fuel_used': fuel_used,
+            'board_size': f"{board_width}x{board_height}"
+        })
+        
+        app_logger.info(f'Unit moved: {token} - {army}:{unit_type} from ({x},{y}) to ({x2},{y2}) fuel_used={fuel_used} on {board_width}x{board_height} board')
+        
         game_save(mngr, token)
         ws_board_update(token)
-        
         return jsons.dump(mngr.tile_get(x2, y2))
         
     except ValidationError as e:
@@ -594,54 +633,53 @@ def unit_move_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
         }
         
     except Exception as e:
-        app_logger.error(f"unit_move failed for {token}: ({x},{y}) -> ({x2},{y2}): {str(e)}")
+        app_logger.error(f'unit_move failed for {token}: ({x},{y}) -> ({x2},{y2}): {str(e)}')
         return {
             "error": True,
-            "error_code": "INTERNAL_ERROR",
+            "error_code": "MOVEMENT_ERROR",
             "message": "Movement failed",
-            "details": {}
+            "details": {"from": {"x": x, "y": y}, "to": {"x": x2, "y": y2}}
         }
 
 # @jsonrpc.method('unit_move')
 # @log_rpc_performance
 # def unit_move_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
-#     '''rpc move unit from / to coordinates'''
+#     """Move a unit with enhanced validation"""
+    
 #     try:
+#         from error_handling import validate_coordinates, ValidationError
+        
+#         # Validate coordinates  
+#         validate_coordinates(x, y, 50, 50)
+#         validate_coordinates(x2, y2, 50, 50)
+        
+#         # Execute move
 #         mngr = game_load(token)
+#         unit = mngr.unit_move(x, y, x2, y2)
         
-#         # Get unit info before move
-#         unit = mngr.unit_at(x, y)
-#         if unit:
-#             army = unit.army.name
-#             unit_type = unit.type.name
-#             fuel_before = unit.status.fuel
-#         else:
-#             army = "unknown"
-#             unit_type = "unknown"
-#             fuel_before = 0
-        
-#         mngr.unit_move(x, y, x2, y2)
-        
-#         # Calculate fuel used
-#         unit_after = mngr.unit_at(x2, y2)
-#         fuel_used = fuel_before - (unit_after.status.fuel if unit_after else 0)
-        
-#         # Enhanced logging
-#         log_game_event('UNIT_MOVED', token, {
-#             'army': army,
-#             'unit_type': unit_type,
-#             'from_pos': (x, y),
-#             'to_pos': (x2, y2),
-#             'fuel_used': fuel_used
-#         })
-#         app_logger.info(f'Unit moved: {token} - {army}:{unit_type} from ({x},{y}) to ({x2},{y2}) fuel_used={fuel_used}')
-        
+#         # Save and return
 #         game_save(mngr, token)
 #         ws_board_update(token)
+        
 #         return jsons.dump(mngr.tile_get(x2, y2))
-#     except Exception as ex:
-#         app_logger.error(f'unit_move failed for {token}: ({x},{y}) -> ({x2},{y2}): {str(ex)}')
-#         return handle_rpc_error('unit_move', token, ex)
+        
+#     except ValidationError as e:
+#         app_logger.error(f"Validation error in unit_move: {e.message}")
+#         return {
+#             "error": True,
+#             "error_code": "VALIDATION_ERROR",
+#             "message": e.message,
+#             "details": getattr(e, 'details', {})
+#         }
+        
+#     except Exception as e:
+#         app_logger.error(f"unit_move failed for {token}: ({x},{y}) -> ({x2},{y2}): {str(e)}")
+#         return {
+#             "error": True,
+#             "error_code": "INTERNAL_ERROR",
+#             "message": "Movement failed",
+#             "details": {}
+#         }
 
 @jsonrpc.method('unit_select')
 @log_rpc_performance
