@@ -17,7 +17,7 @@ class MovementValidationResult:
     """Result of movement validation check"""
     valid: bool
     reason: str = ""
-    movement_cost: int = 0
+    MOVEMENT_COST: int = 0
     fuel_required: int = 0
     path_found: bool = False
     blocked_by: Optional[str] = None
@@ -77,7 +77,7 @@ class EnhancedMovementValidator:
         return MovementValidationResult(
             valid=True,
             reason="Movement is valid",
-            movement_cost=result.movement_cost,
+            MOVEMENT_COST=result.MOVEMENT_COST,
             fuel_required=result.fuel_required,
             path_found=True
         )
@@ -164,10 +164,10 @@ class EnhancedMovementValidator:
             return MovementValidationResult(
                 False, 
                 f"Distance {distance} exceeds movement range {unit.status.move}",
-                movement_cost=distance
+                MOVEMENT_COST=distance
             )
         
-        return MovementValidationResult(True, movement_cost=distance)
+        return MovementValidationResult(True, MOVEMENT_COST=distance)
     
     def _validate_pathfinding(self, unit: Unit, from_x: int, from_y: int, to_x: int, to_y: int) -> MovementValidationResult:
         """Validate path exists considering terrain and obstacles"""
@@ -191,7 +191,7 @@ class EnhancedMovementValidator:
                 return MovementValidationResult(
                     False, 
                     f"Path requires {pathfinding_cost} movement, but unit only has {unit.status.move}",
-                    movement_cost=pathfinding_cost,
+                    MOVEMENT_COST=pathfinding_cost,
                     path_found=True
                 )
             
@@ -206,7 +206,7 @@ class EnhancedMovementValidator:
             return MovementValidationResult(
                 True, 
                 "Valid path found",
-                movement_cost=pathfinding_cost,
+                MOVEMENT_COST=pathfinding_cost,
                 path_found=True
             )
             
@@ -217,7 +217,7 @@ class EnhancedMovementValidator:
                 return MovementValidationResult(
                     True, 
                     f"Path validation failed, using simple distance check: {e}",
-                    movement_cost=distance,
+                    MOVEMENT_COST=distance,
                     path_found=False
                 )
             else:
@@ -231,8 +231,8 @@ class EnhancedMovementValidator:
         
         try:
             unit_class_index = unit.status.cls.value
-            movement_cost = MOVEMENT_COST[terrain_type][unit_class_index]
-            return movement_cost != INF
+            MOVEMENT_COST = MOVEMENT_COST[terrain_type][unit_class_index]
+            return MOVEMENT_COST != INF
         except (KeyError, IndexError):
             # Unknown terrain or unit class - default to false for safety
             return False
@@ -280,7 +280,7 @@ class EnhancedMovementValidator:
         preview = {
             "valid": result.valid,
             "reason": result.reason,
-            "movement_cost": result.movement_cost,
+            "MOVEMENT_COST": result.MOVEMENT_COST,
             "fuel_required": result.fuel_required,
             "fuel_remaining": max(0, unit.status.fuel - result.fuel_required),
             "path_found": result.path_found,
@@ -333,7 +333,7 @@ def enhance_game_manager_movement():
         self.unit_place(unit, x2, y2)
         
         # Consume fuel based on actual movement cost
-        self._consume_fuel(unit, result.movement_cost)
+        self._consume_fuel(unit, result.MOVEMENT_COST)
         
         # Update unit state
         unit.can_move = False

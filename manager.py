@@ -449,7 +449,7 @@ class GameManager:
         self.unit_place(unit, x2, y2)
         
         # Consume fuel based on actual pathfinding cost
-        fuel_cost = min(result.movement_cost, result.fuel_required)
+        fuel_cost = min(result.MOVEMENT_COST, result.fuel_required)
         self._consume_fuel(unit, fuel_cost)
         
         # Update unit state

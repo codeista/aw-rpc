@@ -20,6 +20,7 @@ from gameboard import GameBoard
 from config import Config
 from app_core import app, jsonrpc, db, socketio
 from models import Game
+from map_system import map_repository, Map
 
 # Import our fixed logging system
 try:
@@ -175,7 +176,11 @@ def game_load(token):
         mngr = GameManager(config_game, jsons.loads(game.board, GameBoard))
         return mngr
     
-    app_logger.info(f"Creating new game: {token}")
+    app_logger.info(f"Creating new game: {token}")   
+    # If no game found, create a new one with default map 
+    default_map = map_repository.get_map('test')
+    if not default_map:
+        default_map = map_repository.get_map('scorpion')  
     board = GameBoard.create(default_map)
     mngr = GameManager(config_game, board)
     
@@ -700,7 +705,7 @@ def validate_movement_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
     return {
         'valid': result.valid,
         'reason': result.reason,
-        'movement_cost': result.movement_cost,
+        'MOVEMENT_COST': result.MOVEMENT_COST,
         'fuel_required': result.fuel_required,
         'path_found': result.path_found,
         'blocked_by': result.blocked_by
