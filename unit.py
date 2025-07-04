@@ -183,10 +183,10 @@ class Unit:
     def is_air_unit(self):
         '''Returns true if the unit is an air unit.'''
         return self.type in ({UnitType.FIGHTER, UnitType.BOMBER,
-                              UnitType.BLACKBOMB})
+                              UnitType.BLACKBOMB,})
 
     def is_land_unit(self):
-        '''Returns true if the unit is an air unit.'''
+        '''Returns true if the unit is an land unit.'''
         return self.type in ({UnitType.INFANTRY, UnitType.MECH, UnitType.TANK,
                               UnitType.MEGATANK, UnitType.NEOTANK,
                               UnitType.MEDIUMTANK, UnitType.RECON,
@@ -215,12 +215,14 @@ class Unit:
         fuel = 0
         if self.is_sea_unit():
             fuel = 1
-        if self.is_copter_unit():
+        elif self.is_copter_unit():
             fuel = 2
-        if self.is_air_unit():
+        elif self.is_air_unit():
             fuel = 5
-        if self.is_stealth_air():
+        elif self.is_stealth_air():
             fuel = 8
+        else:
+            fuel = 0
         return fuel
 
     def capacity(self):

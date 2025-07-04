@@ -323,6 +323,7 @@ class GameManager:
         self.board.game_active = False
 
     def army_end_turn(self) -> None:
+        """Enhanced turn ending with daily fuel consumption"""
         """End current army's turn and advance to next army."""
         self._validate_game_active()
         self._end_current_army_turn()
@@ -335,15 +336,40 @@ class GameManager:
         self.unit_deselect()
         self._set_all_army_units_inactive(self.board.current_turn)
 
-    def _advance_to_next_army(self) -> None:
-        """Advance to the next army in turn order."""
-        current_idx = self.board.turn_order.index(self.board.current_turn)
-        next_idx = (current_idx + 1) % len(self.board.turn_order)
-        self.board.current_turn = self.board.turn_order[next_idx]
+    def _advance_to_next_army(self):
+        """Advance to next army and handle day increment with fuel consumption"""
         
-        # Increment day counter when returning to first army
-        if next_idx == 0:
+        # Get current turn info
+        current_army = self.board.current_turn
+        current_turn_index = self.board.turn_order.index(current_army)
+        next_turn_index = (current_turn_index + 1) % len(self.board.turn_order)
+        
+        # Advance to next army
+        self.board.current_turn = self.board.turn_order[next_turn_index]
+        
+        # If we've cycled back to first player, increment day and consume fuel
+        if next_turn_index == 0:
             self.board.days += 1
+            
+            # Consume daily fuel for all units
+            fuel_results = self.consume_daily_fuel()
+            
+            # Log fuel consumption results
+            if fuel_results["units_destroyed"] > 0:
+                print(f"Day {self.board.days}: {fuel_results['units_destroyed']} units destroyed due to fuel depletion")
+            
+            if fuel_results["units_immobilized"] > 0:
+                print(f"Day {self.board.days}: {fuel_results['units_immobilized']} land units immobilized due to fuel depletion")
+
+    # def _advance_to_next_army(self) -> None:
+    #     """Advance to the next army in turn order."""
+    #     current_idx = self.board.turn_order.index(self.board.current_turn)
+    #     next_idx = (current_idx + 1) % len(self.board.turn_order)
+    #     self.board.current_turn = self.board.turn_order[next_idx]
+        
+    #     # Increment day counter when returning to first army
+    #     if next_idx == 0:
+    #         self.board.days += 1
 
     def _start_next_army_turn(self) -> None:
         """Process start-of-turn effects for new army."""
@@ -370,8 +396,8 @@ class GameManager:
         unit.can_attack = True
         unit.can_capture = True
         
-        # Consume daily fuel
-        unit.status.fuel -= unit.fuel_use()
+        # # Consume daily fuel
+        # unit.status.fuel -= unit.fuel_use()
         
         # Remove unit if out of fuel
         if unit.fuel_daily_use() and unit.status.fuel <= 0:
@@ -427,33 +453,89 @@ class GameManager:
                 tile.can_be_attacked = self.unit_can_attack(unit, tile.x, tile.y)
             else:
                 tile.can_be_attacked = False
-
+                
     def unit_move(self, x: int, y: int, x2: int, y2: int) -> Unit:
-        """Enhanced unit movement with comprehensive validation"""
+        """Enhanced unit movement with proper validation and fuel consumption"""
         
-        # Basic validations
-        self._validate_coordinates(x, y, x2, y2)
-        unit = self._validate_unit_exists(x, y)
-        self._validate_unit_turn(unit)
-        self._validate_game_active()
+        # Basic validation
+        self._validate_coordinates(x, y)
+        self._validate_coordinates(x2, y2)
         
-        # Enhanced movement validation
-        validator = EnhancedMovementValidator(self.board)
-        result = validator.validate_movement(unit, x, y, x2, y2)
+        # Get and validate unit
+        unit = self.unit_at(x, y)
+        if not unit:
+            from error_handling import MovementError
+            raise MovementError(
+                f"No unit at position ({x}, {y})",
+                from_pos=(x, y)
+            )
         
-        if not result.valid:
-            raise ValueError(f"Invalid movement: {result.reason}")
+        # Validate unit ownership and turn
+        if unit.army != self.board.current_turn:
+            from error_handling import MovementError
+            raise MovementError(
+                f"Cannot move {unit.army.name} unit during {self.board.current_turn.name}'s turn",
+                from_pos=(x, y)
+            )
+        
+        # Check if unit can move (including fuel restrictions)
+        if not unit.can_move or unit.status.fuel <= 0:
+            from error_handling import UnitError
+            if unit.status.fuel <= 0:
+                raise UnitError(
+                    "Unit is immobilized due to lack of fuel",
+                    unit_id=str(unit.id)
+                )
+            else:
+                raise UnitError(
+                    "Unit has already moved this turn",
+                    unit_id=str(unit.id)
+                )
+        
+        # Check if trying to move to same position
+        if x == x2 and y == y2:
+            from error_handling import MovementError
+            raise MovementError(
+                "Cannot move to the same position",
+                from_pos=(x, y),
+                to_pos=(x2, y2)
+            )
+        
+        # Validate destination and calculate costs
+        self._validate_move_destination(x2, y2, unit)
+        move_cost = self._calculate_movement_cost(unit, x, y, x2, y2)
+        fuel_cost = self._calculate_fuel_cost(unit, x, y, x2, y2)
+        
+        # Validate movement and fuel
+        if move_cost > unit.status.move:
+            from error_handling import MovementError
+            raise MovementError(
+                f"Distance {move_cost} exceeds movement range {unit.status.move}",
+                from_pos=(x, y),
+                to_pos=(x2, y2)
+            )
+        
+        if fuel_cost > unit.status.fuel:
+            from error_handling import UnitError
+            raise UnitError(
+                f"Insufficient fuel. Need {fuel_cost}, have {unit.status.fuel}",
+                unit_id=str(unit.id)
+            )
+        
+        # Check for unit joining
+        target_unit = self.unit_at(x2, y2)
+        if target_unit and target_unit.army == unit.army and target_unit.type == unit.type:
+            return self._handle_unit_join_fixed(x, y, x2, y2)
         
         # Execute the movement
-        unit = self.unit_remove(x, y)
+        self.unit_remove(x, y)
         self.unit_place(unit, x2, y2)
         
-        # Consume fuel based on actual pathfinding cost
-        fuel_cost = min(result.MOVEMENT_COST, result.fuel_required)
-        self._consume_fuel(unit, fuel_cost)
-        
         # Update unit state
+        unit.status.fuel -= fuel_cost
         unit.can_move = False
+        
+        # Indirect units can't attack after moving
         if unit.is_indirect():
             unit.can_attack = False
         
@@ -721,6 +803,79 @@ class GameManager:
     # ENHANCED MOVEMENT METHODS
     # =============================================================================
     
+    def _validate_move_destination(self, x: int, y: int, moving_unit):
+        """Validate the destination tile for movement"""
+        
+        # Check if destination has a unit
+        target_unit = self.unit_at(x, y)
+        if target_unit:
+            # Allow joining friendly units of same type
+            if (target_unit.army == moving_unit.army and 
+                target_unit.type == moving_unit.type and
+                target_unit.status.hp < 100):
+                return  # Valid for joining
+            
+            # Block all other unit occupations
+            from error_handling import MovementError
+            raise MovementError(
+                f"Destination occupied by {target_unit.army.name} {target_unit.type.name}",
+                to_pos=(x, y)
+            )
+        
+        # Check if terrain is passable
+        tile = self.tile_at(x, y)
+        if not self._can_unit_traverse_terrain(moving_unit, tile.mapTile.type):
+            from error_handling import MovementError
+            raise MovementError(
+                f"{moving_unit.type.name} cannot move onto {tile.mapTile.type.name}",
+                to_pos=(x, y)
+            )
+
+    def _can_unit_traverse_terrain(self, unit, terrain) -> bool:
+        """Check if unit can move onto specific terrain type"""
+        
+        unit_class = unit.status.cls
+        
+        # Get movement cost for this unit class on this terrain
+        if terrain in MOVEMENT_COST:
+            cost = MOVEMENT_COST[terrain][unit_class.value]
+            return cost != 99999999  # INF means impassable
+        
+        # Default to passable if not in table
+        return True
+
+    def _calculate_movement_cost(self, unit, from_x: int, from_y: int, to_x: int, to_y: int) -> int:
+        """Calculate movement cost considering terrain"""
+        
+        # For air units, movement is direct (Manhattan distance)
+        if unit.is_air_unit():
+            return abs(to_x - from_x) + abs(to_y - from_y)
+        
+        # For ground/sea units, try pathfinding
+        try:
+            from dijkstra import dijkstra
+            source_tile = self.tile_at(from_x, from_y)
+            target_tile = self.tile_at(to_x, to_y)
+            
+            path_cost = dijkstra(self.board, source_tile, target_tile)
+            if path_cost == 99999999:  # No path found
+                return abs(to_x - from_x) + abs(to_y - from_y)  # Fallback
+            
+            return min(path_cost, unit.status.move + 1)
+        except:
+            # Fallback to Manhattan distance
+            return abs(to_x - from_x) + abs(to_y - from_y)
+
+    def _calculate_fuel_cost(self, unit, from_x: int, from_y: int, to_x: int, to_y: int) -> int:
+        """Calculate fuel cost based on movement points spent"""
+        
+        # Air units: 1 fuel per tile
+        if unit.is_air_unit():
+            return abs(to_x - from_x) + abs(to_y - from_y)
+        
+        # Ground/sea units: 1 fuel per movement point spent
+        return self._calculate_movement_cost(unit, from_x, from_y, to_x, to_y)
+    
     def get_unit_valid_moves(self, unit: Unit) -> List[Tuple[int, int]]:
         """Get all valid moves for a unit"""
         
@@ -769,3 +924,86 @@ class GameManager:
             return validator.validate_movement(unit, x, y, x2, y2)
         except Exception as e:
             return MovementValidationResult(False, f"Validation error: {str(e)}")
+    
+    def consume_daily_fuel(self):
+        """
+        Consume daily fuel at start of each day
+        - Air and sea units are destroyed if fuel hits 0
+        - Land units become immobile but are not destroyed
+        """
+        
+        destroyed_units = []
+        immobilized_units = []
+        
+        for tile in self.board.grid:
+            if not tile.unit:
+                continue
+                
+            unit = tile.unit
+            daily_fuel_cost = self._get_daily_fuel_cost(unit)
+            
+            if daily_fuel_cost > 0:
+                unit.status.fuel -= daily_fuel_cost
+                
+                # Check if unit is affected by fuel depletion
+                if unit.status.fuel <= 0:
+                    unit.status.fuel = 0  # Don't go negative
+                    
+                    if unit.is_air_unit() or unit.is_sea_unit():
+                        # Air and sea units are destroyed
+                        destroyed_units.append((tile.x, tile.y, unit))
+                    else:
+                        # Land units become immobile but stay on board
+                        unit.can_move = False
+                        immobilized_units.append((tile.x, tile.y, unit))
+        
+        # Remove destroyed units (air and sea only)
+        for x, y, unit in destroyed_units:
+            unit_type = unit.type.name
+            army = unit.army.name
+            self.unit_remove(x, y)
+            print(f"Unit destroyed due to fuel depletion: {army} {unit_type} at ({x}, {y})")
+        
+        return {
+            "units_destroyed": len(destroyed_units),
+            "units_immobilized": len(immobilized_units),
+            "destroyed_details": [(x, y, unit.type.name, unit.army.name) for x, y, unit in destroyed_units],
+            "immobilized_details": [(x, y, unit.type.name, unit.army.name) for x, y, unit in immobilized_units]
+        }
+
+    def _get_daily_fuel_cost(self, unit) -> int:
+        """Get daily fuel consumption for different unit types"""
+        
+        # Copter units: 2 fuel per day (check this FIRST)
+        if unit.is_copter_unit():
+            return 2
+        
+        # Sea units: 1 fuel per day
+        elif unit.is_sea_unit():
+            return 1
+        
+        # Other air units: 5 fuel per day  
+        elif unit.is_air_unit():
+            return 5
+        
+        # Ground units: No daily fuel consumption
+        return 0
+
+    # def _get_daily_fuel_cost(self, unit) -> int:
+    #     """Get daily fuel consumption for different unit types"""
+        
+    #     # Sea units: 1 fuel per day
+    #     if unit.is_sea_unit():
+    #         return 1
+        
+    #     # Air units: Different consumption rates
+    #     elif unit.is_air_unit():
+    #         # Copter units: 2 fuel per day
+    #         if unit.is_copter_unit():
+    #             return 2
+    #         # Plane units: 5 fuel per day  
+    #         else:
+    #             return 5
+        
+    #     # Ground units: No daily fuel consumption
+    #     return 0
