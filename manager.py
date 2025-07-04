@@ -623,39 +623,43 @@ class GameManager:
         
         return attacker_hp_after, defender_hp_after
 
-    def capture_tile(self, x: int, y: int) -> GameTile:
-        """Capture property at coordinates."""
-        self._validate_coordinates(x, y)
-        tile = self.tile_get(x, y)
-        unit = self._validate_unit_exists(x, y)
-        self._validate_unit_turn(unit)
-        self._validate_unit_can_act(unit, 'capture')
+    def capture_tile(self, x: int, y: int) -> Dict:
+        """Enhanced property capture with comprehensive validation"""
+        return self.capture_tile_enhanced(x, y)
+
+    # def capture_tile(self, x: int, y: int) -> GameTile:
+    #     """Capture property at coordinates."""
+    #     self._validate_coordinates(x, y)
+    #     tile = self.tile_get(x, y)
+    #     unit = self._validate_unit_exists(x, y)
+    #     self._validate_unit_turn(unit)
+    #     self._validate_unit_can_act(unit, 'capture')
         
-        if not tile.mapTile.is_capturable():
-            raise ValueError('Tile not capturable')
+    #     if not tile.mapTile.is_capturable():
+    #         raise ValueError('Tile not capturable')
         
-        if not unit.type_can_capture():
-            raise ValueError('Unit cannot capture')
+    #     if not unit.type_can_capture():
+    #         raise ValueError('Unit cannot capture')
         
-        if tile.mapTile.army == unit.army:
-            raise ValueError('Cannot capture own property')
+    #     if tile.mapTile.army == unit.army:
+    #         raise ValueError('Cannot capture own property')
         
-        # Apply capture damage
-        capture_power = math.ceil(unit.status.hp / 10)
-        tile.capture_hp -= capture_power
+    #     # Apply capture damage
+    #     capture_power = math.ceil(unit.status.hp / 10)
+    #     tile.capture_hp -= capture_power
         
-        # Complete capture if HP depleted
-        if tile.capture_hp <= 0:
-            self._update_property_ownership(tile, unit.army)
-            tile.capture_hp = 20
+    #     # Complete capture if HP depleted
+    #     if tile.capture_hp <= 0:
+    #         self._update_property_ownership(tile, unit.army)
+    #         tile.capture_hp = 20
             
-            # Check for HQ capture (game end)
-            if tile.mapTile.type == MapType.BASE_TOWER_1:
-                self.board.game_active = False
+    #         # Check for HQ capture (game end)
+    #         if tile.mapTile.type == MapType.BASE_TOWER_1:
+    #             self.board.game_active = False
         
-        self._set_unit_inactive(unit)
-        self.unit_deselect()
-        return tile
+    #     self._set_unit_inactive(unit)
+    #     self.unit_deselect()
+    #     return tile
 
     def unit_wait(self, x: int, y: int) -> Unit:
         """Set unit to wait (end turn for unit)."""
@@ -799,6 +803,313 @@ class GameManager:
         self.resupply_unit(target)
         return target
 
+    # =============================================================================
+    # ENHANCED CAPTURE MECHANICS
+    # =============================================================================
+    
+    def capture_tile_enhanced(self, x: int, y: int) -> Dict:
+        """Enhanced property capture with comprehensive validation and features"""
+        
+        # Basic validation
+        self._validate_coordinates(x, y)
+        tile = self.tile_get(x, y)
+        
+        # Validate unit exists and can capture
+        unit = self._validate_capture_unit(x, y)
+        
+        # Validate property can be captured
+        self._validate_capturable_property(tile, unit)
+        
+        # Get capture context for logging
+        capture_context = self._get_capture_context(tile, unit)
+        
+        # Calculate capture damage
+        capture_damage = self._calculate_capture_damage(unit)
+        original_hp = tile.capture_hp
+        
+        # Apply capture damage
+        tile.capture_hp = max(0, tile.capture_hp - capture_damage)
+        
+        # Check if capture is complete
+        capture_complete = tile.capture_hp <= 0
+        
+        if capture_complete:
+            # Complete the capture
+            capture_result = self._complete_property_capture(tile, unit)
+        else:
+            # Partial capture
+            capture_result = {
+                "captured": False,
+                "progress": True,
+                "hp_remaining": tile.capture_hp,
+                "hp_reduced": capture_damage
+            }
+        
+        # Set unit inactive
+        self._set_unit_inactive(unit)
+        self.unit_deselect()
+        
+        # Enhanced capture result
+        result = {
+            **capture_context,
+            **capture_result,
+            "original_hp": original_hp,
+            "capture_damage": capture_damage,
+            "unit_hp": math.ceil(unit.status.hp / 10),  # Display HP for capture
+            "position": {"x": x, "y": y}
+        }
+        
+        # Log capture event
+        self._log_capture_event(result)
+        
+        return result
+    
+    def _validate_capture_unit(self, x: int, y: int) -> Unit:
+        """Validate unit exists and can perform capture"""
+        
+        unit = self.unit_at(x, y)
+        if not unit:
+            from error_handling import NotFoundError
+            raise NotFoundError(
+                f"No unit at position ({x}, {y}) to capture with",
+                resource_type="unit",
+                details={"position": {"x": x, "y": y}}
+            )
+        
+        # Validate it's the unit's turn
+        if unit.army != self.board.current_turn:
+            from error_handling import GameStateError
+            raise GameStateError(
+                f"It's {self.board.current_turn.name}'s turn, not {unit.army.name}'s",
+                details={"current_turn": self.board.current_turn.name, "unit_army": unit.army.name}
+            )
+        
+        # Validate unit can act
+        if not unit.can_capture:
+            from error_handling import UnitError
+            raise UnitError(
+                "Unit has already performed an action this turn",
+                unit_id=str(unit.id)
+            )
+        
+        # Validate unit type can capture
+        if not unit.type_can_capture():
+            from error_handling import UnitError
+            raise UnitError(
+                f"{unit.type.name} units cannot capture properties",
+                unit_id=str(unit.id),
+                details={"unit_type": unit.type.name}
+            )
+        
+        return unit
+
+    def _validate_capturable_property(self, tile, unit: Unit):
+        """Validate the property can be captured"""
+        
+        # Check if tile has a capturable property
+        capturable_properties = {
+            MapType.CITY, MapType.FACTORY, MapType.AIRPORT, MapType.PORT,
+            MapType.BASE_TOWER_1, MapType.BASE_TOWER_2, MapType.BASE_TOWER_3, MapType.BASE_TOWER_4,
+            MapType.COM_TOWER, MapType.LAB, MapType.MISSILE_SILO
+        }
+        
+        if tile.mapTile.type not in capturable_properties:
+            from error_handling import GameStateError
+            raise GameStateError(
+                f"Cannot capture {tile.mapTile.type.name} - not a capturable property",
+                details={"terrain_type": tile.mapTile.type.name}
+            )
+        
+        # Can't capture own properties
+        if tile.mapTile.army == unit.army:
+            from error_handling import GameStateError
+            raise GameStateError(
+                f"Property already belongs to {unit.army.name}",
+                details={"property_owner": unit.army.name, "unit_army": unit.army.name}
+            )
+        
+        # Can't capture if property has defending unit
+        if tile.unit and tile.unit != unit:
+            from error_handling import GameStateError
+            raise GameStateError(
+                f"Property is defended by {tile.unit.army.name} {tile.unit.type.name}",
+                details={"defender": f"{tile.unit.army.name}_{tile.unit.type.name}"}
+            )
+
+    def _get_capture_context(self, tile, unit: Unit) -> Dict:
+        """Get context information about the capture attempt"""
+        
+        property_name = tile.mapTile.type.name
+        current_owner = tile.mapTile.army.name if tile.mapTile.army else "Neutral"
+        
+        return {
+            "property_type": property_name,
+            "current_owner": current_owner,
+            "capturing_army": unit.army.name,
+            "capturing_unit": unit.type.name,
+            "is_hq": tile.mapTile.type in {MapType.BASE_TOWER_1, MapType.BASE_TOWER_2, 
+                                        MapType.BASE_TOWER_3, MapType.BASE_TOWER_4}
+        }
+
+    def _calculate_capture_damage(self, unit: Unit) -> int:
+        """Calculate capture damage based on unit HP"""
+        
+        # Capture damage = unit's displayed HP (1-10)
+        # This matches authentic Advance Wars mechanics
+        capture_power = math.ceil(unit.status.hp / 10)
+        
+        return capture_power
+
+    def _complete_property_capture(self, tile, unit: Unit) -> Dict:
+        """Complete property capture and handle consequences"""
+        
+        old_owner = tile.mapTile.army
+        property_type = tile.mapTile.type
+        
+        # Update ownership
+        self._update_property_ownership(tile, unit.army)
+        tile.capture_hp = 20  # Reset to full
+        
+        # Check for victory conditions
+        victory_result = self._check_capture_victory_conditions(property_type, unit.army, old_owner)
+        
+        # Generate capture income bonus (immediate reward)
+        capture_bonus = self._calculate_capture_bonus(property_type)
+        if capture_bonus > 0:
+            self._update_army_funds(unit.army, capture_bonus)
+        
+        return {
+            "captured": True,
+            "progress": False,
+            "hp_remaining": 20,
+            "new_owner": unit.army.name,
+            "old_owner": old_owner.name if old_owner else "Neutral",
+            "capture_bonus": capture_bonus,
+            "victory_achieved": victory_result["victory"],
+            "victory_type": victory_result["type"],
+            "game_ended": victory_result["game_ended"]
+        }
+
+    def _calculate_capture_bonus(self, property_type: MapType) -> int:
+        """Calculate immediate bonus for capturing specific properties"""
+        
+        # Different properties give different immediate bonuses
+        capture_bonuses = {
+            MapType.CITY: 1000,           # Standard city bonus
+            MapType.FACTORY: 1500,        # Industrial bonus
+            MapType.AIRPORT: 2000,        # Strategic air bonus
+            MapType.PORT: 2000,           # Strategic sea bonus
+            MapType.COM_TOWER: 3000,      # Major strategic bonus
+            MapType.LAB: 2500,            # Research bonus
+            MapType.MISSILE_SILO: 2000,   # Weapons bonus
+            MapType.BASE_TOWER_1: 5000,   # HQ capture bonus
+            MapType.BASE_TOWER_2: 5000,
+            MapType.BASE_TOWER_3: 5000,
+            MapType.BASE_TOWER_4: 5000,
+        }
+        
+        return capture_bonuses.get(property_type, 0)
+
+    def _check_capture_victory_conditions(self, property_type: MapType, capturing_army: Army, old_owner: Army) -> Dict:
+        """Check if capture results in victory"""
+        
+        victory_result = {
+            "victory": False,
+            "type": None,
+            "game_ended": False
+        }
+        
+        # HQ Capture Victory
+        if property_type in {MapType.BASE_TOWER_1, MapType.BASE_TOWER_2, 
+                        MapType.BASE_TOWER_3, MapType.BASE_TOWER_4}:
+            
+            # Check if the captured HQ belonged to an enemy
+            if old_owner and old_owner != capturing_army:
+                
+                # Check if this army has lost all HQs
+                remaining_hqs = self._count_army_hqs(old_owner)
+                
+                if remaining_hqs == 0:
+                    # Enemy has lost all HQs - victory!
+                    self.board.game_active = False
+                    self.board.winner = capturing_army
+                    
+                    victory_result = {
+                        "victory": True,
+                        "type": "HQ_CAPTURE",
+                        "game_ended": True,
+                        "defeated_army": old_owner.name
+                    }
+        
+        return victory_result
+
+    def _count_army_hqs(self, army: Army) -> int:
+        """Count how many HQs an army still controls"""
+        
+        hq_types = {MapType.BASE_TOWER_1, MapType.BASE_TOWER_2, 
+                MapType.BASE_TOWER_3, MapType.BASE_TOWER_4}
+        
+        hq_count = 0
+        for tile in self.board.grid:
+            if (tile.mapTile.type in hq_types and 
+                tile.mapTile.army == army):
+                hq_count += 1
+        
+        return hq_count
+    
+    def _log_capture_event(self, result: Dict):
+        """Log capture event with detailed information"""
+        
+        if result["captured"]:
+            print(f"🏴 PROPERTY CAPTURED: {result['capturing_army']} {result['capturing_unit']} "
+                f"captured {result['property_type']} at ({result['position']['x']}, {result['position']['y']}) "
+                f"from {result['old_owner']}")
+            
+            if result["victory_achieved"]:
+                print(f"🎉 VICTORY: {result['capturing_army']} wins by {result['victory_type']}!")
+        else:
+            print(f"📈 CAPTURE PROGRESS: {result['capturing_army']} {result['capturing_unit']} "
+                f"reduced {result['property_type']} HP to {result['hp_remaining']}/20 "
+                f"(-{result['capture_damage']} damage)")
+
+    def get_capture_preview(self, x: int, y: int) -> Dict:
+        """Get capture preview information for UI"""
+        
+        try:
+            tile = self.tile_get(x, y)
+            unit = self.unit_at(x, y)
+            
+            if not unit:
+                return {"can_capture": False, "reason": "No unit present"}
+            
+            if not unit.type_can_capture():
+                return {"can_capture": False, "reason": f"{unit.type.name} cannot capture"}
+            
+            if not unit.can_capture:
+                return {"can_capture": False, "reason": "Unit has already acted"}
+            
+            if unit.army != self.board.current_turn:
+                return {"can_capture": False, "reason": "Not unit's turn"}
+            
+            # Calculate capture preview
+            capture_damage = self._calculate_capture_damage(unit)
+            new_hp = max(0, tile.capture_hp - capture_damage)
+            will_complete = new_hp <= 0
+            
+            return {
+                "can_capture": True,
+                "current_hp": tile.capture_hp,
+                "damage": capture_damage,
+                "new_hp": new_hp,
+                "will_complete": will_complete,
+                "property_type": tile.mapTile.type.name,
+                "current_owner": tile.mapTile.army.name if tile.mapTile.army else "Neutral",
+                "turns_to_complete": math.ceil(new_hp / capture_damage) if not will_complete else 0
+            }
+            
+        except Exception as e:
+            return {"can_capture": False, "reason": str(e)}
+        
     # =============================================================================
     # ENHANCED MOVEMENT METHODS
     # =============================================================================
@@ -988,22 +1299,3 @@ class GameManager:
         
         # Ground units: No daily fuel consumption
         return 0
-
-    # def _get_daily_fuel_cost(self, unit) -> int:
-    #     """Get daily fuel consumption for different unit types"""
-        
-    #     # Sea units: 1 fuel per day
-    #     if unit.is_sea_unit():
-    #         return 1
-        
-    #     # Air units: Different consumption rates
-    #     elif unit.is_air_unit():
-    #         # Copter units: 2 fuel per day
-    #         if unit.is_copter_unit():
-    #             return 2
-    #         # Plane units: 5 fuel per day  
-    #         else:
-    #             return 5
-        
-    #     # Ground units: No daily fuel consumption
-    #     return 0
