@@ -231,6 +231,118 @@ class GameManager:
                     self.board.total_red_properties += income
                 elif tile.mapTile.army == Army.BLUE:
                     self.board.total_blue_properties += income
+                    
+    def produce_unit_at_facility(self, facility_x: int, facility_y: int, 
+                           unit_type_str: str, army: Army):
+        """Produce a unit at a facility with cost management"""
+        
+        # Import here to avoid circular imports
+        from production_system import ProductionSystem
+        from unit import UnitType
+        
+        # Convert string to UnitType enum
+        try:
+            unit_type = UnitType[unit_type_str.upper()]
+        except KeyError:
+            raise ValueError(f"Invalid unit type: {unit_type_str}")
+        
+        # Use production system
+        production_system = ProductionSystem(self)
+        result = production_system.produce_unit(facility_x, facility_y, unit_type, army)
+        
+        return result
+
+    def get_production_options(self, facility_x: int, facility_y: int, army: Army) -> Dict:
+        """Get available production options for a facility"""
+        
+        from production_system import ProductionSystem
+        
+        production_system = ProductionSystem(self)
+        return production_system.get_producible_units(facility_x, facility_y, army)
+
+    def get_army_economy(self, army: Army) -> Dict:
+        """Get complete economic information for an army"""
+        
+        from production_system import ProductionSystem
+        
+        production_system = ProductionSystem(self)
+        return production_system.get_economic_summary(army)
+
+    def get_army_facilities(self, army: Army) -> List[Dict]:
+        """Get all production facilities owned by an army"""
+        
+        from production_system import ProductionSystem
+        
+        production_system = ProductionSystem(self)
+        return production_system.get_all_production_facilities(army)
+
+    def can_afford_unit(self, unit_type_str: str, army: Army) -> bool:
+        """Check if army can afford a specific unit type"""
+        
+        from production_system import ProductionSystem
+        from unit import UnitType
+        
+        try:
+            unit_type = UnitType[unit_type_str.upper()]
+            production_system = ProductionSystem(self)
+            current_funds = self._get_army_funds(army)
+            unit_cost = production_system.UNIT_COSTS.get(unit_type, 1000)
+            return current_funds >= unit_cost
+        except KeyError:
+            return False
+
+    def process_daily_income(self, army: Army) -> int:
+        """Process daily income for an army (called during turn start)"""
+        
+        from production_system import ProductionSystem
+        
+        production_system = ProductionSystem(self)
+        daily_income = production_system.calculate_daily_income(army)
+        
+        # Add income to army funds
+        self._update_army_funds(army, daily_income)
+        
+        return daily_income
+
+    # Enhanced turn start method with income processing
+    def _start_next_army_turn(self) -> None:
+        """Process start-of-turn effects for new army with enhanced income"""
+        current_army = self.board.current_turn
+        
+        # Process daily income using production system
+        daily_income = self.process_daily_income(current_army)
+        
+        # Activate units and process turn effects
+        for tile in self.board.grid:
+            if tile.unit and tile.unit.army == current_army:
+                unit = tile.unit
+                self._process_unit_turn_start(unit, tile)
+            elif not tile.unit and tile.mapTile.is_capturable():
+                tile.capture_hp = 20
+        
+        # Log income processing
+        if hasattr(self, 'app_logger'):
+            self.app_logger.info(f"{current_army.name} received {daily_income} income")
+
+    # Enhanced unit creation with initial funds setup
+    def setup_initial_economy(self) -> None:
+        """Setup initial funds for all armies based on starting properties"""
+        
+        from production_system import ProductionSystem
+        
+        production_system = ProductionSystem(self)
+        
+        # Calculate initial funds for each army
+        for army in self.board.turn_order:
+            initial_income = production_system.calculate_daily_income(army)
+            # Give armies starting funds (could be 10x daily income or a fixed amount)
+            starting_funds = max(10000, initial_income * 3)  # At least 10k or 3 days income
+            
+            # Set initial funds
+            if army == Army.RED:
+                self.board.red_funds = starting_funds
+            elif army == Army.BLUE:
+                self.board.blue_funds = starting_funds
 
     # =============================================================================
     # COMBAT SYSTEM
@@ -443,16 +555,6 @@ class GameManager:
             
             if fuel_results["units_immobilized"] > 0:
                 print(f"Day {self.board.days}: {fuel_results['units_immobilized']} land units immobilized due to fuel depletion")
-
-    # def _advance_to_next_army(self) -> None:
-    #     """Advance to the next army in turn order."""
-    #     current_idx = self.board.turn_order.index(self.board.current_turn)
-    #     next_idx = (current_idx + 1) % len(self.board.turn_order)
-    #     self.board.current_turn = self.board.turn_order[next_idx]
-        
-    #     # Increment day counter when returning to first army
-    #     if next_idx == 0:
-    #         self.board.days += 1
 
     def _start_next_army_turn(self) -> None:
         """Process start-of-turn effects for new army."""
@@ -709,40 +811,6 @@ class GameManager:
     def capture_tile(self, x: int, y: int) -> Dict:
         """Enhanced property capture with comprehensive validation"""
         return self.capture_tile_enhanced(x, y)
-
-    # def capture_tile(self, x: int, y: int) -> GameTile:
-    #     """Capture property at coordinates."""
-    #     self._validate_coordinates(x, y)
-    #     tile = self.tile_get(x, y)
-    #     unit = self._validate_unit_exists(x, y)
-    #     self._validate_unit_turn(unit)
-    #     self._validate_unit_can_act(unit, 'capture')
-        
-    #     if not tile.mapTile.is_capturable():
-    #         raise ValueError('Tile not capturable')
-        
-    #     if not unit.type_can_capture():
-    #         raise ValueError('Unit cannot capture')
-        
-    #     if tile.mapTile.army == unit.army:
-    #         raise ValueError('Cannot capture own property')
-        
-    #     # Apply capture damage
-    #     capture_power = math.ceil(unit.status.hp / 10)
-    #     tile.capture_hp -= capture_power
-        
-    #     # Complete capture if HP depleted
-    #     if tile.capture_hp <= 0:
-    #         self._update_property_ownership(tile, unit.army)
-    #         tile.capture_hp = 20
-            
-    #         # Check for HQ capture (game end)
-    #         if tile.mapTile.type == MapType.BASE_TOWER_1:
-    #             self.board.game_active = False
-        
-    #     self._set_unit_inactive(unit)
-    #     self.unit_deselect()
-    #     return tile
 
     def unit_wait(self, x: int, y: int) -> Unit:
         """Set unit to wait (end turn for unit)."""

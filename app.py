@@ -1008,6 +1008,235 @@ def validate_movement_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
         'path_found': result.path_found,
         'blocked_by': result.blocked_by
     }
+
+@jsonrpc.method('produce_unit')
+@log_rpc_performance
+def produce_unit_rpc(token: str, x: int, y: int, unit_type: str) -> dict:
+    """Produce a unit at a facility"""
+    try:
+        mngr = game_load(token)
+        
+        # Validate coordinates
+        board_width = mngr.board.width
+        board_height = mngr.board.height
+        
+        if not (0 <= x < board_width and 0 <= y < board_height):
+            return {
+                "success": False,
+                "error_code": "VALIDATION_ERROR",
+                "message": f"Coordinates ({x}, {y}) out of bounds"
+            }
+        
+        # Get current army
+        current_army = mngr.board.current_turn
+        
+        # Attempt production
+        result = mngr.produce_unit_at_facility(x, y, unit_type, current_army)
+        
+        if result.success:
+            # Save game state
+            game_save(mngr, token)
+            ws_board_update(token)
+            
+            # Enhanced logging
+            if ENHANCED_LOGGING:
+                app_logger.info(f'Unit produced: {token} - {current_army.name} created {unit_type} at ({x},{y}) for {result.cost}')
+            
+            return {
+                "success": True,
+                "unit_created": {
+                    "type": unit_type,
+                    "position": {"x": x, "y": y},
+                    "army": current_army.name,
+                    "cost": result.cost,
+                    "remaining_funds": result.remaining_funds
+                }
+            }
+        else:
+            return {
+                "success": False,
+                "error_code": "PRODUCTION_ERROR",
+                "message": result.error_message,
+                "remaining_funds": result.remaining_funds
+            }
+        
+    except Exception as e:
+        app_logger.error(f"Unit production failed for {token} at ({x},{y}): {str(e)}")
+        return {
+            "success": False,
+            "error_code": "PRODUCTION_ERROR",
+            "message": f"Production failed: {str(e)}"
+        }
+
+@jsonrpc.method('get_production_options')
+@log_rpc_performance
+def get_production_options_rpc(token: str, x: int, y: int) -> dict:
+    """Get available units that can be produced at a facility"""
+    try:
+        mngr = game_load(token)
+        
+        # Validate coordinates
+        board_width = mngr.board.width
+        board_height = mngr.board.height
+        
+        if not (0 <= x < board_width and 0 <= y < board_height):
+            return {
+                "success": False,
+                "error_code": "VALIDATION_ERROR",
+                "message": f"Coordinates ({x}, {y}) out of bounds"
+            }
+        
+        # Get current army
+        current_army = mngr.board.current_turn
+        
+        # Get production options
+        options = mngr.get_production_options(x, y, current_army)
+        
+        if "error" in options:
+            return {
+                "success": False,
+                "error_code": "FACILITY_ERROR",
+                "message": options["error"]
+            }
+        
+        return {
+            "success": True,
+            "facility": {
+                "position": {"x": x, "y": y},
+                "type": options["facility_type"],
+                "army": current_army.name
+            },
+            "production_options": options
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Get production options failed for {token} at ({x},{y}): {str(e)}")
+        return {
+            "success": False,
+            "error_code": "FACILITY_ERROR",
+            "message": f"Could not get production options: {str(e)}"
+        }
+
+@jsonrpc.method('get_army_economy')
+@log_rpc_performance
+def get_army_economy_rpc(token: str) -> dict:
+    """Get complete economic summary for current army"""
+    try:
+        mngr = game_load(token)
+        current_army = mngr.board.current_turn
+        
+        economy = mngr.get_army_economy(current_army)
+        
+        return {
+            "success": True,
+            "economy": economy
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Get army economy failed for {token}: {str(e)}")
+        return {
+            "success": False,
+            "error_code": "ECONOMY_ERROR",
+            "message": f"Could not get economy info: {str(e)}"
+        }
+
+@jsonrpc.method('get_army_facilities')
+@log_rpc_performance
+def get_army_facilities_rpc(token: str) -> dict:
+    """Get all production facilities owned by current army"""
+    try:
+        mngr = game_load(token)
+        current_army = mngr.board.current_turn
+        
+        facilities = mngr.get_army_facilities(current_army)
+        
+        return {
+            "success": True,
+            "army": current_army.name,
+            "facilities": facilities,
+            "facility_count": len(facilities)
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Get army facilities failed for {token}: {str(e)}")
+        return {
+            "success": False,
+            "error_code": "FACILITY_ERROR",
+            "message": f"Could not get facilities: {str(e)}"
+        }
+
+@jsonrpc.method('can_afford_unit')
+@log_rpc_performance
+def can_afford_unit_rpc(token: str, unit_type: str) -> dict:
+    """Check if current army can afford a specific unit type"""
+    try:
+        mngr = game_load(token)
+        current_army = mngr.board.current_turn
+        
+        can_afford = mngr.can_afford_unit(unit_type, current_army)
+        current_funds = mngr._get_army_funds(current_army)
+        
+        # Get unit cost for reference
+        from production_system import ProductionSystem
+        from unit import UnitType
+        
+        try:
+            unit_type_enum = UnitType[unit_type.upper()]
+            production_system = ProductionSystem(mngr)
+            unit_cost = production_system.UNIT_COSTS.get(unit_type_enum, 1000)
+        except KeyError:
+            return {
+                "success": False,
+                "error_code": "VALIDATION_ERROR",
+                "message": f"Invalid unit type: {unit_type}"
+            }
+        
+        return {
+            "success": True,
+            "can_afford": can_afford,
+            "unit_type": unit_type,
+            "unit_cost": unit_cost,
+            "current_funds": current_funds,
+            "army": current_army.name
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Can afford unit check failed for {token}: {str(e)}")
+        return {
+            "success": False,
+            "error_code": "AFFORDABILITY_ERROR",
+            "message": f"Could not check affordability: {str(e)}"
+        }
+
+@jsonrpc.method('get_unit_costs')
+@log_rpc_performance
+def get_unit_costs_rpc(token: str) -> dict:
+    """Get all unit costs for reference"""
+    try:
+        mngr = game_load(token)
+        
+        from production_system import ProductionSystem
+        
+        production_system = ProductionSystem(mngr)
+        
+        # Convert costs to readable format
+        costs = {}
+        for unit_type, cost in production_system.UNIT_COSTS.items():
+            costs[unit_type.name] = cost
+        
+        return {
+            "success": True,
+            "unit_costs": costs
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Get unit costs failed for {token}: {str(e)}")
+        return {
+            "success": False,
+            "error_code": "COSTS_ERROR",
+            "message": f"Could not get unit costs: {str(e)}"
+        }
+
 if __name__ == '__main__':
     app_logger.info("=== AW-RPC Application Starting ===")
     
