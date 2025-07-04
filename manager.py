@@ -6,7 +6,14 @@ from dijkstra import dijkstra
 from map_system import MapType, MOVEMENT_COST, INF, TERRAIN_DEFENSE
 from config import Config
 import configparser
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from combat_system import CombatResult, CombatSystem
 from enhanced_movement_validation import EnhancedMovementValidator, MovementValidationResult
+import random
+from dataclasses import dataclass
+from enum import Enum
+
 '''[This is a cleaned and optimized manager for the RPC game engine for Advance Wars]'''
 
 
@@ -251,6 +258,82 @@ class GameManager:
             attacker.status.hp -= counter_damage
             defender.status.ammo -= 1
 
+    def unit_attack_enhanced(self, attacker_x: int, attacker_y: int, 
+                        defender_x: int, defender_y: int):
+        """Enhanced unit attack with full combat system"""
+        from combat_system import CombatSystem
+        
+        # Validation
+        self._validate_coordinates(attacker_x, attacker_y, defender_x, defender_y)
+        attacker = self._validate_unit_exists(attacker_x, attacker_y)
+        defender = self._validate_unit_exists(defender_x, defender_y)
+        
+        self._validate_unit_turn(attacker)
+        self._validate_unit_can_act(attacker, 'attack')
+        
+        # Check if attack is valid
+        if not attacker.is_attackable(defender):
+            raise ValueError(f"{attacker.type.name} cannot attack {defender.type.name}")
+        
+        if attacker.army == defender.army:
+            raise ValueError("Cannot attack friendly units")
+        
+        # Check range
+        distance = abs(attacker_x - defender_x) + abs(attacker_y - defender_y)
+        if not (attacker.status.rangemin <= distance <= attacker.status.rangemax):
+            raise ValueError(f"Target out of range ({distance}). Range: {attacker.status.rangemin}-{attacker.status.rangemax}")
+        
+        # Execute combat
+        combat_system = CombatSystem(self)
+        result = combat_system.execute_combat((attacker_x, attacker_y), (defender_x, defender_y))
+        
+        # Set attacker as inactive
+        if not result.attacker_destroyed:
+            self._set_unit_inactive(attacker)
+        
+        # Deselect units
+        self.unit_deselect()
+        
+        return result
+
+    def get_damage_preview(self, attacker_x: int, attacker_y: int, 
+                        defender_x: int, defender_y: int) -> Dict:
+        """Get damage preview without executing combat"""
+        from combat_system import CombatSystem
+        
+        attacker = self.unit_at(attacker_x, attacker_y)
+        defender = self.unit_at(defender_x, defender_y)
+        
+        if not attacker or not defender:
+            return {"error": "Missing units"}
+        
+        attacker_tile = self.tile_at(attacker_x, attacker_y)
+        defender_tile = self.tile_at(defender_x, defender_y)
+        
+        combat_system = CombatSystem(self)
+        
+        # Calculate potential damage
+        attacker_damage = combat_system.calculate_damage(attacker, defender, defender_tile)
+        
+        # Check for potential counter
+        counter_damage = 0
+        can_counter = combat_system.can_counter_attack(
+            attacker, defender, (attacker_x, attacker_y), (defender_x, defender_y)
+        )
+        
+        if can_counter:
+            counter_damage = combat_system.calculate_damage(defender, attacker, attacker_tile)
+        
+        return {
+            "attacker_damage": attacker_damage,
+            "counter_damage": counter_damage,
+            "can_counter": can_counter,
+            "defender_hp_after": max(0, defender.status.hp - attacker_damage),
+            "attacker_hp_after": max(0, attacker.status.hp - counter_damage) if can_counter else attacker.status.hp,
+            "defender_destroyed": (defender.status.hp - attacker_damage) <= 0,
+            "attacker_destroyed": can_counter and (attacker.status.hp - counter_damage) <= 0
+        }
+ 
     # =============================================================================
     # MOVEMENT AND VALIDATION
     # =============================================================================

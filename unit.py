@@ -257,6 +257,33 @@ class Unit:
         '''Returns true if the unit can resuppy.'''
         if self.type in {UnitType.APC, UnitType.BLACKBOAT}:
             return True
+        
+    def enhanced_attack_damage(self, target, tile, luck_enabled=True):
+        """Enhanced attack damage calculation with proper Advance Wars formula"""
+        
+        # Get base damage from damage table
+        base_damage = DAMAGE_TABLE[self.type][target.type.value]
+        
+        if base_damage == 0:
+            return 0
+        
+        # Luck factor (0-9)
+        luck = random.randint(0, 9) if luck_enabled else 0
+        
+        # Attacker HP factor (1-10 displayed HP converted to 0.1-1.0)
+        attacker_hp_factor = math.ceil(self.status.hp / 10) / 10
+        
+        # Terrain defense factor
+        terrain_stars = TERRAIN_DEFENSE.get(tile.mapTile.type, 0)
+        defender_hp_display = math.ceil(target.status.hp / 10)
+        
+        # Defense multiplier: (100 - terrain_defense * defender_hp) / 100
+        defense_multiplier = (100 - terrain_stars * defender_hp_display) / 100
+        
+        # Final calculation
+        damage = (base_damage + luck) * attacker_hp_factor * defense_multiplier
+        
+        return max(0, int(damage))
 
     @classmethod
     def create(cls, army: Army, unit_type: UnitType, unit_config: UnitConfig):

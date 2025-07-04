@@ -842,9 +842,140 @@ def check_turn_rpc(token: str) -> dict:
         app_logger.error(f'check_turn failed for {token}: {str(ex)}')
         return handle_rpc_error('check_turn', token, ex)
 
-# Add the remaining RPC methods that were in your original file...
-# (I've shown the pattern for the main ones - you can apply the same enhancements to the rest)
+# Enhanced damage preview RPC method)
+@jsonrpc.method('damage_preview')
+@log_rpc_performance
+def damage_preview_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
+    """Get damage preview before executing attack"""
+    try:
+        mngr = game_load(token)
+        
+        # Validate coordinates
+        board_width = mngr.board.width
+        board_height = mngr.board.height
+        
+        if not (0 <= x < board_width and 0 <= y < board_height):
+            return {
+                "success": False,
+                "error_code": "VALIDATION_ERROR",
+                "message": f"Attacker coordinates ({x}, {y}) out of bounds"
+            }
+        
+        if not (0 <= x2 < board_width and 0 <= y2 < board_height):
+            return {
+                "success": False,
+                "error_code": "VALIDATION_ERROR", 
+                "message": f"Target coordinates ({x2}, {y2}) out of bounds"
+            }
+        
+        preview = mngr.get_damage_preview(x, y, x2, y2)
+        
+        if "error" in preview:
+            return {
+                "success": False,
+                "error_code": "PREVIEW_ERROR",
+                "message": preview["error"]
+            }
+        
+        return {
+            "success": True,
+            "preview": preview,
+            "attacker_position": {"x": x, "y": y},
+            "defender_position": {"x": x2, "y": y2}
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Damage preview failed for {token}: ({x},{y}) vs ({x2},{y2}): {str(e)}")
+        return {
+            "success": False,
+            "error_code": "PREVIEW_ERROR",
+            "message": f"Could not calculate damage preview: {str(e)}"
+        }
 
+@jsonrpc.method('unit_attack_enhanced')
+@log_rpc_performance
+def unit_attack_enhanced_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
+    """Enhanced unit attack with full combat system"""
+    try:
+        mngr = game_load(token)
+        
+        # Validate coordinates
+        board_width = mngr.board.width
+        board_height = mngr.board.height
+        
+        if not (0 <= x < board_width and 0 <= y < board_height):
+            return {
+                "success": False,
+                "error_code": "VALIDATION_ERROR",
+                "message": f"Attacker coordinates ({x}, {y}) out of bounds"
+            }
+        
+        if not (0 <= x2 < board_width and 0 <= y2 < board_height):
+            return {
+                "success": False,
+                "error_code": "VALIDATION_ERROR",
+                "message": f"Target coordinates ({x2}, {y2}) out of bounds"
+            }
+        
+        # Get unit info for logging
+        attacker = mngr.unit_at(x, y)
+        defender = mngr.unit_at(x2, y2)
+        
+        if not attacker:
+            return {
+                "success": False,
+                "error_code": "VALIDATION_ERROR",
+                "message": f"No attacking unit at ({x}, {y})"
+            }
+        
+        if not defender:
+            return {
+                "success": False,
+                "error_code": "VALIDATION_ERROR", 
+                "message": f"No target unit at ({x2}, {y2})"
+            }
+        
+        # Store combat info for logging
+        attacker_info = f"{attacker.army.name}:{attacker.type.name}"
+        defender_info = f"{defender.army.name}:{defender.type.name}"
+        
+        # Execute enhanced combat
+        combat_result = mngr.unit_attack_enhanced(x, y, x2, y2)
+        
+        # Enhanced logging
+        if ENHANCED_LOGGING:
+            app_logger.info(f'Enhanced combat: {token} - {attacker_info} attacked {defender_info} at ({x2},{y2})')
+            app_logger.info(f'Combat result: Attacker dealt {combat_result.attacker_damage_dealt}, Defender dealt {combat_result.defender_damage_dealt}')
+        
+        # Save game state
+        game_save(mngr, token)
+        ws_board_update(token)
+        
+        # Return detailed combat result
+        return {
+            "success": True,
+            "combat_result": {
+                "attacker_damage_dealt": combat_result.attacker_damage_dealt,
+                "defender_damage_dealt": combat_result.defender_damage_dealt,
+                "attacker_hp_before": combat_result.attacker_hp_before,
+                "attacker_hp_after": combat_result.attacker_hp_after,
+                "defender_hp_before": combat_result.defender_hp_before,
+                "defender_hp_after": combat_result.defender_hp_after,
+                "defender_destroyed": combat_result.defender_destroyed,
+                "attacker_destroyed": combat_result.attacker_destroyed,
+                "counter_attack_occurred": combat_result.counter_attack_occurred
+            },
+            "attacker_position": {"x": x, "y": y},
+            "defender_position": {"x": x2, "y": y2}
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Enhanced attack failed for {token}: ({x},{y}) vs ({x2},{y2}): {str(e)}")
+        return {
+            "success": False,
+            "error_code": "COMBAT_ERROR",
+            "message": f"Combat operation failed: {str(e)}"
+        }
 
 # Enhanced movement RPC methods
 @jsonrpc.method('movement_preview')
