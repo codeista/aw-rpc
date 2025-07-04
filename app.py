@@ -644,21 +644,82 @@ def unit_move_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
 @jsonrpc.method('unit_select')
 @log_rpc_performance
 def unit_select_rpc(token: str, x: int, y: int) -> dict:
-    '''rpc select unit at coordinate'''
+    """Select unit with enhanced validation and error handling"""
     try:
-        mngr = game_load(token)
-        unit = mngr.unit_at(x, y)
-        unit_info = f"{unit.army.name}:{unit.type.name}" if unit else "none"
+        from error_handling import ValidationError
         
-        mngr.unit_select(x, y)
+        # Load game first to get actual board dimensions
+        mngr = game_load(token)
+        
+        # Dynamic coordinate validation using actual board size
+        board_width = mngr.board.width
+        board_height = mngr.board.height
+        
+        # Validate coordinates
+        if not (0 <= x < board_width and 0 <= y < board_height):
+            raise ValidationError(
+                f"Selection coordinates ({x}, {y}) are out of bounds. Board size: {board_width}x{board_height}",
+                details={"position": {"x": x, "y": y}, "board_size": {"width": board_width, "height": board_height}}
+            )
+        
+        # Get tile and unit info for logging
+        tile = mngr.tile_at(x, y)
+        unit = mngr.unit_at(x, y)
+        
+        # Determine what's being selected
+        if unit:
+            unit_info = f"{unit.army.name}:{unit.type.name}"
+            selection_type = "unit"
+        elif tile.mapTile.type.name in ['FACTORY', 'AIRPORT', 'PORT'] if hasattr(tile.mapTile.type, 'name') else False:
+            unit_info = f"{tile.mapTile.type.name}"
+            selection_type = "property"
+        else:
+            unit_info = "empty tile"
+            selection_type = "empty"
+        
+        # Try to execute selection - handle the manager's limitations gracefully
+        try:
+            mngr.unit_select(x, y)
+            success = True
+            app_logger.debug(f'{selection_type.title()} selected: {token} - {unit_info} at ({x},{y})')
+        except Exception as selection_error:
+            # If manager.unit_select fails, that's okay for empty tiles/properties
+            # Just log it and continue
+            if "No unit at" in str(selection_error):
+                app_logger.debug(f'Selected {selection_type}: {token} - {unit_info} at ({x},{y}) (no unit selection needed)')
+                success = True
+            else:
+                # Re-raise if it's a different error
+                raise selection_error
+        
+        # Save game state
         game_save(mngr, token)
         ws_board_update(token)
         
-        app_logger.debug(f'Unit selected: {token} - {unit_info} at ({x},{y})')
-        return jsons.dump(mngr.unit_at(x, y))
-    except Exception as ex:
-        app_logger.error(f'unit_select failed for {token} at ({x},{y}): {str(ex)}')
-        return handle_rpc_error('unit_select', token, ex)
+        # Return appropriate information
+        if unit:
+            return jsons.dump(unit)
+        else:
+            # Return tile info for properties/empty tiles
+            return jsons.dump(mngr.tile_get(x, y))
+        
+    except ValidationError as e:
+        app_logger.error(f"Validation error in unit_select: {e.message}")
+        return {
+            "error": True,
+            "error_code": "VALIDATION_ERROR",
+            "message": e.message,
+            "details": getattr(e, 'details', {})
+        }
+        
+    except Exception as e:
+        app_logger.error(f'unit_select failed for {token} at ({x},{y}): {str(e)}')
+        return {
+            "error": True,
+            "error_code": "SELECTION_ERROR",
+            "message": "Selection failed",
+            "details": {"position": {"x": x, "y": y}}
+        }
 
 @jsonrpc.method('unit_attack')
 @log_rpc_performance
@@ -748,48 +809,6 @@ def unit_attack_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
             "message": "Attack failed",
             "details": {"attacker_pos": {"x": x, "y": y}, "target_pos": {"x": x2, "y": y2}}
         }
-
-# @jsonrpc.method('unit_attack')
-# @log_rpc_performance
-# def unit_attack_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
-#     '''rpc attacks the unit from x,y to x2,y2'''
-#     try:
-#         mngr = game_load(token)
-        
-#         # Get unit info before attack
-#         attacker = mngr.unit_at(x, y)
-#         defender = mngr.unit_at(x2, y2)
-        
-#         if attacker and defender:
-#             attacker_info = f"{attacker.army.name}:{attacker.type.name}"
-#             defender_info = f"{defender.army.name}:{defender.type.name}"
-#             defender_hp_before = defender.status.hp
-#         else:
-#             attacker_info = "unknown"
-#             defender_info = "unknown"
-#             defender_hp_before = 0
-        
-#         mngr.unit_attack(x, y, x2, y2)
-        
-#         # Calculate damage dealt
-#         defender_after = mngr.unit_at(x2, y2)
-#         damage_dealt = defender_hp_before - (defender_after.status.hp if defender_after else 0)
-        
-#         # Enhanced logging
-#         if ENHANCED_LOGGING and attacker and defender:
-#             game_event_logger.log_unit_attack(
-#                 token, attacker.army.name, attacker.type.name, (x, y),
-#                 defender.army.name, defender.type.name, (x2, y2), damage_dealt
-#             )
-        
-#         app_logger.info(f'Unit attack: {token} - {attacker_info}@({x},{y}) attacked {defender_info}@({x2},{y2}) damage={damage_dealt}')
-        
-#         game_save(mngr, token)
-#         ws_board_update(token)
-#         return jsons.dump(mngr.tile_get(x2, y2))
-#     except Exception as ex:
-#         app_logger.error(f'unit_attack failed for {token}: ({x},{y}) -> ({x2},{y2}): {str(ex)}')
-#         return handle_rpc_error('unit_attack', token, ex)
 
 @jsonrpc.method('damage_estimate')
 @log_rpc_performance
