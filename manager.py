@@ -129,6 +129,32 @@ class GameManager:
         """Calculate Manhattan distance between two points."""
         return abs(x1 - x2) + abs(y1 - y2)
 
+    def check_win_condition(self) -> Optional[Army]:
+        """Check if any army has won the game"""
+        
+        # Count units for each army
+        army_unit_counts = {}
+        for army in self.board.turn_order:
+            army_unit_counts[army] = 0
+        
+        # Count all units on the board
+        for tile in self.board.grid:
+            if tile.unit:
+                army_unit_counts[tile.unit.army] += 1
+        
+        # Check for armies with no units
+        armies_with_units = []
+        for army, count in army_unit_counts.items():
+            if count > 0:
+                armies_with_units.append(army)
+        
+        # If only one army has units, they win
+        if len(armies_with_units) == 1:
+            return armies_with_units[0]
+        
+        # No winner yet
+        return None
+
     # =============================================================================
     # UNIT STATE MANAGEMENT
     # =============================================================================

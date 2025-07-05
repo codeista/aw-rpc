@@ -105,3 +105,67 @@ table {
 	margin-left: auto;
 	margin-right: auto;
 }
+/* =============================================================================
+   PHASE 2A: ENHANCED COMBAT STYLES
+   ============================================================================= */
+
+/* Combat preview enhancements */
+.combat-preview-modal .modal-content {
+    max-width: 600px;
+    width: 90%;
+}
+
+/* Attack range indicators */
+.attack-range {
+    outline: 2px solid red !important;
+    background-color: rgba(255, 0, 0, 0.2) !important;
+}
+
+.min-range-blocked {
+    outline: 2px dashed gray !important;
+    background-color: rgba(128, 128, 128, 0.3) !important;
+}
+
+/* Combat result animations */
+.combat-result {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    z-index: 1001;
+    display: none;
+}
+
+.damage-number {
+    font-size: 24px;
+    font-weight: bold;
+    color: #ff4444;
+    text-shadow: 1px 1px 2px black;
+}
+
+/* Enhanced modal styling for combat preview */
+#modalcreate .modal-content h3 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+#modalcreate .modal-content h4 {
+    margin-top: 0;
+    color: #555;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+}
+
+#modalcreate .modal-content p {
+    margin: 5px 0;
+}
+
+#modalcreate .modal-content button:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}

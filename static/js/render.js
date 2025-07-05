@@ -83,8 +83,40 @@ function rerender() {
 //
 
 function jsonrpc(method, params, callback) {
+    if (!params) params = {};
     params.token = token;
     console.log('rpc::', method, params);
+    
+    // If no callback provided, return a Promise (for async/await)
+    if (!callback) {
+        return new Promise((resolve, reject) => {
+            var xhr = new XMLHttpRequest();
+            xhr.onreadystatechange = function() {
+                if (this.readyState === XMLHttpRequest.DONE) {
+                    if (this.status === 200) {
+                        try {
+                            var response = JSON.parse(this.responseText);
+                            if (response.error) {
+                                reject(new Error(response.error.message || 'RPC Error'));
+                            } else {
+                                resolve(response.result);
+                            }
+                        } catch (e) {
+                            reject(new Error('Invalid JSON response'));
+                        }
+                    } else {
+                        reject(new Error(`HTTP ${this.status}: ${this.statusText}`));
+                    }
+                }
+            };
+            xhr.open('POST', '/api');
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            var data = {'jsonrpc': '2.0', 'method': method, 'params': params, 'id': uuidv4()};
+            xhr.send(JSON.stringify(data));
+        });
+    }
+    
+    // Original callback-based behavior (for existing code)
     var xhr = new XMLHttpRequest();
     xhr.onreadystatechange = function() {
         if (this.readyState === XMLHttpRequest.DONE) {
@@ -99,7 +131,7 @@ function jsonrpc(method, params, callback) {
     };
     xhr.open('POST', '/api');
     xhr.setRequestHeader('Content-Type', 'application/json');
-    var data  = {'jsonrpc': '2.0', 'method': method, 'params': params, 'id': uuidv4()}
+    var data = {'jsonrpc': '2.0', 'method': method, 'params': params, 'id': uuidv4()};
     xhr.send(JSON.stringify(data));
 }
 
@@ -333,14 +365,14 @@ function canvasClick(ev) {
                  unitUnload(tile);
       }
       if (tile.can_be_attacked) {
-          unitAttack(tile);
+        unitAttackWithPreview(tile);
       }
       else if (tile.unit != null &&
                tile.unit.army == board.current_turn) {
                if (tile.unit.can_attack ||
                    tile.unit.can_move ||
                    tile.unit.can_capture) {
-                   unitSelect(tile);
+                   unitSelectWithRange(tile);
                    }
               }
       if (tile.can_be_moved_to) {
@@ -1016,5 +1048,225 @@ function createScene() {
                 makeSprite(tile);
             }
         }
+    }
+}
+
+// =============================================================================
+// PHASE 2A: ENHANCED COMBAT FUNCTIONS
+// =============================================================================
+
+// Enhanced attack with preview (replaces your partial function)
+function unitAttackWithPreview(tile) {
+    // First show combat preview
+    showCombatPreview(board.selected.x, board.selected.y, tile.x, tile.y);
+}
+
+// Combat preview function (corrected version)
+async function showCombatPreview(attackerX, attackerY, defenderX, defenderY) {
+    try {
+        const result = await jsonrpc('combat_preview', {
+            attacker_x: attackerX,
+            attacker_y: attackerY,
+            defender_x: defenderX,
+            defender_y: defenderY
+        });
+        
+        if (result.success) {
+            showCombatPreviewModal(result, attackerX, attackerY, defenderX, defenderY);
+        } else {
+            alert('Cannot preview combat: ' + result.error);
+            // Fallback to regular attack
+            unitAttackRegular(defenderX, defenderY);
+        }
+    } catch (error) {
+        console.error('Combat preview error:', error);
+        // Fallback to regular attack
+        unitAttackRegular(defenderX, defenderY);
+    }
+}
+
+// Enhanced attack execution (completes your partial function)
+async function enhancedAttack(attackerX, attackerY, defenderX, defenderY) {
+    try {
+        const result = await jsonrpc('unit_attack_enhanced', {
+            attacker_x: attackerX,
+            attacker_y: attackerY,
+            defender_x: defenderX,
+            defender_y: defenderY
+        });
+        
+        if (result.success) {
+            console.log('Enhanced combat result:', result.combat_result);
+            // Show combat result briefly
+            showCombatResult(result.combat_result);
+            // Board will update automatically via websocket
+        } else {
+            alert('Attack failed: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Enhanced attack error:', error);
+        alert('Attack failed: ' + error.message);
+    }
+}
+
+// Show combat preview modal (integrates with your existing modal system)
+function showCombatPreviewModal(previewData, attackerX, attackerY, defenderX, defenderY) {
+    const modalContent = `
+        <span class="close">&times;</span>
+        <h3>Combat Preview</h3>
+        <div style="display: flex; justify-content: space-between; margin: 15px 0;">
+            <div style="flex: 1; margin: 0 10px; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+                <h4>Your Attack</h4>
+                <p><strong>Damage:</strong> ${previewData.attacker_damage}</p>
+                <p><strong>Range:</strong> ${previewData.damage_range}</p>
+                ${previewData.terrain_bonus > 0 ? `<p><em>Enemy has +${previewData.terrain_bonus} terrain defense</em></p>` : ''}
+                ${previewData.ammo_warning ? '<p style="color: red;"><em>⚠ Low ammo!</em></p>' : ''}
+            </div>
+            <div style="flex: 1; margin: 0 10px; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+                <h4>Counter Attack</h4>
+                ${previewData.can_counter ? 
+                    `<p><strong>Damage:</strong> ${previewData.counter_damage}</p>
+                     <p style="color: orange;"><em>Enemy can counter!</em></p>` :
+                    '<p style="color: green;"><em>No counter attack</em></p>'
+                }
+            </div>
+            <div style="flex: 1; margin: 0 10px; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+                <h4>Result</h4>
+                <p><strong>Your HP:</strong> ${previewData.attacker_hp_after}</p>
+                <p><strong>Enemy HP:</strong> ${previewData.defender_hp_after}</p>
+                ${previewData.defender_destroyed ? '<p style="color: green;"><strong>Enemy destroyed!</strong></p>' : ''}
+                ${previewData.attacker_destroyed ? '<p style="color: red;"><strong>You will be destroyed!</strong></p>' : ''}
+            </div>
+        </div>
+        <div style="text-align: center; margin-top: 20px;">
+            <button onclick="confirmCombat(${attackerX}, ${attackerY}, ${defenderX}, ${defenderY})" 
+                    style="margin: 0 10px; padding: 10px 20px; font-size: 16px; background: #d9534f; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                Attack!
+            </button>
+            <button onclick="cancelCombat()" 
+                    style="margin: 0 10px; padding: 10px 20px; font-size: 16px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                Cancel
+            </button>
+        </div>
+    `;
+    
+    // Use your existing modal system
+    const modal = document.getElementById('modalcreate');
+    const modalContentDiv = modal.querySelector('.modal-content');
+    
+    // Store original content to restore later
+    window.originalModalContent = modalContentDiv.innerHTML;
+    
+    // Replace with combat preview
+    modalContentDiv.innerHTML = modalContent;
+    modal.style.display = 'block';
+    
+    // Add close button functionality
+    const closeBtn = modal.querySelector('.close');
+    closeBtn.onclick = cancelCombat;
+}
+
+// Confirm combat attack
+function confirmCombat(attackerX, attackerY, defenderX, defenderY) {
+    // Close modal
+    cancelCombat();
+    
+    // Execute enhanced attack
+    enhancedAttack(attackerX, attackerY, defenderX, defenderY);
+}
+
+// Cancel combat preview
+function cancelCombat() {
+    const modal = document.getElementById('modalcreate');
+    const modalContentDiv = modal.querySelector('.modal-content');
+    
+    // Restore original modal content
+    if (window.originalModalContent) {
+        modalContentDiv.innerHTML = window.originalModalContent;
+    }
+    
+    modal.style.display = 'none';
+}
+
+// Show combat result briefly
+function showCombatResult(combatResult) {
+    console.log('Combat Result:');
+    console.log(`- Attacker dealt ${combatResult.attacker_damage} damage`);
+    console.log(`- Defender dealt ${combatResult.defender_damage} damage`);
+    console.log(`- Counter attack: ${combatResult.counter_attack_occurred ? 'Yes' : 'No'}`);
+    console.log(`- Attacker destroyed: ${combatResult.attacker_destroyed ? 'Yes' : 'No'}`);
+    console.log(`- Defender destroyed: ${combatResult.defender_destroyed ? 'Yes' : 'No'}`);
+    
+    // You could add a visual notification here later
+}
+
+// Regular attack fallback
+function unitAttackRegular(defenderX, defenderY) {
+    jsonrpc('unit_attack', {
+        x: board.selected.x, 
+        y: board.selected.y, 
+        x2: defenderX, 
+        y2: defenderY
+    });
+}
+
+// =============================================================================
+// ATTACK RANGE HIGHLIGHTING
+// =============================================================================
+
+//highlightAttackRange function
+function highlightAttackRange(unitX, unitY) {
+    jsonrpc('get_attack_targets', {
+        unit_x: unitX,
+        unit_y: unitY
+    }).then(result => {
+        if (result && result.success) {
+            clearRangeHighlights();
+            
+            result.targets.forEach(target => {
+                highlightTile(target.x, target.y, 'attack-range');
+            });
+            
+            console.log(`Highlighted ${result.targets.length} attack targets for unit at (${unitX}, ${unitY})`);
+        }
+    }).catch(error => {
+        console.error('Failed to get attack targets:', error);
+    });
+}
+
+// Clear range highlights
+function clearRangeHighlights() {
+    // Since we're using Two.js canvas, we'll need to re-render
+    // For now, just log that we're clearing highlights
+    console.log('Clearing attack range highlights');
+    // The next board update will clear the highlights automatically
+}
+
+// Highlight a specific tile (Two.js version)
+function highlightTile(x, y, className) {
+    // For Two.js, we'll add visual indicators during rendering
+    // Store the highlighted tiles for the next render cycle
+    if (!window.highlightedTiles) {
+        window.highlightedTiles = [];
+    }
+    
+    window.highlightedTiles.push({
+        x: x,
+        y: y,
+        type: className
+    });
+    
+    console.log(`Highlighting tile (${x}, ${y}) as ${className}`);
+}
+
+// Enhanced unit selection with range display
+function unitSelectWithRange(tile) {
+    jsonrpc('unit_select', {x: tile.x, y: tile.y});
+    
+    // Show attack range for selected unit
+    if (tile.unit && tile.unit.army === board.current_turn) {
+        highlightAttackRange(tile.x, tile.y);
+    } else {
+        clearRangeHighlights();
     }
 }
