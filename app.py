@@ -22,6 +22,7 @@ from config import Config
 from app_core import app, jsonrpc, db, socketio
 from models import Game
 from map_system import map_repository, Map
+from enhanced_combat_system import EnhancedCombatSystem
 
 # Import our fixed logging system
 try:
@@ -1302,6 +1303,250 @@ def can_afford_unit_rpc(token: str, unit_type: str) -> dict:
 @log_rpc_performance
 def get_unit_costs_rpc(token: str) -> dict:
     """Get all unit costs for reference"""
+    
+@jsonrpc.method('combat_preview')
+@log_rpc_performance
+def combat_preview_rpc(token: str, attacker_x: int, attacker_y: int, 
+                      defender_x: int, defender_y: int) -> dict:
+    """Get detailed combat preview before attacking"""
+    try:
+        mngr = game_load(token)
+        
+        # Validate inputs
+        if not (0 <= attacker_x < mngr.board.width and 0 <= attacker_y < mngr.board.height):
+            raise ValidationError(f"Invalid attacker position: ({attacker_x}, {attacker_y})")
+        
+        if not (0 <= defender_x < mngr.board.width and 0 <= defender_y < mngr.board.height):
+            raise ValidationError(f"Invalid defender position: ({defender_x}, {defender_y})")
+        
+        attacker = mngr.unit_at(attacker_x, attacker_y)
+        defender = mngr.unit_at(defender_x, defender_y)
+        
+        if not attacker:
+            raise ValidationError("No unit at attacker position")
+        if not defender:
+            raise ValidationError("No unit at defender position")
+        
+        if attacker.army != mngr.board.current_turn:
+            raise ValidationError("Not your turn to attack with this unit")
+        
+        if attacker.army == defender.army:
+            raise ValidationError("Cannot attack friendly units")
+        
+        # Create enhanced combat system
+        combat_system = EnhancedCombatSystem(mngr)
+        preview = combat_system.get_combat_preview(attacker_x, attacker_y, defender_x, defender_y)
+        
+        app_logger.info(f"Combat preview: {token} - {attacker.army.name}:{attacker.type.name} vs {defender.army.name}:{defender.type.name}")
+        
+        return {
+            "success": True,
+            "attacker_damage": preview.attacker_damage,
+            "counter_damage": preview.counter_damage,
+            "can_counter": preview.can_counter,
+            "attacker_hp_after": preview.attacker_hp_after,
+            "defender_hp_after": preview.defender_hp_after,
+            "attacker_destroyed": preview.attacker_destroyed,
+            "defender_destroyed": preview.defender_destroyed,
+            "terrain_bonus": preview.terrain_bonus,
+            "damage_range": f"{preview.luck_range[0]}-{preview.luck_range[1]}",
+            "ammo_warning": preview.ammo_warning
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Combat preview failed: {token} - {str(e)}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+@jsonrpc.method('unit_attack_enhanced')
+@log_rpc_performance  
+def unit_attack_enhanced_rpc(token: str, attacker_x: int, attacker_y: int,
+                            defender_x: int, defender_y: int) -> dict:
+    """Enhanced unit attack with full Phase 2A combat system"""
+    try:
+        mngr = game_load(token)
+        
+        # Validate game state
+        if not mngr.board.game_active:
+            return {
+                "success": False,
+                "error": "Game has ended"
+            }
+        
+        # Validate coordinates
+        if not (0 <= attacker_x < mngr.board.width and 0 <= attacker_y < mngr.board.height):
+            raise ValidationError(f"Invalid attacker position: ({attacker_x}, {attacker_y})")
+        
+        if not (0 <= defender_x < mngr.board.width and 0 <= defender_y < mngr.board.height):
+            raise ValidationError(f"Invalid defender position: ({defender_x}, {defender_y})")
+        
+        # Get units
+        attacker = mngr.unit_at(attacker_x, attacker_y)
+        defender = mngr.unit_at(defender_x, defender_y)
+        
+        if not attacker:
+            raise ValidationError("No unit at attacker position")
+        if not defender:
+            raise ValidationError("No unit at defender position")
+        
+        # Validate turn and ownership
+        if attacker.army != mngr.board.current_turn:
+            raise ValidationError("Not your turn to attack with this unit")
+        
+        if attacker.army == defender.army:
+            raise ValidationError("Cannot attack friendly units")
+        
+        # Check if unit can still act
+        if attacker.status.moved and attacker.status.attacked:
+            raise ValidationError("Unit has already acted this turn")
+        
+        # Validate range
+        distance = abs(attacker_x - defender_x) + abs(attacker_y - defender_y)
+        if not (attacker.status.rangemin <= distance <= attacker.status.rangemax):
+            raise ValidationError(f"Target out of range. Distance: {distance}, Range: {attacker.status.rangemin}-{attacker.status.rangemax}")
+        
+        # Create enhanced combat system and execute
+        combat_system = EnhancedCombatSystem(mngr)
+        
+        # Validate indirect fire rules
+        if not combat_system.validate_indirect_attack(attacker, attacker_x, attacker_y, defender_x, defender_y):
+            raise ValidationError("Indirect unit cannot attack at this range")
+        
+        # Execute enhanced combat
+        result = combat_system.execute_enhanced_combat(attacker_x, attacker_y, defender_x, defender_y)
+        
+        # Mark attacker as having attacked
+        if not result.attacker_destroyed:
+            attacker.status.attacked = True
+        
+        # Log combat result
+        log_game_event('COMBAT', token, {
+            'attacker': f"{result.attacker_hp_before}HP {attacker.army.name} {attacker.type.name}",
+            'defender': f"{result.defender_hp_before}HP {defender.army.name} {defender.type.name}",
+            'attacker_damage': result.attacker_damage_dealt,
+            'counter_damage': result.defender_damage_dealt,
+            'counter_occurred': result.counter_attack_occurred,
+            'attacker_destroyed': result.attacker_destroyed,
+            'defender_destroyed': result.defender_destroyed,
+            'terrain_bonus': result.terrain_bonus_used,
+            'luck_attacker': result.luck_bonus_attacker,
+            'luck_defender': result.luck_bonus_defender
+        })
+        
+        app_logger.info(f"Enhanced combat: {token} - {attacker.army.name}:{attacker.type.name} vs {defender.army.name}:{defender.type.name}, Damage: {result.attacker_damage_dealt}, Counter: {result.defender_damage_dealt}")
+        
+        # Save game state
+        game_save(mngr, token)
+        ws_board_update(token)
+        
+        return {
+            "success": True,
+            "combat_result": {
+                "attacker_damage": result.attacker_damage_dealt,
+                "defender_damage": result.defender_damage_dealt,
+                "attacker_hp_before": result.attacker_hp_before,
+                "attacker_hp_after": result.attacker_hp_after,
+                "defender_hp_before": result.defender_hp_before,
+                "defender_hp_after": result.defender_hp_after,
+                "attacker_destroyed": result.attacker_destroyed,
+                "defender_destroyed": result.defender_destroyed,
+                "counter_attack_occurred": result.counter_attack_occurred,
+                "terrain_bonus": result.terrain_bonus_used,
+                "luck_attacker": result.luck_bonus_attacker,
+                "luck_defender": result.luck_bonus_defender
+            }
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Enhanced combat failed: {token} - {str(e)}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+@jsonrpc.method('get_attack_targets')
+@log_rpc_performance
+def get_attack_targets_rpc(token: str, unit_x: int, unit_y: int) -> dict:
+    """Get all valid attack targets for a unit"""
+    try:
+        mngr = game_load(token)
+        
+        unit = mngr.unit_at(unit_x, unit_y)
+        if not unit:
+            raise ValidationError("No unit at specified position")
+        
+        if unit.army != mngr.board.current_turn:
+            raise ValidationError("Not your unit")
+        
+        targets = []
+        combat_system = EnhancedCombatSystem(mngr)
+        
+        # Check all positions on the board
+        for x in range(mngr.board.width):
+            for y in range(mngr.board.height):
+                target_unit = mngr.unit_at(x, y)
+                if target_unit and target_unit.army != unit.army:
+                    distance = abs(unit_x - x) + abs(unit_y - y)
+                    
+                    # Check basic range
+                    if unit.status.rangemin <= distance <= unit.status.rangemax:
+                        # Check indirect fire rules
+                        if combat_system.validate_indirect_attack(unit, unit_x, unit_y, x, y):
+                            targets.append({
+                                "x": x,
+                                "y": y,
+                                "unit_type": target_unit.type.name,
+                                "army": target_unit.army.name,
+                                "hp": target_unit.status.hp,
+                                "distance": distance
+                            })
+        
+        return {
+            "success": True,
+            "targets": targets,
+            "unit_range": f"{unit.status.rangemin}-{unit.status.rangemax}",
+            "is_indirect": combat_system._is_indirect_unit(unit)
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Get attack targets failed: {token} - {str(e)}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+@jsonrpc.method('get_damage_chart')
+@log_rpc_performance  
+def get_damage_chart_rpc(token: str) -> dict:
+    """Get the complete damage chart for reference"""
+    try:
+        from unit import DAMAGE_TABLE, UnitType
+        
+        # Convert damage table to readable format
+        damage_chart = {}
+        
+        for attacker_type in UnitType:
+            damage_chart[attacker_type.name] = {}
+            for defender_type in UnitType:
+                try:
+                    damage = DAMAGE_TABLE[attacker_type][defender_type.value]
+                    damage_chart[attacker_type.name][defender_type.name] = damage
+                except (KeyError, IndexError):
+                    damage_chart[attacker_type.name][defender_type.name] = 0
+        
+        return {
+            "success": True,
+            "damage_chart": damage_chart
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Get damage chart failed: {str(e)}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
     try:
         mngr = game_load(token)
         
