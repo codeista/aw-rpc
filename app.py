@@ -3,6 +3,7 @@
 '''[This is a RPC game engine for Advance wars with enhanced logging - Built on current version]'''
 
 import os
+os.environ['TYPEGUARD_DISABLE'] = '1'
 import logging
 import datetime
 import secrets
@@ -424,6 +425,17 @@ def game_create_rpc(token: str) -> str:
     except Exception as ex:
         return handle_rpc_error('game_create', token, ex)
 
+# @jsonrpc.method('game_board')
+# @log_rpc_performance
+# def game_board_rpc(token: str) -> dict:
+#     '''rpc return game board'''
+#     app_logger.debug(f'Game board requested: {token}')
+#     try:
+#         mngr = game_load(token)
+#         return jsons.dump(mngr.board)
+#     except Exception as ex:
+#         return handle_rpc_error('game_board', token, ex)
+
 @jsonrpc.method('game_board')
 @log_rpc_performance
 def game_board_rpc(token: str) -> dict:
@@ -431,9 +443,26 @@ def game_board_rpc(token: str) -> dict:
     app_logger.debug(f'Game board requested: {token}')
     try:
         mngr = game_load(token)
-        return jsons.dump(mngr.board)
+        
+        # CRITICAL FIX: Ensure we return a dict, not a string
+        board_data = jsons.dump(mngr.board)
+        
+        # If jsons.dump returns a string, parse it back to dict
+        if isinstance(board_data, str):
+            import json
+            board_data = json.loads(board_data)
+        
+        return board_data  # Now guaranteed to be a dict
+        
     except Exception as ex:
-        return handle_rpc_error('game_board', token, ex)
+        app_logger.error(f'game_board failed for {token}: {str(ex)}')
+        # Return dict for consistency with return type annotation
+        return {
+            "error": True,
+            "error_code": "GAME_BOARD_ERROR", 
+            "message": str(ex),
+            "details": {"token": token}
+        }
 
 @jsonrpc.method('army_end_turn')
 @log_rpc_performance

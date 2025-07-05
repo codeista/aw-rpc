@@ -99,7 +99,7 @@ function jsonrpc(method, params, callback) {
     };
     xhr.open('POST', '/api');
     xhr.setRequestHeader('Content-Type', 'application/json');
-    var data  = {'jsonrpc:': '2.0', 'method': method, 'params': params, 'id': uuidv4()}
+    var data  = {'jsonrpc': '2.0', 'method': method, 'params': params, 'id': uuidv4()}
     xhr.send(JSON.stringify(data));
 }
 
