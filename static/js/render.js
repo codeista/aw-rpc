@@ -1085,7 +1085,7 @@ async function showCombatPreview(attackerX, attackerY, defenderX, defenderY) {
     }
 }
 
-// Enhanced attack execution (completes your partial function)
+// Enhanced attack execution 
 async function enhancedAttack(attackerX, attackerY, defenderX, defenderY) {
     try {
         const result = await jsonrpc('unit_attack_enhanced', {
@@ -1097,8 +1097,15 @@ async function enhancedAttack(attackerX, attackerY, defenderX, defenderY) {
         
         if (result.success) {
             console.log('Enhanced combat result:', result.combat_result);
-            // Show combat result briefly
             showCombatResult(result.combat_result);
+            
+            // Check if game ended
+            if (result.game_ended && result.winner) {
+                setTimeout(() => {
+                    alert(`🎉 GAME OVER! ${result.winner} WINS! 🎉`);
+                }, 1000); // Delay so they can see the combat result first
+            }
+            
             // Board will update automatically via websocket
         } else {
             alert('Attack failed: ' + result.error);

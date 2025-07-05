@@ -497,7 +497,7 @@ def army_end_turn_rpc(token: str) -> dict:
     try:
         mngr = game_load(token)
         current_army = mngr.check_turn()
-        
+        winner = mngr.check_win_condition()
         mngr.army_end_turn()
         game_save(mngr, token)
         ws_board_update(token)

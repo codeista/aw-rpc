@@ -142,17 +142,21 @@ class GameManager:
             if tile.unit:
                 army_unit_counts[tile.unit.army] += 1
         
-        # Check for armies with no units
+        # Check for armies with units
         armies_with_units = []
+        total_units = 0
         for army, count in army_unit_counts.items():
+            total_units += count
             if count > 0:
                 armies_with_units.append(army)
         
-        # If only one army has units, they win
-        if len(armies_with_units) == 1:
+        # Only declare winner if:
+        # 1. Game has been going for a while (multiple units created)
+        # 2. Only one army has units remaining
+        # 3. At least some combat has occurred
+        if len(armies_with_units) == 1 and total_units > 0 and self.board.days > 0:
             return armies_with_units[0]
         
-        # No winner yet
         return None
 
     # =============================================================================
