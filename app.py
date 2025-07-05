@@ -266,6 +266,42 @@ def handle_rpc_error(func_name, token, ex):
     
     return {"error": error_msg, "success": False}
 
+def check_victory_conditions(mngr, token):
+    """Check if game should end due to victory conditions"""
+    # Count remaining units by army
+    red_units = 0
+    blue_units = 0
+    
+    for tile in mngr.board.grid:
+        if tile.unit:
+            if tile.unit.army.name == 'RED':
+                red_units += 1
+            elif tile.unit.army.name == 'BLUE':
+                blue_units += 1
+    
+    app_logger.info(f'Victory check: RED={red_units}, BLUE={blue_units}')
+    
+    # Check for elimination victory
+    if red_units == 0:
+        # SET GAME INACTIVE + SAVE WINNER
+        mngr.board.game_active = False
+        mngr.board.winner = 'BLUE'
+        mngr.board.victory_type = 'ELIMINATION'
+        app_logger.info('GAME ENDED: BLUE wins by elimination')
+        return {'victory': True, 'winner': 'BLUE', 'type': 'ELIMINATION'}
+    elif blue_units == 0:
+        # SET GAME INACTIVE + SAVE WINNER  
+        mngr.board.game_active = False
+        mngr.board.winner = 'RED'
+        mngr.board.victory_type = 'ELIMINATION'
+        app_logger.info('GAME ENDED: RED wins by elimination')
+        return {'victory': True, 'winner': 'RED', 'type': 'ELIMINATION'}
+    
+    # Check for HQ capture victory (if implemented)
+    # ... additional victory conditions
+    
+    return {'victory': False}
+
 #
 # REST Routes (Enhanced)
 #
@@ -425,17 +461,6 @@ def game_create_rpc(token: str) -> str:
     except Exception as ex:
         return handle_rpc_error('game_create', token, ex)
 
-# @jsonrpc.method('game_board')
-# @log_rpc_performance
-# def game_board_rpc(token: str) -> dict:
-#     '''rpc return game board'''
-#     app_logger.debug(f'Game board requested: {token}')
-#     try:
-#         mngr = game_load(token)
-#         return jsons.dump(mngr.board)
-#     except Exception as ex:
-#         return handle_rpc_error('game_board', token, ex)
-
 @jsonrpc.method('game_board')
 @log_rpc_performance
 def game_board_rpc(token: str) -> dict:
@@ -550,6 +575,16 @@ def unit_create_rpc(token: str, army: str, unit_type: str, x: int, y: int) -> di
     """Create a unit with enhanced error handling and validation"""
     
     try:
+        # CHECK GAME ACTIVE FIRST
+        mngr = game_load(token)
+        if not mngr.board.game_active:
+            return {
+                "error": True,
+                "error_code": "GAME_ENDED",
+                "message": f"Cannot create units - game has ended! {getattr(mngr.board, 'winner', 'Unknown')} wins!",
+                "details": {"winner": getattr(mngr.board, 'winner', 'Unknown')}
+            }
+            
         # Import validation functions
         from error_handling import validate_army, validate_unit_type, validate_coordinates, ValidationError
         
@@ -596,6 +631,16 @@ def unit_create_rpc(token: str, army: str, unit_type: str, x: int, y: int) -> di
 def unit_move_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
     """Move unit with enhanced validation and error handling"""
     try:
+        # CHECK GAME ACTIVE FIRST (ADD THIS)
+        mngr = game_load(token)
+        if not mngr.board.game_active:
+            return {
+                "error": True,
+                "error_code": "GAME_ENDED",
+                "message": f"Cannot create units - game has ended! {getattr(mngr.board, 'winner', 'Unknown')} wins!",
+                "details": {"winner": getattr(mngr.board, 'winner', 'Unknown')}
+            }
+            
         from error_handling import ValidationError
         
         # Load game first to get actual board dimensions
@@ -675,6 +720,16 @@ def unit_move_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
 def unit_select_rpc(token: str, x: int, y: int) -> dict:
     """Select unit with enhanced validation and error handling"""
     try:
+        # CHECK GAME ACTIVE FIRST (ADD THIS)
+        mngr = game_load(token)
+        if not mngr.board.game_active:
+            return {
+                "error": True,
+                "error_code": "GAME_ENDED",
+                "message": f"Cannot create units - game has ended! {getattr(mngr.board, 'winner', 'Unknown')} wins!",
+                "details": {"winner": getattr(mngr.board, 'winner', 'Unknown')}
+            }
+            
         from error_handling import ValidationError
         
         # Load game first to get actual board dimensions
@@ -753,7 +808,7 @@ def unit_select_rpc(token: str, x: int, y: int) -> dict:
 @jsonrpc.method('unit_attack')
 @log_rpc_performance
 def unit_attack_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
-    """Attack with enhanced validation and error handling"""
+    """Attack with enhanced validation and error handling + victory detection"""
     try:
         from error_handling import ValidationError
         
@@ -778,50 +833,56 @@ def unit_attack_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
                 details={"target_pos": {"x": x2, "y": y2}, "board_size": {"width": board_width, "height": board_height}}
             )
         
-        # Get unit info before attack
-        attacker = mngr.unit_at(x, y)
-        defender = mngr.unit_at(x2, y2)
+        # Execute the attack
+        result = mngr.unit_attack(x, y, x2, y2)
         
-        # Validate attacker exists
-        if not attacker:
-            raise ValidationError(
-                f"No attacking unit found at position ({x}, {y})",
-                details={"attacker_pos": {"x": x, "y": y}}
-            )
+        # Check victory BEFORE saving (MOVED UP)
+        victory_result = check_victory_conditions(mngr, token)
         
-        # Validate defender exists
-        if not defender:
-            raise ValidationError(
-                f"No target unit found at position ({x2}, {y2})",
-                details={"target_pos": {"x": x2, "y": y2}}
-            )
+        if victory_result['victory']:
+            # SET BOARD STATE HERE (where it gets saved)
+            mngr.board.game_active = False
+            mngr.board.winner = victory_result['winner']
+            mngr.board.victory_type = victory_result['type']
+            app_logger.info(f"SETTING VICTORY STATE: {victory_result['winner']} wins!")
         
-        # Get unit info for logging
-        attacker_info = f"{attacker.army.name}:{attacker.type.name}"
-        defender_info = f"{defender.army.name}:{defender.type.name}"
-        defender_hp_before = defender.status.hp
-        
-        # Execute attack
-        mngr.unit_attack(x, y, x2, y2)
-        
-        # Calculate damage dealt
-        defender_after = mngr.unit_at(x2, y2)
-        damage_dealt = defender_hp_before - (defender_after.status.hp if defender_after else 0)
-        
-        # Enhanced logging
-        if ENHANCED_LOGGING:
-            game_event_logger.log_unit_attack(
-                token, attacker.army.name, attacker.type.name, (x, y),
-                defender.army.name, defender.type.name, (x2, y2), damage_dealt
-            )
-        
-        app_logger.info(f'Unit attack: {token} - {attacker_info}@({x},{y}) attacked {defender_info}@({x2},{y2}) damage={damage_dealt}')
-        
+        # Save game state and update clients (AFTER setting victory state)
         game_save(mngr, token)
         ws_board_update(token)
-        return jsons.dump(mngr.tile_get(x2, y2))
+        
+        if victory_result['victory']:
+            app_logger.info(f"GAME OVER: {victory_result['winner']} wins!")
+            return {
+                **jsons.dump(result),
+                'game_over': True,
+                'winner': victory_result['winner'],
+                'victory_type': victory_result['type']
+            }
+        
+        # Normal return if no victory
+        return jsons.dump(result)
         
     except ValidationError as e:
+        # Return error as a dict instead of raising
+        app_logger.error(f"Validation error in unit_attack: {e.message}")
+        return {
+            "error": True,
+            "error_code": "VALIDATION_ERROR",
+            "message": e.message,
+            "details": getattr(e, 'details', {})
+        }
+        
+    except Exception as e:
+        app_logger.error(f'unit_attack failed for {token}: ({x},{y}) -> ({x2},{y2}): {str(e)}')
+        return {
+            "error": True,
+            "error_code": "COMBAT_ERROR",
+            "message": "Attack failed",
+            "details": {"attacker_pos": {"x": x, "y": y}, "target_pos": {"x": x2, "y": y2}}
+        }
+        
+    except ValidationError as e:
+        # Return error as a dict instead of raising
         app_logger.error(f"Validation error in unit_attack: {e.message}")
         return {
             "error": True,
