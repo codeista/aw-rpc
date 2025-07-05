@@ -392,7 +392,7 @@ socketio.on_namespace(SocketIoNamespace('/'))
 
 @jsonrpc.method('troop_info')
 @log_rpc_performance
-def troop_info() -> dict:
+def troop_info(token: str = None) -> dict:
     '''Returns the unit config info'''
     app_logger.info('troop_info requested')
     return jsons.dump(config_game.units)
