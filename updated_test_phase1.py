@@ -266,18 +266,34 @@ class TestGameMechanics(AWRPCIntegrationTests):
     
     def test_turn_system(self):
         """Test turn advancement"""
+        print("🔄 Testing turn system...")
+        
+        # Get initial turn state
         initial_turn = self.rpc_call('check_turn')
+        current_turn = initial_turn['current_turn']
         
-        # End turn
-        new_turn = self.rpc_call('army_end_turn')
+        print(f"Initial turn: {current_turn}")
         
-        self.assertNotEqual(initial_turn, new_turn)
+        # End the current turn
+        end_result = self.rpc_call('army_end_turn')
         
-        # Verify with check_turn
-        current_turn = self.rpc_call('check_turn')
-        self.assertEqual(new_turn, current_turn)
-        print("✓ Turn system works correctly")
-    
+        # Get new turn state
+        new_turn_result = self.rpc_call('check_turn')
+        new_turn = new_turn_result['current_turn']
+        
+        print(f"After ending turn: {new_turn}")
+        
+        # The turn should have changed to the next army
+        self.assertNotEqual(current_turn, new_turn, "Turn should have changed")
+        
+        # Test specific known turn order (RED -> BLUE -> RED)
+        if current_turn == 'RED':
+            self.assertEqual(new_turn, 'BLUE', "After RED should be BLUE")
+        elif current_turn == 'BLUE':
+            self.assertEqual(new_turn, 'RED', "After BLUE should be RED")
+        
+        print(f"✓ Turn system works: {current_turn} → {new_turn}")
+        
     def test_tile_selection(self):
         """Test tile information retrieval"""
         board = self.rpc_call('game_board')
