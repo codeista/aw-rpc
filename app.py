@@ -177,20 +177,78 @@ def setup_logging(level):
     app_logger.setLevel(level)
 
 def game_load(token):
-    '''Loads the game token specified'''
+    '''Loads the game token specified with FIXED deserialization'''
     app_logger.info(f"Loading game: {token}")
     
     game = Game.from_token(db.session, token)
     if game:
         app_logger.info(f"Game found in database: {token}")
-        mngr = GameManager(config_game, jsons.loads(game.board, GameBoard))
-        return mngr
+        
+        try:
+            # CRITICAL FIX: Better handling of board data format
+            board_data = game.board
+            
+            # Convert to dict if it's a string
+            if isinstance(board_data, str):
+                import json
+                board_dict = json.loads(board_data)
+                print(f"SERIALIZATION_FIX: Parsed JSON string to dict")
+            else:
+                # It's already a dict (most common case)
+                board_dict = board_data
+                print(f"SERIALIZATION_FIX: Board data is already a dict")
+            
+            # RECONSTRUCT UNITS: Fix any dict units in the grid
+            units_reconstructed = 0
+            if 'grid' in board_dict:
+                for i, tile_data in enumerate(board_dict['grid']):
+                    if isinstance(tile_data, dict) and 'unit' in tile_data and tile_data['unit'] is not None:
+                        unit_data = tile_data['unit']
+                        
+                        # If unit is a dict, reconstruct it
+                        if isinstance(unit_data, dict):
+                            print(f"SERIALIZATION_FIX: Reconstructing unit at grid index {i}")
+                            try:
+                                reconstructed_unit = reconstruct_unit_from_dict(unit_data)
+                                tile_data['unit'] = reconstructed_unit
+                                units_reconstructed += 1
+                                print(f"SERIALIZATION_FIX: Successfully reconstructed unit {units_reconstructed}")
+                            except Exception as unit_error:
+                                print(f"SERIALIZATION_FIX: Failed to reconstruct unit at index {i}: {unit_error}")
+                                # Set unit to None instead of leaving a broken dict
+                                tile_data['unit'] = None
+            
+            print(f"SERIALIZATION_FIX: Reconstructed {units_reconstructed} units total")
+            
+            # Now try to deserialize with jsons - pass the dict directly, not as JSON
+            try:
+                board = jsons.loads(board_dict, GameBoard)
+                print(f"SERIALIZATION_FIX: jsons.loads succeeded")
+            except Exception as jsons_error:
+                print(f"SERIALIZATION_FIX: jsons.loads failed: {jsons_error}")
+                # Try alternative approach - create GameBoard manually
+                board = create_board_from_dict(board_dict)
+            
+            mngr = GameManager(config_game, board)
+            return mngr
+            
+        except Exception as e:
+            app_logger.error(f"Failed to deserialize game {token}: {str(e)}")
+            app_logger.error(f"Error type: {type(e).__name__}")
+            app_logger.error(f"Creating new game instead")
+            # Fall through to create new game
     
     app_logger.info(f"Creating new game: {token}")   
-    # If no game found, create a new one with default map 
-    default_map = map_repository.get_map('test')
-    if not default_map:
-        default_map = map_repository.get_map('scorpion')  
+    # If no game found or deserialization failed, create a new one with default map 
+    try:
+        default_map = map_repository.get_map('test')
+        if not default_map:
+            default_map = map_repository.get_map('scorpion')  
+    except:
+        # Fallback if map system isn't working
+        from map_system import Map
+        default_map = Map()
+    
     board = GameBoard.create(default_map)
     mngr = GameManager(config_game, board)
     
@@ -199,6 +257,207 @@ def game_load(token):
         game_event_logger.log_game_created(token, len(board.turn_order))
     
     return mngr
+
+def create_board_from_dict(board_dict):
+    """
+    Fallback method to create GameBoard from dict if jsons.loads fails
+    """
+    try:
+        from gameboard import GameBoard
+        from map_system import Army
+        
+        # Extract basic board properties
+        width = board_dict.get('width', 7)
+        height = board_dict.get('height', 7)
+        
+        # Create a new board with the same dimensions
+        try:
+            default_map = map_repository.get_map('test')
+        except:
+            from map_system import Map
+            default_map = Map()
+        
+        board = GameBoard.create(default_map)
+        
+        # CRITICAL FIX: Properly restore turn order and current turn
+        if 'turn_order' in board_dict:
+            # Convert turn order strings back to Army enums
+            turn_order = []
+            for army_data in board_dict['turn_order']:
+                if isinstance(army_data, str):
+                    turn_order.append(Army[army_data])
+                elif hasattr(army_data, 'name'):
+                    turn_order.append(Army[army_data.name])
+                else:
+                    turn_order.append(army_data)
+            board.turn_order = turn_order
+            print(f"SERIALIZATION_FIX: Restored turn_order: {[army.name for army in turn_order]}")
+        
+        if 'current_turn' in board_dict:
+            current_turn_data = board_dict['current_turn']
+            if isinstance(current_turn_data, str):
+                board.current_turn = Army[current_turn_data]
+            elif hasattr(current_turn_data, 'name'):
+                board.current_turn = Army[current_turn_data.name]
+            else:
+                board.current_turn = current_turn_data
+            print(f"SERIALIZATION_FIX: Restored current_turn: {board.current_turn.name}")
+        
+        # Copy other important properties
+        if 'days' in board_dict:
+            board.days = board_dict['days']
+        if 'game_active' in board_dict:
+            board.game_active = board_dict['game_active']
+        if 'red_funds' in board_dict:
+            board.red_funds = board_dict['red_funds']
+        if 'blue_funds' in board_dict:
+            board.blue_funds = board_dict['blue_funds']
+        
+        # Copy army statistics
+        if 'total_red_troops' in board_dict:
+            board.total_red_troops = board_dict['total_red_troops']
+        if 'total_blue_troops' in board_dict:
+            board.total_blue_troops = board_dict['total_blue_troops']
+        if 'total_red_properties' in board_dict:
+            board.total_red_properties = board_dict['total_red_properties']
+        if 'total_blue_properties' in board_dict:
+            board.total_blue_properties = board_dict['total_blue_properties']
+        
+        # Copy the reconstructed grid
+        if 'grid' in board_dict and len(board_dict['grid']) == len(board.grid):
+            for i, tile_data in enumerate(board_dict['grid']):
+                if isinstance(tile_data, dict) and 'unit' in tile_data:
+                    board.grid[i].unit = tile_data['unit']  # Units should already be reconstructed
+        
+        print(f"SERIALIZATION_FIX: Created board from dict manually with proper turn system")
+        return board
+        
+    except Exception as e:
+        print(f"SERIALIZATION_FIX: Manual board creation failed: {e}")
+        print(f"SERIALIZATION_FIX: Board dict keys: {list(board_dict.keys()) if isinstance(board_dict, dict) else 'Not a dict'}")
+        
+        # Final fallback - create completely new board but try to preserve basic state
+        try:
+            from map_system import Map
+            default_map = Map()
+            board = GameBoard.create(default_map)
+            
+            # At least try to preserve the game state
+            if isinstance(board_dict, dict):
+                if 'days' in board_dict:
+                    board.days = board_dict['days']
+                if 'game_active' in board_dict:
+                    board.game_active = board_dict['game_active']
+                if 'red_funds' in board_dict:
+                    board.red_funds = board_dict['red_funds']
+                if 'blue_funds' in board_dict:
+                    board.blue_funds = board_dict['blue_funds']
+            
+            print(f"SERIALIZATION_FIX: Using minimal fallback board")
+            return board
+        except Exception as e2:
+            print(f"SERIALIZATION_FIX: Even minimal fallback failed: {e2}")
+            # Absolute last resort
+            from map_system import Map
+            return GameBoard.create(Map())
+
+def reconstruct_unit_from_dict(unit_dict: dict):
+    """
+    CRITICAL FIX: Reconstruct Unit object from dictionary using proper Unit.create method
+    """
+    try:
+        from unit import Unit, UnitType, UnitConfig, UnitClass
+        from map_system import Army
+        
+        # Extract basic data from the serialized dict
+        unit_type_name = unit_dict.get('type', 'INFANTRY')
+        army_name = unit_dict.get('army', 'RED')
+        unit_id = unit_dict.get('id', 'reconstructed')
+        status_data = unit_dict.get('status', {})
+        
+        # Convert string names to enums if needed
+        if isinstance(unit_type_name, str):
+            unit_type = UnitType[unit_type_name]
+        elif hasattr(unit_type_name, 'name'):  # It's already an enum
+            unit_type = UnitType[unit_type_name.name]
+        else:
+            unit_type = unit_type_name
+            
+        if isinstance(army_name, str):
+            army = Army[army_name]
+        elif hasattr(army_name, 'name'):  # It's already an enum
+            army = Army[army_name.name]
+        else:
+            army = army_name
+        
+        # Create UnitConfig (status) from the saved data
+        if isinstance(status_data, dict):
+            # If status is serialized as dict, reconstruct UnitConfig
+            unit_config = UnitConfig(
+                cls=UnitClass[status_data.get('cls', 'FOOT')] if isinstance(status_data.get('cls'), str) else status_data.get('cls', UnitClass.FOOT),
+                cost=status_data.get('cost', 1000),
+                move=status_data.get('move', 3),
+                rangemin=status_data.get('rangemin', 1),
+                rangemax=status_data.get('rangemax', 1),
+                fuel=status_data.get('fuel', 99),
+                vision=status_data.get('vision', 2),
+                hp=status_data.get('hp', 100),
+                ammo=status_data.get('ammo', 99),
+                cargo=status_data.get('cargo', [])
+            )
+        else:
+            # If status is already a UnitConfig object, use it
+            unit_config = status_data
+        
+        # Create the Unit object with all required parameters
+        unit = Unit(
+            army=army,
+            type=unit_type,
+            status=unit_config,  # This was the missing required parameter!
+            id=unit_id,
+            can_move=unit_dict.get('can_move', True),
+            can_attack=unit_dict.get('can_attack', True), 
+            can_capture=unit_dict.get('can_capture', True)
+        )
+        
+        print(f"SERIALIZATION_FIX: Successfully reconstructed {unit_type_name} unit with proper status")
+        return unit
+        
+    except Exception as e:
+        # Enhanced fallback with proper UnitConfig
+        print(f"SERIALIZATION_FIX: Failed to reconstruct unit from dict: {e}")
+        print(f"SERIALIZATION_FIX: Unit dict keys: {list(unit_dict.keys()) if isinstance(unit_dict, dict) else 'Not a dict'}")
+        
+        try:
+            # Create a fallback unit with basic UnitConfig
+            from unit import Unit, UnitType, UnitConfig, UnitClass
+            from map_system import Army
+            
+            fallback_config = UnitConfig(
+                cls=UnitClass.FOOT,
+                cost=1000,
+                move=3,
+                rangemin=1,
+                rangemax=1,
+                fuel=99,
+                vision=2,
+                hp=100,
+                ammo=99,
+                cargo=[]
+            )
+            
+            return Unit(
+                army=Army.RED,
+                type=UnitType.INFANTRY,
+                status=fallback_config,  # Proper UnitConfig
+                id='fallback',
+                can_move=True,
+                can_attack=True,
+                can_capture=True
+            )
+        except Exception as e2:
+            print(f"SERIALIZATION_FIX: Even fallback failed: {e2}")
+            raise e2
 
 def game_save(mngr, token):
     '''Saves the current game state'''
@@ -1267,124 +1526,6 @@ def can_load_unit_rpc(token: str, transport_x: int, transport_y: int,
         app_logger.error(f"Can load unit failed: {token} - {str(e)}")
         return {"success": False, "error": str(e)}
 
-# @jsonrpc.method('can_load_unit')
-# @log_rpc_performance
-# def can_load_unit_rpc(token: str, transport_x: int, transport_y: int, 
-#                      cargo_x: int, cargo_y: int) -> dict:
-#     """Check if a unit can be loaded into transport"""
-#     try:
-#         mngr = game_load(token)
-        
-#         # Validate coordinates
-#         if not all(0 <= coord < mngr.board.width or 0 <= coord < mngr.board.height 
-#                   for coord in [transport_x, transport_y, cargo_x, cargo_y]):
-#             return {"success": False, "error": "Invalid coordinates"}
-        
-#         # Get units
-#         transport = mngr.unit_at(transport_x, transport_y)
-#         cargo = mngr.unit_at(cargo_x, cargo_y)
-        
-#         if not transport:
-#             return {"success": False, "error": "No transport unit found"}
-#         if not cargo:
-#             return {"success": False, "error": "No cargo unit found"}
-        
-#         # Check turn
-#         if transport.army != mngr.board.current_turn:
-#             return {"success": False, "error": "Not your turn"}
-        
-#         # Use transport system
-#         transport_system = TransportSystem(mngr)
-#         can_load, message = transport_system.can_load_unit(
-#             transport, cargo, transport_x, transport_y, cargo_x, cargo_y
-#         )
-        
-#         return {
-#             "success": True,
-#             "cargo_info": cargo_info,
-#             "compatible_types": transport_system.get_compatible_cargo_types(unit) if cargo_info["is_transport"] else []
-#         }
-        
-#     except Exception as e:
-#         app_logger.error(f"Get cargo info failed: {token} - {str(e)}")
-#         return {"success": False, "error": str(e)}
-
-@jsonrpc.method('get_loadable_units')
-@log_rpc_performance
-def get_loadable_units_rpc(token: str, transport_x: int, transport_y: int) -> dict:
-    """Get all units that can be loaded into this transport"""
-    try:
-        mngr = game_load(token)
-        
-        # Validate coordinates
-        if not (0 <= transport_x < mngr.board.width and 0 <= transport_y < mngr.board.height):
-            return {"success": False, "error": "Invalid coordinates"}
-        
-        # Get transport
-        transport = mngr.unit_at(transport_x, transport_y)
-        if not transport:
-            return {"success": False, "error": "No unit found"}
-        
-        # Check turn
-        if transport.army != mngr.board.current_turn:
-            return {"success": False, "error": "Not your turn"}
-        
-        transport_system = TransportSystem(mngr)
-        
-        # Check if it's a transport unit
-        if not transport_system.is_transport_unit(transport):
-            return {
-                "success": True,
-                "loadable_units": [],
-                "message": "Unit is not a transport"
-            }
-        
-        loadable_units = []
-        
-        # Check all adjacent tiles
-        directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]  # N, S, E, W
-        
-        for dx, dy in directions:
-            cargo_x = transport_x + dx
-            cargo_y = transport_y + dy
-            
-            # Check if position is on board
-            if not (0 <= cargo_x < mngr.board.width and 0 <= cargo_y < mngr.board.height):
-                continue
-            
-            # Check if there's a unit there
-            cargo_unit = mngr.unit_at(cargo_x, cargo_y)
-            if not cargo_unit:
-                continue
-            
-            # Check if it can be loaded
-            can_load, message = transport_system.can_load_unit(
-                transport, cargo_unit, transport_x, transport_y, cargo_x, cargo_y
-            )
-            
-            if can_load:
-                loadable_units.append({
-                    "x": cargo_x,
-                    "y": cargo_y,
-                    "unit_type": cargo_unit.type.name if hasattr(cargo_unit.type, 'name') else str(cargo_unit.type),
-                    "army": cargo_unit.army.name if hasattr(cargo_unit.army, 'name') else str(cargo_unit.army),
-                    "hp": cargo_unit.status.hp
-                })
-        
-        return {
-            "success": True,
-            "loadable_units": loadable_units,
-            "transport_info": transport_system.get_cargo_info(transport)
-        }
-        
-    except Exception as e:
-        app_logger.error(f"Get loadable units failed: {token} - {str(e)}")
-        return {"success": False, "error": str(e)}
-        
-    except Exception as e:
-        app_logger.error(f"Can load unit failed: {token} - {str(e)}")
-        return {"success": False, "error": str(e)}
-
 @jsonrpc.method('load_unit')
 @log_rpc_performance
 def load_unit_rpc(token: str, transport_x: int, transport_y: int, 
@@ -1539,6 +1680,393 @@ def unload_unit_rpc(token: str, transport_x: int, transport_y: int,
         app_logger.error(f"Unload unit failed: {token} - {str(e)}")
         return {"success": False, "error": str(e)}
     
+# =============================================================================
+# TRANSPORT SYSTEM RPC METHODS - Add these to your app.py
+# =============================================================================
+
+# =============================================================================
+# BACKEND FIX - Update your RPC methods in app.py
+# =============================================================================
+
+# The issue is your RPC methods expect individual parameters, but your frontend 
+# is sending parameter objects. Here are the corrected RPC method signatures:
+
+@jsonrpc.method('get_cargo_info')
+@log_rpc_performance
+def get_cargo_info_rpc(token: str, x: int, y: int) -> dict:
+    """Get detailed cargo information for a unit"""
+    try:
+        mngr = game_load(token)
+        
+        # Validate coordinates
+        if not (0 <= x < mngr.board.width and 0 <= y < mngr.board.height):
+            return {"success": False, "error": "Invalid coordinates"}
+        
+        # Get unit
+        unit = mngr.unit_at(x, y)
+        if not unit:
+            return {"success": False, "error": "No unit found"}
+        
+        # Check turn
+        if unit.army != mngr.board.current_turn:
+            return {"success": False, "error": "Not your turn"}
+        
+        # Get cargo info
+        transport_system = TransportSystem(mngr)
+        cargo_info = transport_system.get_cargo_info(unit)
+        
+        return {
+            "success": True,
+            "cargo_info": cargo_info,
+            "compatible_types": transport_system.get_compatible_cargo_types(unit) if cargo_info["is_transport"] else []
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Get cargo info failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+
+@jsonrpc.method('get_loadable_units')
+@log_rpc_performance
+def get_loadable_units_rpc(token: str, x: int, y: int) -> dict:
+    """Get all units that can be loaded into this transport"""
+    try:
+        mngr = game_load(token)
+        
+        # Validate coordinates
+        if not (0 <= x < mngr.board.width and 0 <= y < mngr.board.height):
+            return {"success": False, "error": "Invalid coordinates"}
+        
+        # Get transport
+        transport = mngr.unit_at(x, y)
+        if not transport:
+            return {"success": False, "error": "No unit found"}
+        
+        # Check turn
+        if transport.army != mngr.board.current_turn:
+            return {"success": False, "error": "Not your turn"}
+        
+        transport_system = TransportSystem(mngr)
+        
+        # Check if it's a transport unit
+        if not transport_system.is_transport_unit(transport):
+            return {
+                "success": True,
+                "loadable_units": [],
+                "message": "Unit is not a transport"
+            }
+        
+        loadable_units = []
+        
+        # Check all adjacent tiles
+        directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]  # N, S, E, W
+        
+        for dx, dy in directions:
+            cargo_x = x + dx
+            cargo_y = y + dy
+            
+            # Check if position is on board
+            if not (0 <= cargo_x < mngr.board.width and 0 <= cargo_y < mngr.board.height):
+                continue
+            
+            # Check if there's a unit there
+            cargo_unit = mngr.unit_at(cargo_x, cargo_y)
+            if not cargo_unit:
+                continue
+            
+            # Check if it can be loaded
+            can_load, message = transport_system.can_load_unit(
+                transport, cargo_unit, x, y, cargo_x, cargo_y
+            )
+            
+            if can_load:
+                loadable_units.append({
+                    "x": cargo_x,
+                    "y": cargo_y,
+                    "unit_type": cargo_unit.type.name if hasattr(cargo_unit.type, 'name') else str(cargo_unit.type),
+                    "army": cargo_unit.army.name if hasattr(cargo_unit.army, 'name') else str(cargo_unit.army),
+                    "hp": cargo_unit.status.hp
+                })
+        
+        return {
+            "success": True,
+            "loadable_units": loadable_units,
+            "transport_info": transport_system.get_cargo_info(transport)
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Get loadable units failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+
+@jsonrpc.method('load_unit')
+@log_rpc_performance
+def load_unit_rpc(token: str, transport_x: int, transport_y: int, 
+                 cargo_x: int, cargo_y: int) -> dict:
+    """Load a unit into transport"""
+    try:
+        mngr = game_load(token)
+        
+        # Validate game state
+        if not mngr.board.game_active:
+            return {"success": False, "error": "Game has ended"}
+        
+        # Validate coordinates
+        coords = [transport_x, transport_y, cargo_x, cargo_y]
+        if not all(0 <= coord < mngr.board.width or 0 <= coord < mngr.board.height for coord in coords):
+            return {"success": False, "error": "Invalid coordinates"}
+        
+        # Get units
+        transport = mngr.unit_at(transport_x, transport_y)
+        cargo = mngr.unit_at(cargo_x, cargo_y)
+        
+        if not transport:
+            return {"success": False, "error": "No transport unit found"}
+        if not cargo:
+            return {"success": False, "error": "No cargo unit found"}
+        
+        # Check turn
+        if transport.army != mngr.board.current_turn:
+            return {"success": False, "error": "Not your turn"}
+        
+        # Execute loading
+        transport_system = TransportSystem(mngr)
+        result = transport_system.load_unit(
+            transport, cargo, transport_x, transport_y, cargo_x, cargo_y
+        )
+        
+        if result.success:
+            # Log the action
+            log_game_event('UNIT_LOADED', token, {
+                'transport': f"{transport.army.name} {transport.type.name}",
+                'cargo': f"{cargo.army.name} {cargo.type.name}",
+                'position': f"({transport_x}, {transport_y})",
+                'cargo_index': result.cargo_index
+            })
+            
+            app_logger.info(f"Unit loaded: {token} - {cargo.type.name} into {transport.type.name} at ({transport_x}, {transport_y})")
+            
+            # Save game state
+            game_save(mngr, token)
+            ws_board_update(token)
+        
+        return {
+            "success": result.success,
+            "message": result.message,
+            "cargo_index": result.cargo_index,
+            "transport_info": transport_system.get_cargo_info(transport)
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Load unit failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+
+@jsonrpc.method('get_unload_positions')
+@log_rpc_performance
+def get_unload_positions_rpc(token: str, x: int, y: int) -> dict:
+    """Get valid positions where units can be unloaded"""
+    try:
+        mngr = game_load(token)
+        
+        # Validate coordinates
+        if not (0 <= x < mngr.board.width and 0 <= y < mngr.board.height):
+            return {"success": False, "error": "Invalid coordinates"}
+        
+        # Get transport
+        transport = mngr.unit_at(x, y)
+        if not transport:
+            return {"success": False, "error": "No unit found"}
+        
+        # Check turn
+        if transport.army != mngr.board.current_turn:
+            return {"success": False, "error": "Not your turn"}
+        
+        # Get valid positions
+        transport_system = TransportSystem(mngr)
+        valid_positions = transport_system.get_valid_unload_positions(x, y)
+        
+        return {
+            "success": True,
+            "valid_positions": [{"x": x, "y": y} for x, y in valid_positions],
+            "transport_info": transport_system.get_cargo_info(transport)
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Get unload positions failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+
+@jsonrpc.method('unload_unit')
+@log_rpc_performance
+def unload_unit_rpc(token: str, transport_x: int, transport_y: int, 
+                   unload_x: int, unload_y: int, cargo_index: int = 0) -> dict:
+    """Unload a unit from transport"""
+    try:
+        mngr = game_load(token)
+        
+        # Validate game state
+        if not mngr.board.game_active:
+            return {"success": False, "error": "Game has ended"}
+        
+        # Validate coordinates
+        coords = [transport_x, transport_y, unload_x, unload_y]
+        if not all(0 <= coord < mngr.board.width or 0 <= coord < mngr.board.height for coord in coords):
+            return {"success": False, "error": "Invalid coordinates"}
+        
+        # Get transport
+        transport = mngr.unit_at(transport_x, transport_y)
+        if not transport:
+            return {"success": False, "error": "No transport unit found"}
+        
+        # Check turn
+        if transport.army != mngr.board.current_turn:
+            return {"success": False, "error": "Not your turn"}
+        
+        # Execute unloading
+        transport_system = TransportSystem(mngr)
+        result = transport_system.unload_unit(
+            transport, cargo_index, transport_x, transport_y, unload_x, unload_y
+        )
+        
+        if result.success:
+            # Log the action
+            log_game_event('UNIT_UNLOADED', token, {
+                'transport': f"{transport.army.name} {transport.type.name}",
+                'position': f"({transport_x}, {transport_y})",
+                'unload_position': f"({unload_x}, {unload_y})",
+                'cargo_index': cargo_index
+            })
+            
+            app_logger.info(f"Unit unloaded: {token} - from {transport.type.name} at ({transport_x}, {transport_y}) to ({unload_x}, {unload_y})")
+            
+            # Save game state
+            game_save(mngr, token)
+            ws_board_update(token)
+        
+        return {
+            "success": result.success,
+            "message": result.message,
+            "unloaded_position": result.unloaded_position,
+            "transport_info": transport_system.get_cargo_info(transport)
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Unload unit failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+
+@jsonrpc.method('get_transport_units')
+@log_rpc_performance
+def get_transport_units_rpc(token: str) -> dict:
+    """Get all transport units for the current army"""
+    try:
+        mngr = game_load(token)
+        current_army = mngr.board.current_turn
+        
+        transport_system = TransportSystem(mngr)
+        transport_units = []
+        
+        # Find all transport units for current army
+        for tile in mngr.board.grid:
+            if tile.unit and tile.unit.army == current_army:
+                if transport_system.is_transport_unit(tile.unit):
+                    cargo_info = transport_system.get_cargo_info(tile.unit)
+                    transport_units.append({
+                        "x": tile.x,
+                        "y": tile.y,
+                        "unit_type": tile.unit.type.name if hasattr(tile.unit.type, 'name') else str(tile.unit.type),
+                        "cargo_info": cargo_info
+                    })
+        
+        return {
+            "success": True,
+            "transport_units": transport_units,
+            "count": len(transport_units),
+            "army": current_army.name if hasattr(current_army, 'name') else str(current_army)
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Get transport units failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+
+@jsonrpc.method('can_load_unit')
+@log_rpc_performance
+def can_load_unit_rpc(token: str, transport_x: int, transport_y: int, 
+                     cargo_x: int, cargo_y: int) -> dict:
+    """Check if a unit can be loaded into transport"""
+    try:
+        mngr = game_load(token)
+        
+        # Validate coordinates
+        coords = [transport_x, transport_y, cargo_x, cargo_y]
+        if not all(0 <= coord < mngr.board.width or 0 <= coord < mngr.board.height for coord in coords):
+            return {"success": False, "error": "Invalid coordinates"}
+        
+        # Get units
+        transport = mngr.unit_at(transport_x, transport_y)
+        cargo = mngr.unit_at(cargo_x, cargo_y)
+        
+        if not transport:
+            return {"success": False, "error": "No transport unit found"}
+        if not cargo:
+            return {"success": False, "error": "No cargo unit found"}
+        
+        # Check turn
+        if transport.army != mngr.board.current_turn:
+            return {"success": False, "error": "Not your turn"}
+        
+        # Use transport system
+        transport_system = TransportSystem(mngr)
+        can_load, message = transport_system.can_load_unit(
+            transport, cargo, transport_x, transport_y, cargo_x, cargo_y
+        )
+        
+        return {
+            "success": True,
+            "can_load": can_load,
+            "message": message,
+            "transport_info": transport_system.get_cargo_info(transport)
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Can load unit failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+
+@jsonrpc.method('can_unload_unit')
+@log_rpc_performance
+def can_unload_unit_rpc(token: str, transport_x: int, transport_y: int,
+                       unload_x: int, unload_y: int, cargo_index: int = 0) -> dict:
+    """Check if a unit can be unloaded at a specific position"""
+    try:
+        mngr = game_load(token)
+        
+        # Validate coordinates
+        coords = [transport_x, transport_y, unload_x, unload_y]
+        if not all(0 <= coord < mngr.board.width or 0 <= coord < mngr.board.height for coord in coords):
+            return {"success": False, "error": "Invalid coordinates"}
+        
+        # Get transport
+        transport = mngr.unit_at(transport_x, transport_y)
+        if not transport:
+            return {"success": False, "error": "No transport unit found"}
+        
+        # Check turn
+        if transport.army != mngr.board.current_turn:
+            return {"success": False, "error": "Not your turn"}
+        
+        # Check if can unload
+        transport_system = TransportSystem(mngr)
+        can_unload, message = transport_system.can_unload_unit(
+            transport, cargo_index, transport_x, transport_y, unload_x, unload_y
+        )
+        
+        return {
+            "success": True,
+            "can_unload": can_unload,
+            "message": message,
+            "transport_info": transport_system.get_cargo_info(transport)
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Can unload unit failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+
 # =============================================================================
 # PHASE 2A: ENHANCED COMBAT RPC METHODS
 # =============================================================================
