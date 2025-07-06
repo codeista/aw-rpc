@@ -1,8 +1,10 @@
-# transport_system.py - Fixed Version with Proper Serialization Handling
+# transport_system.py - Advance Wars Style Transport Mechanics
 
 """
-Enhanced Transport System for AW-RPC with Fixed Serialization
-This fixes the critical bug where unloaded units become dicts instead of Unit objects
+Advance Wars Style Transport System
+- Cargo units move INTO transports (not the other way around)
+- Cargo units unload themselves FROM transports
+- Matches original Advance Wars gameplay exactly
 """
 
 from typing import Dict, List, Tuple, Optional, TYPE_CHECKING, Union
@@ -37,7 +39,7 @@ class UnloadResult:
     unloaded_position: Optional[Tuple[int, int]] = None
 
 class TransportSystem:
-    """Enhanced transport system with proper serialization handling"""
+    """Advance Wars style transport system - cargo units move into transports"""
     
     def __init__(self, game_manager: 'GameManager'):
         self.manager = game_manager
@@ -77,22 +79,112 @@ class TransportSystem:
         }
     
     # =============================================================================
-    # CORE TRANSPORT VALIDATION
+    # UNIT RECONSTRUCTION - SERIALIZATION FIX
+    # =============================================================================
+    
+    def _reconstruct_unit_from_dict(self, unit_dict: dict) -> 'Unit':
+        """Properly reconstruct Unit objects from serialized dictionaries"""
+        try:
+            from unit import Unit, UnitType, UnitConfig, UnitClass
+            from map_system import Army
+            import uuid
+            
+            print(f"TRANSPORT_FIX: Reconstructing unit from dict: {unit_dict.get('type', 'UNKNOWN')}")
+            
+            # Extract basic unit data with safe defaults
+            unit_type_name = unit_dict.get('type', 'INFANTRY')
+            army_name = unit_dict.get('army', 'RED')
+            unit_id = unit_dict.get('id', str(uuid.uuid4()))
+            
+            # Convert string type to UnitType enum
+            try:
+                unit_type = UnitType[unit_type_name]
+            except KeyError:
+                print(f"TRANSPORT_FIX: Unknown unit type {unit_type_name}, defaulting to INFANTRY")
+                unit_type = UnitType.INFANTRY
+            
+            # Convert string army to Army enum  
+            try:
+                army = Army[army_name]
+            except (KeyError, AttributeError):
+                print(f"TRANSPORT_FIX: Unknown army {army_name}, defaulting to RED")
+                army = Army.RED
+            
+            # Create proper UnitConfig from status data
+            status_data = unit_dict.get('status', {})
+            
+            # Get unit class safely
+            unit_class_name = status_data.get('cls', 'FOOT')
+            try:
+                unit_class = UnitClass[unit_class_name]
+            except (KeyError, AttributeError):
+                unit_class = UnitClass.FOOT
+            
+            # Create unit config with proper defaults
+            unit_config = UnitConfig(
+                cls=unit_class,
+                cost=status_data.get('cost', 1000),
+                move=status_data.get('move', 3),
+                rangemin=status_data.get('rangemin', 1),
+                rangemax=status_data.get('rangemax', 1),
+                fuel=status_data.get('fuel', 99),
+                vision=status_data.get('vision', 2),
+                hp=status_data.get('hp', 100),
+                ammo=status_data.get('ammo', 99),
+                cargo=status_data.get('cargo', [])
+            )
+            
+            # Create the unit with proper action flags
+            unit = Unit(
+                army=army,
+                type=unit_type,
+                status=unit_config,
+                id=unit_id,
+                can_move=unit_dict.get('can_move', True),
+                can_attack=unit_dict.get('can_attack', True), 
+                can_capture=unit_dict.get('can_capture', True)
+            )
+            
+            print(f"TRANSPORT_FIX: Successfully reconstructed {unit_type_name} unit")
+            return unit
+            
+        except Exception as e:
+            print(f"TRANSPORT_FIX: Reconstruction failed: {e}")
+            # Create minimal fallback unit
+            from unit import Unit, UnitType, UnitConfig, UnitClass
+            from map_system import Army
+            
+            fallback_config = UnitConfig(
+                cls=UnitClass.FOOT,
+                cost=1000,
+                move=3,
+                rangemin=1,
+                rangemax=1,
+                fuel=99,
+                vision=2,
+                hp=100,
+                ammo=99,
+                cargo=[]
+            )
+            
+            return Unit(
+                army=Army.RED,
+                type=UnitType.INFANTRY,
+                status=fallback_config,
+                id='fallback',
+                can_move=True,
+                can_attack=True,
+                can_capture=True
+            )
+    
+    # =============================================================================
+    # TRANSPORT UNIT IDENTIFICATION
     # =============================================================================
     
     def is_transport_unit(self, unit: 'Unit') -> bool:
-        """Check if unit can transport others"""
+        """Check if unit can transport other units"""
         unit_type = unit.type.name if hasattr(unit.type, 'name') else str(unit.type)
         return unit_type in self.transport_capabilities
-    
-    def can_carry_unit_type(self, transport: 'Unit', cargo_type: str) -> bool:
-        """Check if transport can carry specific unit type"""
-        transport_type = transport.type.name if hasattr(transport.type, 'name') else str(transport.type)
-        
-        if transport_type not in self.transport_capabilities:
-            return False
-        
-        return cargo_type in self.transport_capabilities[transport_type].allowed_unit_types
     
     def get_max_capacity(self, transport: 'Unit') -> int:
         """Get maximum cargo capacity for transport"""
@@ -103,146 +195,50 @@ class TransportSystem:
         
         return self.transport_capabilities[transport_type].max_capacity
     
-    def get_current_cargo_count(self, transport: 'Unit') -> int:
-        """Get current number of units in transport"""
-        if not hasattr(transport.status, 'cargo'):
-            return 0
-        
-        # Count non-None cargo slots
-        return len([unit for unit in transport.status.cargo if unit is not None])
-    
     def has_cargo_space(self, transport: 'Unit') -> bool:
-        """Check if transport has space for more cargo"""
-        current = self.get_current_cargo_count(transport)
-        maximum = self.get_max_capacity(transport)
-        return current < maximum
+        """Check if transport has available cargo space"""
+        if not hasattr(transport.status, 'cargo') or transport.status.cargo is None:
+            return True
+        
+        max_capacity = self.get_max_capacity(transport)
+        current_cargo = sum(1 for slot in transport.status.cargo if slot is not None)
+        
+        return current_cargo < max_capacity
     
-    def get_cargo_info(self, transport: 'Unit') -> Dict:
-        """Get detailed cargo information for UI display"""
-        if not self.is_transport_unit(transport):
-            return {"is_transport": False}
+    def can_carry_unit_type(self, transport: 'Unit', cargo_unit_type: str) -> bool:
+        """Check if transport can carry specific unit type"""
+        transport_type = transport.type.name if hasattr(transport.type, 'name') else str(transport.type)
         
-        cargo_info = []
-        current_cargo = 0
+        if transport_type not in self.transport_capabilities:
+            return False
         
-        if hasattr(transport.status, 'cargo') and transport.status.cargo:
-            for i, cargo in enumerate(transport.status.cargo):
-                if cargo is not None:
-                    current_cargo += 1
-                    
-                    # Handle both Unit objects and serialized dicts
-                    if isinstance(cargo, dict):
-                        unit_type = cargo.get('type', 'UNKNOWN')
-                        army = cargo.get('army', 'UNKNOWN')
-                        hp = cargo.get('status', {}).get('hp', 100)
-                    else:
-                        unit_type = cargo.type.name if hasattr(cargo.type, 'name') else str(cargo.type)
-                        army = cargo.army.name if hasattr(cargo.army, 'name') else str(cargo.army)
-                        hp = cargo.status.hp
-                    
-                    cargo_info.append({
-                        "index": i,
-                        "unit_type": unit_type,
-                        "hp": hp,
-                        "army": army
-                    })
-        
-        return {
-            "is_transport": True,
-            "max_capacity": self.get_max_capacity(transport),
-            "current_cargo": current_cargo,
-            "cargo_list": cargo_info,  # Changed from cargo_units to match your RPC expectations
-            "has_space": current_cargo < self.get_max_capacity(transport)
-        }
+        allowed_types = self.transport_capabilities[transport_type].allowed_unit_types
+        return cargo_unit_type in allowed_types
     
     # =============================================================================
-    # CRITICAL FIX: UNIT RECONSTRUCTION
+    # ADVANCE WARS STYLE LOADING - CARGO MOVES INTO TRANSPORT
     # =============================================================================
     
-    def _reconstruct_unit_from_dict(self, unit_dict: dict) -> 'Unit':
+    def can_cargo_move_into_transport(self, cargo: 'Unit', transport: 'Unit',
+                                    cargo_x: int, cargo_y: int,
+                                    transport_x: int, transport_y: int) -> Tuple[bool, str]:
         """
-        CRITICAL FIX: Reconstruct Unit object from serialized dictionary
-        This fixes the deserialization error that occurs after unloading
+        ADVANCE WARS STYLE: Check if cargo unit can move into transport
+        This is called when the CARGO UNIT is selected and wants to move INTO a transport
         """
-        try:
-            from unit import Unit, UnitType, UnitStatus
-            from map_system import Army
-            
-            # Extract data from the serialized dict
-            unit_type_name = unit_dict.get('type', 'INFANTRY')
-            army_name = unit_dict.get('army', 'RED')
-            unit_id = unit_dict.get('id', 'reconstructed')
-            status_data = unit_dict.get('status', {})
-            
-            # Convert string names to enums if needed
-            if isinstance(unit_type_name, str):
-                unit_type = UnitType[unit_type_name]
-            else:
-                unit_type = unit_type_name
-                
-            if isinstance(army_name, str):
-                army = Army[army_name]
-            else:
-                army = army_name
-            
-            # Create the Unit object
-            unit = Unit(
-                army=army,
-                type=unit_type,
-                id=unit_id,
-                can_move=unit_dict.get('can_move', True),
-                can_attack=unit_dict.get('can_attack', True), 
-                can_capture=unit_dict.get('can_capture', True)
-            )
-            
-            # Restore status properties
-            if status_data:
-                if hasattr(unit.status, 'hp'):
-                    unit.status.hp = status_data.get('hp', 100)
-                if hasattr(unit.status, 'fuel'):
-                    unit.status.fuel = status_data.get('fuel', 100)
-                if hasattr(unit.status, 'ammo'):
-                    unit.status.ammo = status_data.get('ammo', 10)
-                
-                # Copy any other status attributes
-                for key, value in status_data.items():
-                    if hasattr(unit.status, key):
-                        setattr(unit.status, key, value)
-            
-            return unit
-            
-        except Exception as e:
-            # Fallback: create a basic unit if reconstruction fails
-            print(f"Warning: Failed to reconstruct unit from dict: {e}")
-            from unit import Unit, UnitType
-            from map_system import Army
-            
-            return Unit(
-                army=Army.RED,
-                type=UnitType.INFANTRY,
-                id='fallback',
-                can_move=True,
-                can_attack=True,
-                can_capture=True
-            )
-    
-    # =============================================================================
-    # LOADING SYSTEM
-    # =============================================================================
-    
-    def can_load_unit(self, transport: 'Unit', cargo: 'Unit', 
-                     transport_x: int, transport_y: int,
-                     cargo_x: int, cargo_y: int) -> Tuple[bool, str]:
-        """Comprehensive validation for loading units"""
         
-        # Check if transport can carry units
+        # Check if target is actually a transport
         if not self.is_transport_unit(transport):
             return False, f"{transport.type.name} cannot transport other units"
         
-        # Check if units are adjacent (1 tile away)
-        distance = abs(transport_x - cargo_x) + abs(transport_y - cargo_y)
+        # Check if units are adjacent (cargo can reach transport)
+        distance = abs(cargo_x - transport_x) + abs(cargo_y - transport_y)
         if distance != 1:
-            return False, "Units must be adjacent to load"
+            return False, "Must move to adjacent transport"
+        
+        # Check if cargo unit can move
+        if not cargo.can_move:
+            return False, "Unit has already moved this turn"
         
         # Check if transport has capacity
         if not self.has_cargo_space(transport):
@@ -255,25 +251,26 @@ class TransportSystem:
         
         # Check if units are same army
         if transport.army != cargo.army:
-            return False, "Cannot load enemy units"
+            return False, "Cannot board enemy transport"
         
-        # Check if cargo unit can move
-        if not cargo.can_move:
-            return False, "Cargo unit has already moved this turn"
-        
-        return True, "Can load unit"
+        return True, f"Can board {transport.type.name}"
     
-    def load_unit(self, transport: 'Unit', cargo: 'Unit',
-             transport_x: int, transport_y: int,
-             cargo_x: int, cargo_y: int) -> LoadResult:
-        """Load a unit into transport"""
+    def cargo_move_into_transport(self, cargo: 'Unit', transport: 'Unit',
+                                cargo_x: int, cargo_y: int,
+                                transport_x: int, transport_y: int) -> LoadResult:
+        """
+        ADVANCE WARS STYLE: Cargo unit moves into transport
+        This is the main loading method - cargo moves TO the transport location
+        """
         
-        # Validate loading
-        can_load, message = self.can_load_unit(transport, cargo, transport_x, transport_y, cargo_x, cargo_y)
-        if not can_load:
+        # Validate the move
+        can_board, message = self.can_cargo_move_into_transport(
+            cargo, transport, cargo_x, cargo_y, transport_x, transport_y
+        )
+        if not can_board:
             return LoadResult(success=False, message=message)
         
-        # INITIALIZE cargo list if it doesn't exist or is empty
+        # Initialize transport cargo if needed
         if not hasattr(transport.status, 'cargo') or transport.status.cargo is None:
             transport.status.cargo = [None] * self.get_max_capacity(transport)
         elif isinstance(transport.status.cargo, list) and len(transport.status.cargo) == 0:
@@ -282,270 +279,327 @@ class TransportSystem:
         # Find empty cargo slot
         cargo_index = None
         for i in range(len(transport.status.cargo)):
-            if i < len(transport.status.cargo) and transport.status.cargo[i] is None:
+            if transport.status.cargo[i] is None:
                 cargo_index = i
                 break
-        
-        # If no empty slot found, add to end if under capacity
-        if cargo_index is None and len(transport.status.cargo) < self.get_max_capacity(transport):
-            cargo_index = len(transport.status.cargo)
-            transport.status.cargo.append(None)
         
         if cargo_index is None:
             return LoadResult(success=False, message="No available cargo slots")
         
+        # Calculate movement cost for the cargo unit
+        move_distance = abs(cargo_x - transport_x) + abs(cargo_y - transport_y)
+        
+        # Check if cargo has enough movement
+        if move_distance > cargo.status.move:
+            return LoadResult(success=False, message="Not enough movement to reach transport")
+        
+        # Execute the boarding
+        print(f"AW_TRANSPORT: {cargo.type.name} moving from ({cargo_x},{cargo_y}) into {transport.type.name} at ({transport_x},{transport_y})")
+        
         # Store cargo unit in transport
         transport.status.cargo[cargo_index] = cargo
         
-        # Remove cargo unit from board
+        # Remove cargo unit from board (it's now inside the transport)
         self.manager.unit_remove(cargo_x, cargo_y)
         
-        # Mark both units as having acted (use the standard unit attributes)
+        # Cargo unit is now "spent" for this turn (moved into transport)
         cargo.can_move = False
         cargo.can_attack = False
-        transport.can_move = False  # Transport can't move after loading
+        cargo.can_capture = False
+        
+        # Transport does NOT lose its turn for having a unit board it
+        # (This matches Advance Wars - transports can still move after loading)
+        
+        cargo_type_name = cargo.type.name if hasattr(cargo.type, 'name') else str(cargo.type)
+        transport_type_name = transport.type.name if hasattr(transport.type, 'name') else str(transport.type)
         
         return LoadResult(
             success=True, 
-            message=f"{cargo.type.name} loaded into {transport.type.name}",
+            message=f"{cargo_type_name} boarded {transport_type_name}",
             cargo_index=cargo_index
         )
     
     # =============================================================================
-    # UNLOADING SYSTEM - WITH CRITICAL FIX
+    # ADVANCE WARS STYLE UNLOADING - CARGO EXITS FROM TRANSPORT
     # =============================================================================
     
-    def get_valid_unload_positions(self, transport_x: int, transport_y: int) -> List[Tuple[int, int]]:
-        """Get all valid positions where units can be unloaded"""
-        valid_positions = []
-        
-        # Check all adjacent tiles
-        directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]  # N, S, E, W
-        
-        for dx, dy in directions:
-            unload_x = transport_x + dx
-            unload_y = transport_y + dy
-            
-            # Check if position is on board
-            if not (0 <= unload_x < self.manager.board.width and 0 <= unload_y < self.manager.board.height):
-                continue
-            
-            # Check if tile is empty
-            if self.manager.unit_at(unload_x, unload_y) is not None:
-                continue
-            
-            # Check if terrain is passable for ground units
-            tile = self.manager.tile_at(unload_x, unload_y)
-            terrain_name = tile.mapTile.type.name if hasattr(tile.mapTile.type, 'name') else str(tile.mapTile.type)
-            
-            # Basic terrain check - can expand this later
-            if terrain_name in ['SEA']:
-                continue
-            
-            valid_positions.append((unload_x, unload_y))
-        
-        return valid_positions
-    
-    def can_unload_unit(self, transport: 'Unit', cargo_index: int,
-                       transport_x: int, transport_y: int,
-                       unload_x: int, unload_y: int) -> Tuple[bool, str]:
-        """Validate unloading a specific unit"""
+    def can_cargo_exit_transport(self, transport: 'Unit', cargo_index: int,
+                               transport_x: int, transport_y: int,
+                               exit_x: int, exit_y: int) -> Tuple[bool, str]:
+        """
+        ADVANCE WARS STYLE: Check if cargo can exit transport to specific position
+        This is called when a cargo unit wants to EXIT the transport
+        """
         
         # Check if transport has cargo
-        if not hasattr(transport.status, 'cargo') or cargo_index >= len(transport.status.cargo):
-            return False, "Invalid cargo index"
+        if not hasattr(transport.status, 'cargo') or not transport.status.cargo:
+            return False, "Transport has no cargo"
         
-        cargo = transport.status.cargo[cargo_index]
-        if cargo is None:
-            return False, "No unit in cargo slot"
+        # Check cargo index
+        if cargo_index >= len(transport.status.cargo) or transport.status.cargo[cargo_index] is None:
+            return False, "No unit at specified cargo index"
         
-        # Check if unload position is adjacent
-        distance = abs(transport_x - unload_x) + abs(transport_y - unload_y)
+        # Check if exit position is adjacent to transport
+        distance = abs(transport_x - exit_x) + abs(transport_y - exit_y)
         if distance != 1:
-            return False, "Can only unload to adjacent tiles"
+            return False, "Can only exit to adjacent tiles"
         
-        # Check if unload position is empty
-        if self.manager.unit_at(unload_x, unload_y) is not None:
-            return False, "Unload position is occupied"
+        # Check if destination is empty
+        if self.manager.unit_at(exit_x, exit_y):
+            return False, "Exit position is occupied"
         
-        # Check if cargo unit can be placed on this terrain
-        tile = self.manager.tile_at(unload_x, unload_y)
-        # This is a simplified check - you can enhance it later with proper terrain validation
-        terrain_name = tile.mapTile.type.name if hasattr(tile.mapTile.type, 'name') else str(tile.mapTile.type)
+        # Check terrain compatibility
+        cargo = transport.status.cargo[cargo_index]
+        if isinstance(cargo, dict):
+            cargo = self._reconstruct_unit_from_dict(cargo)
         
-        if terrain_name in ['SEA'] and cargo.type.name not in ['LANDER', 'CRUISER', 'BATTLESHIP', 'SUB']:
-            return False, f"Cannot unload {cargo.type.name} onto {terrain_name}"
+        exit_tile = self.manager.tile_at(exit_x, exit_y)
+        terrain_name = exit_tile.mapTile.type.name if hasattr(exit_tile.mapTile.type, 'name') else str(exit_tile.mapTile.type)
         
-        return True, "Can unload unit"
+        # Check if cargo unit can move on this terrain
+        cargo_type = cargo.type.name if hasattr(cargo.type, 'name') else str(cargo.type)
+        
+        # Basic terrain restrictions
+        if terrain_name == 'SEA' and cargo_type not in ['LANDER', 'CRUISER', 'BATTLESHIP', 'SUB']:
+            return False, f"Cannot deploy {cargo_type} onto water"
+        
+        # Check if transport can operate on current terrain (for naval units)
+        transport_tile = self.manager.tile_at(transport_x, transport_y)
+        transport_terrain = transport_tile.mapTile.type.name if hasattr(transport_tile.mapTile.type, 'name') else str(transport_tile.mapTile.type)
+        transport_type = transport.type.name if hasattr(transport.type, 'name') else str(transport.type)
+        
+        # Landers can only unload on shoals/beaches
+        if transport_type == 'LANDER' and transport_terrain not in ['SHOAL', 'BEACH']:
+            return False, "Lander must be on shoal or beach to deploy units"
+        
+        return True, f"Can deploy {cargo_type}"
     
-    def unload_unit(self, transport: 'Unit', cargo_index: int,
-           transport_x: int, transport_y: int,
-           unload_x: int, unload_y: int) -> UnloadResult:
+    def cargo_exit_transport(self, transport: 'Unit', cargo_index: int,
+                           transport_x: int, transport_y: int,
+                           exit_x: int, exit_y: int) -> UnloadResult:
         """
-        CRITICAL FIX: Unload a unit from transport with proper Unit object handling
-        This method now properly handles both Unit objects and serialized dicts
+        ADVANCE WARS STYLE: Cargo unit exits transport to specified position
+        This is the main unloading method - cargo exits TO a specific location
         """
         
-        # Validate unloading
-        can_unload, message = self.can_unload_unit(transport, cargo_index, transport_x, transport_y, unload_x, unload_y)
-        if not can_unload:
+        # Validate the exit
+        can_exit, message = self.can_cargo_exit_transport(
+            transport, cargo_index, transport_x, transport_y, exit_x, exit_y
+        )
+        if not can_exit:
             return UnloadResult(success=False, message=message)
         
         # Get cargo unit
         cargo = transport.status.cargo[cargo_index]
         
-        # ENHANCED DEBUG: Log what we're working with
-        print(f"TRANSPORT_DEBUG: Unloading cargo type: {type(cargo)}")
+        # Handle serialized units
         if isinstance(cargo, dict):
-            print(f"TRANSPORT_DEBUG: Cargo is dict with keys: {list(cargo.keys())}")
-            print(f"TRANSPORT_DEBUG: Unit type in dict: {cargo.get('type', 'MISSING')}")
-        else:
-            print(f"TRANSPORT_DEBUG: Cargo is Unit object: {cargo}")
-        
-        # CRITICAL FIX: Handle serialized units (this fixes the main error)
-        if isinstance(cargo, dict):
-            print(f"TRANSPORT_DEBUG: Reconstructing unit from dict: {cargo.get('type', 'UNKNOWN')}")
+            print(f"AW_TRANSPORT: Reconstructing serialized unit from transport")
             cargo = self._reconstruct_unit_from_dict(cargo)
-            print(f"TRANSPORT_DEBUG: Reconstruction result: {type(cargo)}")
         
         # Ensure we have a proper Unit object
         if not hasattr(cargo, 'type') or not hasattr(cargo, 'army'):
-            print(f"TRANSPORT_DEBUG: ERROR - Invalid cargo unit data after reconstruction")
+            print(f"AW_TRANSPORT: Invalid cargo unit data")
             return UnloadResult(success=False, message="Invalid cargo unit data")
-        
-        print(f"TRANSPORT_DEBUG: Unit validated, proceeding with placement")
         
         # Remove from transport
         transport.status.cargo[cargo_index] = None
         
-        # Place unit on board
-        try:
-            self.manager.unit_place(cargo, unload_x, unload_y)
-            print(f"TRANSPORT_DEBUG: Successfully placed unit using manager.unit_place")
-        except Exception as e:
-            print(f"TRANSPORT_DEBUG: Manager placement failed: {e}")
-            return UnloadResult(success=False, message=f"Failed to place unit: {e}")
-        
-        # Unloaded unit can act this turn
+        # ADVANCE WARS RULE: Unloaded unit can act immediately this turn
         cargo.can_move = True
         cargo.can_attack = True
         cargo.can_capture = True
         
-        # Transport is done for this turn
+        # Clear any previous turn flags
+        if hasattr(cargo, '_unloaded_this_turn'):
+            delattr(cargo, '_unloaded_this_turn')
+        
+        print(f"AW_TRANSPORT: {cargo.type.name} exiting transport to ({exit_x},{exit_y})")
+        
+        # Place unit at exit position
+        try:
+            self.manager.unit_place(cargo, exit_x, exit_y)
+            print(f"AW_TRANSPORT: Successfully deployed {cargo.type.name} at ({exit_x}, {exit_y})")
+        except Exception as e:
+            print(f"AW_TRANSPORT: Failed to deploy unit: {e}")
+            return UnloadResult(success=False, message=f"Failed to deploy unit: {e}")
+        
+        # Transport becomes inactive after unloading (Advance Wars rule)
         transport.can_move = False
         transport.can_attack = False
         
-        unit_type_name = cargo.type.name if hasattr(cargo.type, 'name') else str(cargo.type)
+        cargo_type_name = cargo.type.name if hasattr(cargo.type, 'name') else str(cargo.type)
         transport_type_name = transport.type.name if hasattr(transport.type, 'name') else str(transport.type)
-        
-        print(f"TRANSPORT_DEBUG: Successfully unloaded {unit_type_name} from {transport_type_name}")
         
         return UnloadResult(
             success=True,
-            message=f"{unit_type_name} unloaded from {transport_type_name}",
-            unloaded_position=(unload_x, unload_y)
+            message=f"{cargo_type_name} deployed from {transport_type_name}",
+            unloaded_position=(exit_x, exit_y)
         )
+    
+    # =============================================================================
+    # MOVEMENT INTEGRATION - FOR UI AND PATHFINDING
+    # =============================================================================
+    
+    def get_loadable_transports_near(self, cargo_x: int, cargo_y: int) -> List[Dict]:
+        """
+        Get all adjacent transports that this cargo unit can board
+        Used for UI highlighting when cargo unit is selected
+        """
+        cargo_unit = self.manager.unit_at(cargo_x, cargo_y)
+        if not cargo_unit:
+            return []
+        
+        loadable_transports = []
+        directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+        
+        for dx, dy in directions:
+            transport_x = cargo_x + dx
+            transport_y = cargo_y + dy
+            
+            # Check bounds
+            if not (0 <= transport_x < self.manager.board.width and 0 <= transport_y < self.manager.board.height):
+                continue
+            
+            # Check for transport unit
+            transport_unit = self.manager.unit_at(transport_x, transport_y)
+            if not transport_unit:
+                continue
+            
+            # Check if cargo can board this transport
+            can_board, message = self.can_cargo_move_into_transport(
+                cargo_unit, transport_unit, cargo_x, cargo_y, transport_x, transport_y
+            )
+            
+            if can_board:
+                loadable_transports.append({
+                    'x': transport_x,
+                    'y': transport_y,
+                    'transport_type': transport_unit.type.name if hasattr(transport_unit.type, 'name') else str(transport_unit.type),
+                    'available_space': self.get_max_capacity(transport_unit) - self._get_current_cargo_count(transport_unit),
+                    'message': message
+                })
+        
+        return loadable_transports
+    
+    def get_valid_exit_positions(self, transport_x: int, transport_y: int) -> List[Tuple[int, int]]:
+        """
+        Get all valid positions where cargo can exit from transport
+        Used for UI highlighting when transport is selected
+        """
+        transport = self.manager.unit_at(transport_x, transport_y)
+        if not transport or not self.is_transport_unit(transport):
+            return []
+        
+        valid_positions = []
+        directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+        
+        for dx, dy in directions:
+            exit_x = transport_x + dx
+            exit_y = transport_y + dy
+            
+            # Check bounds
+            if not (0 <= exit_x < self.manager.board.width and 0 <= exit_y < self.manager.board.height):
+                continue
+            
+            # Check if position is empty
+            if self.manager.unit_at(exit_x, exit_y):
+                continue
+            
+            # Check if any cargo can exit here
+            if hasattr(transport.status, 'cargo') and transport.status.cargo:
+                for i, cargo in enumerate(transport.status.cargo):
+                    if cargo is not None:
+                        can_exit, _ = self.can_cargo_exit_transport(
+                            transport, i, transport_x, transport_y, exit_x, exit_y
+                        )
+                        if can_exit:
+                            valid_positions.append((exit_x, exit_y))
+                            break
+        
+        return valid_positions
+    
+    # =============================================================================
+    # TURN MANAGEMENT INTEGRATION
+    # =============================================================================
+    
+    def reset_units_for_new_turn(self, army):
+        """Reset all units for new turn, including cargo units"""
+        print(f"AW_TRANSPORT: Resetting units for {army} turn")
+        
+        # Reset all units on the board
+        for tile in self.manager.board.grid:
+            if tile.unit and tile.unit.army == army:
+                self._reset_unit_for_turn(tile.unit)
+                
+                # Also reset any cargo units
+                if (hasattr(tile.unit.status, 'cargo') and 
+                    tile.unit.status.cargo and 
+                    self.is_transport_unit(tile.unit)):
+                    
+                    for i, cargo in enumerate(tile.unit.status.cargo):
+                        if cargo is not None:
+                            # Handle serialized cargo
+                            if isinstance(cargo, dict):
+                                cargo = self._reconstruct_unit_from_dict(cargo)
+                                tile.unit.status.cargo[i] = cargo
+                            
+                            # Reset cargo unit flags
+                            if hasattr(cargo, 'can_move'):
+                                self._reset_unit_for_turn(cargo)
+                                print(f"AW_TRANSPORT: Reset cargo unit {cargo.type.name}")
+    
+    def _reset_unit_for_turn(self, unit):
+        """Reset individual unit for new turn"""
+        unit.can_move = True
+        unit.can_attack = True
+        unit.can_capture = True
+        
+        # Clear any previous turn flags
+        if hasattr(unit, '_unloaded_this_turn'):
+            delattr(unit, '_unloaded_this_turn')
+        
+        print(f"AW_TRANSPORT: Reset {unit.type.name} - can_move: {unit.can_move}")
     
     # =============================================================================
     # UTILITY METHODS
     # =============================================================================
     
-    def get_compatible_cargo_types(self, transport: 'Unit') -> List[str]:
-        """Get list of unit types this transport can carry"""
-        transport_type = transport.type.name if hasattr(transport.type, 'name') else str(transport.type)
+    def _get_current_cargo_count(self, transport: 'Unit') -> int:
+        """Get current number of units in transport"""
+        if not hasattr(transport.status, 'cargo') or not transport.status.cargo:
+            return 0
         
-        if transport_type not in self.transport_capabilities:
-            return []
-        
-        return self.transport_capabilities[transport_type].allowed_unit_types
+        return sum(1 for slot in transport.status.cargo if slot is not None)
     
-    def get_loadable_units_near(self, transport_x: int, transport_y: int, army) -> List[Dict]:
-        """Get all units near transport that can be loaded"""
-        transport = self.manager.unit_at(transport_x, transport_y)
-        if not transport or not self.is_transport_unit(transport):
-            return []
+    def get_cargo_info(self, transport: 'Unit') -> Dict:
+        """Get detailed information about transport's current cargo"""
+        if not self.is_transport_unit(transport):
+            return {"is_transport": False}
         
-        loadable_units = []
-        
-        # Check all adjacent tiles
-        directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]
-        
-        for dx, dy in directions:
-            cargo_x = transport_x + dx
-            cargo_y = transport_y + dy
-            
-            # Check bounds
-            if not (0 <= cargo_x < self.manager.board.width and 0 <= cargo_y < self.manager.board.height):
-                continue
-            
-            # Check for unit
-            cargo_unit = self.manager.unit_at(cargo_x, cargo_y)
-            if not cargo_unit:
-                continue
-            
-            # Check if it can be loaded
-            can_load, _ = self.can_load_unit(transport, cargo_unit, transport_x, transport_y, cargo_x, cargo_y)
-            
-            if can_load:
-                loadable_units.append({
-                    "x": cargo_x,
-                    "y": cargo_y,
-                    "unit_type": cargo_unit.type.name if hasattr(cargo_unit.type, 'name') else str(cargo_unit.type),
-                    "army": cargo_unit.army.name if hasattr(cargo_unit.army, 'name') else str(cargo_unit.army),
-                    "hp": cargo_unit.status.hp
-                })
-        
-        return loadable_units
-    
-    # =============================================================================
-    # DEBUGGING AND VALIDATION HELPERS
-    # =============================================================================
-    
-    def validate_cargo_integrity(self, transport: 'Unit') -> Dict:
-        """Validate that all cargo units are properly formed"""
-        if not hasattr(transport.status, 'cargo'):
-            return {"valid": True, "issues": []}
-        
-        issues = []
-        for i, cargo in enumerate(transport.status.cargo):
-            if cargo is None:
-                continue
-                
-            if isinstance(cargo, dict):
-                issues.append(f"Cargo slot {i} contains dict instead of Unit object")
-                
-                # Check if dict has required fields
-                required_fields = ['type', 'army', 'status']
-                for field in required_fields:
-                    if field not in cargo:
-                        issues.append(f"Cargo slot {i} missing required field: {field}")
-            
-            elif not hasattr(cargo, 'type') or not hasattr(cargo, 'army'):
-                issues.append(f"Cargo slot {i} has invalid Unit object")
+        cargo_list = []
+        if hasattr(transport.status, 'cargo') and transport.status.cargo:
+            for i, cargo in enumerate(transport.status.cargo):
+                if cargo is not None:
+                    # Handle both Unit objects and dicts
+                    if isinstance(cargo, dict):
+                        unit_type = cargo.get('type', 'UNKNOWN')
+                        unit_hp = cargo.get('status', {}).get('hp', 0)
+                    else:
+                        unit_type = cargo.type.name if hasattr(cargo.type, 'name') else str(cargo.type)
+                        unit_hp = cargo.status.hp if hasattr(cargo.status, 'hp') else 0
+                    
+                    cargo_list.append({
+                        "index": i,
+                        "unit_type": unit_type,
+                        "hp": unit_hp
+                    })
         
         return {
-            "valid": len(issues) == 0,
-            "issues": issues,
-            "cargo_count": self.get_current_cargo_count(transport)
+            "is_transport": True,
+            "max_capacity": self.get_max_capacity(transport),
+            "current_cargo": len(cargo_list),
+            "cargo_units": cargo_list,
+            "has_space": self.has_cargo_space(transport),
+            "transport_type": transport.type.name if hasattr(transport.type, 'name') else str(transport.type)
         }
-    
-    def repair_cargo_integrity(self, transport: 'Unit') -> bool:
-        """Attempt to repair any serialized cargo units"""
-        if not hasattr(transport.status, 'cargo'):
-            return True
-        
-        repairs_made = False
-        for i, cargo in enumerate(transport.status.cargo):
-            if cargo is None:
-                continue
-                
-            if isinstance(cargo, dict):
-                try:
-                    # Reconstruct the unit
-                    reconstructed_unit = self._reconstruct_unit_from_dict(cargo)
-                    transport.status.cargo[i] = reconstructed_unit
-                    repairs_made = True
-                except Exception as e:
-                    print(f"Failed to repair cargo slot {i}: {e}")
-        
-        return repairs_made

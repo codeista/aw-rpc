@@ -5,10 +5,18 @@
 // constants
 const TILESIZE = 16;
 
+// Transport visual constants
+const TRANSPORT_HIGHLIGHT_OPACITY = 0.3;
+const TRANSPORT_BORDER_WIDTH = 2;
+
 // globals
 var token = document.getElementById('draw').getAttribute('x-token');
 var board = null;
 var two = null;
+
+// Transport rendering globals
+var transportHighlightGroup = null;
+var cargoIndicatorGroup = null;
 
 // update board data
 update();
@@ -58,6 +66,22 @@ setTimeout(function() {
 //
 // Helper methods
 //
+
+function isTransportUnitForRender(unit) {
+    if (!unit || !unit.type) return false;
+    const transportTypes = ['APC', 'LANDER', 'TCOPTER', 'CRUISER', 'CARRIER', 'BLACKBOAT'];
+    return transportTypes.includes(unit.type);
+}
+
+function getCargoCountForRender(unit) {
+    if (!unit || !unit.status || !unit.status.cargo) return 0;
+    
+    // Your existing code checks cargo[0] and cargo[1], so we'll do the same
+    let count = 0;
+    if (unit.status.cargo[0]) count++;
+    if (unit.status.cargo[1]) count++;
+    return count;
+}
 
 function uuidv4() {
     return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
@@ -149,6 +173,11 @@ function update() {
                 }
                 var params = { type: Two.Types.canvas, width: board.width * TILESIZE, height: board.height * TILESIZE };
                 two = new Two(params).appendTo(elem);
+                // Initialize transport visual system
+                window.transportHighlights = [];
+                transportHighlightGroup = null;
+                cargoIndicatorGroup = null;
+                console.log('RENDER: Transport visual system initialized');
                 console.log('Two.js initialized successfully');
                 
                 // canvas mouse handling
@@ -1037,6 +1066,130 @@ function makeSprite(tile) {
     return rect;
 }
 
+function renderTransportIndicators() {
+    console.log('RENDER: Adding transport indicators');
+    
+    // Render transport highlights (green for boarding, blue for exits)
+    renderTransportHighlights();
+    
+    // Render cargo indicators on transport units
+    renderCargoIndicators();
+}
+
+function renderTransportHighlights() {
+    // Clear any existing highlight group
+    if (transportHighlightGroup) {
+        two.remove(transportHighlightGroup);
+        transportHighlightGroup = null;
+    }
+    
+    if (!window.transportHighlights || window.transportHighlights.length === 0) {
+        return; // No highlights to show
+    }
+    
+    // Create new highlight group
+    transportHighlightGroup = two.makeGroup();
+    
+    window.transportHighlights.forEach(highlight => {
+        const x = (highlight.x * TILESIZE) + (TILESIZE / 2);
+        const y = (highlight.y * TILESIZE) + (TILESIZE / 2);
+        
+        let color, strokeColor;
+        switch(highlight.type) {
+            case 'loadable-transport':
+                color = 'rgba(76, 175, 80, 0.3)'; // Green with transparency
+                strokeColor = '#4CAF50';
+                break;
+            case 'exit-position':
+                color = 'rgba(33, 150, 243, 0.3)'; // Blue with transparency  
+                strokeColor = '#2196F3';
+                break;
+            default:
+                color = 'rgba(255, 193, 7, 0.3)'; // Yellow with transparency
+                strokeColor = '#FFC107';
+        }
+        
+        // Create highlight rectangle
+        const highlightRect = two.makeRectangle(x, y, TILESIZE - 4, TILESIZE - 4);
+        highlightRect.fill = color;
+        highlightRect.stroke = strokeColor;
+        highlightRect.linewidth = TRANSPORT_BORDER_WIDTH;
+        
+        // Add to highlight group
+        transportHighlightGroup.add(highlightRect);
+    });
+    
+    // Add the group to the scene
+    two.add(transportHighlightGroup);
+}
+
+function renderCargoIndicators() {
+    // Clear existing cargo indicators
+    if (cargoIndicatorGroup) {
+        two.remove(cargoIndicatorGroup);
+        cargoIndicatorGroup = null;
+    }
+    
+    // Create new cargo indicator group
+    cargoIndicatorGroup = two.makeGroup();
+    
+    // Check all tiles for transport units (using your existing board structure)
+    if (!board || !board.grid) return;
+    
+    for (var i = 0; i < board.height; i++) {
+        for (var j = 0; j < board.width; j++) {
+            var tile = board.grid[j + i * board.width];
+            
+            if (tile.unit && isTransportUnitForRender(tile.unit)) {
+                const cargoCount = getCargoCountForRender(tile.unit);
+                if (cargoCount > 0) {
+                    renderCargoCountBadge(tile.x, tile.y, cargoCount);
+                    renderTransportBorder(tile.x, tile.y);
+                }
+            }
+        }
+    }
+    
+    // Add the group to the scene
+    two.add(cargoIndicatorGroup);
+}
+
+function renderCargoCountBadge(tileX, tileY, count) {
+    const x = (tileX * TILESIZE) + TILESIZE - 6;
+    const y = (tileY * TILESIZE) + 6;
+    
+    // Create background circle
+    const badgeBackground = two.makeCircle(x, y, 6);
+    badgeBackground.fill = '#FFD700'; // Gold background
+    badgeBackground.stroke = '#000000';
+    badgeBackground.linewidth = 1;
+    
+    // Create text (Two.js text)
+    const badgeText = two.makeText(count.toString(), x, y);
+    badgeText.fill = '#000000';
+    badgeText.size = 8;
+    badgeText.weight = 'bold';
+    badgeText.family = 'Arial, sans-serif';
+    
+    // Add to cargo indicator group
+    cargoIndicatorGroup.add(badgeBackground);
+    cargoIndicatorGroup.add(badgeText);
+}
+
+function renderTransportBorder(tileX, tileY) {
+    const x = (tileX * TILESIZE) + (TILESIZE / 2);
+    const y = (tileY * TILESIZE) + (TILESIZE / 2);
+    
+    // Create yellow border to indicate transport has cargo
+    const border = two.makeRectangle(x, y, TILESIZE - 2, TILESIZE - 2);
+    border.fill = 'transparent';
+    border.stroke = '#FFD700'; // Gold border
+    border.linewidth = 2;
+    
+    // Add to cargo indicator group
+    cargoIndicatorGroup.add(border);
+}
+
 function createScene() {
     // create game tiles
     for (var i = 0; i < board.height; i++) {
@@ -1050,6 +1203,7 @@ function createScene() {
             }
         }
     }
+    renderTransportIndicators();
 }
 
 // =============================================================================
