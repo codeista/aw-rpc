@@ -240,7 +240,52 @@ function chat(ev) {
 }
 
 function armyEndTurn() {
+    // Clean up transport state before ending turn
+    cleanupTransportState();
+    
+    // Call the original RPC method
     jsonrpc('army_end_turn', {});
+}
+
+function cleanupTransportState() {
+    console.log('TRANSPORT_FIX: Cleaning up transport state for turn end');
+    
+    // Clear transport highlights if function exists
+    if (typeof clearTransportHighlights === 'function') {
+        clearTransportHighlights();
+    }
+    
+    // Reset transport state
+    if (typeof transportHighlights !== 'undefined') {
+        transportHighlights = {
+            loadableUnits: [],
+            unloadPositions: [],
+            selectedTransport: null
+        };
+    }
+    
+    // Clear visual highlights
+    if (typeof transportHighlightGroup !== 'undefined' && transportHighlightGroup) {
+        if (two && two.remove) {
+            try {
+                two.remove(transportHighlightGroup);
+            } catch (e) {
+                console.log('TRANSPORT_FIX: Could not remove transport highlight group:', e);
+            }
+        }
+        transportHighlightGroup = null;
+    }
+    
+    if (typeof cargoIndicatorGroup !== 'undefined' && cargoIndicatorGroup) {
+        if (two && two.remove) {
+            try {
+                two.remove(cargoIndicatorGroup);
+            } catch (e) {
+                console.log('TRANSPORT_FIX: Could not remove cargo indicator group:', e);
+            }
+        }
+        cargoIndicatorGroup = null;
+    }
 }
 
 function endGame() {
@@ -383,46 +428,62 @@ function canvasMove(ev) {
                  draw.style.cursor = 'pointer';
 }
 
-
 function canvasClick(ev) {
     var x = ev.offsetX;
     var y = ev.offsetY;
     var tile = tileAt(x, y);
-    if (ev.detail == 1){
-      if (ev.ctrlKey) {
-          unitLoad(tile);
-      } else if (ev.altKey) {
-                 unitUnload(tile);
-      }
-      if (tile.can_be_attacked) {
-        unitAttackWithPreview(tile);
-      }
-      else if (tile.unit != null &&
-               tile.unit.army == board.current_turn) {
-               if (tile.unit.can_attack ||
-                   tile.unit.can_move ||
-                   tile.unit.can_capture) {
-                   unitSelectWithRange(tile);
-                   }
-              }
-      if (tile.can_be_moved_to) {
-          unitMove(tile);
+    
+    if (ev.detail == 1) {
+        // Handle Ctrl+Click for loading
+        if (ev.ctrlKey) {
+            unitLoad(tile);
+            return;
+        } 
+        
+        // Handle Alt+Click for unloading
+        if (ev.altKey) {
+            unitUnload(tile);
+            return;
         }
-      else if (tile.mapTile.type == 'FACTORY' &&
-               tile.mapTile.army == board.current_turn &&
-               tile.unit == null) {
-               unitCreate(tile);
-               }
-      else if (tile.mapTile.type == 'AIRPORT' &&
-              tile.mapTile.army == board.current_turn &&
-              tile.unit == null) {
-              airunitCreate(tile);
-              }
-      else if (tile.mapTile.type == 'PORT' &&
-              tile.mapTile.army == board.current_turn &&
-              tile.unit == null) {
-              seaunitCreate(tile);
-              }
+        
+        // Regular game actions
+        if (tile.can_be_attacked) {
+            // Use enhanced attack if available, otherwise fallback
+            if (typeof unitAttackWithPreview === 'function') {
+                unitAttackWithPreview(tile);
+            } else {
+                unitAttack(tile);
+            }
+        }
+        else if (tile.unit != null && tile.unit.army == board.current_turn) {
+            if (tile.unit.can_attack || tile.unit.can_move || tile.unit.can_capture) {
+                // Use the correctly named function
+                if (typeof unitSelectWithTransportAndRange === 'function') {
+                    unitSelectWithTransportAndRange(tile);
+                } else {
+                    unitSelect(tile);
+                }
+            }
+        }
+        
+        if (tile.can_be_moved_to) {
+            unitMove(tile);
+        }
+        else if (tile.mapTile.type == 'FACTORY' &&
+                 tile.mapTile.army == board.current_turn &&
+                 tile.unit == null) {
+                 unitCreate(tile);
+        }
+        else if (tile.mapTile.type == 'AIRPORT' &&
+                tile.mapTile.army == board.current_turn &&
+                tile.unit == null) {
+                airunitCreate(tile);
+        }
+        else if (tile.mapTile.type == 'PORT' &&
+                tile.mapTile.army == board.current_turn &&
+                tile.unit == null) {
+                seaunitCreate(tile);
+        }
     }
 }
 
@@ -445,6 +506,64 @@ function canvasdblClick(ev) {
     } else if (tile.unit) {
             unitWait(tile);
             }
+}
+
+function unitSelectWithTransportAndRange(tile) {
+    console.log('SELECTION_FIX: Selecting unit with transport and range support');
+    
+    try {
+        // Step 1: Basic unit selection (existing functionality)
+        jsonrpc('unit_select', {x: tile.x, y: tile.y});
+        
+        // Step 2: Show attack range (existing functionality)  
+        if (tile.unit && tile.unit.army === board.current_turn) {
+            highlightAttackRange(tile.x, tile.y);
+        } else {
+            clearRangeHighlights();
+        }
+        
+        // Step 3: Handle transport-specific functionality
+        handleTransportSelectionLogic(tile);
+        
+    } catch (error) {
+        console.error('SELECTION_FIX: Unit selection failed:', error);
+        // Fallback to basic selection if transport logic fails
+        jsonrpc('unit_select', {x: tile.x, y: tile.y});
+    }
+}
+
+function handleTransportSelectionLogic(tile) {
+    if (!tile.unit) {
+        clearTransportHighlights();
+        return;
+    }
+    
+    // Get cargo/transport information
+    jsonrpc('get_cargo_info', {x: tile.x, y: tile.y}, function(result) {
+        if (result && result.success && result.cargo_info) {
+            const cargoInfo = result.cargo_info;
+            
+            // Show transport-specific highlights
+            if (cargoInfo.is_transport) {
+                if (cargoInfo.current_cargo > 0) {
+                    // Transport has cargo - show unload positions
+                    showUnloadPositionsHighlight(tile.x, tile.y);
+                } else {
+                    // Empty transport - show loadable units nearby
+                    showLoadableUnitsHighlight(tile.x, tile.y);
+                }
+            } else {
+                // Regular unit - clear any transport highlights
+                clearTransportHighlights();
+            }
+            
+            // Show cargo information to user
+            showCargoInfo(tile.unit, cargoInfo);
+        } else {
+            // If cargo info fails, just clear highlights
+            clearTransportHighlights();
+        }
+    });
 }
 
 var textureLoadId = null;
@@ -1496,43 +1615,6 @@ function showUnloadPositionsHighlight(transportX, transportY) {
     });
 }
 
-function unitSelectWithTransport(tile) {
-    const unit = tile.unit;
-    
-    if (!unit) {
-        clearTransportHighlights();
-        clearIndicators();
-        return;
-    }
-    
-    // First get cargo info to determine if this is a transport
-    jsonrpc('get_cargo_info', {x: tile.x, y: tile.y}, function(result) {
-        if (result.success && result.cargo_info) {
-            const cargoInfo = result.cargo_info;
-            
-            // Show cargo information
-            showCargoInfo(unit, cargoInfo);
-            
-            if (cargoInfo.is_transport) {
-                // This is a transport unit
-                if (cargoInfo.current_cargo > 0) {
-                    // Has cargo - show unload positions
-                    showUnloadPositionsHighlight(tile.x, tile.y);
-                } else {
-                    // Empty transport - show loadable units
-                    showLoadableUnitsHighlight(tile.x, tile.y);
-                }
-            } else {
-                // Regular unit - use normal selection
-                clearTransportHighlights();
-            }
-        }
-        
-        // Always call the original unit selection for movement/attack indicators
-        unitSelectWithRange(tile);
-    });
-}
-
 function attemptLoadUnit(transportX, transportY, cargoX, cargoY) {
     jsonrpc('load_unit', {
         transport_x: transportX, 
@@ -1567,10 +1649,6 @@ function attemptUnloadUnit(transportX, transportY, unloadX, unloadY, cargoIndex 
         }
     });
 }
-
-// =============================================================================
-// TRANSPORT UI FEEDBACK
-// =============================================================================
 
 function showTransportFeedback(message) {
     // Remove existing feedback
@@ -1628,18 +1706,64 @@ function showCargoInfo(unit, cargoInfo) {
 // =============================================================================
 
 function handleTransportOperations(tile, event) {
-    // Handle Ctrl+Click for loading
-    if (event.ctrlKey) {
-        return handleLoadingClick(tile);
+    // Only handle if we have the required functions
+    if (!handleLoadingClick || !handleUnloadingClick) {
+        return false;
     }
     
-    // Handle Alt+Click for unloading
-    if (event.altKey) {
-        return handleUnloadingClick(tile);
+    try {
+        // Handle Ctrl+Click for loading
+        if (event.ctrlKey) {
+            return handleLoadingClick(tile);
+        }
+        
+        // Handle Alt+Click for unloading  
+        if (event.altKey) {
+            return handleUnloadingClick(tile);
+        }
+        
+        return false; // No transport operation
+    } catch (error) {
+        console.error('TRANSPORT_FIX: Transport operation failed:', error);
+        showTransportFeedback('Transport operation failed: ' + error.message, 'error');
+        return false;
     }
-    
-    return false; // No transport operation handled
 }
+
+// function showTransportFeedback(message, type = 'info') {
+//     // Remove existing feedback
+//     const existingFeedback = document.getElementById('transport-feedback');
+//     if (existingFeedback) {
+//         existingFeedback.remove();
+//     }
+    
+//     // Create new feedback element
+//     const feedback = document.createElement('div');
+//     feedback.id = 'transport-feedback';
+//     feedback.style.cssText = `
+//         position: fixed;
+//         top: 20px;
+//         right: 20px;
+//         background: ${type === 'error' ? '#e74c3c' : '#2c3e50'};
+//         color: white;
+//         padding: 10px 15px;
+//         border-radius: 5px;
+//         z-index: 1000;
+//         font-family: sans-serif;
+//         box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+//         max-width: 300px;
+//     `;
+//     feedback.textContent = message;
+    
+//     document.body.appendChild(feedback);
+    
+//     // Auto-remove after 3 seconds
+//     setTimeout(() => {
+//         if (feedback && feedback.parentNode) {
+//             feedback.remove();
+//         }
+//     }, 3000);
+// }
 
 function handleLoadingClick(tile) {
     // Check if this tile has a loadable unit highlighted
@@ -1728,59 +1852,9 @@ document.addEventListener('keydown', function(event) {
 });
 
 // =============================================================================
-// ENHANCED CANVAS CLICK HANDLER
-// =============================================================================
-
-function canvasClick(ev) {
-    var x = ev.offsetX;
-    var y = ev.offsetY;
-    var tile = tileAt(x, y);
-    
-    // Handle transport operations first (NEW)
-    if (ev.detail == 1 && handleTransportOperations(tile, ev)) {
-        return; // Transport operation handled, exit early
-    }
-    
-    if (ev.detail == 1) {
-        
-        if (tile.can_be_attacked) {
-            unitAttackWithPreview(tile);
-        }
-        else if (tile.unit != null &&
-                 tile.unit.army == board.current_turn) {
-                 if (tile.unit.can_attack ||
-                     tile.unit.can_move ||
-                     tile.unit.can_capture) {
-                     // REPLACE unitSelectWithRange with unitSelectWithTransport
-                     unitSelectWithTransport(tile);
-                     }
-                }
-        if (tile.can_be_moved_to) {
-            unitMove(tile);
-          }
-        else if (tile.mapTile.type == 'FACTORY' &&
-                 tile.mapTile.army == board.current_turn &&
-                 tile.unit == null) {
-                 unitCreate(tile);
-                 }
-        else if (tile.mapTile.type == 'AIRPORT' &&
-                tile.mapTile.army == board.current_turn &&
-                tile.unit == null) {
-                airunitCreate(tile);
-                }
-        else if (tile.mapTile.type == 'PORT' &&
-                tile.mapTile.army == board.current_turn &&
-                tile.unit == null) {
-                seaunitCreate(tile);
-                }
-      }
-}
-
-// =============================================================================
 // INITIALIZATION
 // =============================================================================
 
-// Add this to your initialization code:
 function initializeTransportSystem() {
     console.log("Transport system initialized");
     
@@ -1819,4 +1893,49 @@ function clearIndicators() {
 
 function gameToken() {
     return token;
+}
+
+function handleLoadingClick(tile) {
+    if (!transportHighlights || !transportHighlights.loadableUnits) {
+        return false;
+    }
+    
+    const isLoadable = transportHighlights.loadableUnits.some(unit => 
+        unit.x === tile.x && unit.y === tile.y
+    );
+    
+    if (isLoadable && transportHighlights.selectedTransport) {
+        attemptLoadUnit(
+            transportHighlights.selectedTransport.x,
+            transportHighlights.selectedTransport.y,
+            tile.x,
+            tile.y
+        );
+        return true;
+    }
+    
+    return false;
+}
+
+function handleUnloadingClick(tile) {
+    if (!transportHighlights || !transportHighlights.unloadPositions) {
+        return false;
+    }
+    
+    const isUnloadable = transportHighlights.unloadPositions.some(pos => 
+        pos.x === tile.x && pos.y === tile.y
+    );
+    
+    if (isUnloadable && transportHighlights.selectedTransport) {
+        attemptUnloadUnit(
+            transportHighlights.selectedTransport.x,
+            transportHighlights.selectedTransport.y,
+            tile.x,
+            tile.y,
+            0
+        );
+        return true;
+    }
+    
+    return false;
 }
