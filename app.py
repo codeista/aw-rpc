@@ -23,6 +23,7 @@ from app_core import app, jsonrpc, db, socketio
 from models import Game
 from map_system import map_repository, Map
 from enhanced_combat_system import EnhancedCombatSystem, CombatPreview, EnhancedCombatResult
+from transport_system import TransportSystem
 
 # Import our fixed logging system
 try:
@@ -983,91 +984,6 @@ def damage_preview_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
             "message": f"Could not calculate damage preview: {str(e)}"
         }
 
-@jsonrpc.method('unit_attack_enhanced')
-@log_rpc_performance
-def unit_attack_enhanced_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
-    """Enhanced unit attack with full combat system"""
-    try:
-        mngr = game_load(token)
-        
-        # Validate coordinates
-        board_width = mngr.board.width
-        board_height = mngr.board.height
-        
-        if not (0 <= x < board_width and 0 <= y < board_height):
-            return {
-                "success": False,
-                "error_code": "VALIDATION_ERROR",
-                "message": f"Attacker coordinates ({x}, {y}) out of bounds"
-            }
-        
-        if not (0 <= x2 < board_width and 0 <= y2 < board_height):
-            return {
-                "success": False,
-                "error_code": "VALIDATION_ERROR",
-                "message": f"Target coordinates ({x2}, {y2}) out of bounds"
-            }
-        
-        # Get unit info for logging
-        attacker = mngr.unit_at(x, y)
-        defender = mngr.unit_at(x2, y2)
-        
-        if not attacker:
-            return {
-                "success": False,
-                "error_code": "VALIDATION_ERROR",
-                "message": f"No attacking unit at ({x}, {y})"
-            }
-        
-        if not defender:
-            return {
-                "success": False,
-                "error_code": "VALIDATION_ERROR", 
-                "message": f"No target unit at ({x2}, {y2})"
-            }
-        
-        # Store combat info for logging
-        attacker_info = f"{attacker.army.name}:{attacker.type.name}"
-        defender_info = f"{defender.army.name}:{defender.type.name}"
-        
-        # Execute enhanced combat
-        combat_result = mngr.unit_attack_enhanced(x, y, x2, y2)
-        
-        # Enhanced logging
-        if ENHANCED_LOGGING:
-            app_logger.info(f'Enhanced combat: {token} - {attacker_info} attacked {defender_info} at ({x2},{y2})')
-            app_logger.info(f'Combat result: Attacker dealt {combat_result.attacker_damage_dealt}, Defender dealt {combat_result.defender_damage_dealt}')
-        
-        # Save game state
-        game_save(mngr, token)
-        ws_board_update(token)
-        
-        # Return detailed combat result
-        return {
-            "success": True,
-            "combat_result": {
-                "attacker_damage_dealt": combat_result.attacker_damage_dealt,
-                "defender_damage_dealt": combat_result.defender_damage_dealt,
-                "attacker_hp_before": combat_result.attacker_hp_before,
-                "attacker_hp_after": combat_result.attacker_hp_after,
-                "defender_hp_before": combat_result.defender_hp_before,
-                "defender_hp_after": combat_result.defender_hp_after,
-                "defender_destroyed": combat_result.defender_destroyed,
-                "attacker_destroyed": combat_result.attacker_destroyed,
-                "counter_attack_occurred": combat_result.counter_attack_occurred
-            },
-            "attacker_position": {"x": x, "y": y},
-            "defender_position": {"x": x2, "y": y2}
-        }
-        
-    except Exception as e:
-        app_logger.error(f"Enhanced attack failed for {token}: ({x},{y}) vs ({x2},{y2}): {str(e)}")
-        return {
-            "success": False,
-            "error_code": "COMBAT_ERROR",
-            "message": f"Combat operation failed: {str(e)}"
-        }
-
 # Enhanced movement RPC methods
 @jsonrpc.method('movement_preview')
 def movement_preview_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
@@ -1303,11 +1219,326 @@ def can_afford_unit_rpc(token: str, unit_type: str) -> dict:
 @log_rpc_performance
 def get_unit_costs_rpc(token: str) -> dict:
     """Get all unit costs for reference"""
-    
+
 # =============================================================================
-# PHASE 2A: ENHANCED COMBAT RPC METHODS
+# PHASE 2B-1: TRANSPORT MECHANICS RPC METHODS
 # =============================================================================
 
+@jsonrpc.method('can_load_unit')
+@log_rpc_performance
+def can_load_unit_rpc(token: str, transport_x: int, transport_y: int, 
+                     cargo_x: int, cargo_y: int) -> dict:
+    """Check if a unit can be loaded into transport"""
+    try:
+        mngr = game_load(token)
+        
+        # Validate coordinates
+        if not all(0 <= coord < mngr.board.width or 0 <= coord < mngr.board.height 
+                  for coord in [transport_x, transport_y, cargo_x, cargo_y]):
+            return {"success": False, "error": "Invalid coordinates"}
+        
+        # Get units
+        transport = mngr.unit_at(transport_x, transport_y)
+        cargo = mngr.unit_at(cargo_x, cargo_y)
+        
+        if not transport:
+            return {"success": False, "error": "No transport unit found"}
+        if not cargo:
+            return {"success": False, "error": "No cargo unit found"}
+        
+        # Check turn
+        if transport.army != mngr.board.current_turn:
+            return {"success": False, "error": "Not your turn"}
+        
+        # Use transport system
+        transport_system = TransportSystem(mngr)
+        can_load, message = transport_system.can_load_unit(
+            transport, cargo, transport_x, transport_y, cargo_x, cargo_y
+        )
+        
+        return {
+            "success": True,
+            "can_load": can_load,
+            "message": message,
+            "transport_info": transport_system.get_cargo_info(transport)
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Can load unit failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+
+# @jsonrpc.method('can_load_unit')
+# @log_rpc_performance
+# def can_load_unit_rpc(token: str, transport_x: int, transport_y: int, 
+#                      cargo_x: int, cargo_y: int) -> dict:
+#     """Check if a unit can be loaded into transport"""
+#     try:
+#         mngr = game_load(token)
+        
+#         # Validate coordinates
+#         if not all(0 <= coord < mngr.board.width or 0 <= coord < mngr.board.height 
+#                   for coord in [transport_x, transport_y, cargo_x, cargo_y]):
+#             return {"success": False, "error": "Invalid coordinates"}
+        
+#         # Get units
+#         transport = mngr.unit_at(transport_x, transport_y)
+#         cargo = mngr.unit_at(cargo_x, cargo_y)
+        
+#         if not transport:
+#             return {"success": False, "error": "No transport unit found"}
+#         if not cargo:
+#             return {"success": False, "error": "No cargo unit found"}
+        
+#         # Check turn
+#         if transport.army != mngr.board.current_turn:
+#             return {"success": False, "error": "Not your turn"}
+        
+#         # Use transport system
+#         transport_system = TransportSystem(mngr)
+#         can_load, message = transport_system.can_load_unit(
+#             transport, cargo, transport_x, transport_y, cargo_x, cargo_y
+#         )
+        
+#         return {
+#             "success": True,
+#             "cargo_info": cargo_info,
+#             "compatible_types": transport_system.get_compatible_cargo_types(unit) if cargo_info["is_transport"] else []
+#         }
+        
+#     except Exception as e:
+#         app_logger.error(f"Get cargo info failed: {token} - {str(e)}")
+#         return {"success": False, "error": str(e)}
+
+@jsonrpc.method('get_loadable_units')
+@log_rpc_performance
+def get_loadable_units_rpc(token: str, transport_x: int, transport_y: int) -> dict:
+    """Get all units that can be loaded into this transport"""
+    try:
+        mngr = game_load(token)
+        
+        # Validate coordinates
+        if not (0 <= transport_x < mngr.board.width and 0 <= transport_y < mngr.board.height):
+            return {"success": False, "error": "Invalid coordinates"}
+        
+        # Get transport
+        transport = mngr.unit_at(transport_x, transport_y)
+        if not transport:
+            return {"success": False, "error": "No unit found"}
+        
+        # Check turn
+        if transport.army != mngr.board.current_turn:
+            return {"success": False, "error": "Not your turn"}
+        
+        transport_system = TransportSystem(mngr)
+        
+        # Check if it's a transport unit
+        if not transport_system.is_transport_unit(transport):
+            return {
+                "success": True,
+                "loadable_units": [],
+                "message": "Unit is not a transport"
+            }
+        
+        loadable_units = []
+        
+        # Check all adjacent tiles
+        directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]  # N, S, E, W
+        
+        for dx, dy in directions:
+            cargo_x = transport_x + dx
+            cargo_y = transport_y + dy
+            
+            # Check if position is on board
+            if not (0 <= cargo_x < mngr.board.width and 0 <= cargo_y < mngr.board.height):
+                continue
+            
+            # Check if there's a unit there
+            cargo_unit = mngr.unit_at(cargo_x, cargo_y)
+            if not cargo_unit:
+                continue
+            
+            # Check if it can be loaded
+            can_load, message = transport_system.can_load_unit(
+                transport, cargo_unit, transport_x, transport_y, cargo_x, cargo_y
+            )
+            
+            if can_load:
+                loadable_units.append({
+                    "x": cargo_x,
+                    "y": cargo_y,
+                    "unit_type": cargo_unit.type.name if hasattr(cargo_unit.type, 'name') else str(cargo_unit.type),
+                    "army": cargo_unit.army.name if hasattr(cargo_unit.army, 'name') else str(cargo_unit.army),
+                    "hp": cargo_unit.status.hp
+                })
+        
+        return {
+            "success": True,
+            "loadable_units": loadable_units,
+            "transport_info": transport_system.get_cargo_info(transport)
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Get loadable units failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+        
+    except Exception as e:
+        app_logger.error(f"Can load unit failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+
+@jsonrpc.method('load_unit')
+@log_rpc_performance
+def load_unit_rpc(token: str, transport_x: int, transport_y: int, 
+                 cargo_x: int, cargo_y: int) -> dict:
+    """Load a unit into transport"""
+    try:
+        mngr = game_load(token)
+        
+        # Validate game state
+        if not mngr.board.game_active:
+            return {"success": False, "error": "Game has ended"}
+        
+        # Validate coordinates
+        if not all(0 <= coord < mngr.board.width or 0 <= coord < mngr.board.height 
+                  for coord in [transport_x, transport_y, cargo_x, cargo_y]):
+            return {"success": False, "error": "Invalid coordinates"}
+        
+        # Get units
+        transport = mngr.unit_at(transport_x, transport_y)
+        cargo = mngr.unit_at(cargo_x, cargo_y)
+        
+        if not transport:
+            return {"success": False, "error": "No transport unit found"}
+        if not cargo:
+            return {"success": False, "error": "No cargo unit found"}
+        
+        # Check turn
+        if transport.army != mngr.board.current_turn:
+            return {"success": False, "error": "Not your turn"}
+        
+        # Execute loading
+        transport_system = TransportSystem(mngr)
+        result = transport_system.load_unit(
+            transport, cargo, transport_x, transport_y, cargo_x, cargo_y
+        )
+        
+        if result.success:
+            # Log the action
+            log_game_event('UNIT_LOADED', token, {
+                'transport': f"{transport.army.name} {transport.type.name}",
+                'cargo': f"{cargo.army.name} {cargo.type.name}",
+                'position': f"({transport_x}, {transport_y})",
+                'cargo_index': result.cargo_index
+            })
+            
+            app_logger.info(f"Unit loaded: {token} - {cargo.type.name} into {transport.type.name} at ({transport_x}, {transport_y})")
+            
+            # Save game state
+            game_save(mngr, token)
+            ws_board_update(token)
+        
+        return {
+            "success": result.success,
+            "message": result.message,
+            "cargo_index": result.cargo_index,
+            "transport_info": transport_system.get_cargo_info(transport)
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Load unit failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+
+@jsonrpc.method('get_unload_positions')
+@log_rpc_performance
+def get_unload_positions_rpc(token: str, transport_x: int, transport_y: int) -> dict:
+    """Get valid positions where units can be unloaded"""
+    try:
+        mngr = game_load(token)
+        
+        # Validate coordinates
+        if not (0 <= transport_x < mngr.board.width and 0 <= transport_y < mngr.board.height):
+            return {"success": False, "error": "Invalid coordinates"}
+        
+        # Get transport
+        transport = mngr.unit_at(transport_x, transport_y)
+        if not transport:
+            return {"success": False, "error": "No unit found"}
+        
+        # Check turn
+        if transport.army != mngr.board.current_turn:
+            return {"success": False, "error": "Not your turn"}
+        
+        # Get valid positions
+        transport_system = TransportSystem(mngr)
+        valid_positions = transport_system.get_valid_unload_positions(transport_x, transport_y)
+        
+        return {
+            "success": True,
+            "valid_positions": [{"x": x, "y": y} for x, y in valid_positions],
+            "transport_info": transport_system.get_cargo_info(transport)
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Get unload positions failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+
+@jsonrpc.method('unload_unit')
+@log_rpc_performance
+def unload_unit_rpc(token: str, transport_x: int, transport_y: int, 
+                   unload_x: int, unload_y: int, cargo_index: int = 0) -> dict:
+    """Unload a unit from transport"""
+    try:
+        mngr = game_load(token)
+        
+        # Validate game state
+        if not mngr.board.game_active:
+            return {"success": False, "error": "Game has ended"}
+        
+        # Validate coordinates
+        coords = [transport_x, transport_y, unload_x, unload_y]
+        if not all(0 <= coord < mngr.board.width or 0 <= coord < mngr.board.height for coord in coords):
+            return {"success": False, "error": "Invalid coordinates"}
+        
+        # Get transport
+        transport = mngr.unit_at(transport_x, transport_y)
+        if not transport:
+            return {"success": False, "error": "No transport unit found"}
+        
+        # Check turn
+        if transport.army != mngr.board.current_turn:
+            return {"success": False, "error": "Not your turn"}
+        
+        # Execute unloading
+        transport_system = TransportSystem(mngr)
+        result = transport_system.unload_unit(
+            transport, cargo_index, transport_x, transport_y, unload_x, unload_y
+        )
+        
+        if result.success:
+            # Log the action
+            log_game_event('UNIT_UNLOADED', token, {
+                'transport': f"{transport.army.name} {transport.type.name}",
+                'position': f"({transport_x}, {transport_y})",
+                'unload_position': f"({unload_x}, {unload_y})",
+                'cargo_index': cargo_index
+            })
+            
+            app_logger.info(f"Unit unloaded: {token} - from {transport.type.name} at ({transport_x}, {transport_y}) to ({unload_x}, {unload_y})")
+            
+            # Save game state
+            game_save(mngr, token)
+            ws_board_update(token)
+        
+        return {
+            "success": result.success,
+            "message": result.message,
+            "unloaded_position": result.unloaded_position,
+            "transport_info": transport_system.get_cargo_info(transport)
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Unload unit failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+    
 # =============================================================================
 # PHASE 2A: ENHANCED COMBAT RPC METHODS
 # =============================================================================
