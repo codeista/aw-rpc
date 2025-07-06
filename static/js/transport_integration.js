@@ -26,7 +26,8 @@ let transportState = {
     loadableTransports: [],
     exitPositions: [],
     showingExitOptions: false,
-    showingBoardingOptions: false
+    showingBoardingOptions: false,
+    selectedCargoIndex: 0
 };
 
 // =============================================================================
@@ -383,7 +384,7 @@ function showCargoSelectionMenu(cargoUnits, transportX, transportY) {
     menu.innerHTML = `
         <h3>Select Unit to Deploy</h3>
         <div id="cargo-list"></div>
-        <button onclick="closeCarg oSelectionMenu()">Cancel</button>
+        <button onclick="closeCargoSelectionMenu()">Cancel</button>
     `;
     
     const cargoList = menu.querySelector('#cargo-list');
@@ -435,4 +436,108 @@ function handleRightClick(tile) {
 // Handle exit position clicks
 function handleExitPositionClick(tile) {
     if (transportState.showingExitOptions && 
+        transportState.exitPositions.some(pos => pos.x === tile.x && pos.y === tile.y)) {
         
+        const transport = transportState.selectedTransport;
+        const cargoIndex = transportState.selectedCargoIndex || 0;
+        
+        console.log(`AW_TRANSPORT: Exit position clicked at (${tile.x}, ${tile.y})`);
+        attemptToExitTransport(transport.x, transport.y, tile.x, tile.y, cargoIndex);
+    }
+}
+
+// Override keyboard controls for transport actions
+function handleKeyboardControls(event) {
+    if (!board.selected) return;
+    
+    const selectedTile = board.selected;
+    const selectedUnit = selectedTile.unit;
+    
+    switch(event.key.toLowerCase()) {
+        case 'b': // Board transport
+            if (canUnitBoardTransports(selectedUnit)) {
+                showLoadableTransports(selectedTile.x, selectedTile.y);
+            }
+            break;
+            
+        case 'e': // Exit transport
+            if (isTransportUnit(selectedUnit)) {
+                showTransportExitOptions(selectedTile.x, selectedTile.y);
+            }
+            break;
+            
+        case 'escape': // Cancel transport actions
+            clearAllTransportHighlights();
+            break;
+    }
+}
+
+// =============================================================================
+// INTEGRATION WITH EXISTING GAME SYSTEMS
+// =============================================================================
+
+// Enhanced board update to show transport indicators
+function updateBoardDisplayWithTransports() {
+    // Call existing board update
+    updateBoardDisplay();
+    
+    // Add transport-specific visual indicators
+    addTransportIndicators();
+}
+
+function addTransportIndicators() {
+    // Get all transport units for visual indicators
+    jsonrpc('get_transport_summary', {}).then(result => {
+        if (result.success) {
+            result.transports.forEach(transport => {
+                addTransportVisualIndicator(transport);
+            });
+        }
+    }).catch(error => {
+        console.error('AW_TRANSPORT: Failed to get transport summary:', error);
+    });
+}
+
+function addTransportVisualIndicator(transportInfo) {
+    // For Two.js canvas implementation, this is handled in the rendering system
+    console.log(`AW_TRANSPORT: Transport at (${transportInfo.x}, ${transportInfo.y}) has ${transportInfo.current_cargo} cargo`);
+}
+
+// Simple board update function (fallback)
+function updateBoardDisplay() {
+    // Call the main update function
+    if (typeof update === 'function') {
+        update();
+    } else if (typeof rerender === 'function') {
+        rerender();
+    }
+}
+
+// =============================================================================
+// INITIALIZATION AND EXPORTS
+// =============================================================================
+
+// Add keyboard event listener
+document.addEventListener('keydown', handleKeyboardControls);
+
+// Initialize transport state if not already defined
+if (typeof window.transportState === 'undefined') {
+    window.transportState = transportState;
+}
+
+// Export functions for use in other files
+window.isTransportUnit = isTransportUnit;
+window.canUnitBoardTransports = canUnitBoardTransports;
+window.showLoadableTransports = showLoadableTransports;
+window.showTransportExitOptions = showTransportExitOptions;
+window.attemptToBoardTransport = attemptToBoardTransport;
+window.attemptToExitTransport = attemptToExitTransport;
+window.clearAllTransportHighlights = clearAllTransportHighlights;
+window.showTransportMessage = showTransportMessage;
+window.updateBoardDisplayWithTransports = updateBoardDisplayWithTransports;
+window.handleTileClickWithTransport = handleTileClickWithTransport;
+window.selectUnitWithTransportOptions = selectUnitWithTransportOptions;
+window.handleRightClick = handleRightClick;
+window.handleExitPositionClick = handleExitPositionClick;
+
+console.log('AW_TRANSPORT: Complete transport integration system loaded successfully');
