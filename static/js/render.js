@@ -166,6 +166,24 @@ function jsonrpc(method, params, callback) {
 
 function update() {
     jsonrpc('game_board', {}, function(res) {
+        // Preserve the current selection before updating board
+        var previousSelection = board ? board.selected : null;
+        
+        // init globals
+        board = res;
+        
+        // Restore selection if it existed
+        if (previousSelection) {
+            // Find the same tile in the new board data
+            var restoredTile = board.grid.find(t => 
+                t.x === previousSelection.x && t.y === previousSelection.y
+            );
+            if (restoredTile) {
+                board.selected = restoredTile;
+                console.log('🔄 Restored selection:', board.selected);
+            }
+        }
+        
         // init globals
         board = res
         if (two === null) {
@@ -201,6 +219,10 @@ function update() {
         // render
         two.clear();
         createScene();
+        // Add this before your existing two.update() call
+        if (window.movementHighlights && window.movementHighlights.length > 0) {
+            renderMovementHighlights();
+        }
         two.update();
         // update info
 
@@ -443,7 +465,7 @@ function canvasClick(ev) {
         if (ev.ctrlKey) {
             unitLoad(tile);
             return;
-        } 
+        }
         
         // Handle Alt+Click for unloading
         if (ev.altKey) {
@@ -451,7 +473,21 @@ function canvasClick(ev) {
             return;
         }
         
-        // Regular game actions
+        // PRIORITY 1: Check for movement on highlighted tiles FIRST
+        if (board.selected && window.movementHighlights) {
+            var isHighlightedMove = window.movementHighlights.some(h => 
+                h.x === tile.x && h.y === tile.y
+            );
+            
+            if (isHighlightedMove) {
+                console.log('🚶 MOVING: Clicking on highlighted tile, attempting move');
+                console.log(`Moving from (${board.selected.x}, ${board.selected.y}) to (${tile.x}, ${tile.y})`);
+                unitMove(tile);
+                return; // Exit immediately after movement
+            }
+        }
+        
+        // PRIORITY 2: Regular game actions (attacks)
         if (tile.can_be_attacked) {
             // Use enhanced attack if available, otherwise fallback
             if (typeof unitAttackWithPreview === 'function') {
@@ -459,35 +495,104 @@ function canvasClick(ev) {
             } else {
                 unitAttack(tile);
             }
+            return;
         }
-        else if (tile.unit != null && tile.unit.army == board.current_turn) {
+        
+        // PRIORITY 3: Unit selection/deselection
+        if (tile.unit != null && tile.unit.army == board.current_turn) {
             if (tile.unit.can_attack || tile.unit.can_move || tile.unit.can_capture) {
-                // Use the correctly named function
-                if (typeof unitSelectWithTransportAndRange === 'function') {
+                // Check if clicking on the same unit (deselect)
+                if (board.selected && 
+                    board.selected.x === tile.x && 
+                    board.selected.y === tile.y) {
+                    console.log('🔄 DESELECTING: Clicking same unit, deselecting');
+                    
+                    // Deselect the unit
+                    board.selected = null;
+                    
+                    // Clear movement highlights
+                    if (typeof clearMovementHighlights === 'function') {
+                        clearMovementHighlights();
+                    }
+                    if (typeof clearMovementHighlightsData === 'function') {
+                        clearMovementHighlightsData();
+                    }
+                    
+                    // Clear transport highlights if they exist
+                    if (typeof clearTransportHighlights === 'function') {
+                        clearTransportHighlights();
+                    }
+                    
+                    // Force a visual update
+                    if (window.two) {
+                        window.two.update();
+                    }
+                    
+                    console.log('✅ Unit deselected');
+                    return;
+                }
+                
+                // Different unit selected - proceed with normal selection
+                if (typeof unitSelectWithMovementHighlighting === 'function') {
+                    unitSelectWithMovementHighlighting(tile);
+                } else if (typeof unitSelectWithTransportAndRange === 'function') {
                     unitSelectWithTransportAndRange(tile);
                 } else {
                     unitSelect(tile);
                 }
+                return;
             }
         }
         
+        // PRIORITY 4: Fallback movement check
         if (tile.can_be_moved_to) {
+            console.log('🚶 MOVING: Using can_be_moved_to flag');
             unitMove(tile);
+            return;
         }
-        else if (tile.mapTile.type == 'FACTORY' &&
-                 tile.mapTile.army == board.current_turn &&
-                 tile.unit == null) {
-                 unitCreate(tile);
-        }
-        else if (tile.mapTile.type == 'AIRPORT' &&
+        
+        // PRIORITY 5: Building interactions
+        if (tile.mapTile.type == 'FACTORY' &&
                 tile.mapTile.army == board.current_turn &&
                 tile.unit == null) {
-                airunitCreate(tile);
+            unitCreate(tile);
+            return;
         }
-        else if (tile.mapTile.type == 'PORT' &&
+        if (tile.mapTile.type == 'AIRPORT' &&
                 tile.mapTile.army == board.current_turn &&
                 tile.unit == null) {
-                seaunitCreate(tile);
+            airunitCreate(tile);
+            return;
+        }
+        if (tile.mapTile.type == 'PORT' &&
+                tile.mapTile.army == board.current_turn &&
+                tile.unit == null) {
+            seaunitCreate(tile);
+            return;
+        }
+        
+        // PRIORITY 6: Deselect when clicking empty tiles (LAST)
+        if (board.selected) {
+            console.log('🔄 DESELECTING: Clicking empty/enemy tile');
+            board.selected = null;
+            
+            // Clear all highlights
+            if (typeof clearMovementHighlights === 'function') {
+                clearMovementHighlights();
+            }
+            if (typeof clearMovementHighlightsData === 'function') {
+                clearMovementHighlightsData();
+            }
+            if (typeof clearTransportHighlights === 'function') {
+                clearTransportHighlights();
+            }
+            
+            // Force visual update
+            if (window.two) {
+                window.two.update();
+            }
+            
+            console.log('✅ Deselected by clicking empty tile');
         }
     }
 }
@@ -1950,3 +2055,340 @@ function handleUnloadingClick(tile) {
     
     return false;
 }
+
+// =============================================================================
+// MOVEMENT HIGHLIGHTING SYSTEM FIX
+// Add this to your render.js file
+// =============================================================================
+
+// Global variables for movement highlighting
+window.movementHighlights = [];
+window.movementHighlightGroup = null;
+
+// =============================================================================
+// MOVEMENT RANGE CALCULATION AND HIGHLIGHTING
+// =============================================================================
+
+function highlightMovementRange(unitX, unitY) {
+    console.log(`🚶 MOVEMENT: Highlighting movement range for unit at (${unitX}, ${unitY})`);
+    
+    // Get movement range data from backend
+    jsonrpc('get_unit_valid_moves', {x: unitX, y: unitY})
+        .then(result => {
+            if (result && result.success && result.moves) {
+                clearMovementHighlights();
+                
+                result.moves.forEach(move => {
+                    highlightMovementTile(move.x, move.y, 'movement-range');
+                });
+                
+                console.log(`✅ Highlighted ${result.moves.length} movement options`);
+            } else {
+                console.log('❌ No movement data received, trying fallback calculation');
+                // Fallback: calculate movement range locally
+                calculateMovementRangeLocally(unitX, unitY);
+            }
+        })
+        .catch(error => {
+            console.error('Movement range request failed:', error);
+            // Fallback: calculate movement range locally
+            calculateMovementRangeLocally(unitX, unitY);
+        });
+}
+
+function calculateMovementRangeLocally(unitX, unitY) {
+    console.log('🔧 FALLBACK: Calculating movement range locally');
+    
+    // Don't clear if we already have highlights from a previous source
+    if (window.movementHighlights && window.movementHighlights.length > 0) {
+        console.log('✅ Highlights already exist, skipping fallback');
+        return;
+    }
+    
+    // Get the selected unit
+    var selectedUnit = null;
+    var selectedTile = board.grid.find(t => t.x === unitX && t.y === unitY);
+    if (selectedTile && selectedTile.unit) {
+        selectedUnit = selectedTile.unit;
+    }
+    
+    if (!selectedUnit) {
+        console.log('❌ No unit found for movement calculation');
+        return;
+    }
+    
+    // Basic movement range calculation (adjust based on your game rules)
+    var movementRange = getUnitMovementRange(selectedUnit);
+    console.log(`Unit ${selectedUnit.type} has movement range: ${movementRange}`);
+    
+    // Check all tiles within movement range
+    for (var x = 0; x < board.width; x++) {
+        for (var y = 0; y < board.height; y++) {
+            if (x === unitX && y === unitY) continue; // Skip current position
+            
+            var distance = Math.abs(x - unitX) + Math.abs(y - unitY); // Manhattan distance
+            if (distance <= movementRange) {
+                var targetTile = board.grid.find(t => t.x === x && t.y === y);
+                if (targetTile && canUnitMoveToTile(selectedUnit, targetTile)) {
+                    highlightMovementTile(x, y, 'movement-range');
+                }
+            }
+        }
+    }
+    
+    // Render the highlights after calculation
+    renderMovementHighlights();
+}
+
+function getUnitMovementRange(unit) {
+    // Define movement ranges for different unit types
+    // Adjust these values based on your game's rules
+    var movementRanges = {
+        'INFANTRY': 2,
+        'MECH': 2,
+        'RECON': 8,
+        'TANK': 6,
+        'MD_TANK': 5,
+        'NEOTANK': 6,
+        'APC': 6,
+        'ARTILLERY': 5,
+        'ROCKET': 5,
+        'ANTI_AIR': 6,
+        'MISSILE': 4,
+        'FIGHTER': 9,
+        'BOMBER': 7,
+        'B_COPTER': 6,
+        'T_COPTER': 6,
+        'BATTLESHIP': 5,
+        'CRUISER': 6,
+        'LANDER': 6,
+        'SUB': 5
+    };
+    
+    return movementRanges[unit.type] || 3; // Default to 3 if unit type not found
+}
+
+function canUnitMoveToTile(unit, tile) {
+    // Basic movement validation
+    // You can expand this based on your game's terrain rules
+    
+    // Can't move to occupied tiles (except for transports)
+    if (tile.unit) {
+        // Allow moving to friendly transports for loading
+        if (tile.unit.army === unit.army && isTransportUnit(tile.unit)) {
+            return true;
+        }
+        return false;
+    }
+    
+    // Can't move to enemy properties (usually)
+    if (tile.mapTile && tile.mapTile.army && tile.mapTile.army !== unit.army) {
+        // Some properties like cities can be moved to for capture
+        var capturableTypes = ['CITY', 'FACTORY', 'AIRPORT', 'PORT'];
+        if (capturableTypes.includes(tile.mapTile.type)) {
+            return unit.can_capture; // Only if unit can capture
+        }
+        return false;
+    }
+    
+    // Check terrain restrictions
+    if (tile.mapTile && tile.mapTile.type) {
+        return canUnitTraverseTerrain(unit, tile.mapTile.type);
+    }
+    
+    return true; // Default: can move
+}
+
+function canUnitTraverseTerrain(unit, terrainType) {
+    // Define terrain movement rules
+    // This is a simplified version - expand based on your game rules
+    
+    var landUnits = ['INFANTRY', 'MECH', 'RECON', 'TANK', 'MD_TANK', 'NEOTANK', 
+                     'APC', 'ARTILLERY', 'ROCKET', 'ANTI_AIR', 'MISSILE'];
+    var seaUnits = ['BATTLESHIP', 'CRUISER', 'LANDER', 'SUB'];
+    var airUnits = ['FIGHTER', 'BOMBER', 'B_COPTER', 'T_COPTER'];
+    
+    // Sea units can only move on sea/reef
+    if (seaUnits.includes(unit.type)) {
+        return ['SEA', 'REEF'].includes(terrainType);
+    }
+    
+    // Air units can move anywhere
+    if (airUnits.includes(unit.type)) {
+        return true;
+    }
+    
+    // Land units can't move on sea
+    if (landUnits.includes(unit.type)) {
+        return !['SEA', 'REEF'].includes(terrainType);
+    }
+    
+    return true; // Default
+}
+
+// =============================================================================
+// MOVEMENT HIGHLIGHTING VISUAL FUNCTIONS
+// =============================================================================
+
+function highlightMovementTile(x, y, className) {
+    // Add to movement highlights array
+    if (!window.movementHighlights) {
+        window.movementHighlights = [];
+    }
+    
+    window.movementHighlights.push({
+        x: x,
+        y: y,
+        type: className
+    });
+    
+    console.log(`🎯 Highlighting movement tile (${x}, ${y})`);
+}
+
+function clearMovementHighlights() {
+    // Clear visual highlights in Two.js ONLY
+    if (window.movementHighlightGroup && window.two) {
+        window.two.remove(window.movementHighlightGroup);
+        window.movementHighlightGroup = null;
+    }
+    
+    console.log('🧹 Cleared movement highlight visuals');
+}
+
+function renderMovementHighlights() {
+    if (!window.movementHighlights || !window.two || window.movementHighlights.length === 0) {
+        return;
+    }
+    
+    // Clear existing visual highlights only
+    if (window.movementHighlightGroup) {
+        window.two.remove(window.movementHighlightGroup);
+    }
+    
+    // Create new highlight group
+    window.movementHighlightGroup = window.two.makeGroup();
+    
+    var renderedCount = 0;
+    window.movementHighlights.forEach(highlight => {
+        try {
+            var rect = window.two.makeRectangle(
+                highlight.x * TILESIZE + TILESIZE/2, 
+                highlight.y * TILESIZE + TILESIZE/2, 
+                TILESIZE - 2, 
+                TILESIZE - 2
+            );
+            
+            // Subtle yellow highlighting
+            rect.stroke = '#B8860B';
+            rect.fill = 'rgba(255, 248, 220, 0.2)';
+            rect.linewidth = 1;
+            rect.noFill = false;
+            
+            window.movementHighlightGroup.add(rect);
+            renderedCount++;
+        } catch (error) {
+            console.error('Error creating highlight rect:', error);
+        }
+    });
+    
+    // Force Two.js update
+    try {
+        window.two.update();
+        console.log(`✅ Rendered ${renderedCount} movement highlights successfully`);
+    } catch (error) {
+        console.error('Error updating Two.js:', error);
+    }
+}
+
+function clearMovementHighlightsData() {
+    // Clear the data array
+    if (window.movementHighlights) {
+        window.movementHighlights = [];
+    }
+    console.log('🧹 Cleared movement highlights data');
+}
+
+// =============================================================================
+// ENHANCED UNIT SELECTION WITH MOVEMENT HIGHLIGHTING
+// =============================================================================
+
+function unitSelectWithMovementHighlighting(tile) {
+    console.log('🎯 SELECTION: Enhanced unit selection with movement highlighting');
+    
+    try {
+        // Step 1: Basic unit selection
+        jsonrpc('unit_select', {x: tile.x, y: tile.y}).then(result => {
+            if (result && !result.error) {
+                // Set board selection
+                board.selected = tile;
+                console.log('✅ Unit selected successfully');
+                
+                // Step 2: Show movement range for selected unit
+                if (tile.unit && tile.unit.army === board.current_turn) {
+                    highlightMovementRange(tile.x, tile.y);
+                    
+                    // Step 3: Also show attack range if desired
+                    if (typeof highlightAttackRange === 'function') {
+                        setTimeout(() => {
+                            highlightAttackRange(tile.x, tile.y);
+                        }, 100);
+                    }
+                } else {
+                    clearMovementHighlights();
+                }
+                
+                // Step 4: Handle transport functionality if available
+                if (typeof handleTransportSelectionLogic === 'function') {
+                    handleTransportSelectionLogic(tile);
+                }
+            } else {
+                console.error('Unit selection failed:', result);
+            }
+        });
+        
+    } catch (error) {
+        console.error('Selection error:', error);
+        // Fallback to basic selection
+        jsonrpc('unit_select', {x: tile.x, y: tile.y});
+    }
+}
+
+// =============================================================================
+// INTEGRATION WITH EXISTING RENDERING SYSTEM
+// =============================================================================
+
+// Override or add to your existing createScene function
+function addMovementHighlightsToScene() {
+    if (window.movementHighlights && window.movementHighlights.length > 0) {
+        renderMovementHighlights();
+    }
+}
+
+// Call this in your main render/update loop
+function updateMovementHighlights() {
+    if (window.movementHighlights && window.movementHighlights.length > 0) {
+        renderMovementHighlights();
+    }
+}
+
+// =============================================================================
+// UTILITY FUNCTIONS
+// =============================================================================
+
+function isTransportUnit(unit) {
+    var transportTypes = ['APC', 'LANDER', 'BLACKBOAT', 'T_COPTER'];
+    return transportTypes.includes(unit.type);
+}
+
+// =============================================================================
+// INITIALIZATION AND EXPORTS
+// =============================================================================
+
+// Make functions available globally
+window.highlightMovementRange = highlightMovementRange;
+window.clearMovementHighlights = clearMovementHighlights;
+window.unitSelectWithMovementHighlighting = unitSelectWithMovementHighlighting;
+window.addMovementHighlightsToScene = addMovementHighlightsToScene;
+window.updateMovementHighlights = updateMovementHighlights;
+
+console.log('✅ Movement highlighting system loaded successfully');
