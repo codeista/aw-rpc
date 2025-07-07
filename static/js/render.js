@@ -76,10 +76,15 @@ function isTransportUnitForRender(unit) {
 function getCargoCountForRender(unit) {
     if (!unit || !unit.status || !unit.status.cargo) return 0;
     
-    // Your existing code checks cargo[0] and cargo[1], so we'll do the same
+    // FIXED: Count non-null cargo slots properly
     let count = 0;
-    if (unit.status.cargo[0]) count++;
-    if (unit.status.cargo[1]) count++;
+    if (Array.isArray(unit.status.cargo)) {
+        for (let i = 0; i < unit.status.cargo.length; i++) {
+            if (unit.status.cargo[i] !== null && unit.status.cargo[i] !== undefined) {
+                count++;
+            }
+        }
+    }
     return count;
 }
 
@@ -1169,19 +1174,25 @@ function makeSprite(tile) {
         flag.fill = flagTexture;
         flag.stroke = 'transparent';
     }
-    if (tile.unit.status.cargo[0] ||
-        tile.unit.status.cargo[1]) {
-        const LOADSIZE = SPRITESIZE/2;
-        x = spriteSheetWidth/2 - LOADSIZE/2;
-        y = spriteSheetHeight/2 - LOADSIZE/2;
-        x = x - 520;
-        y = y - 1233;
-        var loadTexture = new Two.Texture(unitsSrc, () => ontextureLoad(unitsSrc));
-        loadTexture.offset = new Two.Vector(x, y);
-        load = two.makeRectangle(tile.x * TILESIZE + TILESIZE - LOADSIZE/2 - 8, tile.y * TILESIZE + TILESIZE - LOADSIZE/2, LOADSIZE, LOADSIZE);
-        load.fill = loadTexture;
-        load.stroke = 'transparent';
+    
+    // FIXED CARGO INDICATOR CODE:
+    if (isTransportUnitForRender(tile.unit)) {
+        const cargoCount = getCargoCountForRender(tile.unit);
+        
+        if (cargoCount > 0) {
+            const LOADSIZE = SPRITESIZE/2;
+            x = spriteSheetWidth/2 - LOADSIZE/2;
+            y = spriteSheetHeight/2 - LOADSIZE/2;
+            x = x - 520;
+            y = y - 1233;
+            var loadTexture = new Two.Texture(unitsSrc, () => ontextureLoad(unitsSrc));
+            loadTexture.offset = new Two.Vector(x, y);
+            load = two.makeRectangle(tile.x * TILESIZE + TILESIZE - LOADSIZE/2 - 8, tile.y * TILESIZE + TILESIZE - LOADSIZE/2, LOADSIZE, LOADSIZE);
+            load.fill = loadTexture;
+            load.stroke = 'transparent';
+        }
     }
+    
     return rect;
 }
 

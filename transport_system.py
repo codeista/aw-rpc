@@ -62,11 +62,28 @@ class TransportSystem:
         return unit_type in self.transport_capabilities
     
     def get_max_capacity(self, transport) -> int:
-        """Get maximum cargo capacity for transport"""
-        if not self.is_transport_unit(transport):
-            return 0
+        """Get maximum cargo capacity for transport unit - with debugging"""
         transport_type = transport.type.name if hasattr(transport.type, 'name') else str(transport.type)
-        return self.transport_capabilities[transport_type].max_capacity
+        
+        capacity_map = {
+            'APC': 1,
+            'LANDER': 2, 
+            'TCOPTER': 1,
+            'CRUISER': 2,
+            'CARRIER': 2,
+            'BLACKBOAT': 1
+        }
+        
+        capacity = capacity_map.get(transport_type, 0)
+        print(f"DEBUG: get_max_capacity for {transport_type}: {capacity}")
+        return capacity
+    
+    # def get_max_capacity(self, transport) -> int:
+    #     """Get maximum cargo capacity for transport"""
+    #     if not self.is_transport_unit(transport):
+    #         return 0
+    #     transport_type = transport.type.name if hasattr(transport.type, 'name') else str(transport.type)
+    #     return self.transport_capabilities[transport_type].max_capacity
     
     def get_compatible_cargo_types(self, transport) -> List[str]:
         """Get list of unit types this transport can carry"""
@@ -124,6 +141,9 @@ class TransportSystem:
         
         return True, "Unit can be loaded"
     
+# PRODUCTION VERSION - Clean transport_system.py load_unit method
+# Replace your current load_unit method with this clean version
+
     def load_unit(self, transport, cargo, transport_x: int, transport_y: int, cargo_x: int, cargo_y: int) -> TransportResult:
         """Load cargo unit into transport"""
         
@@ -133,10 +153,28 @@ class TransportSystem:
             return TransportResult(False, message)
         
         try:
-            # Initialize cargo array if needed
-            if not hasattr(transport.status, 'cargo') or transport.status.cargo is None:
-                max_capacity = self.get_max_capacity(transport)
+            # Ensure cargo array exists and has correct structure
+            max_capacity = self.get_max_capacity(transport)
+            
+            # Initialize or fix cargo array if needed
+            if (not hasattr(transport.status, 'cargo') or 
+                transport.status.cargo is None or 
+                not isinstance(transport.status.cargo, list) or 
+                len(transport.status.cargo) != max_capacity):
+                
+                # Preserve existing cargo if any
+                old_cargo = []
+                if (hasattr(transport.status, 'cargo') and 
+                    isinstance(transport.status.cargo, list)):
+                    old_cargo = list(transport.status.cargo)
+                
+                # Create new cargo array
                 transport.status.cargo = [None] * max_capacity
+                
+                # Restore valid cargo units
+                for i, item in enumerate(old_cargo[:max_capacity]):
+                    if item is not None:
+                        transport.status.cargo[i] = item
             
             # Find first available cargo slot
             cargo_index = -1
@@ -146,7 +184,7 @@ class TransportSystem:
                     break
             
             if cargo_index == -1:
-                return TransportResult(False, "No available cargo slots")
+                return TransportResult(False, "No available cargo slots", cargo_index=-1)
             
             # Store the cargo unit
             transport.status.cargo[cargo_index] = cargo
@@ -164,7 +202,7 @@ class TransportSystem:
             
         except Exception as e:
             return TransportResult(False, f"Loading failed: {str(e)}")
-    
+
     def get_valid_unload_positions(self, transport_x: int, transport_y: int) -> List[Tuple[int, int]]:
         """Get valid positions where units can be unloaded"""
         valid_positions = []
