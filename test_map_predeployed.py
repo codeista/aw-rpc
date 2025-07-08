@@ -44,12 +44,12 @@ PLAIN,MOUNTAIN,WOOD,PLAIN,CITY,CITY,PLAIN,WOOD,MOUNTAIN,PLAIN,FACTORY:RED,PLAIN'
         {'army': Army.RED, 'type': UnitType.BATTLESHIP, 'x': 3, 'y': 0, 'hp': 100, 'terrain': 'SEA'},
         {'army': Army.RED, 'type': UnitType.SUB, 'x': 1, 'y': 1, 'hp': 100, 'terrain': 'SEA'},
         {'army': Army.RED, 'type': UnitType.CRUISER, 'x': 4, 'y': 2, 'hp': 100, 'terrain': 'SEA'},
-        {'army': Army.RED, 'type': UnitType.LANDER, 'x': 2, 'y': 1, 'hp': 100, 'terrain': 'SEA'},
+        {'army': Army.RED, 'type': UnitType.LANDER, 'x': 3,'y': 1, 'hp': 100, 'terrain': 'SEA'},
         
         # BLUE Naval Forces
         {'army': Army.BLUE, 'type': UnitType.BATTLESHIP, 'x': 5, 'y': 2, 'hp': 100, 'terrain': 'SEA'},
         {'army': Army.BLUE, 'type': UnitType.CRUISER, 'x': 5, 'y': 0, 'hp': 100, 'terrain': 'SEA'},
-        {'army': Army.BLUE, 'type': UnitType.LANDER, 'x': 7, 'y': 1, 'hp': 100, 'terrain': 'SEA'},
+        {'army': Army.BLUE, 'type': UnitType.LANDER, 'x': 8,'y': 1, 'hp': 100, 'terrain': 'SEA'},
         
         # LAND COMBAT ZONE (Rows 4-7)
         # RED Land Forces - Testing different terrain effects
@@ -155,6 +155,7 @@ def create_comprehensive_test_map():
     # Larger 12x10 map with comprehensive terrain coverage
     map_data = '''RED,BLUE
 PORT:RED,SEA,SEA,REEF,SEA,SEA,REEF,SEA,SEA,PORT:BLUE,MOUNTAIN,CITY
+SEA,SEA,SEA,SEA,SEA,SEA,SEA,SEA,SEA,SEA,SEA,SEA
 SEA,SEA,REEF,SEA,SEA,SEA,SEA,REEF,SEA,SEA,WOOD,PLAIN
 BEACH_W,BEACH_N,BEACH_N,BEACH_N,BEACH_N,BEACH_N,BEACH_N,BEACH_N,BEACH_N,BEACH_E,ROAD_HORT,ROAD_HORT
 FACTORY:RED,ROAD_HORT,CITY,MOUNTAIN,WOOD,WOOD,MOUNTAIN,CITY,ROAD_HORT,FACTORY:BLUE,ROAD_VERT,PLAIN
@@ -175,10 +176,10 @@ COM_TOWER:RED,CITY,PLAIN,WOOD,CITY,CITY,WOOD,PLAIN,CITY,COM_TOWER:BLUE,PLAIN,FAC
     # Comprehensive unit deployment covering all unit types
     comprehensive_units = [
         # RED NAVAL FORCES
-        {'army': Army.RED, 'type': UnitType.BATTLESHIP, 'x': 2, 'y': 0, 'hp': 100},
-        {'army': Army.RED, 'type': UnitType.CRUISER, 'x': 4, 'y': 1, 'hp': 100},
-        {'army': Army.RED, 'type': UnitType.SUB, 'x': 1, 'y': 1, 'hp': 100},
-        {'army': Army.RED, 'type': UnitType.LANDER, 'x': 3, 'y': 1, 'hp': 100},
+        {'army': Army.RED, 'type': UnitType.BATTLESHIP, 'x': 4, 'y': 0, 'hp': 100},
+        {'army': Army.RED, 'type': UnitType.CRUISER, 'x': 4, 'y': 2, 'hp': 100},
+        {'army': Army.RED, 'type': UnitType.SUB, 'x': 4, 'y': 1, 'hp': 100},
+        {'army': Army.RED, 'type': UnitType.LANDER, 'x': 1, 'y': 3, 'hp': 100},
         
         # RED GROUND FORCES
         {'army': Army.RED, 'type': UnitType.INFANTRY, 'x': 1, 'y': 3, 'hp': 100},
@@ -186,10 +187,10 @@ COM_TOWER:RED,CITY,PLAIN,WOOD,CITY,CITY,WOOD,PLAIN,CITY,COM_TOWER:BLUE,PLAIN,FAC
         {'army': Army.RED, 'type': UnitType.TANK, 'x': 1, 'y': 5, 'hp': 100},
         {'army': Army.RED, 'type': UnitType.MEDIUMTANK, 'x': 2, 'y': 6, 'hp': 100},
         {'army': Army.RED, 'type': UnitType.RECON, 'x': 0, 'y': 4, 'hp': 100},
-        {'army': Army.RED, 'type': UnitType.APC, 'x': 0, 'y': 5, 'hp': 100},
-        {'army': Army.RED, 'type': UnitType.ARTILLERY, 'x': 1, 'y': 8, 'hp': 100},
+        {'army': Army.RED, 'type': UnitType.APC, 'x': 2, 'y': 3, 'hp': 100},
+        {'army': Army.RED, 'type': UnitType.ARTILLERY, 'x': 3, 'y': 8, 'hp': 100},
         {'army': Army.RED, 'type': UnitType.ROCKET, 'x': 2, 'y': 8, 'hp': 100},
-        {'army': Army.RED, 'type': UnitType.ANTIAIR, 'x': 1, 'y': 6, 'hp': 100},
+        {'army': Army.RED, 'type': UnitType.ANTIAIR, 'x': 4, 'y': 8, 'hp': 100},
         {'army': Army.RED, 'type': UnitType.MISSILE, 'x': 0, 'y': 9, 'hp': 100},
         
         # RED AIR FORCE
@@ -198,10 +199,10 @@ COM_TOWER:RED,CITY,PLAIN,WOOD,CITY,CITY,WOOD,PLAIN,CITY,COM_TOWER:BLUE,PLAIN,FAC
         {'army': Army.RED, 'type': UnitType.BCOPTER, 'x': 0, 'y': 8, 'hp': 100},
         
         # BLUE NAVAL FORCES  
-        {'army': Army.BLUE, 'type': UnitType.BATTLESHIP, 'x': 7, 'y': 0, 'hp': 100},
+        {'army': Army.BLUE, 'type': UnitType.BATTLESHIP, 'x': 5, 'y': 0, 'hp': 100},
         {'army': Army.BLUE, 'type': UnitType.CRUISER, 'x': 5, 'y': 1, 'hp': 100},
-        {'army': Army.BLUE, 'type': UnitType.SUB, 'x': 8, 'y': 1, 'hp': 100},
-        {'army': Army.BLUE, 'type': UnitType.LANDER, 'x': 6, 'y': 1, 'hp': 100},
+        {'army': Army.BLUE, 'type': UnitType.SUB, 'x': 5, 'y': 2, 'hp': 100},
+        {'army': Army.BLUE, 'type': UnitType.LANDER, 'x': 8, 'y': 3, 'hp': 100},
         
         # BLUE GROUND FORCES
         {'army': Army.BLUE, 'type': UnitType.INFANTRY, 'x': 8, 'y': 3, 'hp': 100},

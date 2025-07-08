@@ -178,6 +178,23 @@ function update() {
     jsonrpc('game_board', {}, function(res) {
         // Preserve the current selection before updating board
         var previousSelection = board ? board.selected : null;
+
+                // Update board data
+        board = res;
+        
+        // CRITICAL: Restore selection if it existed
+        if (previousSelection) {
+            // Find the same tile in the new board data
+            var restoredTile = board.grid.find(t => 
+                t.x === previousSelection.x && t.y === previousSelection.y
+            );
+            if (restoredTile) {
+                board.selected = restoredTile;
+                console.log('🔄 Restored selection:', board.selected);
+            } else {
+                console.log('❌ Could not restore selection - tile not found');
+            }
+        }
         
         // init globals
         board = res;
@@ -1152,8 +1169,8 @@ function makeMapTile(tile) {
                 y = y - 64;
                 break;
             case 'REEF':
-                x = x - 224;
-                y = y - 146;
+                x = x - 195
+                y = y - 145
                 break;
             case 'MISSILE_SILO':
                 x = x - 188;
@@ -2780,6 +2797,34 @@ function endUnitTurn() {
 }
 
 // =============================================================================
+// INDIRECT UNIT MOVEMENT RESTRICTIONS (Advance Wars Rules)
+// =============================================================================
+
+function isIndirectUnit(unit) {
+    if (!unit || !unit.type) return false;
+    const indirectTypes = ['ARTILLERY', 'ROCKET', 'MISSILE'];
+    return indirectTypes.includes(unit.type);
+}
+
+function hasMoved(unit) {
+    // Indirect units cannot attack after moving
+    // We detect movement by checking if can_move is false
+    return !unit.can_move;
+}
+
+function checkIndirectUnitRestrictions(unitX, unitY) {
+    const tile = board.grid.find(t => t.x === unitX && t.y === unitY);
+    const unit = tile?.unit;
+    
+    if (unit && isIndirectUnit(unit) && hasMoved(unit)) {
+        console.log(`🚀 ${unit.type} has moved - cannot attack this turn (Advance Wars rule)`);
+        return true; // Restricted
+    }
+    
+    return false; // Not restricted
+}
+
+// =============================================================================
 // ATTACK HIGHLIGHTING SYSTEM
 // =============================================================================
 
@@ -2857,6 +2902,17 @@ function renderAttackHighlights() {
     }
 }
 
+function isIndirectUnit(unit) {
+    const indirectTypes = ['ARTILLERY', 'ROCKET', 'MISSILE'];
+    return indirectTypes.includes(unit.type);
+}
+
+function hasMoved(unit) {
+    // Check if unit has moved this turn (you might need to track this differently)
+    // One way is to check if can_move is false but can_attack might still be true
+    return !unit.can_move && unit.can_attack;
+}
+
 // =============================================================================
 // MOVEMENT HIGHLIGHTING (Enhanced)
 // =============================================================================
@@ -2904,6 +2960,17 @@ function applyMovementHighlights(moves) {
 
 function showAttackTargets(unitX, unitY) {
     console.log(`🎯 Getting attack targets for unit at (${unitX}, ${unitY})`);
+    
+    // Get the unit to check if it's indirect and has moved
+    const tile = board.grid.find(t => t.x === unitX && t.y === unitY);
+    const unit = tile?.unit;
+    
+    // CHECK: If indirect unit has moved, don't show attack targets
+    if (unit && isIndirectUnit(unit) && hasMoved(unit)) {
+        console.log('🚀 Indirect unit has moved - no attack allowed this turn');
+        clearAttackHighlights();
+        return;
+    }
     
     jsonrpc('get_attack_targets', {
         unit_x: unitX,
@@ -3539,3 +3606,4 @@ console.log('- testSeaUnits() - Create all naval units');
 console.log('- testAllUnits() - Create one of each unit type');
 console.log('- analyzeBoardUnits() - List current units on board');
 console.log('- checkMissingSprites() - Check for missing sprite cases');
+
