@@ -1304,25 +1304,6 @@ def unit_attack_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
             "message": "Attack failed",
             "details": {"attacker_pos": {"x": x, "y": y}, "target_pos": {"x": x2, "y": y2}}
         }
-        
-    except ValidationError as e:
-        # Return error as a dict instead of raising
-        app_logger.error(f"Validation error in unit_attack: {e.message}")
-        return {
-            "error": True,
-            "error_code": "VALIDATION_ERROR",
-            "message": e.message,
-            "details": getattr(e, 'details', {})
-        }
-        
-    except Exception as e:
-        app_logger.error(f'unit_attack failed for {token}: ({x},{y}) -> ({x2},{y2}): {str(e)}')
-        return {
-            "error": True,
-            "error_code": "COMBAT_ERROR",
-            "message": "Attack failed",
-            "details": {"attacker_pos": {"x": x, "y": y}, "target_pos": {"x": x2, "y": y2}}
-        }
 
 # Add this to your app.py file to fix the APC loading error
 # This creates an alias for the frontend's expected method name
@@ -1373,6 +1354,39 @@ def unit_unload_rpc(token: str, x: int, y: int, x2: int, y2: int, index: int = 0
         return {"success": False, "error": str(e)}
 
 # Add this simple alias to your app.py file
+@jsonrpc.method('get_unload_positions_internal')
+@log_rpc_performance
+def get_unload_positions_rpc(token: str, transport_x: int, transport_y: int) -> dict:
+    """Get valid unload positions for transport cargo (internal method)"""
+    try:
+        mngr = game_load(token)
+        
+        # Validate coordinates
+        if not (0 <= transport_x < mngr.board.width and 0 <= transport_y < mngr.board.height):
+            return {"success": False, "error": "Invalid coordinates"}
+        
+        # Get transport
+        transport = mngr.unit_at(transport_x, transport_y)
+        if not transport:
+            return {"success": False, "error": "No unit found"}
+        
+        # Check turn ownership
+        if transport.army != mngr.board.current_turn:
+            return {"success": False, "error": "Not your turn"}
+        
+        # Get valid exit positions
+        transport_system = TransportSystem(mngr)
+        valid_positions = transport_system.get_valid_exit_positions(transport_x, transport_y)
+        
+        return {
+            "success": True,
+            "valid_positions": [{"x": x, "y": y} for x, y in valid_positions],
+            "transport_info": transport_system.get_cargo_info(transport)
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Get unload positions failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
 
 @jsonrpc.method('get_unload_positions')
 @log_rpc_performance  
@@ -1714,8 +1728,31 @@ def can_afford_unit_rpc(token: str, unit_type: str) -> dict:
 @jsonrpc.method('get_unit_costs')
 @log_rpc_performance
 def get_unit_costs_rpc(token: str) -> dict:
+    
     """Get all unit costs for reference"""
- 
+    try:
+        from production_system import ProductionSystem
+        from unit import UnitType
+        
+        # Get unit costs from production system
+        production_system = ProductionSystem(None)  # Manager not needed for costs
+        unit_costs = {}
+        
+        for unit_type in UnitType:
+            cost = production_system.UNIT_COSTS.get(unit_type, 1000)
+            unit_costs[unit_type.name] = cost
+        
+        return {
+            "success": True,
+            "unit_costs": unit_costs
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Get unit costs failed: {str(e)}")
+        return {
+            "success": False,
+            "error": str(e)
+        } 
 # =============================================================================
 # TRANSPORT SYSTEM RPC METHODS -
 # =============================================================================
