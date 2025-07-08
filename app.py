@@ -703,51 +703,6 @@ def create_comprehensive_test():
         app_logger.error(f"Failed to create comprehensive test game: {e}")
         return f"Error creating comprehensive test game: {e}", 500
 
-# TESTING ENDPOINTS for specific scenarios
-@app.route('/test_combat')
-def test_combat_scenario():
-    """Create a game specifically designed for combat testing"""
-    token = secrets.token_urlsafe(6)
-    
-    # Create basic test game
-    game_manager = get_predeployed_test_game(token)
-    
-    # Modify to have units adjacent for immediate combat
-    board = game_manager.board
-    
-    # Clear a section and place opposing units next to each other
-    # Find center of board
-    center_x, center_y = board.width // 2, board.height // 2
-    
-    # Clear center area
-    for dx in range(-1, 2):
-        for dy in range(-1, 2):
-            x, y = center_x + dx, center_y + dy
-            if 0 <= x < board.width and 0 <= y < board.height:
-                tile_index = y * board.width + x
-                board.grid[tile_index].unit = None
-    
-    # Place combat units
-    from unit import Unit, UnitType
-    from config import Config
-    config_game = Config()
-    
-    # RED tank
-    red_tank_config = config_game.units[UnitType.TANK.name]
-    red_tank = Unit.create(Army.RED, UnitType.TANK, red_tank_config)
-    tile_index = center_y * board.width + (center_x - 1)
-    board.grid[tile_index].unit = red_tank
-    
-    # BLUE tank (adjacent)
-    blue_tank_config = config_game.units[UnitType.TANK.name]
-    blue_tank = Unit.create(Army.BLUE, UnitType.TANK, blue_tank_config)
-    tile_index = center_y * board.width + (center_x + 1)
-    board.grid[tile_index].unit = blue_tank
-    
-    games[token] = game_manager
-    app_logger.info(f"Created combat test game: {token}")
-    return redirect(f'/game/{token}')
-
 @app.route('/test_movement')  
 def test_movement_scenario():
     """Create a game specifically for movement testing"""
@@ -756,6 +711,10 @@ def test_movement_scenario():
     try:
         game_manager = get_predeployed_test_game(token)
         board = game_manager.board
+
+        from unit import Unit, UnitType
+        from config import Config
+        from map_system import Army  # ← This was missing!
         
         # Clear most BLUE units for easier testing
         for tile in board.grid:
@@ -795,6 +754,62 @@ def test_movement_scenario():
     except Exception as e:
         app_logger.error(f"Failed to create movement test game: {e}")
         return f"Error creating movement test game: {e}", 500
+
+@app.route('/test_combat')
+def create_combat_test():
+    """Create a game with units positioned for immediate combat"""
+    token = secrets.token_urlsafe(6)
+    
+    try:
+        from unit import Unit, UnitType
+        from config import Config
+        from map_system import Army
+        
+        game_manager = get_predeployed_test_game(token)
+        board = game_manager.board
+        
+        # Set up combat scenario
+        center_x, center_y = board.width // 2, board.height // 2
+        
+        # Clear center area and place opposing units
+        config_game = Config()
+        
+        # RED tank
+        red_tank_config = config_game.units[UnitType.TANK.name]
+        red_tank = Unit.create(Army.RED, UnitType.TANK, red_tank_config)
+        tile_index = center_y * board.width + (center_x - 1)
+        board.grid[tile_index].unit = red_tank
+        
+        # BLUE tank (adjacent)
+        blue_tank_config = config_game.units[UnitType.TANK.name]
+        blue_tank = Unit.create(Army.BLUE, UnitType.TANK, blue_tank_config)
+        tile_index = center_y * board.width + (center_x + 1)
+        board.grid[tile_index].unit = blue_tank
+        
+        games[token] = game_manager
+        app_logger.info(f"Created combat test game: {token}")
+        return redirect(f'/game/{token}')
+        
+    except Exception as e:
+        app_logger.error(f"Failed to create combat test game: {e}")
+        return f"Error creating combat test game: {e}", 500
+
+@app.route('/test_info')
+def test_info():
+    """Show information about available test games"""
+    return '''
+    <html>
+    <head><title>AW-RPC Test Games</title></head>
+    <body>
+        <h1>🎮 Available Test Games</h1>
+        <p><a href="/test">🏔️ Terrain Test Game</a></p>
+        <p><a href="/test_comprehensive">🌍 Comprehensive Test</a></p>
+        <p><a href="/test_combat">⚔️ Combat Test Game</a></p>
+        <p><a href="/test_movement">🏃 Movement Test Game</a></p>
+        <p><a href="/">🎲 Random Game</a></p>
+    </body>
+    </html>
+    '''
 
 #
 # Websocket (Enhanced)

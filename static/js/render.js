@@ -686,32 +686,36 @@ function handleTransportSelectionLogic(tile) {
         return;
     }
     
-    // Get cargo/transport information
-    jsonrpc('get_cargo_info', {x: tile.x, y: tile.y}, function(result) {
-        if (result && result.success && result.cargo_info) {
-            const cargoInfo = result.cargo_info;
-            
-            // Show transport-specific highlights
-            if (cargoInfo.is_transport) {
-                if (cargoInfo.current_cargo > 0) {
-                    // Transport has cargo - show unload positions
-                    showUnloadPositionsHighlight(tile.x, tile.y);
-                } else {
-                    // Empty transport - show loadable units nearby
-                    showLoadableUnitsHighlight(tile.x, tile.y);
+    
+    // Get cargo/transport information (ONLY for transport units)
+    if (tile.unit && isTransportUnit(tile.unit)) {
+        jsonrpc('get_cargo_info', {x: tile.x, y: tile.y}, function(result) {
+            if (result && result.success && result.cargo_info) {
+                const cargoInfo = result.cargo_info;
+                
+                // Show transport-specific highlights
+                if (cargoInfo.is_transport) {
+                    if (cargoInfo.current_cargo > 0) {
+                        // Transport has cargo - show unload positions
+                        showUnloadPositionsHighlight(tile.x, tile.y);
+                    } else {
+                        // Empty transport - show loadable units nearby
+                        showLoadableUnitsHighlight(tile.x, tile.y);
+                    }
                 }
+                
+                // Show cargo information to user (only for transports now)
+                showCargoInfo(tile.unit, cargoInfo);
             } else {
-                // Regular unit - clear any transport highlights
+                // If cargo info fails, just clear highlights
                 clearTransportHighlights();
             }
-            
-            // Show cargo information to user
-            showCargoInfo(tile.unit, cargoInfo);
-        } else {
-            // If cargo info fails, just clear highlights
-            clearTransportHighlights();
-        }
-    });
+        });
+    } else {
+        // For non-transport units, just clear any existing transport highlights
+        clearTransportHighlights();
+        // No popup, no RPC call needed
+    }
 }
 
 var textureLoadId = null;
@@ -2491,8 +2495,10 @@ function updateMovementHighlights() {
 // =============================================================================
 
 function isTransportUnit(unit) {
-    var transportTypes = ['APC', 'LANDER', 'BLACKBOAT', 'T_COPTER'];
-    return transportTypes.includes(unit.type);
+    if (!unit || !unit.type) return false;
+    const transportTypes = ['APC', 'LANDER', 'TCOPTER', 'CRUISER', 'CARRIER', 'BLACKBOAT'];
+    const unitType = unit.type.name || unit.type;
+    return transportTypes.includes(unitType);
 }
 
 // =============================================================================
