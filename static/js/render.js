@@ -14,6 +14,16 @@ var token = document.getElementById('draw').getAttribute('x-token');
 var board = null;
 var two = null;
 
+// Initialize game state for combat system
+if (!window.gameState) {
+    window.gameState = {
+        selectedUnit: null,
+        movementPhase: false,
+        showingAttackTargets: false,
+        attackHighlights: []
+    };
+}
+
 // Transport rendering globals
 var transportHighlightGroup = null;
 var cargoIndicatorGroup = null;
@@ -660,24 +670,63 @@ function unitSelectWithTransportAndRange(tile) {
     console.log('SELECTION_FIX: Selecting unit with transport and range support');
     
     try {
-        // Step 1: Basic unit selection (existing functionality)
+        // Step 1: Basic unit selection
         jsonrpc('unit_select', {x: tile.x, y: tile.y});
         
-        // Step 2: Show attack range (existing functionality)  
+        // Step 2: Show movement range AND attack targets
         if (tile.unit && tile.unit.army === board.current_turn) {
-            highlightAttackRange(tile.x, tile.y);
+            // Show movement range
+            showMovementRange(tile.x, tile.y);
+            
+            // Show attack targets after a short delay
+            setTimeout(() => {
+                showAttackTargets(tile.x, tile.y);
+            }, 200);
         } else {
-            clearRangeHighlights();
+            clearAllHighlights();
         }
         
-        // Step 3: Handle transport-specific functionality
+        // Step 3: Handle transport functionality
         handleTransportSelectionLogic(tile);
         
     } catch (error) {
         console.error('SELECTION_FIX: Unit selection failed:', error);
-        // Fallback to basic selection if transport logic fails
         jsonrpc('unit_select', {x: tile.x, y: tile.y});
     }
+}
+
+function executeMovement(targetTile) {
+    console.log(`🚶 EXECUTING MOVEMENT to (${targetTile.x}, ${targetTile.y})`);
+    
+    if (!board.selected || !board.selected.unit) {
+        console.error('❌ No unit selected for movement');
+        return;
+    }
+    
+    var mover = board.selected;
+    
+    jsonrpc('unit_move', {
+        x: mover.x,
+        y: mover.y,
+        x2: targetTile.x,
+        y2: targetTile.y
+    }, function(result) {
+        console.log('✅ Movement completed:', result);
+        
+        // Update the selected tile position
+        board.selected = targetTile;
+        
+        // Clear movement highlights but keep unit selected for potential attack
+        clearMovementHighlights();
+        
+        // Show attack options from new position
+        setTimeout(() => {
+            showAttackTargets(targetTile.x, targetTile.y);
+        }, 300);
+        
+        // Update the board
+        update();
+    });
 }
 
 function handleTransportSelectionLogic(tile) {
@@ -1664,6 +1713,34 @@ function unitAttackRegular(defenderX, defenderY) {
         y: board.selected.y, 
         x2: defenderX, 
         y2: defenderY
+    });
+}
+
+function executeAttack(targetTile) {
+    console.log(`⚔️ EXECUTING ATTACK on (${targetTile.x}, ${targetTile.y})`);
+    
+    if (!board.selected || !board.selected.unit) {
+        console.error('❌ No unit selected for attack');
+        return;
+    }
+    
+    var attacker = board.selected;
+    
+    jsonrpc('unit_attack', {
+        x: attacker.x,
+        y: attacker.y,
+        x2: targetTile.x,
+        y2: targetTile.y
+    }, function(result) {
+        console.log('✅ Attack completed:', result);
+        clearAllHighlights();
+        board.selected = null;
+        
+        if (result && result.game_over) {
+            alert(`Game Over! ${result.winner} wins!`);
+        }
+        
+        update();
     });
 }
 
@@ -2822,6 +2899,153 @@ function applyMovementHighlights(moves) {
 }
 
 // =============================================================================
+// ATTACK HIGHLIGHTING SYSTEM - ADD THESE FUNCTIONS
+// =============================================================================
+
+function showAttackTargets(unitX, unitY) {
+    console.log(`🎯 Getting attack targets for unit at (${unitX}, ${unitY})`);
+    
+    jsonrpc('get_attack_targets', {
+        unit_x: unitX,
+        unit_y: unitY
+    }, function(result) {
+        if (result && result.success && result.targets && result.targets.length > 0) {
+            console.log(`🎯 Found ${result.targets.length} attack targets`);
+            
+            // Clear existing attack highlights
+            clearAttackHighlights();
+            
+            // Add new attack highlights
+            result.targets.forEach(target => {
+                highlightAttackTile(target.x, target.y);
+            });
+            
+            // Render the highlights
+            renderAttackHighlights();
+            
+        } else {
+            console.log('🎯 No attack targets found');
+        }
+    });
+}
+
+function highlightAttackTile(x, y) {
+    if (!window.gameState.attackHighlights) {
+        window.gameState.attackHighlights = [];
+    }
+    
+    window.gameState.attackHighlights.push({
+        x: x,
+        y: y,
+        type: 'attack-target'
+    });
+    
+    console.log(`🎯 Highlighting attack tile (${x}, ${y})`);
+}
+
+function clearAttackHighlights() {
+    // Clear visual highlights
+    if (window.attackHighlightGroup && window.two) {
+        window.two.remove(window.attackHighlightGroup);
+        window.attackHighlightGroup = null;
+    }
+    
+    // Clear data
+    if (window.gameState.attackHighlights) {
+        window.gameState.attackHighlights = [];
+    }
+    
+    console.log('🧹 Cleared attack highlights');
+}
+
+function renderAttackHighlights() {
+    if (!window.gameState.attackHighlights || !window.two || window.gameState.attackHighlights.length === 0) {
+        return;
+    }
+    
+    // Clear existing visual highlights
+    if (window.attackHighlightGroup) {
+        window.two.remove(window.attackHighlightGroup);
+    }
+    
+    // Create new highlight group
+    window.attackHighlightGroup = window.two.makeGroup();
+    
+    var renderedCount = 0;
+    window.gameState.attackHighlights.forEach(highlight => {
+        try {
+            var rect = window.two.makeRectangle(
+                highlight.x * TILESIZE + TILESIZE/2, 
+                highlight.y * TILESIZE + TILESIZE/2, 
+                TILESIZE - 2, 
+                TILESIZE - 2
+            );
+            
+            // Red highlighting for attack targets
+            rect.stroke = '#DC143C'; // Crimson red
+            rect.fill = 'rgba(220, 20, 60, 0.3)'; // Semi-transparent red
+            rect.linewidth = 2;
+            rect.noFill = false;
+            
+            window.attackHighlightGroup.add(rect);
+            renderedCount++;
+        } catch (error) {
+            console.error('Error creating attack highlight rect:', error);
+        }
+    });
+    
+    // Force Two.js update
+    try {
+        window.two.update();
+        console.log(`🎯 Rendered ${renderedCount} attack highlights successfully`);
+    } catch (error) {
+        console.error('Error updating Two.js:', error);
+    }
+}
+
+function executeAttack(targetTile) {
+    console.log(`⚔️ EXECUTING ATTACK on (${targetTile.x}, ${targetTile.y})`);
+    
+    if (!board.selected || !board.selected.unit) {
+        console.error('❌ No unit selected for attack');
+        return;
+    }
+    
+    var attacker = board.selected;
+    
+    jsonrpc('unit_attack', {
+        x: attacker.x,
+        y: attacker.y,
+        x2: targetTile.x,
+        y2: targetTile.y
+    }, function(result) {
+        console.log('✅ Attack completed:', result);
+        
+        // Clear all highlights after attack
+        clearAllHighlights();
+        board.selected = null;
+        
+        // Check for game over
+        if (result && result.game_over) {
+            alert(`Game Over! ${result.winner} wins!`);
+        }
+        
+        // Update the board
+        update();
+    });
+}
+
+function isAttackHighlighted(x, y) {
+    if (!window.gameState || !window.gameState.attackHighlights) {
+        return false;
+    }
+    
+    return window.gameState.attackHighlights.some(highlight => 
+        highlight.x === x && highlight.y === y
+    );
+}
+
+// =============================================================================
 // UTILITY FUNCTIONS
 // =============================================================================
 
@@ -2856,10 +3080,19 @@ function advanceWarsCanvasClick(ev) {
     var y = ev.offsetY;
     var tile = tileAt(x, y);
     
-    console.log(`⚔️ AW CLICK: Tile (${tile.x}, ${tile.y}), Detail: ${ev.detail}`);
+    console.log(`⚔️ AW CLICK: Tile (${tile.x}, ${tile.y})`);
     
     if (ev.detail == 1) { // Single click
         
+        // Handle transport operations first
+        if (ev.ctrlKey) {
+            unitLoad(tile);
+            return;
+        }
+        if (ev.altKey) {
+            unitUnload(tile);
+            return;
+        }
         // Handle Ctrl+Click for loading (keep existing transport logic)
         if (ev.ctrlKey) {
             unitLoad(tile);
@@ -2872,36 +3105,24 @@ function advanceWarsCanvasClick(ev) {
             return;
         }
         
-        // PRIORITY 1: Attack targets (when in attack phase)
-        if (window.gameState.showingAttackTargets && isAttackHighlighted(tile.x, tile.y)) {
-            console.log('🎯 AW: Attacking highlighted target');
-            advanceWarsAttack(tile);
+        // PRIORITY 1: Attack targets (RED highlights)
+        if (isAttackHighlighted(tile.x, tile.y)) {
+            console.log(`🎯 ATTACK: Clicking on attack target`);
+            executeAttack(tile);
             return;
         }
         
-        // PRIORITY 2: Movement to highlighted tiles
-        if (window.gameState.selectedUnit && !window.gameState.movementPhase && isMovementHighlighted(tile.x, tile.y)) {
-            console.log('🚶 AW: Moving to highlighted tile');
-            advanceWarsMove(tile);
+        // PRIORITY 2: Movement targets (BLUE/YELLOW highlights)
+        if (isMovementHighlighted(tile.x, tile.y)) {
+            console.log(`🚶 MOVEMENT: Clicking on movement tile`);
+            executeMovement(tile);
             return;
         }
         
-        // PRIORITY 3: Unit selection/deselection
+        // PRIORITY 3: Unit selection
         if (tile.unit != null && tile.unit.army == board.current_turn) {
             if (tile.unit.can_attack || tile.unit.can_move || tile.unit.can_capture) {
-                
-                // Check if clicking on already selected unit (deselect)
-                if (window.gameState.selectedUnit && 
-                    window.gameState.selectedUnit.x === tile.x && 
-                    window.gameState.selectedUnit.y === tile.y) {
-                    console.log('🔄 AW: Deselecting same unit');
-                    endUnitTurn();
-                    return;
-                }
-                
-                // Select new unit
-                console.log('🎯 AW: Selecting new unit');
-                advanceWarsUnitSelect(tile);
+                unitSelectWithTransportAndRange(tile);
                 return;
             }
         }
