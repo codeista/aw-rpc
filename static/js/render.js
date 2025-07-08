@@ -1169,8 +1169,8 @@ function makeMapTile(tile) {
                 y = y - 64;
                 break;
             case 'REEF':
-                x = x - 195
-                y = y - 145
+                x = x - 195;
+                y = y - 145;
                 break;
             case 'MISSILE_SILO':
                 x = x - 188;
@@ -2165,51 +2165,6 @@ function gameToken() {
     return token;
 }
 
-function handleLoadingClick(tile) {
-    if (!transportHighlights || !transportHighlights.loadableUnits) {
-        return false;
-    }
-    
-    const isLoadable = transportHighlights.loadableUnits.some(unit => 
-        unit.x === tile.x && unit.y === tile.y
-    );
-    
-    if (isLoadable && transportHighlights.selectedTransport) {
-        attemptLoadUnit(
-            transportHighlights.selectedTransport.x,
-            transportHighlights.selectedTransport.y,
-            tile.x,
-            tile.y
-        );
-        return true;
-    }
-    
-    return false;
-}
-
-function handleUnloadingClick(tile) {
-    if (!transportHighlights || !transportHighlights.unloadPositions) {
-        return false;
-    }
-    
-    const isUnloadable = transportHighlights.unloadPositions.some(pos => 
-        pos.x === tile.x && pos.y === tile.y
-    );
-    
-    if (isUnloadable && transportHighlights.selectedTransport) {
-        attemptUnloadUnit(
-            transportHighlights.selectedTransport.x,
-            transportHighlights.selectedTransport.y,
-            tile.x,
-            tile.y,
-            0
-        );
-        return true;
-    }
-    
-    return false;
-}
-
 // =============================================================================
 // MOVEMENT HIGHLIGHTING SYSTEM FIX
 // Add this to your render.js file
@@ -2902,17 +2857,6 @@ function renderAttackHighlights() {
     }
 }
 
-function isIndirectUnit(unit) {
-    const indirectTypes = ['ARTILLERY', 'ROCKET', 'MISSILE'];
-    return indirectTypes.includes(unit.type);
-}
-
-function hasMoved(unit) {
-    // Check if unit has moved this turn (you might need to track this differently)
-    // One way is to check if can_move is false but can_attack might still be true
-    return !unit.can_move && unit.can_attack;
-}
-
 // =============================================================================
 // MOVEMENT HIGHLIGHTING (Enhanced)
 // =============================================================================
@@ -2996,122 +2940,6 @@ function showAttackTargets(unitX, unitY) {
     });
 }
 
-function highlightAttackTile(x, y) {
-    if (!window.gameState.attackHighlights) {
-        window.gameState.attackHighlights = [];
-    }
-    
-    window.gameState.attackHighlights.push({
-        x: x,
-        y: y,
-        type: 'attack-target'
-    });
-    
-    console.log(`🎯 Highlighting attack tile (${x}, ${y})`);
-}
-
-function clearAttackHighlights() {
-    // Clear visual highlights
-    if (window.attackHighlightGroup && window.two) {
-        window.two.remove(window.attackHighlightGroup);
-        window.attackHighlightGroup = null;
-    }
-    
-    // Clear data
-    if (window.gameState.attackHighlights) {
-        window.gameState.attackHighlights = [];
-    }
-    
-    console.log('🧹 Cleared attack highlights');
-}
-
-function renderAttackHighlights() {
-    if (!window.gameState.attackHighlights || !window.two || window.gameState.attackHighlights.length === 0) {
-        return;
-    }
-    
-    // Clear existing visual highlights
-    if (window.attackHighlightGroup) {
-        window.two.remove(window.attackHighlightGroup);
-    }
-    
-    // Create new highlight group
-    window.attackHighlightGroup = window.two.makeGroup();
-    
-    var renderedCount = 0;
-    window.gameState.attackHighlights.forEach(highlight => {
-        try {
-            var rect = window.two.makeRectangle(
-                highlight.x * TILESIZE + TILESIZE/2, 
-                highlight.y * TILESIZE + TILESIZE/2, 
-                TILESIZE - 2, 
-                TILESIZE - 2
-            );
-            
-            // Red highlighting for attack targets
-            rect.stroke = '#DC143C'; // Crimson red
-            rect.fill = 'rgba(220, 20, 60, 0.3)'; // Semi-transparent red
-            rect.linewidth = 2;
-            rect.noFill = false;
-            
-            window.attackHighlightGroup.add(rect);
-            renderedCount++;
-        } catch (error) {
-            console.error('Error creating attack highlight rect:', error);
-        }
-    });
-    
-    // Force Two.js update
-    try {
-        window.two.update();
-        console.log(`🎯 Rendered ${renderedCount} attack highlights successfully`);
-    } catch (error) {
-        console.error('Error updating Two.js:', error);
-    }
-}
-
-function executeAttack(targetTile) {
-    console.log(`⚔️ EXECUTING ATTACK on (${targetTile.x}, ${targetTile.y})`);
-    
-    if (!board.selected || !board.selected.unit) {
-        console.error('❌ No unit selected for attack');
-        return;
-    }
-    
-    var attacker = board.selected;
-    
-    jsonrpc('unit_attack', {
-        x: attacker.x,
-        y: attacker.y,
-        x2: targetTile.x,
-        y2: targetTile.y
-    }, function(result) {
-        console.log('✅ Attack completed:', result);
-        
-        // Clear all highlights after attack
-        clearAllHighlights();
-        board.selected = null;
-        
-        // Check for game over
-        if (result && result.game_over) {
-            alert(`Game Over! ${result.winner} wins!`);
-        }
-        
-        // Update the board
-        update();
-    });
-}
-
-function isAttackHighlighted(x, y) {
-    if (!window.gameState || !window.gameState.attackHighlights) {
-        return false;
-    }
-    
-    return window.gameState.attackHighlights.some(highlight => 
-        highlight.x === x && highlight.y === y
-    );
-}
-
 // =============================================================================
 // UTILITY FUNCTIONS
 // =============================================================================
@@ -3180,15 +3008,22 @@ function advanceWarsCanvasClick(ev) {
         }
         
         // PRIORITY 2: Movement targets (BLUE/YELLOW highlights)
-        if (isMovementHighlighted(tile.x, tile.y)) {
+        if (window.movementHighlights && window.movementHighlights.some(h => h.x === tile.x && h.y === tile.y)) {
             console.log(`🚶 MOVEMENT: Clicking on movement tile`);
-            executeMovement(tile);
+            unitMove(tile);  // Use existing working unitMove function
             return;
         }
-        
+                
         // PRIORITY 3: Unit selection
         if (tile.unit != null && tile.unit.army == board.current_turn) {
             if (tile.unit.can_attack || tile.unit.can_move || tile.unit.can_capture) {
+                // Set selection consistently
+                board.selected = tile;
+                if (window.gameState) {
+                    window.gameState.selectedUnit = tile;
+                }
+                
+                // Use working selection function
                 unitSelectWithTransportAndRange(tile);
                 return;
             }
