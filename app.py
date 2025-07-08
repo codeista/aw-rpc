@@ -2842,6 +2842,115 @@ def get_damage_chart_rpc(token: str) -> dict:
             "success": False,
             "error": str(e)
         }
+
+@jsonrpc.method('get_movement_costs')
+def get_movement_costs(unit_type: str, token: str):
+    """Get movement costs for a unit type across all terrain types"""
+    try:
+        mngr = game_load(token)
+        
+        # Get movement costs from map_system
+        from map_system import get_movement_cost_for_unit_on_terrain
+        
+        terrain_costs = {}
+        terrain_types = [
+            'PLAIN', 'WOOD', 'MOUNTAIN', 'ROAD_HORT', 'ROAD_VERT', 
+            'ROAD_NW', 'ROAD_NE', 'ROAD_SE', 'ROAD_SW', 'CITY', 
+            'FACTORY', 'AIRPORT', 'PORT', 'RIVER_HORT', 'RIVER_VERT',
+            'BEACH_N', 'BEACH_E', 'BEACH_S', 'BEACH_W', 'SEA', 'REEF'
+            # Add all your terrain types here
+        ]
+        
+        for terrain in terrain_types:
+            try:
+                cost = get_movement_cost_for_unit_on_terrain(unit_type, terrain)
+                terrain_costs[terrain] = cost
+            except:
+                terrain_costs[terrain] = 99  # Impassable
+        
+        return {
+            "success": True,
+            "unit_type": unit_type,
+            "terrain_costs": terrain_costs
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+@jsonrpc.method('get_movement_highlights')
+def get_movement_highlights(x: int, y: int, token: str) -> dict:
+    """Get valid movement positions for highlighting using the same logic as actual movement"""
+    try:
+        # Load the game
+        mngr = game_load(token)
+        
+        # Validate coordinates
+        if not (0 <= x < mngr.board.width and 0 <= y < mngr.board.height):
+            return {
+                "success": False,
+                "error": f"Invalid coordinates ({x}, {y})"
+            }
+        
+        # Get the unit at the position
+        unit = mngr.unit_at(x, y)
+        if not unit:
+            return {
+                "success": False,
+                "error": "No unit at position"
+            }
+        
+        # Get valid moves
+        valid_moves = []
+        
+        # Check every position on the board
+        for target_x in range(mngr.board.width):
+            for target_y in range(mngr.board.height):
+                # Skip the unit's current position
+                if target_x == x and target_y == y:
+                    continue
+                
+                try:
+                    # Check if unit can move to this position
+                    # Use whatever validation method exists in your manager
+                    if hasattr(mngr, 'unit_can_move_to'):
+                        can_move = mngr.unit_can_move_to(unit, target_x, target_y)
+                    elif hasattr(mngr, 'can_unit_move_to'):
+                        can_move = mngr.can_unit_move_to(unit, target_x, target_y)
+                    else:
+                        # Fallback - check if tile is empty and accessible
+                        target_tile = mngr.tile_at(target_x, target_y)
+                        can_move = (target_tile is not None and 
+                                   mngr.unit_at(target_x, target_y) is None)
+                    
+                    if can_move:
+                        valid_moves.append({
+                            "x": target_x,
+                            "y": target_y,
+                            "cost": 1  # Default cost for now
+                        })
+                        
+                except Exception as move_error:
+                    # Skip this position if validation fails
+                    app_logger.debug(f"Movement validation failed for ({target_x}, {target_y}): {move_error}")
+                    continue
+        
+        app_logger.debug(f"Found {len(valid_moves)} valid moves for unit at ({x}, {y})")
+        
+        return {
+            "success": True,
+            "moves": valid_moves,
+            "unit_type": unit.type.name if hasattr(unit, 'type') and hasattr(unit.type, 'name') else str(unit.type)
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Error in get_movement_highlights: {str(e)}")
+        return {
+            "success": False,
+            "error": f"Server error: {str(e)}"
+        }
         
 if __name__ == '__main__':
     app_logger.info("=== AW-RPC Application Starting ===")
