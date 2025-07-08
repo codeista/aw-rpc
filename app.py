@@ -1324,6 +1324,80 @@ def unit_attack_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
             "details": {"attacker_pos": {"x": x, "y": y}, "target_pos": {"x": x2, "y": y2}}
         }
 
+# Add this to your app.py file to fix the APC loading error
+# This creates an alias for the frontend's expected method name
+
+@jsonrpc.method('unit_load')
+@log_rpc_performance
+def unit_load_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
+    """
+    LEGACY ALIAS: Load a unit into transport
+    Frontend logic: Select unit, then alt-click transport
+    x,y = selected unit position (cargo)
+    x2,y2 = alt-clicked transport position
+    """
+    try:
+        # Correct parameter mapping:
+        # x,y = cargo position (selected unit)
+        # x2,y2 = transport position (alt-clicked)
+        return load_unit_rpc(token, transport_x=x2, transport_y=y2, cargo_x=x, cargo_y=y)
+        
+    except Exception as e:
+        app_logger.error(f"Unit load (legacy) failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+    
+# Add this to your app.py file to fix the APC unloading
+
+@jsonrpc.method('unit_unload')
+@log_rpc_performance
+def unit_unload_rpc(token: str, x: int, y: int, x2: int, y2: int, index: int = 0) -> dict:
+    """
+    LEGACY ALIAS: Unload a unit from transport
+    Frontend logic: Select transport, then alt-click destination
+    x,y = selected transport position
+    x2,y2 = alt-clicked unload destination position
+    index = cargo index (frontend sends 'index', not 'cargo_index')
+    """
+    try:
+        # Parameter mapping:
+        # x,y = transport position (selected transport)
+        # x2,y2 = unload destination (alt-clicked tile)
+        # index = cargo_index (frontend parameter name)
+        return unload_unit_rpc(token, 
+                             transport_x=x, transport_y=y,
+                             unload_x=x2, unload_y=y2, 
+                             cargo_index=index)
+        
+    except Exception as e:
+        app_logger.error(f"Unit unload (legacy) failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+
+# Add this simple alias to your app.py file
+
+@jsonrpc.method('get_unload_positions')
+@log_rpc_performance  
+def get_unload_positions_frontend_alias(token: str, x: int, y: int) -> dict:
+    """
+    FRONTEND ALIAS: Get valid unload positions
+    Frontend calls with x,y, maps to backend transport_x, transport_y
+    Also fixes cargo_list vs cargo_units naming mismatch
+    """
+    try:
+        # Call existing backend method with correct parameter names
+        result = get_unload_positions_rpc(token, transport_x=x, transport_y=y)
+        
+        # Fix frontend naming expectation: cargo_units -> cargo_list
+        if result.get('success') and 'transport_info' in result:
+            transport_info = result['transport_info']
+            if 'cargo_units' in transport_info:
+                transport_info['cargo_list'] = transport_info['cargo_units']
+        
+        return result
+        
+    except Exception as e:
+        app_logger.error(f"Get unload positions (frontend alias) failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+
 @jsonrpc.method('damage_estimate')
 @log_rpc_performance
 def damage_estimate_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
@@ -1641,208 +1715,7 @@ def can_afford_unit_rpc(token: str, unit_type: str) -> dict:
 @log_rpc_performance
 def get_unit_costs_rpc(token: str) -> dict:
     """Get all unit costs for reference"""
-
-# =============================================================================
-# PHASE 2B-1: TRANSPORT MECHANICS RPC METHODS
-# =============================================================================
-
-@jsonrpc.method('can_load_unit')
-@log_rpc_performance
-def can_load_unit_rpc(token: str, transport_x: int, transport_y: int, 
-                     cargo_x: int, cargo_y: int) -> dict:
-    """Check if a unit can be loaded into transport"""
-    try:
-        mngr = game_load(token)
-        
-        # Validate coordinates
-        if not all(0 <= coord < mngr.board.width or 0 <= coord < mngr.board.height 
-                  for coord in [transport_x, transport_y, cargo_x, cargo_y]):
-            return {"success": False, "error": "Invalid coordinates"}
-        
-        # Get units
-        transport = mngr.unit_at(transport_x, transport_y)
-        cargo = mngr.unit_at(cargo_x, cargo_y)
-        
-        if not transport:
-            return {"success": False, "error": "No transport unit found"}
-        if not cargo:
-            return {"success": False, "error": "No cargo unit found"}
-        
-        # Check turn
-        if transport.army != mngr.board.current_turn:
-            return {"success": False, "error": "Not your turn"}
-        
-        # Use transport system
-        transport_system = TransportSystem(mngr)
-        can_load, message = transport_system.can_load_unit(
-            transport, cargo, transport_x, transport_y, cargo_x, cargo_y
-        )
-        
-        return {
-            "success": True,
-            "can_load": can_load,
-            "message": message,
-            "transport_info": transport_system.get_cargo_info(transport)
-        }
-        
-    except Exception as e:
-        app_logger.error(f"Can load unit failed: {token} - {str(e)}")
-        return {"success": False, "error": str(e)}
-
-@jsonrpc.method('load_unit')
-@log_rpc_performance
-def load_unit_rpc(token: str, transport_x: int, transport_y: int, 
-                 cargo_x: int, cargo_y: int) -> dict:
-    """Load a unit into transport"""
-    try:
-        mngr = game_load(token)
-        
-        # Validate game state
-        if not mngr.board.game_active:
-            return {"success": False, "error": "Game has ended"}
-        
-        # Validate coordinates
-        if not all(0 <= coord < mngr.board.width or 0 <= coord < mngr.board.height 
-                  for coord in [transport_x, transport_y, cargo_x, cargo_y]):
-            return {"success": False, "error": "Invalid coordinates"}
-        
-        # Get units
-        transport = mngr.unit_at(transport_x, transport_y)
-        cargo = mngr.unit_at(cargo_x, cargo_y)
-        
-        if not transport:
-            return {"success": False, "error": "No transport unit found"}
-        if not cargo:
-            return {"success": False, "error": "No cargo unit found"}
-        
-        # Check turn
-        if transport.army != mngr.board.current_turn:
-            return {"success": False, "error": "Not your turn"}
-        
-        # Execute loading
-        transport_system = TransportSystem(mngr)
-        result = transport_system.load_unit(
-            transport, cargo, transport_x, transport_y, cargo_x, cargo_y
-        )
-        
-        if result.success:
-            # Log the action
-            log_game_event('UNIT_LOADED', token, {
-                'transport': f"{transport.army.name} {transport.type.name}",
-                'cargo': f"{cargo.army.name} {cargo.type.name}",
-                'position': f"({transport_x}, {transport_y})",
-                'cargo_index': result.cargo_index
-            })
-            
-            app_logger.info(f"Unit loaded: {token} - {cargo.type.name} into {transport.type.name} at ({transport_x}, {transport_y})")
-            
-            # Save game state
-            game_save(mngr, token)
-            ws_board_update(token)
-        
-        return {
-            "success": result.success,
-            "message": result.message,
-            "cargo_index": result.cargo_index,
-            "transport_info": transport_system.get_cargo_info(transport)
-        }
-        
-    except Exception as e:
-        app_logger.error(f"Load unit failed: {token} - {str(e)}")
-        return {"success": False, "error": str(e)}
-
-@jsonrpc.method('get_unload_positions')
-@log_rpc_performance
-def get_unload_positions_rpc(token: str, transport_x: int, transport_y: int) -> dict:
-    """Get valid positions where units can be unloaded"""
-    try:
-        mngr = game_load(token)
-        
-        # Validate coordinates
-        if not (0 <= transport_x < mngr.board.width and 0 <= transport_y < mngr.board.height):
-            return {"success": False, "error": "Invalid coordinates"}
-        
-        # Get transport
-        transport = mngr.unit_at(transport_x, transport_y)
-        if not transport:
-            return {"success": False, "error": "No unit found"}
-        
-        # Check turn
-        if transport.army != mngr.board.current_turn:
-            return {"success": False, "error": "Not your turn"}
-        
-        # Get valid positions
-        transport_system = TransportSystem(mngr)
-        valid_positions = transport_system.get_valid_unload_positions(transport_x, transport_y)
-        
-        return {
-            "success": True,
-            "valid_positions": [{"x": x, "y": y} for x, y in valid_positions],
-            "transport_info": transport_system.get_cargo_info(transport)
-        }
-        
-    except Exception as e:
-        app_logger.error(f"Get unload positions failed: {token} - {str(e)}")
-        return {"success": False, "error": str(e)}
-
-@jsonrpc.method('unload_unit')
-@log_rpc_performance
-def unload_unit_rpc(token: str, transport_x: int, transport_y: int, 
-                   unload_x: int, unload_y: int, cargo_index: int = 0) -> dict:
-    """Unload a unit from transport"""
-    try:
-        mngr = game_load(token)
-        
-        # Validate game state
-        if not mngr.board.game_active:
-            return {"success": False, "error": "Game has ended"}
-        
-        # Validate coordinates
-        coords = [transport_x, transport_y, unload_x, unload_y]
-        if not all(0 <= coord < mngr.board.width or 0 <= coord < mngr.board.height for coord in coords):
-            return {"success": False, "error": "Invalid coordinates"}
-        
-        # Get transport
-        transport = mngr.unit_at(transport_x, transport_y)
-        if not transport:
-            return {"success": False, "error": "No transport unit found"}
-        
-        # Check turn
-        if transport.army != mngr.board.current_turn:
-            return {"success": False, "error": "Not your turn"}
-        
-        # Execute unloading
-        transport_system = TransportSystem(mngr)
-        result = transport_system.unload_unit(
-            transport, cargo_index, transport_x, transport_y, unload_x, unload_y
-        )
-        
-        if result.success:
-            # Log the action
-            log_game_event('UNIT_UNLOADED', token, {
-                'transport': f"{transport.army.name} {transport.type.name}",
-                'position': f"({transport_x}, {transport_y})",
-                'unload_position': f"({unload_x}, {unload_y})",
-                'cargo_index': cargo_index
-            })
-            
-            app_logger.info(f"Unit unloaded: {token} - from {transport.type.name} at ({transport_x}, {transport_y}) to ({unload_x}, {unload_y})")
-            
-            # Save game state
-            game_save(mngr, token)
-            ws_board_update(token)
-        
-        return {
-            "success": result.success,
-            "message": result.message,
-            "unloaded_position": result.unloaded_position,
-            "transport_info": transport_system.get_cargo_info(transport)
-        }
-        
-    except Exception as e:
-        app_logger.error(f"Unload unit failed: {token} - {str(e)}")
-        return {"success": False, "error": str(e)}
-    
+ 
 # =============================================================================
 # TRANSPORT SYSTEM RPC METHODS -
 # =============================================================================
@@ -2048,52 +1921,6 @@ def get_exit_positions_rpc(token: str, transport_x: int, transport_y: int) -> di
     except Exception as e:
         app_logger.error(f"Get exit positions failed: {token} - {str(e)}")
         return {"success": False, "error": str(e)}
-
-# @jsonrpc.method('can_cargo_board_transport')
-# @log_rpc_performance
-# def can_cargo_board_transport_rpc(token: str, cargo_x: int, cargo_y: int,
-#                                  transport_x: int, transport_y: int) -> dict:
-#     """
-#     ADVANCE WARS STYLE: Check if cargo can board specific transport
-#     Used for validation before attempting to board
-#     """
-#     try:
-#         mngr = game_load(token)
-        
-#         # Validate coordinates
-#         coords = [cargo_x, cargo_y, transport_x, transport_y]
-#         if not all(0 <= coord < mngr.board.width or 0 <= coord < mngr.board.height for coord in coords):
-#             return {"success": False, "error": "Invalid coordinates"}
-        
-#         # Get units
-#         cargo = mngr.unit_at(cargo_x, cargo_y)
-#         transport = mngr.unit_at(transport_x, transport_y)
-        
-#         if not cargo:
-#             return {"success": False, "error": "No cargo unit found"}
-#         if not transport:
-#             return {"success": False, "error": "No transport unit found"}
-        
-#         # Check turn ownership
-#         if cargo.army != mngr.board.current_turn:
-#             return {"success": False, "error": "Not your turn"}
-        
-#         # Check if boarding is possible
-#         transport_system = TransportSystem(mngr)
-#         can_board, message = transport_system.can_cargo_move_into_transport(
-#             cargo, transport, cargo_x, cargo_y, transport_x, transport_y
-#         )
-        
-#         return {
-#             "success": True,
-#             "can_board": can_board,
-#             "message": message,
-#             "transport_info": transport_system.get_cargo_info(transport)
-#         }
-        
-#     except Exception as e:
-#         app_logger.error(f"Can cargo board failed: {token} - {str(e)}")
-#         return {"success": False, "error": str(e)}
 
 @jsonrpc.method('can_cargo_exit_transport')
 @log_rpc_performance
@@ -2457,40 +2284,6 @@ def load_unit_rpc(token: str, transport_x: int, transport_y: int,
         
     except Exception as e:
         app_logger.error(f"Load unit failed: {token} - {str(e)}")
-        return {"success": False, "error": str(e)}
-
-@jsonrpc.method('get_unload_positions')
-@log_rpc_performance
-def get_unload_positions_rpc(token: str, x: int, y: int) -> dict:
-    """Get valid positions where units can be unloaded"""
-    try:
-        mngr = game_load(token)
-        
-        # Validate coordinates
-        if not (0 <= x < mngr.board.width and 0 <= y < mngr.board.height):
-            return {"success": False, "error": "Invalid coordinates"}
-        
-        # Get transport
-        transport = mngr.unit_at(x, y)
-        if not transport:
-            return {"success": False, "error": "No unit found"}
-        
-        # Check turn
-        if transport.army != mngr.board.current_turn:
-            return {"success": False, "error": "Not your turn"}
-        
-        # Get valid positions
-        transport_system = TransportSystem(mngr)
-        valid_positions = transport_system.get_valid_unload_positions(x, y)
-        
-        return {
-            "success": True,
-            "valid_positions": [{"x": x, "y": y} for x, y in valid_positions],
-            "transport_info": transport_system.get_cargo_info(transport)
-        }
-        
-    except Exception as e:
-        app_logger.error(f"Get unload positions failed: {token} - {str(e)}")
         return {"success": False, "error": str(e)}
 
 @jsonrpc.method('unload_unit')
