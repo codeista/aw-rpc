@@ -655,43 +655,6 @@ def debug_methods():
     except Exception as e:
         return {'error': str(e)}
 
-@app.route('/test')
-def create_test_game_with_units():
-    """Create a 7x7 test game with predeployed units for immediate testing"""
-    token = secrets.token_urlsafe(6)
-    
-    try:
-        # Create game with predeployed units
-        game_manager = get_predeployed_test_game(token)
-        games[token] = game_manager
-        
-        # Log game creation
-        app_logger.info(f"Created test game with predeployed units: {token}")
-        
-        # Redirect to the game
-        return redirect(f'/game/{token}')
-    
-    except Exception as e:
-        app_logger.error(f"Failed to create test game: {e}")
-        return f"Error creating test game: {e}", 500
-
-@app.route('/test_comprehensive')  
-def create_comprehensive_test_game():
-    """Create a 10x10 test game with comprehensive unit deployment"""
-    token = secrets.token_urlsafe(6)
-    
-    try:
-        # Create comprehensive test game
-        game_manager = get_comprehensive_test_game(token)
-        games[token] = game_manager
-        
-        app_logger.info(f"Created comprehensive test game: {token}")
-        return redirect(f'/game/{token}')
-    
-    except Exception as e:
-        app_logger.error(f"Failed to create comprehensive test game: {e}")
-        return f"Error creating comprehensive test game: {e}", 500
-
 @app.route('/debug')
 def debug_info():
     """Debug endpoint to see current game status"""
@@ -713,6 +676,32 @@ def debug_info():
         'active_games': active_games,
         'total_games': len(games)
     }
+    
+@app.route('/test')
+def create_terrain_test_game():
+    """Create terrain-focused test game with predeployed units"""
+    token = secrets.token_urlsafe(6)
+    try:
+        game_manager = get_predeployed_test_game(token)
+        games[token] = game_manager
+        app_logger.info(f"Created terrain test game: {token}")
+        return redirect(f'/game/{token}')
+    except Exception as e:
+        app_logger.error(f"Failed to create terrain test game: {e}")
+        return f"Error creating test game: {e}", 500
+
+@app.route('/test_comprehensive')  
+def create_comprehensive_test():
+    """Create comprehensive test game with all unit types"""
+    token = secrets.token_urlsafe(6)
+    try:
+        game_manager = get_comprehensive_test_game(token)
+        games[token] = game_manager
+        app_logger.info(f"Created comprehensive test game: {token}")
+        return redirect(f'/game/{token}')
+    except Exception as e:
+        app_logger.error(f"Failed to create comprehensive test game: {e}")
+        return f"Error creating comprehensive test game: {e}", 500
 
 # TESTING ENDPOINTS for specific scenarios
 @app.route('/test_combat')
@@ -764,39 +753,48 @@ def test_movement_scenario():
     """Create a game specifically for movement testing"""
     token = secrets.token_urlsafe(6)
     
-    game_manager = get_predeployed_test_game(token)
-    board = game_manager.board
-    
-    # Clear most of the board for open movement
-    for tile in board.grid:
-        if tile.unit and tile.unit.army == Army.BLUE:
-            tile.unit = None  # Remove BLUE units for easier testing
-    
-    # Place a few RED units in strategic positions
-    from unit import Unit, UnitType
-    from config import Config
-    config_game = Config()
-    
-    test_units = [
-        {'type': UnitType.INFANTRY, 'x': 1, 'y': 1},
-        {'type': UnitType.RECON, 'x': 3, 'y': 3},
-        {'type': UnitType.TANK, 'x': 5, 'y': 5}
-    ]
-    
-    for unit_data in test_units:
-        # Clear the tile first
-        tile_index = unit_data['y'] * board.width + unit_data['x']
-        board.grid[tile_index].unit = None
+    try:
+        game_manager = get_predeployed_test_game(token)
+        board = game_manager.board
         
-        # Get proper unit config and create unit
-        unit_config = config_game.units[unit_data['type'].name]
-        unit = Unit.create(Army.RED, unit_data['type'], unit_config)
-        board.grid[tile_index].unit = unit
-    
-    games[token] = game_manager
-    app_logger.info(f"Created movement test game: {token}")
-    return redirect(f'/game/{token}')
-
+        # Clear most BLUE units for easier testing
+        for tile in board.grid:
+            if tile.unit and tile.unit.army == Army.BLUE:
+                tile.unit = None
+        
+        # Place a few RED units in strategic positions for movement testing
+        from unit import Unit, UnitType
+        from config import Config
+        from map_system import Army
+        
+        config_game = Config()
+        
+        test_units = [
+            {'type': UnitType.INFANTRY, 'x': 1, 'y': 1},
+            {'type': UnitType.RECON, 'x': 3, 'y': 3},
+            {'type': UnitType.TANK, 'x': 5, 'y': 5}
+        ]
+        
+        for unit_data in test_units:
+            # Clear the tile first
+            tile_index = unit_data['y'] * board.width + unit_data['x']
+            if tile_index < len(board.grid):
+                board.grid[tile_index].unit = None
+                
+                # Get proper unit config and create unit
+                unit_config = config_game.units[unit_data['type'].name]
+                unit = Unit.create(Army.RED, unit_data['type'], unit_config)
+                unit.can_move = True
+                unit.can_attack = True
+                board.grid[tile_index].unit = unit
+        
+        games[token] = game_manager
+        app_logger.info(f"Created movement test game: {token}")
+        return redirect(f'/game/{token}')
+        
+    except Exception as e:
+        app_logger.error(f"Failed to create movement test game: {e}")
+        return f"Error creating movement test game: {e}", 500
 
 #
 # Websocket (Enhanced)

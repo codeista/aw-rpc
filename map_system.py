@@ -398,13 +398,16 @@ class MapRepository:
         """Load all default maps."""
         # Default test map
         self._maps['test'] = Map.parse('''RED,BLUE
-CRoad,ROAD_HORT*6
-AIRPORT:RED,PLAIN,PLAIN,FACTORY:RED,PLAIN,PLAIN,BASE_TOWER_1:RED
-ROAD_VERT,PLAIN,WOOD*4,MOUNTAIN
-ROAD_VERT,CITY,SEA*3,MOUNTAIN*2
-ROAD_VERT,PLAIN,WOOD*4,MOUNTAIN
-ROAD_VERT,PLAIN*2,FACTORY:BLUE,PLAIN,PLAIN,BASE_TOWER_1:BLUE
-CRoad,ROAD_HORT,ROAD_HORT,ROAD_HORT,ROAD_HORT,ROAD_HORT,AIRPORT:BLUE''', "Test Map")
+PORT:RED,SEA,SEA,SEA,REEF,SEA,SEA,SEA,PORT:BLUE,PLAIN,MOUNTAIN,CITY
+SEA,SEA,SEA,SEA,SEA,SEA,SEA,SEA,SEA,PLAIN,WOOD,PLAIN
+SEA,SEA,REEF,SEA,SEA,SEA,REEF,SEA,SEA,ROAD_HORT,ROAD_HORT,ROAD_HORT
+BEACH_W,BEACH_N,BEACH_N,BEACH_N,BEACH_N,BEACH_N,BEACH_N,BEACH_N,BEACH_E,ROAD_VERT,FACTORY:BLUE,ROAD_VERT
+FACTORY:RED,ROAD_HORT,ROAD_HORT,CITY,MOUNTAIN,CITY,ROAD_HORT,ROAD_HORT,FACTORY:BLUE,ROAD_VERT,PLAIN,ROAD_VERT
+ROAD_VERT,PLAIN,WOOD,PLAIN,BASE_TOWER_1:RED,BASE_TOWER_1:BLUE,PLAIN,WOOD,ROAD_VERT,ROAD_VERT,MOUNTAIN,ROAD_VERT
+ROAD_VERT,MOUNTAIN,CITY,WOOD,PLAIN,PLAIN,WOOD,CITY,ROAD_VERT,ROAD_VERT,WOOD,ROAD_VERT
+AIRPORT:RED,ROAD_HORT,ROAD_HORT,ROAD_HORT,PLAIN,PLAIN,ROAD_HORT,ROAD_HORT,AIRPORT:BLUE,ROAD_SW,ROAD_HORT,ROAD_SE
+PLAIN,PLAIN,PLAIN,PLAIN,MOUNTAIN,MOUNTAIN,PLAIN,PLAIN,PLAIN,CITY,PLAIN,CITY
+PLAIN,MOUNTAIN,WOOD,PLAIN,CITY,CITY,PLAIN,WOOD,MOUNTAIN,PLAIN,FACTORY:RED,PLAIN''', "Test Map for Combat Testing")
 
         # Scorpion Operation map
         self._maps['scorpion'] = Map.parse('''RED,BLUE
@@ -453,3 +456,49 @@ def get_default_map() -> Map:
 PLAIN,PLAIN,PLAIN
 PLAIN,CITY,PLAIN
 PLAIN,PLAIN,PLAIN''', "Fallback Map")
+    
+# Function to add pre-deployed units to test map
+def add_test_units_to_game(game_manager):
+    """Add pre-deployed units to the test map for immediate testing."""
+    
+    # Naval Units
+    test_units = [
+        # Naval Combat Zone
+        {"type": "BATTLESHIP", "army": "RED", "x": 3, "y": 0},      # Naval power
+        {"type": "CRUISER", "army": "BLUE", "x": 5, "y": 0},        # Anti-air naval
+        {"type": "SUB", "army": "RED", "x": 1, "y": 1},             # Stealth naval
+        {"type": "LANDER", "army": "BLUE", "x": 7, "y": 1},         # Naval transport
+        {"type": "CRUISER", "army": "RED", "x": 4, "y": 2},         # Naval engagement
+        {"type": "BATTLESHIP", "army": "BLUE", "x": 5, "y": 2},     # Counter naval
+        
+        # Land Combat Zone
+        {"type": "INFANTRY", "army": "RED", "x": 1, "y": 4},        # Basic infantry
+        {"type": "MECH", "army": "BLUE", "x": 7, "y": 4},           # Mountain specialist
+        {"type": "TANK", "army": "RED", "x": 3, "y": 5},            # Heavy armor
+        {"type": "RECON", "army": "BLUE", "x": 6, "y": 5},          # Fast recon
+        {"type": "MECH", "army": "RED", "x": 1, "y": 6},            # Mountain defense
+        {"type": "TANK", "army": "BLUE", "x": 8, "y": 6},           # Mobile armor
+        
+        # Air Operations
+        {"type": "FIGHTER", "army": "RED", "x": 1, "y": 7},         # Air superiority
+        {"type": "FIGHTER", "army": "BLUE", "x": 8, "y": 8},        # Air combat
+        {"type": "BOMBER", "army": "RED", "x": 1, "y": 8},          # Ground attack
+        
+        # Artillery Support
+        {"type": "ARTILLERY", "army": "RED", "x": 3, "y": 9},       # Indirect fire
+        {"type": "ROCKET", "army": "BLUE", "x": 6, "y": 9},         # Long range
+    ]
+    
+    # Create each unit
+    for unit_data in test_units:
+        try:
+            game_manager.create_unit(
+                army=unit_data["army"],
+                unit_type=unit_data["type"],
+                x=unit_data["x"],
+                y=unit_data["y"]
+            )
+        except Exception as e:
+            print(f"Failed to create {unit_data['type']} at ({unit_data['x']},{unit_data['y']}): {e}")
+    
+    return len(test_units)
