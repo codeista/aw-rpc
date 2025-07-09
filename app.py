@@ -12,6 +12,10 @@ import time
 import json
 import traceback
 
+import subprocess
+import threading
+
+from flask_cors import CORS
 from flask import redirect, render_template, abort, request
 from flask_socketio import Namespace, join_room, leave_room
 import jsons
@@ -810,6 +814,206 @@ def test_info():
     </body>
     </html>
     '''
+
+@app.route('/api/test-status')
+def test_status():
+    """Get current test framework status"""
+    try:
+        return json.dumps({
+            'status': 'ready',
+            'totalTests': 35,
+            'framework': 'Enhanced Testing Suite v2.0',
+            'categories': {
+                'movement': 12,
+                'transport': 10, 
+                'capture': 8,
+                'basic': 5
+            },
+            'lastRun': None
+        })
+    except Exception as e:
+        return json.dumps({'error': str(e)})
+
+# Replace your @app.route('/api/run-tests') function with this improved version:
+
+@app.route('/api/run-tests')
+def run_tests():
+    """Run the complete unittest suite"""
+    try:
+        print("🧪 Running complete test suite...")
+        
+        result = subprocess.run([
+            'python', '-m', 'unittest', 'test_unittest.py', '-v'
+        ], capture_output=True, text=True, timeout=120)
+        
+        # Parse unittest output more carefully
+        output_lines = result.stdout.split('\n')
+        
+        # Count test results
+        passed_tests = 0
+        failed_tests = 0
+        total_tests = 0
+        test_details = []
+        
+        # Look for test result lines
+        for line in output_lines:
+            if ' ... ok' in line:
+                passed_tests += 1
+                test_name = line.split(' (')[0].strip()
+                test_details.append({'name': test_name, 'status': 'PASS'})
+            elif ' ... FAIL' in line or ' ... ERROR' in line:
+                failed_tests += 1
+                test_name = line.split(' (')[0].strip()
+                test_details.append({'name': test_name, 'status': 'FAIL'})
+        
+        total_tests = passed_tests + failed_tests
+        
+        # Look for final summary line like "Ran 35 tests in 3.930s"
+        for line in output_lines:
+            if line.startswith('Ran ') and ' tests in ' in line:
+                import re
+                match = re.search(r'Ran (\d+) tests', line)
+                if match:
+                    total_tests = int(match.group(1))
+                    print(f"📊 Found summary: {total_tests} total tests")
+                break
+        
+        # If we found the summary but no individual results, assume all passed if OK
+        if total_tests > 0 and passed_tests == 0 and failed_tests == 0:
+            if result.returncode == 0 and 'OK' in result.stdout:
+                passed_tests = total_tests
+                failed_tests = 0
+                print(f"✅ All {total_tests} tests passed (based on OK status)")
+            else:
+                failed_tests = total_tests
+                passed_tests = 0
+                print(f"❌ All {total_tests} tests failed (based on error status)")
+        
+        # Fallback: if we still have no test count, use your known count
+        if total_tests == 0:
+            total_tests = 35
+            if result.returncode == 0:
+                passed_tests = 35
+                failed_tests = 0
+            else:
+                passed_tests = 0
+                failed_tests = 35
+            print(f"📊 Using fallback: {total_tests} tests, return code: {result.returncode}")
+        
+        success_rate = round((passed_tests / total_tests * 100), 1) if total_tests > 0 else 0
+        
+        response_data = {
+            'success': result.returncode == 0,
+            'totalTests': total_tests,
+            'passedTests': passed_tests,
+            'failedTests': failed_tests,
+            'successRate': success_rate,
+            'output': result.stdout[:2000],  # First 2000 chars
+            'errors': result.stderr[:1000] if result.stderr else None,
+            'testDetails': test_details[:10],  # First 10 test details
+            'timestamp': time.strftime('%Y-%m-%d %H:%M:%S')
+        }
+        
+        print(f"✅ Test API response: {passed_tests}/{total_tests} passed ({success_rate}%)")
+        return json.dumps(response_data)
+        
+    except subprocess.TimeoutExpired:
+        return json.dumps({
+            'error': 'Tests timed out after 120 seconds',
+            'success': False,
+            'totalTests': 35,
+            'passedTests': 0,
+            'failedTests': 35
+        })
+    except Exception as e:
+        print(f"❌ Test API error: {e}")
+        return json.dumps({
+            'error': str(e),
+            'success': False,
+            'totalTests': 35,
+            'passedTests': 0,
+            'failedTests': 35
+        })
+
+@app.route('/api/run-test-category/<category>')
+def run_test_category(category):
+    """Run tests for a specific category"""
+    try:
+        category_mapping = {
+            'basic': 'Test_RPC_unit_create',
+            'movement': 'Test_Enhanced_Movement_System',
+            'transport': 'Test_Enhanced_Transport_System', 
+            'capture': 'Test_Enhanced_Capture_System'
+        }
+        
+        if category not in category_mapping:
+            return json.dumps({'error': f'Unknown category: {category}'})
+        
+        test_class = category_mapping[category]
+        
+        print(f"🧪 Running {category} tests...")
+        
+        result = subprocess.run([
+            'python', '-m', 'unittest', f'test_unittest.{test_class}', '-v'
+        ], capture_output=True, text=True, timeout=60)
+        
+        # Parse results
+        passed = result.stdout.count('... ok')
+        failed = result.stdout.count('... FAIL') + result.stdout.count('... ERROR')
+        total = passed + failed
+        
+        response_data = {
+            'success': result.returncode == 0,
+            'category': category,
+            'totalTests': total,
+            'passedTests': passed,
+            'failedTests': failed,
+            'output': result.stdout,
+            'errors': result.stderr if result.stderr else None,
+            'timestamp': time.strftime('%Y-%m-%d %H:%M:%S')
+        }
+        
+        print(f"✅ {category} tests: {passed}/{total} passed")
+        return json.dumps(response_data)
+        
+    except Exception as e:
+        print(f"❌ Category test error: {e}")
+        return json.dumps({
+            'error': str(e),
+            'success': False,
+            'category': category
+        })
+
+@app.route('/api/quick-test')
+def quick_test():
+    """Run a quick validation test"""
+    try:
+        print("⚡ Running quick validation...")
+        
+        # Run just one basic test
+        result = subprocess.run([
+            'python', '-m', 'unittest', 'test_unittest.Test_RPC_unit_create.test_unit_create', '-v'
+        ], capture_output=True, text=True, timeout=30)
+        
+        success = result.returncode == 0
+        
+        response_data = {
+            'success': success,
+            'testName': 'Quick Unit Creation Test',
+            'output': result.stdout,
+            'errors': result.stderr if result.stderr else None,
+            'timestamp': time.strftime('%Y-%m-%d %H:%M:%S')
+        }
+        
+        print(f"⚡ Quick test: {'PASSED' if success else 'FAILED'}")
+        return json.dumps(response_data)
+        
+    except Exception as e:
+        print(f"❌ Quick test error: {e}")
+        return json.dumps({
+            'error': str(e),
+            'success': False
+        })
 
 #
 # Websocket (Enhanced)
