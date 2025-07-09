@@ -264,22 +264,24 @@ class TransportSystem:
             # Get the cargo unit
             cargo_unit = transport.status.cargo[cargo_index]
             
-            # Place unit on the board
+            # Place unit on unload position
             unload_tile = self.game_manager.tile_at(unload_x, unload_y)
-            if unload_tile:
-                unload_tile.unit = cargo_unit
-                
-                # Remove from cargo
-                transport.status.cargo[cargo_index] = None
-                
-                return TransportResult(
-                    success=True,
-                    message=f"{cargo_unit.type.name} unloaded from {transport.type.name}",
-                    unloaded_position=(unload_x, unload_y)
-                )
-            else:
-                return TransportResult(False, "Invalid unload position")
-                
+            unload_tile.unit = cargo_unit
+            
+            # CRITICAL FIX: Mark the unloaded unit as unable to move
+            # This prevents the unit from moving after being unloaded
+            cargo_unit.can_move = False
+            cargo_unit.can_attack = False  # Optional: Also prevent attacking
+            
+            # Remove from transport cargo
+            transport.status.cargo[cargo_index] = None
+            
+            return TransportResult(
+                success=True,
+                message=f"{cargo_unit.type.name} unloaded and turn ended",
+                unloaded_position=(unload_x, unload_y)
+            )
+            
         except Exception as e:
             return TransportResult(False, f"Unloading failed: {str(e)}")
     
