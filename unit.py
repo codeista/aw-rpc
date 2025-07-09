@@ -120,6 +120,7 @@ class UnitConfig:
     hp: int
     ammo: int
     cargo: List['Unit']
+    has_moved_this_turn: bool = False
 
 
 @dataclass
