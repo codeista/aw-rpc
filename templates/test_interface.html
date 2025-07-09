@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advance Wars - Testing Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .test-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .test-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        
+        .test-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .test-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button.success {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+        }
+        
+        button.warning {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+        }
+        
+        button.error {
+            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+        }
+        
+        .test-results {
+            background: #f5f5f5;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        .status-bar {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            text-align: center;
+        }
+        
+        .status-item {
+            padding: 10px;
+            border-radius: 5px;
+            background: #f8f9fa;
+        }
+        
+        .status-item.pass {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-item.fail {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-item.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .log-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50 0%, #45a049 100%);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 Advance Wars Testing Interface</h1>
+            <p>Comprehensive testing suite for movement, transport, and capture mechanics</p>
+        </div>
+        
+        <div class="status-bar">
+            <h3>Overall Test Status</h3>
+            <div class="progress-bar">
+                <div class="progress-fill" id="overall-progress"></div>
+            </div>
+            <div class="status-grid">
+                <div class="status-item pending" id="unit-status">
+                    <strong>Unit Tests</strong><br>
+                    <span id="unit-count">Pending</span>
+                </div>
+                <div class="status-item pending" id="movement-status">
+                    <strong>Movement</strong><br>
+                    <span id="movement-count">Pending</span>
+                </div>
+                <div class="status-item pending" id="transport-status">
+                    <strong>Transport</strong><br>
+                    <span id="transport-count">Pending</span>
+                </div>
+                <div class="status-item pending" id="capture-status">
+                    <strong>Capture</strong><br>
+                    <span id="capture-count">Pending</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-grid">
+            <div class="test-card">
+                <h3>🧪 Unit & Basic Tests</h3>
+                <div class="test-buttons">
+                    <button onclick="runCoreSystemTests()">Core Systems</button>
+                    <button onclick="testUnitCreation()">Unit Creation</button>
+                    <button onclick="testTurnSystem()">Turn System</button>
+                    <button onclick="runAllBasicTests()">Run All Basic</button>
+                </div>
+                <div class="test-results" id="basic-results">
+                    Click buttons above to run basic system tests
+                </div>
+            </div>
+            
+            <div class="test-card">
+                <h3>🚶 Movement Tests</h3>
+                <div class="test-buttons">
+                    <button onclick="testBasicMovement()">Basic Movement</button>
+                    <button onclick="testPathfinding()">Pathfinding</button>
+                    <button onclick="testMovementRange()">Range Limits</button>
+                    <button onclick="runAllMovementTests()">Run All Movement</button>
+                </div>
+                <div class="test-results" id="movement-results">
+                    Click buttons above to run movement tests
+                </div>
+            </div>
+            
+            <div class="test-card">
+                <h3>🚛 Transport Tests</h3>
+                <div class="test-buttons">
+                    <button onclick="testUnitLoading()">Unit Loading</button>
+                    <button onclick="testTransportMovement()">Transport Movement</button>
+                    <button onclick="testUnitUnloading()">Unit Unloading</button>
+                    <button onclick="runAllTransportTests()">Run All Transport</button>
+                </div>
+                <div class="test-results" id="transport-results">
+                    Click buttons above to run transport tests
+                </div>
+            </div>
+            
+            <div class="test-card">
+                <h3>🏛️ Capture Tests</h3>
+                <div class="test-buttons">
+                    <button onclick="testCaptureInitiation()">Capture Start</button>
+                    <button onclick="testCaptureProgression()">Capture Progress</button>
+                    <button onclick="testCaptureCompletion()">Capture Complete</button>
+                    <button onclick="runAllCaptureTests()">Run All Capture</button>
+                </div>
+                <div class="test-results" id="capture-results">
+                    Click buttons above to run capture tests
+                </div>
+            </div>
+            
+            <div class="test-card">
+                <h3>⚡ Performance Tests</h3>
+                <div class="test-buttons">
+                    <button onclick="testAPIPerformance()">API Speed</button>
+                    <button onclick="testMemoryUsage()">Memory Usage</button>
+                    <button onclick="testStressTest()">Stress Test</button>
+                    <button onclick="runAllPerformanceTests()">Run All Performance</button>
+                </div>
+                <div class="test-results" id="performance-results">
+                    Click buttons above to run performance tests
+                </div>
+            </div>
+            
+            <div class="test-card">
+                <h3>🔧 Integration Tests</h3>
+                <div class="test-buttons">
+                    <button onclick="testCompleteGameflow()">Complete Gameflow</button>
+                    <button onclick="testErrorHandling()">Error Handling</button>
+                    <button onclick="testEdgeCases()">Edge Cases</button>
+                    <button onclick="runAllIntegrationTests()">Run All Integration</button>
+                </div>
+                <div class="test-results" id="integration-results">
+                    Click buttons above to run integration tests
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-card">
+            <h3>🏆 Master Test Runner</h3>
+            <div class="test-buttons">
+                <button onclick="runAllTests()" style="font-size: 16px; padding: 15px 25px;">
+                    🚀 Run Complete Test Suite
+                </button>
+                <button onclick="clearAllResults()" class="warning">Clear Results</button>
+                <button onclick="exportResults()" class="success">Export Results</button>
+            </div>
+        </div>
+        
+        <div class="log-output" id="master-log">
+            Test output will appear here...
+        </div>
+    </div>
+
+    <!-- Include your game scripts -->
+    <script src="static/js/render.js"></script>
+    <script src="static/js/comprehensive_game_testing.js"></script>
+    
+    <script>
+        // Global test state
+        let testState = {
+            basic: { passed: 0, total: 0 },
+            movement: { passed: 0, total: 0 },
+            transport: { passed: 0, total: 0 },
+            capture: { passed: 0, total: 0 },
+            performance: { passed: 0, total: 0 },
+            integration: { passed: 0, total: 0 }
+        };
+        
+        // Utility functions
+        function updateTestResult(category, testName, success, details = '') {
+            testState[category].total++;
+            if (success) testState[category].passed++;
+            
+            const resultDiv = document.getElementById(`${category}-results`);
+            const status = success ? '✅' : '❌';
+            const statusClass = success ? 'success' : 'error';
+            
+            resultDiv.innerHTML += `<div class="${statusClass}">${status} ${testName}: ${details}</div>`;
+            resultDiv.scrollTop = resultDiv.scrollHeight;
+            
+            updateStatusBar(category);
+            updateOverallProgress();
+        }
+        
+        function updateStatusBar(category) {
+            const statusItem = document.getElementById(`${category}-status`);
+            const count = document.getElementById(`${category}-count`);
+            const { passed, total } = testState[category];
+            
+            if (total === 0) return;
+            
+            count.textContent = `${passed}/${total}`;
+            
+            if (passed === total) {
+                statusItem.className = 'status-item pass';
+            } else if (passed > 0) {
+                statusItem.className = 'status-item fail';
+            } else {
+                statusItem.className = 'status-item fail';
+            }
+        }
+        
+        function updateOverallProgress() {
+            const totalTests = Object.values(testState).reduce((sum, cat) => sum + cat.total, 0);
+            const passedTests = Object.values(testState).reduce((sum, cat) => sum + cat.passed, 0);
+            
+            if (totalTests > 0) {
+                const percentage = (passedTests / totalTests) * 100;
+                document.getElementById('overall-progress').style.width = `${percentage}%`;
+            }
+        }
+        
+        function logToMaster(message) {
+            const masterLog = document.getElementById('master-log');
+            const timestamp = new Date().toLocaleTimeString();
+            masterLog.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            masterLog.scrollTop = masterLog.scrollHeight;
+        }
+        
+        // Test implementations
+        async function runCoreSystemTests() {
+            logToMaster('🧪 Starting core system tests...');
+            try {
+                const result = runCoreSystemTests();
+                updateTestResult('basic', 'Core Systems', result.success, 'Board, units, properties checked');
+            } catch (error) {
+                updateTestResult('basic', 'Core Systems', false, error.message);
+            }
+        }
+        
+        async function testBasicMovement() {
+            logToMaster('🚶 Testing basic movement...');
+            try {
+                const result = await testMovementSystem();
+                updateTestResult('movement', 'Basic Movement', result.success, 
+                    `${result.successful_moves || 0} moves tested`);
+            } catch (error) {
+                updateTestResult('movement', 'Basic Movement', false, error.message);
+            }
+        }
+        
+        async function testUnitLoading() {
+            logToMaster('📦 Testing unit loading...');
+            try {
+                const result = await testUnitLoading();
+                updateTestResult('transport', 'Unit Loading', result.success, 
+                    result.details || 'Loading mechanics tested');
+            } catch (error) {
+                updateTestResult('transport', 'Unit Loading', false, error.message);
+            }
+        }
+        
+        async function testCaptureInitiation() {
+            logToMaster('🏴 Testing capture initiation...');
+            try {
+                const result = await testCaptureInitiation();
+                updateTestResult('capture', 'Capture Initiation', result.success,
+                    result.property || 'Capture mechanics tested');
+            } catch (error) {
+                updateTestResult('capture', 'Capture Initiation', false, error.message);
+            }
+        }
+        
+        async function runAllTests() {
+            logToMaster('🚀 Starting complete test suite...');
+            
+            // Clear previous results
+            clearAllResults();
+            
+            // Run all test categories
+            await runAllBasicTests();
+            await runAllMovementTests();
+            await runAllTransportTests();
+            await runAllCaptureTests();
+            await runAllPerformanceTests();
+            await runAllIntegrationTests();
+            
+            // Generate final report
+            generateFinalReport();
+        }
+        
+        function generateFinalReport() {
+            const totalTests = Object.values(testState).reduce((sum, cat) => sum + cat.total, 0);
+            const passedTests = Object.values(testState).reduce((sum, cat) => sum + cat.passed, 0);
+            const successRate = totalTests > 0 ? (passedTests / totalTests) * 100 : 0;
+            
+            logToMaster('📊 ===== FINAL TEST REPORT =====');
+            logToMaster(`Total Tests: ${totalTests}`);
+            logToMaster(`Passed: ${passedTests}`);
+            logToMaster(`Success Rate: ${successRate.toFixed(1)}%`);
+            
+            if (successRate >= 90) {
+                logToMaster('🏆 EXCELLENT! All systems working perfectly!');
+            } else if (successRate >= 75) {
+                logToMaster('✅ GOOD! Most systems working well!');
+            } else if (successRate >= 50) {
+                logToMaster('⚠️ FAIR! Some issues need attention!');
+            } else {
+                logToMaster('❌ POOR! Major issues need fixing!');
+            }
+        }
+        
+        function clearAllResults() {
+            Object.keys(testState).forEach(category => {
+                testState[category] = { passed: 0, total: 0 };
+                document.getElementById(`${category}-results`).innerHTML = 'Results cleared';
+                document.getElementById(`${category}-status`).className = 'status-item pending';
+                document.getElementById(`${category}-count`).textContent = 'Pending';
+            });
+            
+            document.getElementById('overall-progress').style.width = '0%';
+            document.getElementById('master-log').innerHTML = 'Test output cleared...';
+        }
+        
+        function exportResults() {
+            const report = {
+                timestamp: new Date().toISOString(),
+                testState: testState,
+                totalTests: Object.values(testState).reduce((sum, cat) => sum + cat.total, 0),
+                passedTests: Object.values(testState).reduce((sum, cat) => sum + cat.passed, 0)
+            };
+            
+            const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `test_report_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            logToMaster('📄 Test report exported successfully!');
+        }
+        
+        // Mock implementations for missing functions
+        async function runAllBasicTests() {
+            await runCoreSystemTests();
+            await testUnitCreation();
+            await testTurnSystem();
+        }
+        
+        async function runAllMovementTests() {
+            await testBasicMovement();
+            await testPathfinding();
+            await testMovementRange();
+        }
+        
+        async function runAllTransportTests() {
+            await testUnitLoading();
+            await testTransportMovement();
+            await testUnitUnloading();
+        }
+        
+        async function runAllCaptureTests() {
+            await testCaptureInitiation();
+            await testCaptureProgression();
+            await testCaptureCompletion();
+        }
+        
+        async function runAllPerformanceTests() {
+            await testAPIPerformance();
+            await testMemoryUsage();
+            await testStressTest();
+        }
+        
+        async function runAllIntegrationTests() {
+            await testCompleteGameflow();
+            await testErrorHandling();
+            await testEdgeCases();
+        }
+        
+        // Initialize the interface
+        document.addEventListener('DOMContentLoaded', function() {
+            logToMaster('🎮 Testing interface loaded successfully!');
+            logToMaster('Click any test button to begin testing...');
+        });
+    </script>
+</body>
+</html>

@@ -326,3 +326,121 @@ class CompleteTransportSystem:
                         })
         
         return info
+    
+    def get_valid_unload_positions(self, transport_x: int, transport_y: int) -> List[Tuple[int, int]]:
+        """Get all valid positions where transport cargo can be unloaded"""
+        valid_positions = []
+        
+        # Check all adjacent tiles (N, S, E, W)
+        directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+        
+        for dx, dy in directions:
+            unload_x = transport_x + dx
+            unload_y = transport_y + dy
+            
+            # Check if position is on the board
+            if not (0 <= unload_x < self.game_manager.board.width and 
+                    0 <= unload_y < self.game_manager.board.height):
+                continue
+            
+            # Check if position is empty
+            unload_tile = self.game_manager.tile_at(unload_x, unload_y)
+            if unload_tile and unload_tile.unit is None:
+                valid_positions.append((unload_x, unload_y))
+        
+        return valid_positions
+
+    def get_valid_exit_positions(self, transport_x: int, transport_y: int) -> List[Tuple[int, int]]:
+        """Alias for get_valid_unload_positions (for compatibility)"""
+        return self.get_valid_unload_positions(transport_x, transport_y)
+    
+# Add these methods to your CompleteTransportSystem class in transport_system.py
+# Place them after the existing methods (around the end of the class)
+
+    def cargo_move_into_transport(self, cargo, transport, cargo_x: int, cargo_y: int, 
+                                transport_x: int, transport_y: int) -> TransportResult:
+        """
+        Handle cargo unit moving into transport (Advance Wars style)
+        This is an alias for load_unit_enhanced with parameter reordering
+        """
+        return self.load_unit_enhanced(transport, cargo, transport_x, transport_y, cargo_x, cargo_y)
+
+    def get_compatible_cargo_types(self, transport) -> List[str]:
+        """Get list of unit types that can be loaded into this transport"""
+        if not self.is_transport_unit(transport):
+            return []
+        
+        capability = self.get_transport_capability(transport)
+        if not capability:
+            return []
+        
+        return capability.compatible_units.copy()
+
+    def get_loadable_transports_near(self, cargo_x: int, cargo_y: int) -> List[Dict]:
+        """Get all friendly transports near a cargo unit that can load it"""
+        loadable_transports = []
+        
+        # Get the cargo unit
+        cargo_tile = self.game_manager.tile_at(cargo_x, cargo_y)
+        if not cargo_tile or not cargo_tile.unit:
+            return loadable_transports
+        
+        cargo_unit = cargo_tile.unit
+        
+        # Check all adjacent tiles for compatible transports
+        directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]  # N, S, E, W
+        
+        for dx, dy in directions:
+            transport_x = cargo_x + dx
+            transport_y = cargo_y + dy
+            
+            # Check if position is on board
+            if not (0 <= transport_x < self.game_manager.board.width and 
+                    0 <= transport_y < self.game_manager.board.height):
+                continue
+            
+            # Check if there's a transport there
+            transport_tile = self.game_manager.tile_at(transport_x, transport_y)
+            if not transport_tile or not transport_tile.unit:
+                continue
+            
+            transport_unit = transport_tile.unit
+            
+            # Check if it's a friendly transport that can load this cargo
+            if (self.is_transport_unit(transport_unit) and 
+                transport_unit.army == cargo_unit.army):
+                
+                can_load, message = self.can_load_unit(
+                    transport_unit, cargo_unit, transport_x, transport_y, cargo_x, cargo_y
+                )
+                
+                if can_load:
+                    cargo_info = self.get_cargo_info(transport_unit)
+                    loadable_transports.append({
+                        "x": transport_x,
+                        "y": transport_y,
+                        "unit_type": transport_unit.type.name if hasattr(transport_unit.type, 'name') else str(transport_unit.type),
+                        "army": transport_unit.army.name if hasattr(transport_unit.army, 'name') else str(transport_unit.army),
+                        "cargo_info": cargo_info,
+                        "can_load_message": message
+                    })
+        
+        return loadable_transports
+
+    def can_cargo_exit_transport(self, transport, cargo_index: int, transport_x: int, transport_y: int,
+                            exit_x: int, exit_y: int) -> Tuple[bool, str]:
+        """
+        Check if cargo can exit transport at specific position
+        This is an alias for can_unload_unit
+        """
+        return self.can_unload_unit(transport, cargo_index, transport_x, transport_y, exit_x, exit_y)
+
+    def cargo_exit_transport(self, transport, cargo_index: int, transport_x: int, transport_y: int,
+                            exit_x: int, exit_y: int) -> TransportResult:
+        """
+        Handle cargo exiting transport (Advance Wars style)
+        This is an alias for unload_unit_enhanced
+        """
+        return self.unload_unit_enhanced(transport, cargo_index, transport_x, transport_y, exit_x, exit_y)
+    
+TransportSystem = CompleteTransportSystem
