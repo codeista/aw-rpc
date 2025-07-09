@@ -237,6 +237,37 @@ function update() {
                     canvas.onmousemove = canvasMove;
                     canvas.onclick = advanceWarsCanvasClick;
                     canvas.ondblclick = advanceWarsDoubleClick;
+
+                    // NEW: Prevent right-click context menu
+                    canvas.addEventListener('contextmenu', function(event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        console.log('🖱️ Right-click detected on canvas');
+                        
+                        const tile = getTileFromCanvasClick(event);
+                        if (tile) {
+                            handleTransportRightClick(tile, event);
+                        }
+                        return false;
+                    });
+
+                    // ✅ NEW: Add this alt-click handler here
+                    canvas.addEventListener('click', function(event) {
+                        if (event.altKey) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            console.log('🖱️ Alt-click detected on canvas');
+                            
+                            const tile = getTileFromCanvasClick(event);
+                            if (tile) {
+                                handleTransportAltClick(tile, event);
+                            }
+                            return false;
+                        }
+                    });
+                    
+                    console.log('✅ Context menu prevention and alt-click handler added to canvas');
+                    
                 }
             } catch (error) {
                 console.error('Error initializing Two.js:', error);
@@ -250,6 +281,10 @@ function update() {
         // Render both movement and attack highlights
         if (window.movementHighlights && window.movementHighlights.length > 0) {
             renderMovementHighlights();
+        }
+        // Render transport highlights
+        if (window.transportHighlights && window.transportHighlights.length > 0) {
+            renderTransportHighlights();
         }
         if (window.gameState && window.gameState.attackHighlights && window.gameState.attackHighlights.length > 0) {
             renderAttackHighlights();
@@ -1962,7 +1997,8 @@ function showCargoInfo(unit, cargoInfo) {
     } else {
         message += `${cargoInfo.current_cargo}/${cargoInfo.max_capacity} cargo`;
         
-        if (cargoInfo.cargo_list.length > 0) {
+        const cargoList = cargoInfo.cargo_list || cargoInfo.cargo_units || [];
+        if (cargoList.length > 0) {
             const cargoTypes = cargoInfo.cargo_list.map(c => c.unit_type).join(', ');
             message += ` (${cargoTypes})`;
         }
@@ -2733,21 +2769,22 @@ function advanceWarsAttack(targetTile) {
     
     return true;
 }
+
 function endUnitTurn() {
-    console.log('⚔️ AW: Ending unit turn');
+    console.log('🏁 Ending unit turn');
     
-    // Clear all state
-    board.selected = null;
-    window.gameState.selectedUnit = null;
-    window.gameState.movementPhase = false;
-    window.gameState.showingAttackTargets = false;
+    if (window.gameState && window.gameState.selectedUnit) {
+        window.gameState.selectedUnit = null;
+    }
     
-    // Clear all highlights
     clearAllHighlights();
     
-    // Force visual update
-    if (window.two) {
-        window.two.update();
+    // Clear transport state
+    if (typeof frontendTransportState !== 'undefined') {
+        frontendTransportState.showingLoadOptions = false;
+        frontendTransportState.showingUnloadOptions = false;
+        frontendTransportState.validUnloadPositions = [];
+        frontendTransportState.selectedTransport = null;
     }
 }
 
@@ -2945,15 +2982,22 @@ function showAttackTargets(unitX, unitY) {
 // =============================================================================
 
 function clearAllHighlights() {
-    clearMovementHighlights();
-    clearMovementHighlightsData();
-    clearAttackHighlights();
+    console.log('🧹 Clearing all highlights');
     
+    // Clear movement highlights
+    if (typeof clearMovementHighlights === 'function') {
+        clearMovementHighlights();
+    }
+    
+    // Clear transport highlights
     if (typeof clearTransportHighlights === 'function') {
         clearTransportHighlights();
     }
     
-    console.log('🧹 Cleared all highlights');
+    // Clear any other highlights
+    if (typeof clearAttackHighlights === 'function') {
+        clearAttackHighlights();
+    }
 }
 
 function isMovementHighlighted(x, y) {
@@ -2977,87 +3021,162 @@ function advanceWarsCanvasClick(ev) {
     
     console.log(`⚔️ AW CLICK: Tile (${tile.x}, ${tile.y})`);
     
-    if (ev.detail == 1) { // Single click
+    // PRIORITY 1: Frontend transport unload system (HIGHEST PRIORITY)
+    if (typeof frontendTransportState !== 'undefined' && 
+        frontendTransportState.showingUnloadOptions) {
+        console.log('🔧 PRIORITY 1: Frontend transport unload system active');
         
-        // Handle transport operations first
-        if (ev.ctrlKey) {
-            unitLoad(tile);
-            return;
-        }
-        if (ev.altKey) {
-            unitUnload(tile);
-            return;
-        }
-        // Handle Ctrl+Click for loading (keep existing transport logic)
-        if (ev.ctrlKey) {
-            unitLoad(tile);
-            return;
-        }
+        // Check if clicked position is valid for unload
+        const isValidUnload = frontendTransportState.validUnloadPositions.some(pos => 
+            pos.x === tile.x && pos.y === tile.y
+        );
         
-        // Handle Alt+Click for unloading (keep existing transport logic)
-        if (ev.altKey) {
-            unitUnload(tile);
-            return;
-        }
-        
-        // PRIORITY 1: Attack targets (RED highlights)
-        if (isAttackHighlighted(tile.x, tile.y)) {
-            console.log(`🎯 ATTACK: Clicking on attack target`);
-            executeAttack(tile);
-            return;
-        }
-        
-        // PRIORITY 2: Movement targets (BLUE/YELLOW highlights)
-        if (window.movementHighlights && window.movementHighlights.some(h => h.x === tile.x && h.y === tile.y)) {
-            console.log(`🚶 MOVEMENT: Clicking on movement tile`);
-            unitMove(tile);  // Use existing working unitMove function
-            return;
-        }
-                
-        // PRIORITY 3: Unit selection
-        if (tile.unit != null && tile.unit.army == board.current_turn) {
-            if (tile.unit.can_attack || tile.unit.can_move || tile.unit.can_capture) {
-                // Set selection consistently
-                board.selected = tile;
-                if (window.gameState) {
-                    window.gameState.selectedUnit = tile;
-                }
-                
-                // Use working selection function
-                unitSelectWithTransportAndRange(tile);
-                return;
+        if (isValidUnload) {
+            console.log('✅ Valid unload position clicked');
+            if (typeof attemptUnloadUnit === 'function') {
+                attemptUnloadUnit(tile);
             }
-        }
-        
-        // PRIORITY 4: Building interactions (only when no unit selected)
-        if (!window.gameState.selectedUnit) {
-            if (tile.mapTile.type == 'FACTORY' &&
-                    tile.mapTile.army == board.current_turn &&
-                    tile.unit == null) {
-                unitCreate(tile);
-                return;
+            return; // STOP - unload handled
+        } else {
+            console.log('❌ Invalid unload position - closing unload mode');
+            // Close unload mode if clicking elsewhere
+            if (typeof closeTransportMenu === 'function') {
+                closeTransportMenu();
             }
-            if (tile.mapTile.type == 'AIRPORT' &&
-                    tile.mapTile.army == board.current_turn &&
-                    tile.unit == null) {
-                airunitCreate(tile);
-                return;
-            }
-            if (tile.mapTile.type == 'PORT' &&
-                    tile.mapTile.army == board.current_turn &&
-                    tile.unit == null) {
-                seaunitCreate(tile);
-                return;
-            }
-        }
-        
-        // PRIORITY 5: Deselect when clicking empty tiles
-        if (window.gameState.selectedUnit) {
-            console.log('🔄 AW: Deselecting by clicking empty tile');
-            endUnitTurn();
+            return; // STOP - don't continue processing
         }
     }
+    
+    // PRIORITY 2: Frontend transport load system
+    if (typeof frontendTransportState !== 'undefined' && 
+        frontendTransportState.showingLoadOptions) {
+        console.log('🔧 PRIORITY 2: Frontend transport load system active');
+        
+        if (tile.unit && frontendTransportState.transportInfo && 
+            frontendTransportState.transportInfo.compatible_units.includes(tile.unit.type)) {
+            console.log('✅ Valid load target clicked');
+            if (typeof attemptLoadUnit === 'function') {
+                attemptLoadUnit(tile);
+            }
+            return; // STOP - load handled
+        } else {
+            console.log('❌ Invalid load target - closing load mode');
+            if (typeof closeTransportMenu === 'function') {
+                closeTransportMenu();
+            }
+            return; // STOP - don't continue processing
+        }
+    }
+    
+    // PRIORITY 3: Alt-click system for legacy unload/load
+    if (ev.altKey && window.gameState && window.gameState.selectedUnit) {
+        console.log('🔧 PRIORITY 3: Alt-click system');
+        
+        const selectedTile = board.grid.find(t => 
+            t.x === window.gameState.selectedUnit.x && t.y === window.gameState.selectedUnit.y
+        );
+        
+        if (selectedTile && selectedTile.unit) {
+            // Check if selected unit is a transport with cargo (UNLOAD)
+            if (isTransportUnitForRender(selectedTile.unit) && getCargoCountForRender(selectedTile.unit) > 0) {
+                console.log('✅ Alt-click UNLOAD');
+                
+                jsonrpc('unit_unload', {
+                    x: window.gameState.selectedUnit.x,
+                    y: window.gameState.selectedUnit.y,
+                    x2: tile.x,
+                    y2: tile.y,
+                    index: 0
+                }, function(result) {
+                    if (result.success) {
+                        console.log('✅ Alt-click unload successful');
+                        window.gameState.selectedUnit = null;
+                        clearAllHighlights();
+                        update();
+                    } else {
+                        console.log('❌ Alt-click unload failed:', result.error);
+                    }
+                });
+                return; // STOP - unload handled
+            }
+            // Check if selected unit is cargo and clicked tile has transport (LOAD)
+            else if (tile.unit && isTransportUnitForRender(tile.unit)) {
+                console.log('✅ Alt-click LOAD');
+                
+                jsonrpc('unit_load', {
+                    x: window.gameState.selectedUnit.x,
+                    y: window.gameState.selectedUnit.y,
+                    x2: tile.x,
+                    y2: tile.y
+                }, function(loadResult) {
+                    if (loadResult.success) {
+                        console.log('✅ Alt-click load successful');
+                        window.gameState.selectedUnit = null;
+                        clearAllHighlights();
+                        update();
+                    } else {
+                        console.log('❌ Alt-click load failed:', loadResult.error);
+                    }
+                });
+                return; // STOP - load handled
+            }
+        }
+        
+        console.log('❌ Alt-click: No valid transport operation');
+        return; // STOP - always stop after alt-click
+    }
+    
+    // PRIORITY 4: Transport integration system (CONTROLLED)
+    if (typeof handleTileClickWithTransport === 'function') {
+        console.log('🔧 PRIORITY 4: Transport integration system');
+        
+        const transportHandled = handleTileClickWithTransport(tile, ev);
+        if (transportHandled) {
+            console.log('✅ Transport integration handled click');
+            return; // STOP - transport integration handled it
+        }
+    }
+    
+    // PRIORITY 5: New transport system
+    if (typeof window.transportSystem !== 'undefined' && 
+        typeof window.transportSystem.handleTransportClick === 'function') {
+        console.log('🔧 PRIORITY 5: New transport system');
+        
+        const newTransportHandled = window.transportSystem.handleTransportClick(tile, ev);
+        if (newTransportHandled) {
+            console.log('✅ New transport system handled click');
+            return; // STOP - new transport system handled it
+        }
+    }
+    
+    // PRIORITY 6: Normal movement system
+    if (window.gameState && window.gameState.selectedUnit && tile.can_be_moved_to) {
+        console.log('🔧 PRIORITY 6: Normal movement system');
+        advanceWarsMove(window.gameState.selectedUnit, tile);
+        return;
+    }
+    
+    // PRIORITY 7: Attack system
+    if (window.gameState && window.gameState.selectedUnit && tile.can_be_attacked) {
+        console.log('🔧 PRIORITY 7: Attack system');
+        advanceWarsAttack(window.gameState.selectedUnit, tile);
+        return;
+    }
+    
+    // PRIORITY 8: Unit selection
+    if (tile.unit && tile.unit.army === board.current_turn) {
+        console.log('🔧 PRIORITY 8: Unit selection');
+        advanceWarsUnitSelect(tile);
+        return;
+    }
+    
+    // PRIORITY 9: Deselect when clicking empty tiles
+    if (window.gameState && window.gameState.selectedUnit) {
+        console.log('🔧 PRIORITY 9: Deselecting');
+        endUnitTurn();
+    }
 }
+
 
 // =============================================================================
 // DOUBLE CLICK HANDLER

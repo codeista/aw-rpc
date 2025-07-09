@@ -1,3 +1,20 @@
+// EMERGENCY FIX: Add this to the TOP of transport_frontend.js
+// This prevents the infinite recursion by disabling the problematic integration
+
+function integrateWithExistingSystem() {
+    console.log('🔗 DISABLED: Skipping transport integration to prevent recursion');
+    // Don't do any integration - just exit
+    return;
+}
+
+// Also prevent auto-integration
+document.removeEventListener('DOMContentLoaded', integrateWithExistingSystem);
+
+// Override the setTimeout integration too
+window.transportIntegrationComplete = true;
+
+console.log('🛑 Transport integration disabled to prevent recursion bug');
+
 // transport_frontend.js - Frontend integration for transport system
 
 // =============================================================================
@@ -479,34 +496,34 @@ function handleTransportClick(tile, event) {
 
 // Bridge with existing transport integration
 function integrateWithExistingSystem() {
-    console.log('🔗 Integrating new transport system with existing handlers');
+    // console.log('🔗 Integrating new transport system with existing handlers');
     
-    // Override or extend existing functions if they exist
-    if (typeof handleTileClickWithTransport === 'function') {
-        // Store reference to old function
-        window.originalHandleTileClickWithTransport = handleTileClickWithTransport;
+    // // Override or extend existing functions if they exist
+    // if (typeof handleTileClickWithTransport === 'function') {
+    //     // Store reference to old function
+    //     window.originalHandleTileClickWithTransport = handleTileClickWithTransport;
         
-        // Create new integrated function that preserves alt-click behavior
-        window.handleTileClickWithTransport = function(tile, event) {
-            // PRIORITY: For alt-clicks and ctrl-clicks, ALWAYS use original system
-            if (event && (event.altKey || event.ctrlKey)) {
-                console.log('🔄 Alt/Ctrl-click: Using original transport system');
-                return window.originalHandleTileClickWithTransport(tile, event);
-            }
+    //     // Create new integrated function that preserves alt-click behavior
+    //     window.handleTileClickWithTransport = function(tile, event) {
+    //         // PRIORITY: For alt-clicks and ctrl-clicks, ALWAYS use original system
+    //         if (event && (event.altKey || event.ctrlKey)) {
+    //             console.log('🔄 Alt/Ctrl-click: Using original transport system');
+    //             return window.originalHandleTileClickWithTransport(tile, event);
+    //         }
             
-            // For regular clicks on transports, try new system first
-            if (tile.unit && isTransportUnit(tile.unit)) {
-                if (window.transportSystem && window.transportSystem.handleTransportClick(tile, event)) {
-                    return true;
-                }
-            }
+    //         // For regular clicks on transports, try new system first
+    //         if (tile.unit && isTransportUnit(tile.unit)) {
+    //             if (window.transportSystem && window.transportSystem.handleTransportClick(tile, event)) {
+    //                 return true;
+    //             }
+    //         }
             
-            // Fall back to original system for other cases
-            return window.originalHandleTileClickWithTransport(tile, event);
-        };
+    //         // Fall back to original system for other cases
+    //         return window.originalHandleTileClickWithTransport(tile, event);
+    //     };
         
-        console.log('✅ Integrated with existing handleTileClickWithTransport (preserving alt/ctrl-click)');
-    }
+    //     console.log('✅ Integrated with existing handleTileClickWithTransport (preserving alt/ctrl-click)');
+    // }
     
     // Keep the rest of the integration unchanged
     if (typeof selectUnitWithTransportOptions === 'function') {
@@ -554,3 +571,32 @@ window.transportSystem = {
     isTransportUnit
 };
 
+// Add this to the VERY END of your transport_frontend.js file
+// This will override ALL problematic integration functions
+
+// COMPLETE OVERRIDE: Disable all integration
+function integrateWithExistingSystem() {
+    console.log('🛑 FINAL FIX: All transport integration completely disabled');
+    return;
+}
+
+// OVERRIDE: Prevent selectUnitWithTransportOptions wrapping
+if (typeof window.originalSelectUnitWithTransportOptions !== 'undefined') {
+    // Restore the original function to break the recursion
+    window.selectUnitWithTransportOptions = window.originalSelectUnitWithTransportOptions;
+    console.log('🔧 FIXED: Restored original selectUnitWithTransportOptions');
+}
+
+// OVERRIDE: Prevent handleTileClickWithTransport wrapping  
+if (typeof window.originalHandleTileClickWithTransport !== 'undefined') {
+    // Restore the original function to break the recursion
+    window.handleTileClickWithTransport = window.originalHandleTileClickWithTransport;
+    console.log('🔧 FIXED: Restored original handleTileClickWithTransport');
+}
+
+// SAFETY: Clear any transport integration flags
+window.transportIntegrationComplete = true;
+
+console.log('🛑 EMERGENCY FIX: All transport integration disabled to prevent recursion');
+
+// Your transport system will still work through the main click handler

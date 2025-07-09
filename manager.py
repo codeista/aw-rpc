@@ -13,6 +13,13 @@ from enhanced_movement_validation import EnhancedMovementValidator, MovementVali
 import random
 from dataclasses import dataclass
 from enum import Enum
+from transport_system import CompleteTransportSystem
+
+try:
+    from transport_system import CompleteTransportSystem
+    print("✅ Transport system import successful")
+except ImportError as e:
+    print(f"❌ Transport system import failed: {e}")
 
 '''[This is a cleaned and optimized manager for the RPC game engine for Advance Wars]'''
 
@@ -43,6 +50,7 @@ class GameManager:
     def __init__(self, config: Config, board: GameBoard):
         self.config = config
         self.board = board
+        self.transport_system = CompleteTransportSystem(self)
 
     def __repr__(self):
         return f"{self.__class__.__name__}"
@@ -509,6 +517,39 @@ class GameManager:
             
         distance = self._calculate_manhattan_distance(tile.x, tile.y, x, y)
         return unit.status.rangemin <= distance <= unit.status.rangemax
+
+    # Add these transport-related methods
+    def is_transport_unit(self, unit) -> bool:
+        """Check if unit is any type of transport"""
+        return self.transport_system.is_transport_unit(unit)
+    
+    def get_transport_capability(self, unit):
+        """Get transport capability for a unit"""
+        return self.transport_system.get_transport_capability(unit)
+    
+    def can_load_transport(self, transport, cargo, transport_x: int, transport_y: int, 
+                          cargo_x: int, cargo_y: int) -> tuple:
+        """Check if transport can load cargo unit"""
+        return self.transport_system.can_load_unit(transport, cargo, transport_x, transport_y, cargo_x, cargo_y)
+    
+    def load_transport_unit(self, transport, cargo, transport_x: int, transport_y: int, 
+                           cargo_x: int, cargo_y: int):
+        """Load unit into transport"""
+        return self.transport_system.load_unit_enhanced(transport, cargo, transport_x, transport_y, cargo_x, cargo_y)
+    
+    def can_unload_transport(self, transport, cargo_index: int, transport_x: int, transport_y: int, 
+                            unload_x: int, unload_y: int) -> tuple:
+        """Check if unit can be unloaded from transport"""
+        return self.transport_system.can_unload_unit(transport, cargo_index, transport_x, transport_y, unload_x, unload_y)
+    
+    def unload_transport_unit(self, transport, cargo_index: int, transport_x: int, transport_y: int, 
+                             unload_x: int, unload_y: int):
+        """Unload unit from transport"""
+        return self.transport_system.unload_unit_enhanced(transport, cargo_index, transport_x, transport_y, unload_x, unload_y)
+    
+    def get_transport_cargo_info(self, unit):
+        """Get cargo information for transport unit"""
+        return self.transport_system.get_cargo_info(unit)
 
     # =============================================================================
     # UNIT MANAGEMENT
@@ -1294,6 +1335,100 @@ class GameManager:
     # =============================================================================
     # ENHANCED MOVEMENT METHODS
     # =============================================================================
+    
+    # Add these methods to your GameManager class in manager.py
+
+    def can_transport_move(self, transport) -> bool:
+        """Check if transport can still move this turn"""
+        if not self.is_transport_unit(transport):
+            return transport.can_move
+        
+        # Transports can only move once per turn
+        return not getattr(transport.status, 'has_moved_this_turn', False) and transport.can_move
+
+    def can_transport_load_unload(self, transport) -> bool:
+        """Check if transport can load/unload (always true if it's their turn)"""
+        if not self.is_transport_unit(transport):
+            return False
+        
+        # Transports can always load/unload regardless of movement status
+        return transport.army == self.board.current_turn
+
+    def unit_move_enhanced(self, x: int, y: int, x2: int, y2: int):
+        """Enhanced movement with transport movement limitations"""
+        
+        # Get the unit
+        unit = self.unit_at(x, y)
+        if not unit:
+            raise ValueError("No unit at source position")
+        
+        # Check if transport has already moved this turn
+        if self.is_transport_unit(unit):
+            if getattr(unit.status, 'has_moved_this_turn', False):
+                raise ValueError(f"{unit.type.name} can only move once per turn")
+        
+        # Execute normal movement (use your existing unit_move method)
+        moved_unit = self.unit_move(x, y, x2, y2)
+        
+        # Mark transport as having moved
+        if self.is_transport_unit(moved_unit):
+            moved_unit.status.has_moved_this_turn = True
+            
+            # Transport keeps load/unload abilities after moving
+            # moved_unit.can_move stays True for load/unload actions (not actual movement)
+            # moved_unit.can_attack stays True if applicable
+            # moved_unit.can_capture stays True if applicable
+        
+        return moved_unit
+
+    def reset_transport_movement_flags(self, army):
+        """Reset movement flags for all transports of specified army"""
+        for tile in self.board.grid:
+            if (tile.unit and 
+                tile.unit.army == army and 
+                self.is_transport_unit(tile.unit)):
+                tile.unit.status.has_moved_this_turn = False
+                tile.unit.can_move = True
+
+    # Update your existing turn start method
+    def _start_next_army_turn(self) -> None:
+        """Start new army turn with transport movement reset"""
+        current_army = self.board.current_turn
+        
+        for tile in self.board.grid:
+            if tile.unit and tile.unit.army == current_army:
+                # Reset all action flags for new turn
+                tile.unit.can_move = True
+                tile.unit.can_attack = True
+                tile.unit.can_capture = True
+                
+                # Reset transport-specific movement flags
+                if self.is_transport_unit(tile.unit):
+                    tile.unit.status.has_moved_this_turn = False
+                
+                # APC auto-resupply adjacent units at turn start
+                if self.is_apc(tile.unit):
+                    self._apc_auto_resupply_adjacent(tile)
+
+    def is_apc(self, unit) -> bool:
+        """Check if unit is an APC"""
+        if not unit or not hasattr(unit, 'type'):
+            return False
+        unit_type = unit.type.name if hasattr(unit.type, 'name') else str(unit.type)
+        return unit_type == 'APC'
+
+    def _apc_auto_resupply_adjacent(self, apc_tile) -> None:
+        """APC automatically resupplies adjacent units at turn start"""
+        directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+        
+        for dx, dy in directions:
+            adj_x, adj_y = apc_tile.x + dx, apc_tile.y + dy
+            if self.coord_valid(adj_x, adj_y):
+                adj_tile = self.tile_at(adj_x, adj_y)
+                if (adj_tile.unit and 
+                    adj_tile.unit.army == apc_tile.unit.army and
+                    adj_tile.unit != apc_tile.unit):
+                    self.resupply_unit(adj_tile.unit)
     
     def _validate_move_destination(self, x: int, y: int, moving_unit):
         """Validate the destination tile for movement"""

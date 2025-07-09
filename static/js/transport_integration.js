@@ -34,14 +34,31 @@ let transportState = {
 // MAIN TRANSPORT INTEGRATION
 // =============================================================================
 
-// Override the main tile click handler to include transport logic
-function handleTileClickWithTransport(tile) {
+function handleTileClickWithTransport(tile, event) {
     console.log(`AW_TRANSPORT: Tile clicked at (${tile.x}, ${tile.y})`);
+    
+    // CRITICAL: Don't interfere with frontend transport operations
+    if (typeof frontendTransportState !== 'undefined') {
+        if (frontendTransportState.showingUnloadOptions) {
+            console.log('AW_TRANSPORT: Frontend unload mode active - not handling');
+            return false; // Let frontend handle unload
+        }
+        if (frontendTransportState.showingLoadOptions) {
+            console.log('AW_TRANSPORT: Frontend load mode active - not handling');
+            return false; // Let frontend handle load
+        }
+    }
+    
+    // CRITICAL: Don't interfere with alt-clicks
+    if (event && event.altKey) {
+        console.log('AW_TRANSPORT: Alt-click detected - not handling');
+        return false; // Let alt-click system handle
+    }
     
     // Clear previous highlights
     clearAllTransportHighlights();
     
-    // Handle different click scenarios
+    // Handle transport integration logic only if no other system is active
     if (board.selected) {
         const selectedTile = board.selected;
         const selectedUnit = selectedTile.unit;
@@ -50,42 +67,107 @@ function handleTileClickWithTransport(tile) {
         if (tile.unit && 
             tile.unit.army === selectedUnit.army && 
             isTransportUnit(tile.unit) && 
-            canUnitBoardTransports(selectedUnit)) {
+            canUnitBoardTransports(selectedUnit) &&
+            !(tile.x === selectedTile.x && tile.y === selectedTile.y)) {
             
             console.log(`AW_TRANSPORT: Attempting to board transport`);
             attemptToBoardTransport(selectedTile.x, selectedTile.y, tile.x, tile.y);
-            return;
+            return true; // We handled it
         }
         
-        // Scenario 2: Normal movement (including auto-boarding)
-        if (!tile.unit) {
-            console.log(`AW_TRANSPORT: Normal movement`);
-            attemptEnhancedMovement(selectedTile.x, selectedTile.y, tile.x, tile.y);
-            return;
+        // Scenario 2: Enhanced movement (only if not conflicting)
+        if (!tile.unit && tile.can_be_moved_to) {
+            console.log(`AW_TRANSPORT: Enhanced movement`);
+            safelyPerformEnhancedMovement(selectedTile.x, selectedTile.y, tile.x, tile.y);
+            return true; // We handled it
         }
         
         // Scenario 3: Selecting a different unit
         if (tile.unit && tile.unit.army === board.current_turn) {
+            console.log(`AW_TRANSPORT: Selecting unit with transport options`);
             selectUnitWithTransportOptions(tile);
-            return;
-        }
-        
-        // Scenario 4: Attack (existing logic)
-        if (tile.unit && tile.unit.army !== board.current_turn) {
-            // Handle attack (existing attack logic)
-            unitAttack(tile.x, tile.y);
-            return;
+            return true; // We handled it
         }
     } else {
         // No unit selected - select this unit if it belongs to current player
         if (tile.unit && tile.unit.army === board.current_turn) {
+            console.log(`AW_TRANSPORT: Selecting unit with transport options`);
             selectUnitWithTransportOptions(tile);
-            return;
+            return true; // We handled it
         }
     }
     
-    // Fallback to default behavior
-    unitSelect(tile);
+    return false; // We didn't handle it
+}
+
+function safelyPerformEnhancedMovement(fromX, fromY, toX, toY) {
+    console.log(`AW_TRANSPORT: Enhanced movement from (${fromX},${fromY}) to (${toX},${toY})`);
+    
+    // ✅ FIX: Find unit using the flat array structure
+    const fromTile = board.grid.find(t => t.x === fromX && t.y === fromY);
+    if (!fromTile || !fromTile.unit) {
+        console.log('AW_TRANSPORT: No unit at source position');
+        return;
+    }
+    
+    if (!fromTile.unit.can_move) {
+        console.log('AW_TRANSPORT: Unit cannot move this turn');
+        showTransportMessage('Unit has already moved this turn', 'warning');
+        return;
+    }
+    
+    // ✅ FIX: Use regular movement for transports (much more reliable)
+    if (isTransportUnit(fromTile.unit)) {
+        console.log(`AW_TRANSPORT: Using regular movement for transport`);
+        jsonrpc('unit_move', {
+            x: fromX,
+            y: fromY,
+            x2: toX,
+            y2: toY
+        }).then(result => {
+            if (result.success || !result.error) {
+                console.log(`AW_TRANSPORT: Transport movement successful`);
+                
+                // ✅ FIX: Update selection to new position using flat array
+                const newTile = board.grid.find(t => t.x === toX && t.y === toY);
+                if (newTile) {
+                    board.selected = newTile;
+                    console.log(`🔄 Selection updated to new position (${toX}, ${toY})`);
+                }
+                
+                clearAllTransportHighlights();
+                updateBoardDisplay();
+            } else {
+                console.error(`AW_TRANSPORT: Transport movement failed - ${result.error}`);
+                showTransportMessage(result.error || 'Movement failed', 'error');
+            }
+        }).catch(error => {
+            console.error('AW_TRANSPORT: Transport movement failed:', error);
+            showTransportMessage('Movement failed', 'error');
+        });
+        return;
+    }
+    
+    // Regular enhanced movement for non-transport units
+    jsonrpc('unit_move_enhanced', {
+        from_x: fromX,
+        from_y: fromY,
+        to_x: toX,
+        to_y: toY
+    }).then(result => {
+        if (result.success) {
+            console.log('AW_TRANSPORT: Movement successful');
+            showTransportMessage(result.message || 'Unit moved successfully', 'success');
+            clearAllTransportHighlights();
+            updateBoardDisplay();
+        } else {
+            console.log('AW_TRANSPORT: Movement failed -', result.error);
+            showTransportMessage(result.error, 'error');
+        }
+    }).catch(error => {
+        console.error('AW_TRANSPORT: Movement error:', error);
+        showTransportMessage('Movement failed', 'error');
+    });
 }
 
 // =============================================================================
@@ -123,19 +205,34 @@ function attemptToBoardTransport(cargoX, cargoY, transportX, transportY) {
         transport_x: transportX,
         transport_y: transportY
     }).then(result => {
-        if (result.success) {
-            console.log(`AW_TRANSPORT: Boarding successful - ${result.message}`);
             
-            // Show success message
-            showTransportMessage(result.message, 'success');
+    if (result.success) {
+        console.log(`AW_TRANSPORT: Boarding successful - ${result.message}`);
+
+        // Show success message
+        showTransportMessage(result.message, 'success');
+        
+        // Clear transport highlights
+        clearAllTransportHighlights();
+        
+        // ✅ FIX: Find transport tile using flat array structure
+        const transportTile = board.grid.find(t => t.x === transportX && t.y === transportY);
+        if (transportTile && transportTile.unit) {
+            board.selected = transportTile;
+            console.log(`🔄 Selection updated to transport at (${transportX}, ${transportY})`);
             
-            // Clear selection and highlights
-            clearAllTransportHighlights();
-            board.selected = null;
-            
-            // Update board display
-            updateBoardDisplay();
+            // Show movement range for the transport
+            if (typeof showMovementRange === 'function') {
+                showMovementRange(transportX, transportY);
+            }
         } else {
+            console.log(`❌ Could not find transport tile at (${transportX}, ${transportY})`);
+            board.selected = null;
+        }
+        
+        // Update board display
+        updateBoardDisplay();
+    }else {
             console.error(`AW_TRANSPORT: Boarding failed - ${result.error}`);
             showTransportMessage(result.error, 'error');
         }
@@ -173,30 +270,58 @@ function showLoadableTransports(cargoX, cargoY) {
 function showTransportExitOptions(transportX, transportY) {
     console.log(`AW_TRANSPORT: Showing exit options for transport at (${transportX}, ${transportY})`);
     
-    jsonrpc('get_exit_positions', {
-        transport_x: transportX,
-        transport_y: transportY
-    }).then(result => {
-        if (result.success && result.valid_positions.length > 0) {
-            transportState.exitPositions = result.valid_positions;
-            transportState.showingExitOptions = true;
-            
-            // Highlight exit positions in blue
-            result.valid_positions.forEach(pos => {
-                highlightTile(pos.x, pos.y, 'exit-position');
-            });
-            
-            // Show cargo selection UI if multiple cargo units
-            if (result.transport_info.cargo_units.length > 1) {
-                showCargoSelectionMenu(result.transport_info.cargo_units, transportX, transportY);
-            }
-            
-            console.log(`AW_TRANSPORT: Showing ${result.valid_positions.length} exit positions`);
-        } else {
-            showTransportMessage('No units can be deployed from this transport', 'info');
+    // ✅ NEW: First check if transport has cargo
+    jsonrpc('get_cargo_info', {x: transportX, y: transportY}).then(cargoResult => {
+        if (!cargoResult.success) {
+            showTransportMessage('Could not get transport information', 'error');
+            return;
         }
+        
+        const cargoInfo = cargoResult.cargo_info;
+        
+        // ✅ NEW: Only show exit options if transport has cargo
+        if (!cargoInfo.is_transport) {
+            showTransportMessage('Unit is not a transport', 'warning');
+            return;
+        }
+        
+        if (cargoInfo.current_cargo === 0) {
+            showTransportMessage('Transport is empty - no units to deploy', 'warning');
+            return;
+        }
+        
+        // Transport has cargo, proceed with getting exit positions
+        jsonrpc('get_exit_positions', {
+            transport_x: transportX,
+            transport_y: transportY
+        }).then(result => {
+            if (result.success && result.valid_positions.length > 0) {
+                transportState.exitPositions = result.valid_positions;
+                transportState.showingExitOptions = true;
+                
+                // Highlight exit positions in blue
+                result.valid_positions.forEach(pos => {
+                    highlightTile(pos.x, pos.y, 'exit-position');
+                });
+                
+                // Show cargo selection UI if multiple cargo units
+                if (result.transport_info && result.transport_info.cargo_units && result.transport_info.cargo_units.length > 1) {
+                    showCargoSelectionMenu(result.transport_info.cargo_units, transportX, transportY);
+                }
+                
+                console.log(`AW_TRANSPORT: Showing ${result.valid_positions.length} exit positions for ${cargoInfo.current_cargo} cargo units`);
+                showTransportMessage(`${cargoInfo.current_cargo} unit(s) ready to deploy. Alt-click blue tiles to deploy.`, 'info');
+            } else {
+                showTransportMessage('No valid positions to deploy units', 'info');
+            }
+        }).catch(error => {
+            console.error('AW_TRANSPORT: Failed to get exit positions:', error);
+            showTransportMessage('Failed to get exit positions', 'error');
+        });
+        
     }).catch(error => {
-        console.error('AW_TRANSPORT: Failed to get exit positions:', error);
+        console.error('AW_TRANSPORT: Failed to get cargo info:', error);
+        showTransportMessage('Failed to get transport information', 'error');
     });
 }
 
@@ -237,35 +362,41 @@ function attemptToExitTransport(transportX, transportY, exitX, exitY, cargoIndex
 // =============================================================================
 
 function attemptEnhancedMovement(fromX, fromY, toX, toY) {
-    console.log(`AW_TRANSPORT: Enhanced movement from (${fromX},${fromY}) to (${toX},${toY})`);
-    
-    jsonrpc('unit_move_enhanced', {
-        from_x: fromX,
-        from_y: fromY,
-        to_x: toX,
-        to_y: toY
-    }).then(result => {
-        if (result.success) {
-            if (result.action === 'boarded_transport') {
-                console.log(`AW_TRANSPORT: Auto-boarded transport - ${result.message}`);
-                showTransportMessage(result.message, 'success');
-            } else {
-                console.log(`AW_TRANSPORT: Normal movement - ${result.message}`);
-            }
-            
-            // Clear selection and update board
-            clearAllTransportHighlights();
-            board.selected = null;
-            updateBoardDisplay();
-        } else {
-            console.error(`AW_TRANSPORT: Movement failed - ${result.error}`);
-            showTransportMessage(result.error, 'error');
-        }
-    }).catch(error => {
-        console.error('AW_TRANSPORT: Enhanced movement failed:', error);
-        showTransportMessage('Movement failed', 'error');
-    });
+    // Just call the new safe function
+    safelyPerformEnhancedMovement(fromX, fromY, toX, toY);
 }
+
+// function attemptEnhancedMovement(fromX, fromY, toX, toY) {
+    
+//     console.log(`AW_TRANSPORT: Enhanced movement from (${fromX},${fromY}) to (${toX},${toY})`);
+    
+//     jsonrpc('unit_move_enhanced', {
+//         from_x: fromX,
+//         from_y: fromY,
+//         to_x: toX,
+//         to_y: toY
+//     }).then(result => {
+//         if (result.success) {
+//             if (result.action === 'boarded_transport') {
+//                 console.log(`AW_TRANSPORT: Auto-boarded transport - ${result.message}`);
+//                 showTransportMessage(result.message, 'success');
+//             } else {
+//                 console.log(`AW_TRANSPORT: Normal movement - ${result.message}`);
+//             }
+            
+//             // Clear selection and update board
+//             clearAllTransportHighlights();
+//             board.selected = null;
+//             updateBoardDisplay();
+//         } else {
+//             console.error(`AW_TRANSPORT: Movement failed - ${result.error}`);
+//             showTransportMessage(result.error, 'error');
+//         }
+//     }).catch(error => {
+//         console.error('AW_TRANSPORT: Enhanced movement failed:', error);
+//         showTransportMessage('Movement failed', 'error');
+//     });
+// }
 
 // =============================================================================
 // UTILITY FUNCTIONS
@@ -476,6 +607,69 @@ function handleKeyboardControls(event) {
 // INTEGRATION WITH EXISTING GAME SYSTEMS
 // =============================================================================
 
+function getTileFromCanvasClick(event) {
+    console.log('🎯 Getting tile from canvas click');
+    
+    const canvas = event.target;
+    if (!canvas) {
+        console.log('❌ No canvas target');
+        return null;
+    }
+    
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    
+    // Your game uses TILESIZE (should be 32 based on typical setup)
+    const TILE_SIZE = TILESIZE;
+    
+    const tileX = Math.floor(x / TILE_SIZE);
+    const tileY = Math.floor(y / TILE_SIZE);
+    
+    console.log(`🎯 Click position: (${x}, ${y}) -> Tile: (${tileX}, ${tileY})`);
+    
+    // Find the actual tile from the board using your flat array structure
+    if (board && board.grid) {
+        const tile = board.grid.find(t => t.x === tileX && t.y === tileY);
+        if (tile) {
+            console.log('✅ Found tile:', tile);
+            return tile;
+        } else {
+            console.log(`❌ No tile found at coordinates (${tileX}, ${tileY})`);
+            console.log('Available tiles:', board.grid.map(t => `(${t.x},${t.y})`).slice(0, 10)); // Show first 10 for debug
+        }
+    } else {
+        console.log('❌ No board or board.grid available');
+    }
+    
+    return null;
+}
+
+function handleTransportRightClick(tile, event) {
+    console.log(`🖱️ RIGHT-CLICK: Tile (${tile.x}, ${tile.y})`);
+    
+    // Check if this tile has a transport unit
+    if (tile.unit && isTransportUnit(tile.unit) && tile.unit.army === board.current_turn) {
+        console.log(`🚛 RIGHT-CLICK: Transport unit found - showing exit options`);
+        
+        // Show transport exit options
+        showTransportExitOptions(tile.x, tile.y);
+        
+        // Show visual feedback
+        showTransportMessage('Right-clicked on transport - showing exit options', 'info');
+        
+        return true; // We handled it
+    } else if (tile.unit) {
+        console.log(`👤 RIGHT-CLICK: Non-transport unit (${tile.unit.type || 'unknown'})`);
+        showTransportMessage('Right-click only works on transport units', 'warning');
+    } else {
+        console.log(`🔳 RIGHT-CLICK: Empty tile`);
+        showTransportMessage('No unit here to deploy from', 'info');
+    }
+    
+    return false;
+}
+
 // Enhanced board update to show transport indicators
 function updateBoardDisplayWithTransports() {
     // Call existing board update
@@ -513,6 +707,46 @@ function updateBoardDisplay() {
     }
 }
 
+// Add this function to transport_integration.js (before the exports)
+function handleTransportAltClick(tile, event) {
+    console.log(`🖱️ ALT-CLICK: Tile (${tile.x}, ${tile.y})`);
+    
+    // Check if we're showing exit options and this is a valid exit position
+    if (transportState.showingExitOptions && 
+        transportState.exitPositions.some(pos => pos.x === tile.x && pos.y === tile.y)) {
+        
+        // Find the selected transport
+        const transport = transportState.selectedTransport;
+        if (transport) {
+            console.log(`🚛 ALT-CLICK: Exiting cargo from transport at (${transport.x}, ${transport.y}) to (${tile.x}, ${tile.y})`);
+            
+            const cargoIndex = transportState.selectedCargoIndex || 0;
+            attemptToExitTransport(transport.x, transport.y, tile.x, tile.y, cargoIndex);
+            return true;
+        }
+    }
+    
+    // Check if this is a transport with cargo (select it and show options)
+    if (tile.unit && isTransportUnit(tile.unit) && tile.unit.army === board.current_turn) {
+        console.log(`🚛 ALT-CLICK: Selecting transport and showing exit options`);
+        
+        // Select the transport
+        board.selected = tile;
+        transportState.selectedTransport = tile;
+        
+        // Show exit options immediately
+        showTransportExitOptions(tile.x, tile.y);
+        
+        showTransportMessage('Alt-clicked transport - showing exit options. Alt-click blue tiles to deploy.', 'info');
+        return true;
+    }
+    
+    // Regular alt-click on empty tile or non-transport
+    console.log(`🔳 ALT-CLICK: Not a transport exit action`);
+    showTransportMessage('Alt-click on transport to show exit options, then alt-click blue tiles to deploy', 'info');
+    return false;
+}
+
 // =============================================================================
 // INITIALIZATION AND EXPORTS
 // =============================================================================
@@ -539,5 +773,8 @@ window.handleTileClickWithTransport = handleTileClickWithTransport;
 window.selectUnitWithTransportOptions = selectUnitWithTransportOptions;
 window.handleRightClick = handleRightClick;
 window.handleExitPositionClick = handleExitPositionClick;
+window.getTileFromCanvasClick = getTileFromCanvasClick;
+window.handleTransportRightClick = handleTransportRightClick;
+window.handleTransportAltClick = handleTransportAltClick; 
 
 console.log('AW_TRANSPORT: Complete transport integration system loaded successfully');
