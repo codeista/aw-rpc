@@ -20,6 +20,13 @@ from flask import redirect, render_template, abort, request
 from flask_socketio import Namespace, join_room, leave_room
 import jsons
 
+from optimized_test_map import (
+    get_optimized_test_game, 
+    create_quick_combat_scenario,
+    verify_optimized_map
+)
+import secrets
+
 from manager import GameManager
 from gameboard import GameBoard
 from config import Config
@@ -1014,6 +1021,581 @@ def quick_test():
             'error': str(e),
             'success': False
         })
+
+# === ADD THESE ROUTES TO YOUR app.py ===
+
+@app.route('/test_optimized')
+def create_optimized_test_game():
+    """Create the ultimate test game with all mechanics ready"""
+    token = secrets.token_urlsafe(6)
+    
+    try:
+        # Import everything we need explicitly
+        from config import Config
+        from manager import GameManager
+        from optimized_test_map import create_optimized_test_map
+        
+        # Create configuration
+        config_game = Config()
+        print(f"DEBUG: Config created: {type(config_game)}")
+        
+        # Create the optimized board
+        board = create_optimized_test_map()
+        print(f"DEBUG: Board created: {type(board)}")
+        
+        # Create game manager with proper parameters
+        game_manager = GameManager(config_game, board)
+        print(f"DEBUG: GameManager created: {type(game_manager)}")
+        
+        # Set game properties
+        game_manager.board.game_active = True
+        game_manager.board.current_turn = Army.RED
+        
+        # Store in games dict
+        games[token] = game_manager
+        
+        app_logger.info(f"Created optimized test game: {token}")
+        
+        # Show what's available for testing
+        print("🎮 OPTIMIZED TEST GAME CREATED!")
+        print("   ⚔️ Combat: Units positioned for immediate attacks")
+        print("   🚢 Transport: Loaded transports ready to unload")
+        print("   🏰 Capture: Infantry next to neutral cities")
+        print("   💰 Economy: 50,000 funds each army")
+        print("   🎯 All unit types: Naval, air, land units deployed")
+        
+        return redirect(f'/game/{token}')
+    
+    except Exception as e:
+        # Enhanced error reporting
+        import traceback
+        error_details = traceback.format_exc()
+        app_logger.error(f"Failed to create optimized test game: {e}")
+        app_logger.error(f"Full traceback: {error_details}")
+        
+        # Return detailed error page
+        return f"""
+        <h2>❌ Error Creating Optimized Test Game</h2>
+        <p><strong>Error:</strong> {e}</p>
+        <p><strong>Error Type:</strong> {type(e).__name__}</p>
+        <h3>Debug Information:</h3>
+        <pre>{error_details}</pre>
+        <h3>Troubleshooting:</h3>
+        <ul>
+            <li><a href="/test_verify">Test Map Verification</a></li>
+            <li><a href="/debug">View Active Games</a></li>
+            <li>Check server console for detailed logs</li>
+        </ul>
+        <p><a href="/">Back to Home</a></p>
+        """, 500
+
+@app.route('/test_combat')  
+def create_combat_focused_game():
+    """Create a smaller map focused on combat testing"""
+    token = secrets.token_urlsafe(6)
+    
+    try:
+        from manager import GameManager
+        from config import Config
+        
+        # Load configuration
+        config_game = Config()
+        
+        # Create game manager with combat scenario board and config
+        combat_board = create_quick_combat_scenario()
+        game_manager = GameManager(config_game, combat_board)
+        game_manager.board.game_active = True
+        game_manager.board.current_turn = Army.RED
+        
+        games[token] = game_manager
+        app_logger.info(f"Created combat test game: {token}")
+        
+        print("⚔️ COMBAT TEST GAME CREATED!")
+        print("   🎯 4 combat pairs ready for immediate testing")
+        print("   📏 Units positioned at optimal attack ranges")
+        print("   🏰 Cities ready for capture testing")
+        
+        return redirect(f'/game/{token}')
+    
+    except Exception as e:
+        app_logger.error(f"Failed to create combat test game: {e}")
+        return f"Error creating combat test game: {e}", 500
+
+@app.route('/test_transport')
+def create_transport_test_game():
+    """Create game focused on transport and cargo mechanics"""
+    token = secrets.token_urlsafe(6)
+    
+    try:
+        # Create optimized game and modify for transport focus
+        game_manager = get_optimized_test_game(token)
+        board = game_manager.board
+        
+        # Clear some units to focus on transports
+        transport_focus_tiles = []
+        for tile in board.grid:
+            if tile.unit and hasattr(tile.unit, 'cargo') and len(tile.unit.cargo) > 0:
+                transport_focus_tiles.append(tile)
+        
+        games[token] = game_manager
+        app_logger.info(f"Created transport test game: {token}")
+        
+        print("🚢 TRANSPORT TEST GAME CREATED!")
+        print(f"   📦 {len(transport_focus_tiles)} loaded transports ready")
+        print("   🏖️ Beach landing zones available")
+        print("   🚁 Naval and land transport options")
+        print("   📋 Test: Load/unload, transport movement, cargo protection")
+        
+        return redirect(f'/game/{token}')
+    
+    except Exception as e:
+        app_logger.error(f"Failed to create transport test game: {e}")
+        return f"Error creating transport test game: {e}", 500
+
+@app.route('/test_capture')
+def create_capture_test_game():
+    """Create game focused on property capture mechanics"""
+    token = secrets.token_urlsafe(6)
+    
+    try:
+        # Create optimized game
+        game_manager = get_optimized_test_game(token)
+        board = game_manager.board
+        
+        # Count capture opportunities
+        capture_opportunities = 0
+        neutral_buildings = 0
+        
+        for tile in board.grid:
+            if tile.mapTile.is_capturable():
+                if not tile.mapTile.army:  # Neutral
+                    neutral_buildings += 1
+                
+                # Check for nearby infantry
+                for check_tile in board.grid:
+                    if (check_tile.unit and 
+                        check_tile.unit.type in [UnitType.INFANTRY, UnitType.MECH] and
+                        abs(check_tile.x - tile.x) + abs(check_tile.y - tile.y) <= 1):
+                        capture_opportunities += 1
+                        break
+        
+        games[token] = game_manager
+        app_logger.info(f"Created capture test game: {token}")
+        
+        print("🏰 CAPTURE TEST GAME CREATED!")
+        print(f"   📊 {capture_opportunities} immediate capture opportunities")
+        print(f"   🏛️ {neutral_buildings} neutral buildings available")
+        print("   👥 Infantry positioned next to key buildings")
+        print("   📋 Test: Capture mechanics, income generation, property control")
+        
+        return redirect(f'/{token}')
+    
+    except Exception as e:
+        app_logger.error(f"Failed to create capture test game: {e}")
+        return f"Error creating capture test game: {e}", 500
+
+@app.route('/test_verify')
+def verify_test_maps():
+    """Verify that all test maps are working correctly"""
+    try:
+        verify_optimized_map()
+        
+        return """
+        <h2>🔍 Test Map Verification Complete</h2>
+        <p>✅ All test maps verified and ready for use</p>
+        <h3>Available Test Games:</h3>
+        <ul>
+            <li><a href="/test_optimized">🎮 Complete Mechanics Test</a> - All features in one map</li>
+            <li><a href="/test_combat">⚔️ Combat Focused Test</a> - Quick combat scenarios</li>
+            <li><a href="/test_transport">🚢 Transport Test</a> - Cargo and transport mechanics</li>
+            <li><a href="/test_capture">🏰 Capture Test</a> - Property capture scenarios</li>
+        </ul>
+        <h3>Testing Features Available:</h3>
+        <ul>
+            <li>✅ Units positioned for immediate combat</li>
+            <li>✅ Loaded transports (naval and land)</li>
+            <li>✅ Infantry next to capturable buildings</li>
+            <li>✅ All unit types represented</li>
+            <li>✅ Multiple terrain types</li>
+            <li>✅ Balanced economies (50k funds each)</li>
+        </ul>
+        <p><a href="/debug">View All Active Games</a></p>
+        """
+    
+    except Exception as e:
+        return f"<h2>❌ Test Map Verification Failed</h2><p>Error: {e}</p>"
+    
+# === ENHANCED GAME DEBUGGING ===
+
+@app.route('/debug_detailed/<token>')
+def debug_game_detailed(token):
+    """Provide detailed debugging info for a specific game"""
+    if token not in games:
+        return f"Game {token} not found", 404
+    
+    game_manager = games[token]
+    board = game_manager.board
+    
+    # Analyze the game state
+    unit_analysis = {}
+    combat_pairs = []
+    capture_opportunities = []
+    loaded_transports = []
+    
+    for tile in board.grid:
+        if tile.unit:
+            army = tile.unit.army.name
+            unit_type = tile.unit.type.name
+            
+            if army not in unit_analysis:
+                unit_analysis[army] = {}
+            unit_analysis[army][unit_type] = unit_analysis[army].get(unit_type, 0) + 1
+            
+            # Check for loaded transports
+            if hasattr(tile.unit, 'cargo') and len(tile.unit.cargo) > 0:
+                loaded_transports.append({
+                    'type': unit_type,
+                    'position': f"({tile.x},{tile.y})",
+                    'cargo_count': len(tile.unit.cargo),
+                    'cargo_types': [cargo.type.name for cargo in tile.unit.cargo]
+                })
+            
+            # Check for capture opportunities
+            if tile.unit.type in [UnitType.INFANTRY, UnitType.MECH]:
+                for dx, dy in [(0,1), (0,-1), (1,0), (-1,0)]:
+                    check_x, check_y = tile.x + dx, tile.y + dy
+                    if 0 <= check_x < board.width and 0 <= check_y < board.height:
+                        check_tile = board.grid[check_y * board.width + check_x]
+                        if check_tile.mapTile.is_capturable():
+                            building_owner = check_tile.mapTile.army.name if check_tile.mapTile.army else "Neutral"
+                            capture_opportunities.append({
+                                'unit': f"{unit_type} at ({tile.x},{tile.y})",
+                                'target': f"{check_tile.mapTile.type} at ({check_x},{check_y})",
+                                'current_owner': building_owner
+                            })
+            
+            # Check for adjacent combat opportunities
+            for dx, dy in [(0,1), (0,-1), (1,0), (-1,0)]:
+                check_x, check_y = tile.x + dx, tile.y + dy
+                if 0 <= check_x < board.width and 0 <= check_y < board.height:
+                    check_tile = board.grid[check_y * board.width + check_x]
+                    if (check_tile.unit and 
+                        check_tile.unit.army != tile.unit.army):
+                        combat_pairs.append({
+                            'attacker': f"{tile.unit.army.name} {unit_type} at ({tile.x},{tile.y})",
+                            'defender': f"{check_tile.unit.army.name} {check_tile.unit.type.name} at ({check_x},{check_y})"
+                        })
+    
+    html_response = f"""
+    <html>
+    <head><title>Debug: Game {token}</title></head>
+    <body>
+        <h1>🔍 Detailed Game Analysis: {token}</h1>
+        
+        <h2>📊 Game State</h2>
+        <ul>
+            <li><strong>Current Turn:</strong> {board.current_turn.name}</li>
+            <li><strong>Day:</strong> {board.days}</li>
+            <li><strong>Game Active:</strong> {board.game_active}</li>
+            <li><strong>Board Size:</strong> {board.width}x{board.height}</li>
+        </ul>
+        
+        <h2>💰 Economy</h2>
+        <ul>
+            <li><strong>RED Funds:</strong> ${board.red_funds:,}</li>
+            <li><strong>BLUE Funds:</strong> ${board.blue_funds:,}</li>
+            <li><strong>RED Properties:</strong> {board.total_red_properties}</li>
+            <li><strong>BLUE Properties:</strong> {board.total_blue_properties}</li>
+        </ul>
+        
+        <h2>🪖 Unit Deployment</h2>"""
+    
+    for army, units in unit_analysis.items():
+        html_response += f"<h3>{army} Army ({sum(units.values())} total units)</h3><ul>"
+        for unit_type, count in sorted(units.items()):
+            html_response += f"<li>{unit_type}: {count}</li>"
+        html_response += "</ul>"
+    
+    html_response += f"""
+        <h2>⚔️ Combat Opportunities ({len(combat_pairs)})</h2>
+        <ul>"""
+    
+    for pair in combat_pairs[:10]:  # Show first 10
+        html_response += f"<li>{pair['attacker']} vs {pair['defender']}</li>"
+    
+    if len(combat_pairs) > 10:
+        html_response += f"<li><em>... and {len(combat_pairs) - 10} more</em></li>"
+    
+    html_response += f"""
+        </ul>
+        
+        <h2>🏰 Capture Opportunities ({len(capture_opportunities)})</h2>
+        <ul>"""
+    
+    for opp in capture_opportunities[:10]:  # Show first 10
+        html_response += f"<li>{opp['unit']} can capture {opp['target']} (currently {opp['current_owner']})</li>"
+    
+    if len(capture_opportunities) > 10:
+        html_response += f"<li><em>... and {len(capture_opportunities) - 10} more</em></li>"
+    
+    html_response += f"""
+        </ul>
+        
+        <h2>🚢 Loaded Transports ({len(loaded_transports)})</h2>
+        <ul>"""
+    
+    for transport in loaded_transports:
+        html_response += f"<li>{transport['type']} at {transport['position']} carrying {transport['cargo_count']} units: {', '.join(transport['cargo_types'])}</li>"
+    
+    html_response += f"""
+        </ul>
+        
+        <h2>🎮 Quick Actions</h2>
+        <ul>
+            <li><a href="/{token}">🎯 Play Game</a></li>
+            <li><a href="/debug">📋 All Games</a></li>
+            <li><a href="/test_optimized">🔄 Create New Optimized Test</a></li>
+        </ul>
+        
+        <h2>🧪 Browser Console Tests</h2>
+        <p>Open the game and run these in browser console:</p>
+        <pre>
+// Test combat
+rpc('unit_attack', {{x: 4, y: 5, x2: 6, y2: 5}}, console.log);
+
+// Test movement  
+rpc('unit_move', {{x: 2, y: 3, x2: 3, y2: 3}}, console.log);
+
+// Test capture
+rpc('unit_capture', {{x: 2, y: 3}}, console.log);
+
+// Test transport unload
+rpc('unit_unload', {{x: 3, y: 1, x2: 4, y2: 2, cargo_index: 0}}, console.log);
+
+// Check game state
+rpc('game_board', {{}}, console.log);
+        </pre>
+    </body>
+    </html>
+    """
+    
+    return html_response
+
+# === JAVASCRIPT TESTING HELPERS ===
+
+@app.route('/test_scripts/<token>')
+def get_test_scripts(token):
+    """Provide JavaScript testing scripts for browser console"""
+    if token not in games:
+        return f"Game {token} not found", 404
+    
+    game_manager = games[token]
+    board = game_manager.board
+    
+    # Find specific units for targeted testing
+    red_units = []
+    blue_units = []
+    transports = []
+    infantry_near_buildings = []
+    
+    for tile in board.grid:
+        if tile.unit:
+            unit_info = {
+                'type': tile.unit.type.name,
+                'x': tile.x,
+                'y': tile.y,
+                'hp': tile.unit.status.hp,
+                'army': tile.unit.army.name
+            }
+            
+            if tile.unit.army.name == 'RED':
+                red_units.append(unit_info)
+            else:
+                blue_units.append(unit_info)
+            
+            # Check for transports with cargo
+            if hasattr(tile.unit, 'cargo') and len(tile.unit.cargo) > 0:
+                unit_info['cargo'] = [cargo.type.name for cargo in tile.unit.cargo]
+                transports.append(unit_info)
+            
+            # Check for infantry near buildings
+            if tile.unit.type in [UnitType.INFANTRY, UnitType.MECH]:
+                for dx, dy in [(0,1), (0,-1), (1,0), (-1,0)]:
+                    check_x, check_y = tile.x + dx, tile.y + dy
+                    if 0 <= check_x < board.width and 0 <= check_y < board.height:
+                        check_tile = board.grid[check_y * board.width + check_x]
+                        if check_tile.mapTile.is_capturable():
+                            unit_info['target_building'] = {
+                                'type': check_tile.mapTile.type,
+                                'x': check_x,
+                                'y': check_y,
+                                'owner': check_tile.mapTile.army.name if check_tile.mapTile.army else 'Neutral'
+                            }
+                            infantry_near_buildings.append(unit_info)
+                            break
+
+    javascript_tests = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Scripts for Game {token}</title>
+    <style>
+        body {{ font-family: monospace; margin: 20px; }}
+        .test-section {{ margin: 20px 0; padding: 15px; border: 1px solid #ccc; }}
+        pre {{ background: #f5f5f5; padding: 10px; overflow-x: auto; }}
+        .copy-btn {{ margin: 5px; padding: 5px 10px; cursor: pointer; }}
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Scripts for Game {token}</h1>
+    <p><a href="/{token}" target="_blank">🎮 Open Game in New Tab</a></p>
+    
+    <div class="test-section">
+        <h2>⚔️ Combat Tests</h2>
+        <p>Copy and paste these into the game's browser console:</p>"""
+    
+    # Generate combat test scripts
+    if len(red_units) > 0 and len(blue_units) > 0:
+        red_unit = red_units[0]
+        blue_unit = blue_units[0]
+        javascript_tests += f"""
+        <pre>
+// Test attack with {red_unit['type']} vs {blue_unit['type']}
+rpc('unit_attack', {{
+    x: {red_unit['x']}, y: {red_unit['y']}, 
+    x2: {blue_unit['x']}, y2: {blue_unit['y']}
+}}, console.log);
+        </pre>"""
+    
+    javascript_tests += """
+    </div>
+    
+    <div class="test-section">
+        <h2>🚶 Movement Tests</h2>"""
+    
+    if len(red_units) > 0:
+        unit = red_units[0]
+        new_x = min(unit['x'] + 1, board.width - 1)
+        new_y = unit['y']
+        javascript_tests += f"""
+        <pre>
+// Test movement with {unit['type']}
+rpc('unit_move', {{
+    x: {unit['x']}, y: {unit['y']}, 
+    x2: {new_x}, y2: {new_y}
+}}, console.log);
+        </pre>"""
+    
+    javascript_tests += """
+    </div>
+    
+    <div class="test-section">
+        <h2>🏰 Capture Tests</h2>"""
+    
+    for unit in infantry_near_buildings[:3]:  # Show first 3
+        javascript_tests += f"""
+        <pre>
+// {unit['type']} capture {unit['target_building']['type']} (currently {unit['target_building']['owner']})
+// First move to the building:
+rpc('unit_move', {{
+    x: {unit['x']}, y: {unit['y']}, 
+    x2: {unit['target_building']['x']}, y2: {unit['target_building']['y']}
+}}, console.log);
+
+// Then capture (after move completes):
+setTimeout(() => {{
+    rpc('unit_capture', {{x: {unit['target_building']['x']}, y: {unit['target_building']['y']}}}, console.log);
+}}, 1000);
+        </pre>"""
+    
+    javascript_tests += """
+    </div>
+    
+    <div class="test-section">
+        <h2>🚢 Transport Tests</h2>"""
+    
+    for transport in transports[:2]:  # Show first 2
+        unload_x = min(transport['x'] + 1, board.width - 1)
+        unload_y = transport['y']
+        javascript_tests += f"""
+        <pre>
+// {transport['type']} unload {transport['cargo'][0]} 
+rpc('unit_unload', {{
+    x: {transport['x']}, y: {transport['y']}, 
+    x2: {unload_x}, y2: {unload_y}, 
+    cargo_index: 0
+}}, console.log);
+        </pre>"""
+    
+    javascript_tests += f"""
+    </div>
+    
+    <div class="test-section">
+        <h2>🎮 General Game Tests</h2>
+        <pre>
+// Check current game state
+rpc('game_board', {{}}, console.log);
+
+// Check current turn
+rpc('check_turn', {{}}, console.log);
+
+// End turn
+rpc('army_end_turn', {{}}, console.log);
+
+// Get tile info
+rpc('tile', {{x: 5, y: 5}}, console.log);
+
+// Create new unit (at factory)
+rpc('unit_create', {{
+    army: '{board.current_turn.name}', 
+    unit_type: 'INFANTRY', 
+    x: 0, y: 0
+}}, console.log);
+        </pre>
+    </div>
+    
+    <div class="test-section">
+        <h2>📊 Available Units for Testing</h2>
+        <h3>RED Army Units:</h3>
+        <ul>"""
+    
+    for unit in red_units:
+        javascript_tests += f"<li>{unit['type']} at ({unit['x']},{unit['y']}) - HP: {unit['hp']}</li>"
+    
+    javascript_tests += """
+        </ul>
+        <h3>BLUE Army Units:</h3>
+        <ul>"""
+    
+    for unit in blue_units:
+        javascript_tests += f"<li>{unit['type']} at ({unit['x']},{unit['y']}) - HP: {unit['hp']}</li>"
+    
+    javascript_tests += f"""
+        </ul>
+    </div>
+    
+    <script>
+        // Helper function to copy text to clipboard
+        function copyToClipboard(text) {{
+            navigator.clipboard.writeText(text).then(() => {{
+                alert('Copied to clipboard!');
+            }});
+        }}
+        
+        // Add copy buttons to all pre elements
+        document.querySelectorAll('pre').forEach(pre => {{
+            const button = document.createElement('button');
+            button.textContent = 'Copy';
+            button.className = 'copy-btn';
+            button.onclick = () => copyToClipboard(pre.textContent);
+            pre.parentNode.insertBefore(button, pre);
+        }});
+    </script>
+</body>
+</html>
+    """
+    
+    return javascript_tests
 
 #
 # Websocket (Enhanced)

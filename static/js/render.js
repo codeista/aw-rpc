@@ -84,18 +84,51 @@ function isTransportUnitForRender(unit) {
 }
 
 function getCargoCountForRender(unit) {
-    if (!unit || !unit.status || !unit.status.cargo) return 0;
+    if (!unit) return 0;
     
-    // FIXED: Count non-null cargo slots properly
-    let count = 0;
-    if (Array.isArray(unit.status.cargo)) {
-        for (let i = 0; i < unit.status.cargo.length; i++) {
-            if (unit.status.cargo[i] !== null && unit.status.cargo[i] !== undefined) {
-                count++;
-            }
-        }
+    console.log('CARGO_COUNT: Checking unit:', unit.type, unit);
+    
+    // Method 1: Check unit.cargo array
+    if (unit.cargo && Array.isArray(unit.cargo)) {
+        // Count non-null cargo slots
+        const actualCargoCount = unit.cargo.filter(cargo => 
+            cargo !== null && 
+            cargo !== undefined && 
+            typeof cargo === 'object'
+        ).length;
+        
+        console.log('CARGO_COUNT: unit.cargo array:', unit.cargo);
+        console.log('CARGO_COUNT: Actual cargo count:', actualCargoCount);
+        return actualCargoCount;
     }
-    return count;
+    
+    // Method 2: Check unit.status.cargo array  
+    if (unit.status && unit.status.cargo && Array.isArray(unit.status.cargo)) {
+        const actualCargoCount = unit.status.cargo.filter(cargo => 
+            cargo !== null && 
+            cargo !== undefined && 
+            typeof cargo === 'object'
+        ).length;
+        
+        console.log('CARGO_COUNT: unit.status.cargo array:', unit.status.cargo);
+        console.log('CARGO_COUNT: Actual cargo count:', actualCargoCount);
+        return actualCargoCount;
+    }
+    
+    // Method 3: Check for explicit cargo count property
+    if (typeof unit.cargo_count === 'number') {
+        console.log('CARGO_COUNT: Using unit.cargo_count:', unit.cargo_count);
+        return unit.cargo_count;
+    }
+    
+    // Method 4: Check status cargo count
+    if (unit.status && typeof unit.status.cargo_count === 'number') {
+        console.log('CARGO_COUNT: Using unit.status.cargo_count:', unit.status.cargo_count);
+        return unit.status.cargo_count;
+    }
+    
+    console.log('CARGO_COUNT: No cargo found, returning 0');
+    return 0;
 }
 
 function uuidv4() {
@@ -3561,3 +3594,271 @@ console.log('- testAllUnits() - Create one of each unit type');
 console.log('- analyzeBoardUnits() - List current units on board');
 console.log('- checkMissingSprites() - Check for missing sprite cases');
 
+// =============================================================================
+// PERMANENT CLICK SYSTEM FIXES - Added to fix factory clicks and unit selection
+// =============================================================================
+
+function applyCompleteClickFix() {
+    console.log('🔧 APPLYING: Complete click system fix');
+    
+    // ========================================================================
+    // FIX 1: Selection State Management
+    // Prevents board.selected from being cleared during board updates
+    // ========================================================================
+    
+    const originalUpdate = window.update;
+    
+    window.update = function() {
+        // Store current selection info BEFORE update
+        const currentSelection = board?.selected ? {
+            x: board.selected.x,
+            y: board.selected.y,
+            unit: board.selected.unit
+        } : null;
+        
+        // Call the original update
+        originalUpdate();
+        
+        // Restore selection AFTER board is updated
+        if (currentSelection) {
+            setTimeout(() => {
+                const restoredTile = board.grid.find(tile => 
+                    tile.x === currentSelection.x && 
+                    tile.y === currentSelection.y
+                );
+                
+                if (restoredTile && restoredTile.unit) {
+                    board.selected = restoredTile;
+                    console.log('✅ SELECTION RESTORED: Unit at', currentSelection.x, currentSelection.y);
+                    
+                    // Show visual feedback
+                    showSelectionVisuals(restoredTile);
+                } else {
+                    console.log('⚠️ Could not restore selection - tile changed');
+                }
+            }, 50);
+        }
+    };
+    
+    // ========================================================================
+    // FIX 2: Visual Feedback System
+    // Shows movement highlights and attack targets when unit is selected
+    // ========================================================================
+    
+    function showSelectionVisuals(tile) {
+        console.log('🎨 SHOWING: Visual selection feedback');
+        
+        try {
+            // Show movement highlights
+            if (typeof highlightMovementRange === 'function') {
+                highlightMovementRange(tile.x, tile.y);
+            } else if (typeof showMovementRange === 'function') {
+                showMovementRange(tile.x, tile.y);
+            }
+            
+            // Show attack targets
+            if (typeof showAttackTargets === 'function') {
+                setTimeout(() => {
+                    showAttackTargets(tile.x, tile.y);
+                }, 100);
+            }
+            
+            // Force visual update
+            if (window.two && window.two.update) {
+                window.two.update();
+            }
+            
+            console.log('✅ Visual feedback applied');
+            
+        } catch (error) {
+            console.error('❌ Visual feedback error:', error);
+        }
+    }
+    
+    // ========================================================================
+    // FIX 3: Production Building and Movement Click Handler
+    // Handles factory clicks and movement execution properly
+    // ========================================================================
+    
+    const originalTransportHandler = window.handleTileClickWithTransport;
+    
+    window.handleTileClickWithTransport = function(tile) {
+        console.log(`🎯 SMART CLICK: Checking tile (${tile.x}, ${tile.y})`);
+        
+        // PRIORITY 1: Production buildings (factories, airports, ports)
+        if ((tile.mapTile.type === 'FACTORY' || 
+             tile.mapTile.type === 'AIRPORT' || 
+             tile.mapTile.type === 'PORT') &&
+            tile.mapTile.army === board.current_turn &&
+            !tile.unit) {
+            
+            console.log(`🏭 PRODUCTION: ${tile.mapTile.type} click`);
+            if (tile.mapTile.type === 'FACTORY') unitCreate(tile);
+            else if (tile.mapTile.type === 'AIRPORT') airunitCreate(tile);
+            else if (tile.mapTile.type === 'PORT') seaunitCreate(tile);
+            return;
+        }
+        
+        // PRIORITY 2: Movement execution (clicking on highlighted movement tiles)
+        if (board.selected && !tile.unit && 
+            window.movementHighlights && 
+            window.movementHighlights.some(h => h.x === tile.x && h.y === tile.y)) {
+            
+            console.log(`🚶 MOVEMENT: Executing move to (${tile.x}, ${tile.y})`);
+            executeMovement(tile);
+            return;
+        }
+        
+        // PRIORITY 3: Attack execution (clicking on highlighted attack targets)
+        if (board.selected && tile.unit && 
+            tile.unit.army !== board.current_turn &&
+            window.gameState?.attackHighlights &&
+            window.gameState.attackHighlights.some(h => h.x === tile.x && h.y === tile.y)) {
+            
+            console.log(`⚔️ ATTACK: Executing attack on (${tile.x}, ${tile.y})`);
+            executeAttack(tile);
+            return;
+        }
+        
+        // PRIORITY 4: Fall back to original transport logic
+        if (originalTransportHandler) {
+            originalTransportHandler(tile);
+        }
+    };
+    
+    // ========================================================================
+    // FIX 4: Movement Execution with Highlight Clearing
+    // Executes unit movement and clears highlights afterwards
+    // ========================================================================
+    
+    window.executeMovement = function(targetTile) {
+        console.log(`🚶 EXECUTING: Movement to (${targetTile.x}, ${targetTile.y})`);
+        
+        if (!board.selected) {
+            console.error('❌ No unit selected for movement');
+            return;
+        }
+        
+        const fromTile = board.selected;
+        
+        jsonrpc('unit_move', {
+            x: fromTile.x,
+            y: fromTile.y,
+            x2: targetTile.x,
+            y2: targetTile.y
+        }).then(result => {
+            if (result && !result.error) {
+                console.log('✅ Movement successful! Clearing highlights...');
+                
+                // Clear all highlights and selection
+                board.selected = null;
+                if (window.movementHighlights) window.movementHighlights = [];
+                if (window.gameState?.attackHighlights) window.gameState.attackHighlights = [];
+                
+                // Call clear functions
+                ['clearMovementHighlights', 'clearAttackHighlights', 'clearTransportHighlights'].forEach(func => {
+                    if (typeof window[func] === 'function') window[func]();
+                });
+                
+                // Force visual update
+                if (window.two?.update) window.two.update();
+                
+                console.log('🧹 All highlights cleared');
+            } else {
+                console.log('❌ Movement failed:', result?.message);
+            }
+        }).catch(error => {
+            console.error('❌ Movement error:', error);
+        });
+    };
+    
+    // ========================================================================
+    // FIX 5: Enhanced Unit Selection
+    // Ensures board.selected is set immediately when unit is clicked
+    // ========================================================================
+    
+    const originalSelectWithTransport = window.selectUnitWithTransportOptions;
+    
+    window.selectUnitWithTransportOptions = function(tile) {
+        console.log('🎯 ENHANCED SELECT: Setting selection immediately');
+        
+        // Set selection IMMEDIATELY
+        board.selected = tile;
+        
+        // Show visual feedback
+        showSelectionVisuals(tile);
+        
+        // Call original function
+        if (originalSelectWithTransport) {
+            originalSelectWithTransport(tile);
+        }
+    };
+    
+    // ========================================================================
+    // UTILITY: Manual Clear Function for Debugging
+    // ========================================================================
+    
+    window.clearAllHighlights = function() {
+        console.log('🧹 MANUAL: Clearing all highlights');
+        
+        // Clear all highlight arrays
+        if (window.movementHighlights) window.movementHighlights = [];
+        if (window.gameState && window.gameState.attackHighlights) window.gameState.attackHighlights = [];
+        
+        // Clear selection
+        board.selected = null;
+        if (window.gameState) {
+            window.gameState.selectedUnit = null;
+            window.gameState.movementPhase = false;
+            window.gameState.showingAttackTargets = false;
+        }
+        
+        // Call all clear functions
+        const clearFunctions = [
+            'clearMovementHighlights',
+            'clearMovementHighlightsData', 
+            'clearAttackHighlights',
+            'clearTransportHighlights',
+            'clearAllTransportHighlights'
+        ];
+        
+        clearFunctions.forEach(funcName => {
+            if (typeof window[funcName] === 'function') {
+                try {
+                    window[funcName]();
+                    console.log(`✅ Called ${funcName}`);
+                } catch (e) {
+                    console.log(`⚠️ Error calling ${funcName}:`, e);
+                }
+            }
+        });
+        
+        // Force visual update
+        if (window.two && window.two.update) {
+            window.two.update();
+        }
+        
+        console.log('🧹 Manual clear complete');
+    };
+    
+    console.log('✅ COMPLETE CLICK SYSTEM FIX APPLIED');
+    console.log('💡 Use clearAllHighlights() in console if highlights get stuck');
+}
+
+// ========================================================================
+// AUTO-APPLY THE FIXES WHEN PAGE LOADS
+// ========================================================================
+
+// Apply fixes when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(applyCompleteClickFix, 200);
+});
+
+// Also apply immediately if DOM is already loaded
+if (document.readyState !== 'loading') {
+    setTimeout(applyCompleteClickFix, 200);
+}
+
+console.log('🎯 Click system fixes loaded - will apply after page initialization');
+
+// END OF CLICK SYSTEM FIXES
