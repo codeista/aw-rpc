@@ -36,6 +36,28 @@ let transportState = {
 
 function handleTileClickWithTransport(tile, event) {
     console.log(`AW_TRANSPORT: Tile clicked at (${tile.x}, ${tile.y})`);
+
+        // ========================================================================
+    // PRIORITY 1: PRODUCTION BUILDINGS (CRITICAL FIX)
+    // ========================================================================
+    if ((tile.mapTile.type === 'FACTORY' || 
+         tile.mapTile.type === 'AIRPORT' || 
+         tile.mapTile.type === 'PORT') &&
+        tile.mapTile.army === board.current_turn &&
+        !tile.unit) {
+        
+        console.log(`🏭 PRODUCTION: ${tile.mapTile.type} click at (${tile.x}, ${tile.y})`);
+        
+        // Call the appropriate creation function
+        if (tile.mapTile.type === 'FACTORY') {
+            unitCreate(tile);
+        } else if (tile.mapTile.type === 'AIRPORT') {
+            airunitCreate(tile);
+        } else if (tile.mapTile.type === 'PORT') {
+            seaunitCreate(tile);
+        }
+        return; // Exit early, don't process as transport
+    }
     
     // CRITICAL: Don't interfere with frontend transport operations
     if (typeof frontendTransportState !== 'undefined') {
