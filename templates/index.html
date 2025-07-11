@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AW-RPC - Advance Wars Strategy Game</title>
+    <style>
+        /* ===== RESET & BASE STYLES ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        /* ===== MAIN CONTAINER ===== */
+        .setup-container {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 40px;
+            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 36px;
+            font-weight: bold;
+            color: #ecf0f1;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .header p {
+            font-size: 18px;
+            color: #bdc3c7;
+            margin-bottom: 10px;
+        }
+
+        /* ===== FORM SECTIONS ===== */
+        .form-section {
+            background: rgba(255,255,255,0.03);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .form-section h3 {
+            color: #3498db;
+            margin-bottom: 20px;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-section h3::before {
+            content: "▶";
+            color: #e74c3c;
+        }
+
+        /* ===== FORM CONTROLS ===== */
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            color: #ecf0f1;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .form-control {
+            padding: 12px 15px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #3498db;
+            background: rgba(255,255,255,0.15);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        .form-control option {
+            background: #2c3e50;
+            color: white;
+        }
+
+        /* ===== PLAYER SETUP ===== */
+        .players-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .player-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .player-card:hover {
+            border-color: #3498db;
+            transform: translateY(-2px);
+        }
+
+        .player-card h4 {
+            color: #3498db;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        /* ===== COLOR SELECTOR ===== */
+        .color-selector {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .color-option {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .color-option:hover {
+            transform: scale(1.1);
+            border-color: rgba(255,255,255,0.5);
+        }
+
+        .color-option.selected {
+            border-color: #fff;
+            box-shadow: 0 0 0 2px #3498db;
+        }
+
+        .color-option.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .color-red { background: #e74c3c; }
+        .color-blue { background: #3498db; }
+        .color-green { background: #27ae60; }
+        .color-yellow { background: #f1c40f; }
+        .color-grey { background: #95a5a6; }
+
+        /* ===== BUTTONS ===== */
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            width: 100%;
+            margin-top: 30px;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .setup-container {
+                padding: 25px;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .players-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 28px;
+            }
+        }
+
+        /* ===== LOADING STATE ===== */
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(52, 152, 219, 0.3);
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="setup-container">
+        <div class="header">
+            <h1>🎮 AW-RPC</h1>
+            <p>Advanced Wars Real-Time Strategy</p>
+            <p>Set up your battle and choose your commanding officer</p>
+        </div>
+
+        <form id="gameSetupForm">
+            <!-- Game Settings Section -->
+            <div class="form-section">
+                <h3>🎯 Game Settings</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="mapSelect">Select Map</label>
+                        <select id="mapSelect" class="form-control" required>
+                            <option value="">Loading maps...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="playerCount">Number of Players</label>
+                        <select id="playerCount" class="form-control" required>
+                            <option value="2">2 Players</option>
+                            <option value="3">3 Players</option>
+                            <option value="4">4 Players</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="turnLimit">Turn Limit</label>
+                        <select id="turnLimit" class="form-control" required>
+                            <option value="30">30 Turns</option>
+                            <option value="50">50 Turns</option>
+                            <option value="75">75 Turns</option>
+                            <option value="100">100 Turns</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="gameMode">Game Mode</label>
+                        <select id="gameMode" class="form-control" required>
+                            <option value="standard">Standard</option>
+                            <option value="competitive" disabled>Competitive (Coming Soon)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Players Setup Section -->
+            <div class="form-section">
+                <h3>👥 Players & Commanding Officers</h3>
+                <div class="players-grid" id="playersGrid">
+                    <!-- Player cards will be generated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Create Game Button -->
+            <button type="submit" class="btn btn-primary" id="createGameBtn">
+                🚀 Create & Join Game
+            </button>
+
+            <!-- Loading State -->
+            <div class="loading" id="loadingState">
+                <div class="spinner"></div>
+                <p>Creating game and setting up battlefield...</p>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Game setup data
+        const COS = [
+            { id: 'andy', name: 'Andy', description: 'Balanced commander' },
+            { id: 'max', name: 'Max', description: 'Strong direct combat' },
+            { id: 'sami', name: 'Sami', description: 'Infantry specialist' },
+            { id: 'grit', name: 'Grit', description: 'Indirect combat expert' }
+        ];
+
+        const COLORS = [
+            { id: 'RED', name: 'Red', class: 'color-red' },
+            { id: 'BLUE', name: 'Blue', class: 'color-blue' },
+            { id: 'GREEN', name: 'Green', class: 'color-green' },
+            { id: 'YELLOW', name: 'Yellow', class: 'color-yellow' },
+            { id: 'GREY', name: 'Grey', class: 'color-grey' }
+        ];
+
+        let gameSetup = {
+            players: []
+        };
+
+        // Initialize the form
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAvailableMaps();
+            generatePlayerCards();
+            updatePlayerCount();
+            
+            document.getElementById('playerCount').addEventListener('change', updatePlayerCount);
+            document.getElementById('gameSetupForm').addEventListener('submit', createGame);
+        });
+
+        async function loadAvailableMaps() {
+            try {
+                const response = await fetch('/api/maps');
+                const result = await response.json();
+                
+                const mapSelect = document.getElementById('mapSelect');
+                mapSelect.innerHTML = '<option value="">Choose a map...</option>';
+                
+                if (result.success && result.maps) {
+                    result.maps.forEach(map => {
+                        const option = document.createElement('option');
+                        option.value = map.id;
+                        option.textContent = `${map.name} (${map.width}x${map.height}) - ${map.armies.length} Players`;
+                        mapSelect.appendChild(option);
+                    });
+                } else {
+                    mapSelect.innerHTML = '<option value="">Error loading maps</option>';
+                }
+            } catch (error) {
+                console.error('Error loading maps:', error);
+                const mapSelect = document.getElementById('mapSelect');
+                mapSelect.innerHTML = '<option value="">Error loading maps</option>';
+            }
+        }
+
+        function generatePlayerCards() {
+            const grid = document.getElementById('playersGrid');
+            const playerCount = parseInt(document.getElementById('playerCount').value);
+            
+            grid.innerHTML = '';
+            gameSetup.players = [];
+            
+            for (let i = 0; i < playerCount; i++) {
+                const playerCard = createPlayerCard(i + 1);
+                grid.appendChild(playerCard);
+                
+                gameSetup.players.push({
+                    slot: i + 1,
+                    co: '',
+                    color: '',
+                    name: `Player ${i + 1}`
+                });
+            }
+            
+            // Auto-assign first available colors
+            const availableColors = ['RED', 'BLUE', 'GREEN', 'YELLOW'];
+            for (let i = 0; i < Math.min(playerCount, availableColors.length); i++) {
+                selectColor(i + 1, availableColors[i]);
+            }
+        }
+
+        function createPlayerCard(playerNum) {
+            const card = document.createElement('div');
+            card.className = 'player-card';
+            card.innerHTML = `
+                <h4>Player ${playerNum}</h4>
+                
+                <div class="form-group">
+                    <label>Commanding Officer</label>
+                    <select class="form-control" id="co-${playerNum}" onchange="selectCO(${playerNum}, this.value)">
+                        <option value="">Choose CO...</option>
+                        ${COS.map(co => `<option value="${co.id}">${co.name} - ${co.description}</option>`).join('')}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Army Color</label>
+                    <div class="color-selector">
+                        ${COLORS.map(color => `
+                            <div class="color-option ${color.class}" 
+                                 data-color="${color.id}" 
+                                 data-player="${playerNum}"
+                                 onclick="selectColor(${playerNum}, '${color.id}')"
+                                 title="${color.name}">
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            return card;
+        }
+
+        function updatePlayerCount() {
+            generatePlayerCards();
+            updateColorAvailability();
+        }
+
+        function selectCO(playerNum, coId) {
+            const player = gameSetup.players[playerNum - 1];
+            player.co = coId;
+            checkFormValidity();
+        }
+
+        function selectColor(playerNum, colorId) {
+            // Remove previous selection for this player
+            const player = gameSetup.players[playerNum - 1];
+            if (player.color) {
+                document.querySelector(`[data-player="${playerNum}"][data-color="${player.color}"]`).classList.remove('selected');
+            }
+            
+            // Set new selection
+            player.color = colorId;
+            document.querySelector(`[data-player="${playerNum}"][data-color="${colorId}"]`).classList.add('selected');
+            
+            updateColorAvailability();
+            checkFormValidity();
+        }
+
+        function updateColorAvailability() {
+            const usedColors = gameSetup.players.map(p => p.color).filter(c => c);
+            
+            COLORS.forEach(color => {
+                const elements = document.querySelectorAll(`[data-color="${color.id}"]`);
+                elements.forEach(element => {
+                    const playerNum = element.dataset.player;
+                    const playerColor = gameSetup.players[playerNum - 1].color;
+                    
+                    if (usedColors.includes(color.id) && playerColor !== color.id) {
+                        element.classList.add('disabled');
+                        element.onclick = null;
+                    } else {
+                        element.classList.remove('disabled');
+                        element.onclick = () => selectColor(playerNum, color.id);
+                    }
+                });
+            });
+        }
+
+        function checkFormValidity() {
+            const mapSelected = document.getElementById('mapSelect').value;
+            const allCOsSelected = gameSetup.players.every(p => p.co);
+            const allColorsSelected = gameSetup.players.every(p => p.color);
+            
+            const submitBtn = document.getElementById('createGameBtn');
+            submitBtn.disabled = !(mapSelected && allCOsSelected && allColorsSelected);
+        }
+
+        async function createGame(event) {
+            event.preventDefault();
+            
+            const formData = {
+                map: document.getElementById('mapSelect').value,
+                playerCount: parseInt(document.getElementById('playerCount').value),
+                turnLimit: parseInt(document.getElementById('turnLimit').value),
+                gameMode: document.getElementById('gameMode').value,
+                players: gameSetup.players
+            };
+            
+            // Show loading state
+            document.getElementById('createGameBtn').style.display = 'none';
+            document.getElementById('loadingState').style.display = 'block';
+            
+            try {
+                const response = await fetch('/api/create_game', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Redirect to game
+                    window.location.href = `/game/${result.token}`;
+                } else {
+                    throw new Error(result.error || 'Failed to create game');
+                }
+            } catch (error) {
+                alert('Error creating game: ' + error.message);
+                document.getElementById('createGameBtn').style.display = 'block';
+                document.getElementById('loadingState').style.display = 'none';
+            }
+        }
+
+        // Initialize form validation
+        document.getElementById('mapSelect').addEventListener('change', checkFormValidity);
+    </script>
+</body>
+</html>

@@ -32,7 +32,7 @@ from gameboard import GameBoard
 from config import Config
 from app_core import app, jsonrpc, db, socketio
 from models import Game
-from map_system import map_repository, Map
+from map_system import map_repository, Map, Army
 from enhanced_combat_system import EnhancedCombatSystem, CombatPreview, EnhancedCombatResult
 from transport_system import CompleteTransportSystem, TransportResult
 from test_map_predeployed import get_predeployed_test_game, get_comprehensive_test_game
@@ -533,6 +533,60 @@ def game_create(token):
         game_event_logger.log_game_created(token, len(mngr.board.turn_order))
     app_logger.info(f"Game created successfully: {token}")
 
+def game_create_with_setup(token, game_setup):
+    '''Creates a new game with custom setup parameters'''
+    app_logger.info(f"Creating game with setup: {token}")
+    
+    # Get the selected map
+    map_id = game_setup['map_id']
+    selected_map = map_repository.get_map(map_id)
+    
+    if not selected_map:
+        raise ValueError(f"Map not found: {map_id}")
+    
+    # Create custom turn order based on player selections
+    custom_turn_order = []
+    players = game_setup['players']
+    
+    for player in players:
+        army_color = player['color']
+        try:
+            army_enum = Army[army_color]
+            custom_turn_order.append(army_enum)
+        except KeyError:
+            raise ValueError(f"Invalid army color: {army_color}")
+    
+    # Create a modified map with custom turn order
+    custom_map = Map(
+        width=selected_map.width,
+        height=selected_map.height,
+        tiles=selected_map.tiles.copy(),  # Copy the tile layout
+        turn_order=custom_turn_order,     # Use custom turn order
+        name=selected_map.name,
+        description=f"Custom game: {selected_map.description}"
+    )
+    
+    # Create GameManager with custom map
+    config_game = Config()
+    board = GameBoard.create(custom_map)
+    mngr = GameManager(config_game, board)
+    
+    # Store game setup data in the manager
+    mngr._game_setup = game_setup
+    
+    # Add to games dictionary
+    games[token] = mngr
+    
+    # Create database entry
+    game = Game(mngr.board, token)
+    db.session.add(game)
+    db.session.commit()
+    
+    if ENHANCED_LOGGING:
+        game_event_logger.log_game_created(token, len(mngr.board.turn_order))
+    
+    app_logger.info(f"Game created with custom setup: {token}, map: {map_id}, turn_order: {[army.name for army in custom_turn_order]}")
+
 def handle_rpc_error(func_name, token, ex):
     '''Enhanced error handling for RPC methods'''
     error_msg = str(ex)
@@ -586,9 +640,84 @@ def check_victory_conditions(mngr, token):
 
 @app.route('/')
 def index():
-    new_token = secrets.token_urlsafe(4)
-    app_logger.info(f"Index accessed, redirecting to new game: {new_token}")
-    return redirect('/game/' + new_token)
+    app_logger.info("Landing page accessed")
+    return render_template('index.html')
+
+@app.route('/api/maps', methods=['GET'])
+def get_available_maps():
+    """API endpoint to get available maps"""
+    try:
+        maps = map_repository.list_maps()
+        map_data = []
+        
+        for map_id in maps:
+            map_obj = map_repository.get_map(map_id)
+            if map_obj:
+                map_data.append({
+                    'id': map_id,
+                    'name': map_obj.name,
+                    'width': map_obj.width,
+                    'height': map_obj.height,
+                    'armies': [army.name for army in map_obj.turn_order]
+                })
+        
+        return {'success': True, 'maps': map_data}
+    except Exception as e:
+        app_logger.error(f"Error getting maps: {str(e)}")
+        return {'success': False, 'error': str(e)}
+
+@app.route('/api/create_game', methods=['POST'])
+def create_game_api():
+    """API endpoint for creating a new game with setup parameters"""
+    try:
+        data = request.get_json()
+        
+        # Generate game token
+        token = secrets.token_urlsafe(4)
+        
+        # Validate required fields
+        required_fields = ['map', 'playerCount', 'turnLimit', 'players']
+        for field in required_fields:
+            if field not in data:
+                return {'success': False, 'error': f'Missing required field: {field}'}
+        
+        # Validate player setup
+        players = data['players']
+        if len(players) != data['playerCount']:
+            return {'success': False, 'error': 'Player count mismatch'}
+        
+        # Check for duplicate colors
+        colors = [p['color'] for p in players if p['color']]
+        if len(colors) != len(set(colors)):
+            return {'success': False, 'error': 'Duplicate army colors selected'}
+        
+        # Check all players have CO and color
+        for i, player in enumerate(players):
+            if not player.get('co'):
+                return {'success': False, 'error': f'Player {i+1} must select a CO'}
+            if not player.get('color'):
+                return {'success': False, 'error': f'Player {i+1} must select an army color'}
+        
+        # Store game setup data (we'll extend this later)
+        game_setup = {
+            'token': token,
+            'map_id': data['map'],
+            'player_count': data['playerCount'],
+            'turn_limit': data['turnLimit'],
+            'game_mode': data.get('gameMode', 'standard'),
+            'players': players
+        }
+        
+        # Create the game with the selected map
+        game_create_with_setup(token, game_setup)
+        
+        app_logger.info(f"Game created with setup: {token}, map: {data['map']}, players: {data['playerCount']}")
+        
+        return {'success': True, 'token': token}
+        
+    except Exception as e:
+        app_logger.error(f"Error creating game: {str(e)}")
+        return {'success': False, 'error': str(e)}
 
 @app.route('/game/<token>')
 def game(token: str):
@@ -650,10 +779,21 @@ def debug_methods():
     try:
         methods_info = {
             'enhanced_logging': ENHANCED_LOGGING,
-            'map_system': 'map_system' in globals(),
+            'map_system': 'map_repository' in globals(),
             'total_methods': 0,
             'registered_methods': []
         }
+        
+        # Add map system details if available
+        if 'map_repository' in globals():
+            try:
+                methods_info['map_system_details'] = {
+                    'available_maps': map_repository.list_maps(),
+                    'map_count': len(map_repository.list_maps()),
+                    'test_map_available': map_repository.get_map('test') is not None
+                }
+            except Exception as e:
+                methods_info['map_system_error'] = str(e)
         
         if hasattr(jsonrpc, 'jsonrpc_site'):
             site = jsonrpc.jsonrpc_site
@@ -817,10 +957,112 @@ def test_info():
         <p><a href="/test_comprehensive">🌍 Comprehensive Test</a></p>
         <p><a href="/test_combat">⚔️ Combat Test Game</a></p>
         <p><a href="/test_movement">🏃 Movement Test Game</a></p>
-        <p><a href="/">🎲 Random Game</a></p>
+        <p><a href="/test_interface">🧪 Complete Testing Interface</a></p>
+        <p><a href="/">🎲 New Game Setup</a></p>
     </body>
     </html>
     '''
+
+@app.route('/test_interface')
+def test_interface():
+    """Complete testing interface with all testing tools"""
+    app_logger.info("Test interface accessed")
+    return render_template('test_interface.html')
+
+@app.route('/api/test_create_custom_game', methods=['POST'])
+def test_create_custom_game():
+    """API endpoint for test interface to create custom games"""
+    try:
+        app_logger.info("Test interface: Custom game creation request received")
+        
+        data = request.get_json()
+        app_logger.info(f"Test interface: Request data: {data}")
+        
+        # Default test setup if no data provided
+        if not data:
+            data = {
+                'map': 'test',
+                'playerCount': 2,
+                'turnLimit': 50,
+                'gameMode': 'standard',
+                'players': [
+                    {'slot': 1, 'co': 'andy', 'color': 'RED', 'name': 'Player 1'},
+                    {'slot': 2, 'co': 'max', 'color': 'BLUE', 'name': 'Player 2'}
+                ]
+            }
+        
+        # Generate test token
+        token = f"test_{secrets.token_urlsafe(4)}"
+        app_logger.info(f"Test interface: Generated token: {token}")
+        
+        # Create game setup
+        game_setup = {
+            'token': token,
+            'map_id': data['map'],
+            'player_count': data['playerCount'],
+            'turn_limit': data['turnLimit'],
+            'game_mode': data.get('gameMode', 'standard'),
+            'players': data['players']
+        }
+        
+        # Create the game
+        app_logger.info(f"Test interface: Creating game with setup: {game_setup}")
+        game_create_with_setup(token, game_setup)
+        
+        app_logger.info(f"Test interface: Successfully created game: {token}")
+        
+        return {
+            'success': True, 
+            'token': token,
+            'game_url': f'/game/{token}',
+            'setup': game_setup
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Test interface: Error creating test game: {str(e)}")
+        import traceback
+        app_logger.error(f"Test interface: Full traceback: {traceback.format_exc()}")
+        return {'success': False, 'error': str(e)}
+
+@app.route('/api/test_connection', methods=['GET'])
+def test_connection():
+    """Simple test endpoint to verify server connectivity"""
+    return {'success': True, 'message': 'Server is reachable', 'timestamp': datetime.datetime.now().isoformat()}
+
+@app.route('/api/server_logs', methods=['GET'])
+def get_server_logs():
+    """Get recent server logs for test interface synchronization"""
+    try:
+        lines = request.args.get('lines', 50, type=int)  # Default to 50 lines
+        log_type = request.args.get('type', 'app')  # app, game, or errors
+        
+        log_files = {
+            'app': 'logs/awrpc_app.log',
+            'game': 'logs/game_events.log', 
+            'errors': 'logs/awrpc_errors.log'
+        }
+        
+        log_file = log_files.get(log_type, 'logs/awrpc_app.log')
+        
+        if not os.path.exists(log_file):
+            return {'success': False, 'error': f'Log file {log_file} not found'}
+        
+        with open(log_file, 'r') as f:
+            all_lines = f.readlines()
+            recent_lines = all_lines[-lines:] if len(all_lines) > lines else all_lines
+            
+        return {
+            'success': True,
+            'logs': [line.strip() for line in recent_lines],
+            'total_lines': len(all_lines),
+            'showing_lines': len(recent_lines),
+            'log_type': log_type,
+            'timestamp': datetime.datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Error reading server logs: {str(e)}")
+        return {'success': False, 'error': str(e)}
 
 @app.route('/api/test-status')
 def test_status():
@@ -3834,7 +4076,29 @@ if __name__ == '__main__':
     debug = os.environ.get('DEBUG', 'True').lower() == 'true'
     
     app_logger.info(f"Enhanced logging: {ENHANCED_LOGGING}")
-    app_logger.info(f"Map system available: {'map_system' in globals()}")
+    
+    # Check map system availability
+    map_system_available = 'map_repository' in globals()
+    app_logger.info(f"Map system available: {map_system_available}")
+    
+    if map_system_available:
+        try:
+            # Test map repository functionality
+            available_maps = map_repository.list_maps()
+            app_logger.info(f"Available maps: {available_maps}")
+            
+            # Test getting a specific map
+            test_map = map_repository.get_map('test')
+            if test_map:
+                app_logger.info(f"Test map loaded: {test_map.name} ({test_map.width}x{test_map.height})")
+            else:
+                app_logger.warning("Test map not found in repository")
+                
+        except Exception as e:
+            app_logger.error(f"Error testing map system: {e}")
+    else:
+        app_logger.error("Map system not available - check imports")
+    
     app_logger.info(f"Starting server on {host}:{port} (debug={debug})")
     app_logger.info("=== AW-RPC Application Ready ===")
     

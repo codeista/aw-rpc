@@ -163,7 +163,7 @@
 
     <!-- Quick Access Links -->
     <div class="test-section">
-        <h2>🚀 Quick Access - Optimized Test Games</h2>
+        <h2>🚀 Quick Access - Test Games</h2>
         <div class="quick-links">
             <button class="btn-success btn-large" onclick="openOptimizedTest()">
                 🎯 Complete Mechanics Test
@@ -179,6 +179,26 @@
             </button>
         </div>
         <div class="results-area" id="game-access-status">Ready to create optimized test games...</div>
+    </div>
+
+    <!-- New Game Setup Integration -->
+    <div class="test-section">
+        <h2>🎮 New Game Setup System Testing</h2>
+        <div class="test-grid">
+            <div class="test-card">
+                <h3>🎲 Custom Game Creation</h3>
+                <p>Test the new game setup system with custom parameters</p>
+                <button class="btn-primary" onclick="testCustomGameCreation()">Create Custom Game</button>
+                <button class="btn-info" onclick="openGameSetupInterface()">Open Setup Interface</button>
+            </div>
+            <div class="test-card">
+                <h3>🎯 Multi-Army Testing</h3>
+                <p>Test games with 3-4 players and different army colors</p>
+                <button class="btn-success" onclick="testMultiArmyGame()">Create Multi-Army Game</button>
+                <button class="btn-warning" onclick="testFundAllocation()">Test Fund Allocation</button>
+            </div>
+        </div>
+        <div class="results-area" id="custom-game-results">New game setup system integration ready...</div>
     </div>
 
     <!-- System Status Dashboard -->
@@ -329,12 +349,17 @@
         <h2>💻 Live Test Console</h2>
         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
             <div>
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <button class="btn-info" onclick="showClientLogs()">Client Logs</button>
+                    <button class="btn-success" onclick="showServerLogs()">Server Logs</button>
+                    <button class="btn-warning" onclick="syncLogs()">Sync Logs</button>
+                    <button class="btn-danger" onclick="clearConsole()">Clear</button>
+                </div>
                 <div id="live-log"></div>
                 <div style="margin-top: 10px;">
                     <input type="text" id="console-input" placeholder="Enter RPC command (e.g., game_board, {})" 
                            style="width: 70%; padding: 8px;" onkeypress="handleConsoleInput(event)">
                     <button class="btn-primary" onclick="executeConsoleCommand()">Execute</button>
-                    <button class="btn-warning" onclick="clearConsole()">Clear</button>
                 </div>
             </div>
             <div>
@@ -344,6 +369,12 @@
                     <button class="btn-info" onclick="quickCommand('check_turn', {})">Check Turn</button>
                     <button class="btn-success" onclick="quickCommand('army_end_turn', {})">End Turn</button>
                     <button class="btn-warning" onclick="quickCommand('tile', {x:5, y:5})">Get Tile</button>
+                </div>
+                <h4>Log Controls</h4>
+                <div style="display: flex; flex-direction: column; gap: 5px;">
+                    <button class="btn-info" onclick="fetchServerLogs('app')">App Logs</button>
+                    <button class="btn-info" onclick="fetchServerLogs('game')">Game Logs</button>
+                    <button class="btn-info" onclick="fetchServerLogs('errors')">Error Logs</button>
                 </div>
             </div>
         </div>
@@ -371,11 +402,70 @@ Automated test results will appear here...
         </div>
     </div>
 
+    <!-- Integration Testing Section -->
+    <div class="test-section">
+        <h2>🔧 Integration Testing</h2>
+        <div class="test-grid">
+            <div class="test-card">
+                <h3>📊 Integration Status</h3>
+                <p>Test all integration points individually:</p>
+                <div style="text-align: left; font-size: 12px;">
+                    <button class="btn-info" onclick="testIntegrationPoint('test_verify')">Test Verification Routes</button>
+                    <button class="btn-info" onclick="testIntegrationPoint('api_maps')">Test Maps API</button>
+                    <button class="btn-info" onclick="testIntegrationPoint('custom_game')">Test Custom Game API</button>
+                    <button class="btn-info" onclick="testIntegrationPoint('debug_methods')">Test Debug Methods</button>
+                </div>
+                <div class="results-area" id="integration-test-results" style="height: 150px; margin-top: 10px;">
+Integration test results will appear here...
+                </div>
+            </div>
+            <div class="test-card">
+                <h3>🔄 Full Integration Check</h3>
+                <p>Run comprehensive integration validation:</p>
+                <button class="btn-success" onclick="runFullIntegrationCheck()">Run Full Integration Check</button>
+                <div id="full-integration-status" style="margin-top: 10px; font-size: 12px;">
+                    Click button to run full integration check...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Troubleshooting Section -->
+    <div class="test-section">
+        <h2>🔧 Troubleshooting</h2>
+        <div class="test-grid">
+            <div class="test-card">
+                <h3>❌ NetworkError Issues</h3>
+                <p>If you see NetworkError when attempting to fetch resource:</p>
+                <ul style="text-align: left; font-size: 12px;">
+                    <li>✅ Start Flask server: <code>python3 app.py</code></li>
+                    <li>✅ Check server is running on correct port</li>
+                    <li>✅ Verify you're in the correct directory</li>
+                    <li>✅ Install dependencies: <code>pip install flask flask-cors</code></li>
+                </ul>
+                <button class="btn-primary" onclick="checkServerConnection()">Test Server Connection</button>
+                <button class="btn-info" onclick="testSimpleConnection()">Test Simple API</button>
+            </div>
+            <div class="test-card">
+                <h3>🔍 Debug Information</h3>
+                <p>Current debugging status:</p>
+                <div id="debug-info" style="font-size: 12px; text-align: left;">
+                    <p><strong>Browser:</strong> <span id="browser-info"></span></p>
+                    <p><strong>URL:</strong> <span id="current-url"></span></p>
+                    <p><strong>Time:</strong> <span id="current-time"></span></p>
+                </div>
+                <button class="btn-info" onclick="updateDebugInfo()">Refresh Debug Info</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Global state
         let currentGameToken = null;
         let testResults = {};
         let logEntries = [];
+        let serverLogEntries = [];
+        let currentLogView = 'client'; // 'client' or 'server'
 
         // Utility functions
         function log(message, type = 'info') {
@@ -413,12 +503,14 @@ Automated test results will appear here...
                     updateStatus('server-indicator', '✅ Connected', 'pass');
                     return true;
                 } else {
-                    updateStatus('server-indicator', '❌ Server Error', 'fail');
+                    updateStatus('server-indicator', `❌ Server Error (${response.status})`, 'fail');
+                    log(`Server responded with status: ${response.status}`, 'error');
                     return false;
                 }
             } catch (error) {
                 updateStatus('server-indicator', '❌ Disconnected', 'fail');
                 log(`Server connection failed: ${error.message}`, 'error');
+                log(`Error type: ${error.constructor.name}`, 'error');
                 return false;
             }
         }
@@ -426,6 +518,20 @@ Automated test results will appear here...
         // RPC testing functions
         async function testRPC(method, params = {}) {
             try {
+                // Auto-get token if not available
+                if (!currentGameToken) {
+                    try {
+                        const response = await fetch('/debug');
+                        const data = await response.json();
+                        if (data.active_games && data.active_games.length > 0) {
+                            currentGameToken = data.active_games[0].token;
+                            log(`🎮 Auto-fetched game token: ${currentGameToken}`);
+                        }
+                    } catch (e) {
+                        log('⚠️ Could not auto-fetch game token', 'warning');
+                    }
+                }
+                
                 if (typeof jsonrpc === 'function') {
                     const result = await jsonrpc(method, params);
                     updateStatus('rpc-indicator', '✅ RPC Active', 'pass');
@@ -443,6 +549,11 @@ Automated test results will appear here...
                         })
                     });
                     const data = await response.json();
+                    
+                    if (data.error) {
+                        throw new Error(data.error.message || 'RPC Error');
+                    }
+                    
                     updateStatus('rpc-indicator', '✅ RPC Active', 'pass');
                     return data.result;
                 }
@@ -528,13 +639,19 @@ Automated test results will appear here...
                 }
             }
 
-            // Check for active games
+            // Check for active games and auto-set token
             try {
                 const response = await fetch('/debug');
                 if (response.ok) {
-                    const text = await response.text();
-                    const gameCount = (text.match(/Game:/g) || []).length;
+                    const data = await response.json();
+                    const gameCount = data.active_games ? data.active_games.length : 0;
                     updateStatus('game-indicator', `${gameCount} Active Games`, 'pass');
+                    
+                    // Auto-set current game token if not already set
+                    if (!currentGameToken && data.active_games && data.active_games.length > 0) {
+                        currentGameToken = data.active_games[0].token;
+                        log(`🎮 Auto-set game token: ${currentGameToken}`);
+                    }
                 }
             } catch (error) {
                 updateStatus('game-indicator', '❌ Cannot Check', 'fail');
@@ -697,7 +814,67 @@ Automated test results will appear here...
 
         function clearConsole() {
             logEntries = [];
+            serverLogEntries = [];
             document.getElementById('live-log').innerHTML = '';
+        }
+
+        // Log synchronization functions
+        async function fetchServerLogs(type = 'app', lines = 25) {
+            try {
+                const response = await fetch(`/api/server_logs?type=${type}&lines=${lines}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    serverLogEntries = result.logs.map(log => `[SERVER] ${log}`);
+                    log(`✅ Fetched ${result.showing_lines} ${type} logs from server`);
+                    
+                    if (currentLogView === 'server') {
+                        showServerLogs();
+                    }
+                } else {
+                    log(`❌ Failed to fetch server logs: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Error fetching server logs: ${error.message}`, 'error');
+            }
+        }
+
+        function showClientLogs() {
+            currentLogView = 'client';
+            const logElement = document.getElementById('live-log');
+            logElement.innerHTML = logEntries.slice(-50).join('\n');
+            logElement.scrollTop = logElement.scrollHeight;
+            log('📱 Showing client logs');
+        }
+
+        function showServerLogs() {
+            currentLogView = 'server';
+            const logElement = document.getElementById('live-log');
+            logElement.innerHTML = serverLogEntries.slice(-50).join('\n');
+            logElement.scrollTop = logElement.scrollHeight;
+            log('🖥️ Showing server logs');
+        }
+
+        async function syncLogs() {
+            log('🔄 Synchronizing logs...');
+            
+            // Fetch latest server logs
+            await fetchServerLogs('app', 25);
+            
+            // Combine and sort logs by timestamp (approximate)
+            const combinedLogs = [
+                ...logEntries.slice(-25).map(log => ({type: 'client', message: log})),
+                ...serverLogEntries.slice(-25).map(log => ({type: 'server', message: log}))
+            ];
+            
+            // Display combined logs
+            const logElement = document.getElementById('live-log');
+            logElement.innerHTML = combinedLogs.map(log => 
+                `<span style="color: ${log.type === 'client' ? '#0f0' : '#0af'}">${log.message}</span>`
+            ).join('\n');
+            logElement.scrollTop = logElement.scrollHeight;
+            
+            log('✅ Logs synchronized - showing combined client and server logs');
         }
 
         // Automated test suites
@@ -730,12 +907,30 @@ Automated test results will appear here...
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
             log('🎮 AW-RPC Testing Interface initialized');
-            refreshSystemStatus();
+            
+            // Check if we can reach the server immediately
+            checkServerConnection().then(serverOk => {
+                if (!serverOk) {
+                    log('❌ Flask server not reachable', 'error');
+                    log('💡 To start the server: python3 app.py', 'error');
+                    log('💡 Make sure you\'re in the correct directory', 'error');
+                    log('💡 Check that all dependencies are installed', 'error');
+                } else {
+                    log('✅ Flask server is running and reachable');
+                    refreshSystemStatus();
+                    
+                    // Auto-sync logs on startup
+                    setTimeout(() => {
+                        syncLogs();
+                    }, 1000);
+                }
+            });
             
             // Show helpful info
             log('💡 Tip: Create an optimized test game first, then use mechanics testing');
             log('💡 Quick access buttons will open games in new tabs');
             log('💡 Use the live console to send RPC commands directly');
+            log('💡 Use "Sync Logs" to see server logs alongside client logs');
         });
 
         // Add more testing functions as needed
@@ -925,6 +1120,37 @@ Automated test results will appear here...
             const resultsDiv = document.getElementById('automated-test-results');
             resultsDiv.textContent = 'Running integration test suite...\n';
             
+            // Auto-get current game token from active games
+            if (!currentGameToken) {
+                try {
+                    const response = await fetch('/debug');
+                    const data = await response.json();
+                    if (data.active_games && data.active_games.length > 0) {
+                        currentGameToken = data.active_games[0].token;
+                        log(`🎮 Using active game token: ${currentGameToken}`);
+                        resultsDiv.textContent += `Using active game: ${currentGameToken}\n`;
+                    } else {
+                        resultsDiv.textContent += '⚠️ No active games found - creating test game...\n';
+                        // Create a quick test game
+                        const createResponse = await fetch('/test_optimized');
+                        if (createResponse.ok) {
+                            const gameUrl = createResponse.url;
+                            currentGameToken = gameUrl.split('/').pop();
+                            log(`🎮 Created test game token: ${currentGameToken}`);
+                            resultsDiv.textContent += `Created test game: ${currentGameToken}\n`;
+                        } else {
+                            resultsDiv.textContent += '❌ Failed to create test game for integration tests\n';
+                            log('❌ Failed to create test game for integration tests');
+                            return;
+                        }
+                    }
+                } catch (error) {
+                    resultsDiv.textContent += `❌ Failed to get game token: ${error.message}\n`;
+                    log(`❌ Failed to get game token: ${error.message}`);
+                    return;
+                }
+            }
+            
             const integrationTests = [
                 { name: 'Frontend-Backend RPC', test: () => testRPC('check_turn') },
                 { name: 'Game State Persistence', test: async () => {
@@ -1069,23 +1295,426 @@ Automated test results will appear here...
             log('  Ctrl+E - Export Results');
         }
 
+        // New Game Setup System Integration Functions
+        async function testCustomGameCreation() {
+            log('🎲 Testing custom game creation...');
+            const resultsDiv = document.getElementById('custom-game-results');
+            resultsDiv.textContent = 'Creating custom game...';
+            
+            try {
+                // First check if server is reachable
+                const serverOk = await checkServerConnection();
+                if (!serverOk) {
+                    resultsDiv.textContent = '❌ Server not reachable - start Flask application first';
+                    return;
+                }
+                
+                log('📡 Sending request to /api/test_create_custom_game...');
+                
+                const response = await fetch('/api/test_create_custom_game', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        map: 'test',
+                        playerCount: 2,
+                        turnLimit: 50,
+                        gameMode: 'standard',
+                        players: [
+                            {slot: 1, co: 'andy', color: 'RED', name: 'Test Player 1'},
+                            {slot: 2, co: 'max', color: 'BLUE', name: 'Test Player 2'}
+                        ]
+                    })
+                });
+                
+                log(`📡 Response status: ${response.status}`);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    resultsDiv.textContent = `❌ Server error (${response.status}): ${errorText}`;
+                    log(`❌ Server error: ${response.status} - ${errorText}`, 'error');
+                    return;
+                }
+                
+                const result = await response.json();
+                log(`📡 Response received: ${JSON.stringify(result)}`);
+                
+                if (result.success) {
+                    currentGameToken = result.token;
+                    resultsDiv.textContent = `✅ Custom game created successfully!\nToken: ${result.token}\nGame URL: ${result.game_url}`;
+                    
+                    // Open the game in a new tab
+                    window.open(result.game_url, '_blank');
+                    
+                    log(`✅ Custom game created: ${result.token}`);
+                } else {
+                    resultsDiv.textContent = `❌ Failed to create custom game: ${result.error}`;
+                    log(`❌ Custom game creation failed: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                resultsDiv.textContent = `❌ Network error: ${error.message}\nCheck if Flask server is running`;
+                log(`❌ Network error: ${error.message}`, 'error');
+                log(`❌ Error type: ${error.constructor.name}`, 'error');
+                
+                // Additional debug info
+                if (error.message.includes('NetworkError')) {
+                    log('💡 This usually means the Flask server is not running', 'error');
+                    log('💡 Start the server with: python3 app.py', 'error');
+                }
+            }
+        }
+        
+        async function testMultiArmyGame() {
+            log('🎯 Testing multi-army game creation...');
+            const resultsDiv = document.getElementById('custom-game-results');
+            resultsDiv.textContent = 'Creating multi-army game...';
+            
+            try {
+                const response = await fetch('/api/test_create_custom_game', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        map: 'test',
+                        playerCount: 4,
+                        turnLimit: 75,
+                        gameMode: 'standard',
+                        players: [
+                            {slot: 1, co: 'andy', color: 'RED', name: 'Red Army'},
+                            {slot: 2, co: 'max', color: 'BLUE', name: 'Blue Army'},
+                            {slot: 3, co: 'sami', color: 'GREEN', name: 'Green Army'},
+                            {slot: 4, co: 'grit', color: 'YELLOW', name: 'Yellow Army'}
+                        ]
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentGameToken = result.token;
+                    resultsDiv.textContent = `✅ Multi-army game created!\nToken: ${result.token}\n4 armies: RED, BLUE, GREEN, YELLOW`;
+                    
+                    // Open the game in a new tab
+                    window.open(result.game_url, '_blank');
+                    
+                    log(`✅ Multi-army game created: ${result.token}`);
+                } else {
+                    resultsDiv.textContent = `❌ Failed to create multi-army game: ${result.error}`;
+                    log(`❌ Multi-army game creation failed: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                resultsDiv.textContent = `❌ Error creating multi-army game: ${error.message}`;
+                log(`❌ Multi-army game creation error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testFundAllocation() {
+            log('💰 Testing fund allocation...');
+            const resultsDiv = document.getElementById('custom-game-results');
+            
+            if (!currentGameToken) {
+                resultsDiv.textContent = '⚠️ Create a game first to test fund allocation';
+                log('⚠️ No active game token for fund allocation test');
+                return;
+            }
+            
+            try {
+                const board = await testRPC('game_board');
+                const fundInfo = [];
+                
+                // Check RED/BLUE funds (backward compatibility)
+                fundInfo.push(`RED funds: ${board.red_funds || 0}`);
+                fundInfo.push(`BLUE funds: ${board.blue_funds || 0}`);
+                
+                // Check flexible fund system if available
+                if (board.army_funds) {
+                    for (const [army, funds] of Object.entries(board.army_funds)) {
+                        fundInfo.push(`${army} funds: ${funds}`);
+                    }
+                }
+                
+                resultsDiv.textContent = `✅ Fund allocation test results:\n${fundInfo.join('\n')}`;
+                log('✅ Fund allocation test completed');
+                
+            } catch (error) {
+                resultsDiv.textContent = `❌ Fund allocation test failed: ${error.message}`;
+                log(`❌ Fund allocation test error: ${error.message}`, 'error');
+            }
+        }
+        
+        function openGameSetupInterface() {
+            log('🎮 Opening game setup interface...');
+            window.open('/', '_blank');
+            log('✅ Game setup interface opened in new tab');
+        }
+
+        // Debug information function
+        function updateDebugInfo() {
+            document.getElementById('browser-info').textContent = navigator.userAgent;
+            document.getElementById('current-url').textContent = window.location.href;
+            document.getElementById('current-time').textContent = new Date().toLocaleString();
+            log('🔍 Debug info updated');
+        }
+
+        // Simple connection test
+        async function testSimpleConnection() {
+            log('🔌 Testing simple API connection...');
+            
+            try {
+                const response = await fetch('/api/test_connection');
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    log('✅ Simple API connection successful');
+                    log(`📡 Server response: ${result.message}`);
+                    updateStatus('server-indicator', '✅ API Working', 'pass');
+                } else {
+                    log('❌ Simple API connection failed');
+                    log(`📡 Response: ${JSON.stringify(result)}`);
+                    updateStatus('server-indicator', '❌ API Failed', 'fail');
+                }
+            } catch (error) {
+                log(`❌ Simple API connection error: ${error.message}`, 'error');
+                log(`❌ Error type: ${error.constructor.name}`, 'error');
+                updateStatus('server-indicator', '❌ API Error', 'fail');
+            }
+        }
+
+        // Integration point testing
+        async function testIntegrationPoint(point) {
+            log(`🔧 Testing integration point: ${point}...`);
+            const resultsDiv = document.getElementById('integration-test-results');
+            
+            try {
+                let response, result;
+                
+                switch(point) {
+                    case 'test_verify':
+                        response = await fetch('/test_verify');
+                        if (response.ok) {
+                            resultsDiv.textContent += `✅ Test Verification Routes: Working\n`;
+                            log('✅ Test verification routes working');
+                        } else {
+                            resultsDiv.textContent += `❌ Test Verification Routes: Failed (${response.status})\n`;
+                            log(`❌ Test verification routes failed: ${response.status}`);
+                        }
+                        break;
+                        
+                    case 'api_maps':
+                        response = await fetch('/api/maps');
+                        if (response.ok) {
+                            result = await response.json();
+                            resultsDiv.textContent += `✅ Maps API: Working (${result.maps?.length || 0} maps)\n`;
+                            log(`✅ Maps API working with ${result.maps?.length || 0} maps`);
+                        } else {
+                            resultsDiv.textContent += `❌ Maps API: Failed (${response.status})\n`;
+                            log(`❌ Maps API failed: ${response.status}`);
+                        }
+                        break;
+                        
+                    case 'custom_game':
+                        response = await fetch('/api/test_create_custom_game', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({})
+                        });
+                        if (response.ok) {
+                            result = await response.json();
+                            if (result.success) {
+                                resultsDiv.textContent += `✅ Custom Game API: Working (created ${result.token})\n`;
+                                log(`✅ Custom game API working, created: ${result.token}`);
+                            } else {
+                                resultsDiv.textContent += `⚠️ Custom Game API: Partial (${result.error})\n`;
+                                log(`⚠️ Custom game API partial: ${result.error}`);
+                            }
+                        } else {
+                            resultsDiv.textContent += `❌ Custom Game API: Failed (${response.status})\n`;
+                            log(`❌ Custom game API failed: ${response.status}`);
+                        }
+                        break;
+                        
+                    case 'debug_methods':
+                        response = await fetch('/debug/methods');
+                        if (response.ok) {
+                            result = await response.json();
+                            const mapSystemStatus = result.map_system ? 'with map system' : 'without map system';
+                            resultsDiv.textContent += `✅ Debug Methods: Working (${mapSystemStatus})\n`;
+                            log(`✅ Debug methods working ${mapSystemStatus}`);
+                        } else {
+                            resultsDiv.textContent += `❌ Debug Methods: Failed (${response.status})\n`;
+                            log(`❌ Debug methods failed: ${response.status}`);
+                        }
+                        break;
+                }
+            } catch (error) {
+                resultsDiv.textContent += `❌ ${point}: Error (${error.message})\n`;
+                log(`❌ Integration point ${point} error: ${error.message}`, 'error');
+            }
+        }
+
+        // Full integration check
+        async function runFullIntegrationCheck() {
+            log('🔧 Running full integration check...');
+            const statusDiv = document.getElementById('full-integration-status');
+            
+            statusDiv.innerHTML = 'Running comprehensive integration check...<br>';
+            
+            const checks = [
+                { name: 'Server Connection', test: checkServerConnection },
+                { name: 'Test Verification Routes', test: () => fetch('/test_verify').then(r => r.ok) },
+                { name: 'Maps API', test: () => fetch('/api/maps').then(r => r.ok) },
+                { name: 'Custom Game API', test: () => fetch('/api/test_create_custom_game', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({})
+                }).then(r => r.ok) },
+                { name: 'Debug Methods', test: () => fetch('/debug/methods').then(r => r.ok) }
+            ];
+            
+            let passedChecks = 0;
+            
+            for (const check of checks) {
+                try {
+                    const result = await check.test();
+                    if (result) {
+                        statusDiv.innerHTML += `✅ ${check.name}: PASS<br>`;
+                        passedChecks++;
+                    } else {
+                        statusDiv.innerHTML += `❌ ${check.name}: FAIL<br>`;
+                    }
+                } catch (error) {
+                    statusDiv.innerHTML += `❌ ${check.name}: ERROR<br>`;
+                }
+            }
+            
+            const percentage = Math.round((passedChecks / checks.length) * 100);
+            
+            if (percentage === 100) {
+                statusDiv.innerHTML += `<br><strong>🎉 Full Integration Achieved (${percentage}%)</strong>`;
+                updateStatus('integration-indicator', '✅ Full Integration (100%)', 'pass');
+            } else if (percentage >= 75) {
+                statusDiv.innerHTML += `<br><strong>✅ Good Integration (${percentage}%)</strong>`;
+                updateStatus('integration-indicator', `✅ Good Integration (${percentage}%)`, 'pass');
+            } else if (percentage >= 50) {
+                statusDiv.innerHTML += `<br><strong>⚠️ Partial Integration (${percentage}%)</strong>`;
+                updateStatus('integration-indicator', `⚠️ Partial Integration (${percentage}%)`, 'warning');
+            } else {
+                statusDiv.innerHTML += `<br><strong>❌ Limited Integration (${percentage}%)</strong>`;
+                updateStatus('integration-indicator', `❌ Limited Integration (${percentage}%)`, 'fail');
+            }
+            
+            log(`🔧 Full integration check complete: ${passedChecks}/${checks.length} checks passed (${percentage}%)`);
+        }
+
         // Enhanced initialization
         window.addEventListener('load', function() {
             showKeyboardShortcuts();
             startGameStateMonitoring();
+            updateDebugInfo();
             
-            // Auto-check if test routes are available
+            // Auto-check integration status
             setTimeout(async () => {
+                let integrationScore = 0;
+                let totalChecks = 0;
+                let integrationDetails = [];
+                
+                // Check 1: Test verification routes
+                totalChecks++;
                 try {
                     const response = await fetch('/test_verify');
                     if (response.ok) {
+                        integrationScore++;
+                        integrationDetails.push('✅ Test verification routes');
                         log('✅ Optimized test routes are available');
-                        updateStatus('integration-indicator', '✅ Full Integration', 'pass');
+                    } else {
+                        integrationDetails.push('⚠️ Test verification routes (partial)');
+                        log('⚠️ Test verification routes responded but with issues');
                     }
                 } catch (error) {
-                    log('⚠️ Optimized test routes not available - add routes to app.py');
-                    updateStatus('integration-indicator', '⚠️ Partial Integration', 'warning');
+                    integrationDetails.push('❌ Test verification routes');
+                    log('❌ Test verification routes not available');
                 }
+                
+                // Check 2: New game setup system
+                totalChecks++;
+                try {
+                    const response = await fetch('/api/maps');
+                    if (response.ok) {
+                        integrationScore++;
+                        integrationDetails.push('✅ New game setup system');
+                        log('✅ New game setup system is available');
+                    } else {
+                        integrationDetails.push('❌ New game setup system');
+                        log('❌ New game setup system not responding');
+                    }
+                } catch (error) {
+                    integrationDetails.push('❌ New game setup system');
+                    log('❌ New game setup system not available');
+                }
+                
+                // Check 3: Test interface custom game creation
+                totalChecks++;
+                try {
+                    const response = await fetch('/api/test_create_custom_game', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({}) // Empty body should use defaults
+                    });
+                    if (response.ok) {
+                        integrationScore++;
+                        integrationDetails.push('✅ Custom game creation API');
+                        log('✅ Custom game creation API is available');
+                    } else {
+                        integrationDetails.push('⚠️ Custom game creation API (partial)');
+                        log('⚠️ Custom game creation API has issues');
+                    }
+                } catch (error) {
+                    integrationDetails.push('❌ Custom game creation API');
+                    log('❌ Custom game creation API not available');
+                }
+                
+                // Check 4: Debug/methods endpoint
+                totalChecks++;
+                try {
+                    const response = await fetch('/debug/methods');
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.map_system) {
+                            integrationScore++;
+                            integrationDetails.push('✅ Debug/methods with map system');
+                            log('✅ Debug/methods endpoint working with map system');
+                        } else {
+                            integrationDetails.push('⚠️ Debug/methods (no map system)');
+                            log('⚠️ Debug/methods endpoint working but map system not detected');
+                        }
+                    } else {
+                        integrationDetails.push('❌ Debug/methods endpoint');
+                        log('❌ Debug/methods endpoint not responding');
+                    }
+                } catch (error) {
+                    integrationDetails.push('❌ Debug/methods endpoint');
+                    log('❌ Debug/methods endpoint not available');
+                }
+                
+                // Determine integration status
+                const integrationPercentage = Math.round((integrationScore / totalChecks) * 100);
+                
+                if (integrationScore === totalChecks) {
+                    updateStatus('integration-indicator', '✅ Full Integration (100%)', 'pass');
+                    log('🎉 Full integration achieved - all systems working');
+                } else if (integrationScore >= totalChecks * 0.75) {
+                    updateStatus('integration-indicator', `✅ Good Integration (${integrationPercentage}%)`, 'pass');
+                    log(`✅ Good integration achieved - ${integrationScore}/${totalChecks} systems working`);
+                } else if (integrationScore >= totalChecks * 0.5) {
+                    updateStatus('integration-indicator', `⚠️ Partial Integration (${integrationPercentage}%)`, 'warning');
+                    log(`⚠️ Partial integration - ${integrationScore}/${totalChecks} systems working`);
+                } else {
+                    updateStatus('integration-indicator', `❌ Limited Integration (${integrationPercentage}%)`, 'fail');
+                    log(`❌ Limited integration - ${integrationScore}/${totalChecks} systems working`);
+                }
+                
+                // Log integration details
+                log('📋 Integration Status Details:');
+                integrationDetails.forEach(detail => log(`  ${detail}`));
+                
             }, 2000);
         });
 

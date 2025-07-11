@@ -51,7 +51,6 @@ inputshowjson.onchange = showJson;
 
 // init socket.io
 setTimeout(function() {
-    //const socket = io(document.location.scheme + document.location.host + '/');
     const socket = io('/');
 
     socket.on('connect', () => {
@@ -62,11 +61,9 @@ setTimeout(function() {
         console.log('socket disconnected');
     });
     socket.on('update', (msg) => {
-        console.log('update: ' + msg);
         update();
     });
     socket.on('message', (msg) => {
-        console.log('message: ' + msg);
         var textareachat = document.getElementById('textareachat');
         textareachat.value = textareachat.value + msg + '\n';
         textareachat.scrollTop = textareachat.scrollHeight;
@@ -85,9 +82,6 @@ function isTransportUnitForRender(unit) {
 
 function getCargoCountForRender(unit) {
     if (!unit) return 0;
-    
-    console.log('CARGO_COUNT: Checking unit:', unit.type, unit);
-    
     // Method 1: Check unit.cargo array
     if (unit.cargo && Array.isArray(unit.cargo)) {
         // Count non-null cargo slots
@@ -97,8 +91,6 @@ function getCargoCountForRender(unit) {
             typeof cargo === 'object'
         ).length;
         
-        console.log('CARGO_COUNT: unit.cargo array:', unit.cargo);
-        console.log('CARGO_COUNT: Actual cargo count:', actualCargoCount);
         return actualCargoCount;
     }
     
@@ -110,24 +102,19 @@ function getCargoCountForRender(unit) {
             typeof cargo === 'object'
         ).length;
         
-        console.log('CARGO_COUNT: unit.status.cargo array:', unit.status.cargo);
-        console.log('CARGO_COUNT: Actual cargo count:', actualCargoCount);
         return actualCargoCount;
     }
     
     // Method 3: Check for explicit cargo count property
     if (typeof unit.cargo_count === 'number') {
-        console.log('CARGO_COUNT: Using unit.cargo_count:', unit.cargo_count);
         return unit.cargo_count;
     }
     
     // Method 4: Check status cargo count
     if (unit.status && typeof unit.status.cargo_count === 'number') {
-        console.log('CARGO_COUNT: Using unit.status.cargo_count:', unit.status.cargo_count);
         return unit.status.cargo_count;
     }
     
-    console.log('CARGO_COUNT: No cargo found, returning 0');
     return 0;
 }
 
@@ -223,9 +210,7 @@ function update() {
             );
             if (restoredTile) {
                 board.selected = restoredTile;
-                console.log('🔄 Restored selection:', board.selected);
             } else {
-                console.log('❌ Could not restore selection - tile not found');
             }
         }
         
@@ -240,7 +225,6 @@ function update() {
             );
             if (restoredTile) {
                 board.selected = restoredTile;
-                console.log('🔄 Restored selection:', board.selected);
             }
         }
         
@@ -275,7 +259,6 @@ function update() {
                     canvas.addEventListener('contextmenu', function(event) {
                         event.preventDefault();
                         event.stopPropagation();
-                        console.log('🖱️ Right-click detected on canvas');
                         
                         const tile = getTileFromCanvasClick(event);
                         if (tile) {
@@ -289,7 +272,6 @@ function update() {
                         if (event.altKey) {
                             event.preventDefault();
                             event.stopPropagation();
-                            console.log('🖱️ Alt-click detected on canvas');
                             
                             const tile = getTileFromCanvasClick(event);
                             if (tile) {
@@ -298,9 +280,6 @@ function update() {
                             return false;
                         }
                     });
-                    
-                    console.log('✅ Context menu prevention and alt-click handler added to canvas');
-                    
                 }
             } catch (error) {
                 console.error('Error initializing Two.js:', error);
@@ -375,7 +354,6 @@ function armyEndTurn() {
 }
 
 function cleanupTransportState() {
-    console.log('TRANSPORT_FIX: Cleaning up transport state for turn end');
     
     // Clear transport highlights if function exists
     if (typeof clearTransportHighlights === 'function') {
@@ -397,7 +375,6 @@ function cleanupTransportState() {
             try {
                 two.remove(transportHighlightGroup);
             } catch (e) {
-                console.log('TRANSPORT_FIX: Could not remove transport highlight group:', e);
             }
         }
         transportHighlightGroup = null;
@@ -408,7 +385,6 @@ function cleanupTransportState() {
             try {
                 two.remove(cargoIndicatorGroup);
             } catch (e) {
-                console.log('TRANSPORT_FIX: Could not remove cargo indicator group:', e);
             }
         }
         cargoIndicatorGroup = null;
@@ -523,12 +499,8 @@ function unitJoin(tile) {
 function unitMove(tile) {
     var source = board.selected;
     var target = tile;
-    
-    console.log('🚶 EXECUTING MOVE: From (' + source.x + ', ' + source.y + ') to (' + target.x + ', ' + target.y + ')');
-    
     jsonrpc('unit_move', {x: source.x, y: source.y, x2: target.x, y2: target.y})
         .then(result => {
-            console.log('✅ Move completed successfully');
             
             // Clear the selection and highlights after successful move
             board.selected = null;
@@ -551,7 +523,6 @@ function unitMove(tile) {
                 window.two.update();
             }
             
-            console.log('🧹 Cleared highlights after movement');
         })
         .catch(error => {
             console.error('❌ Move failed:', error);
@@ -613,8 +584,6 @@ function canvasClick(ev) {
             );
             
             if (isHighlightedMove) {
-                console.log('🚶 MOVING: Clicking on highlighted tile, attempting move');
-                console.log(`Moving from (${board.selected.x}, ${board.selected.y}) to (${tile.x}, ${tile.y})`);
                 unitMove(tile);
                 return; // Exit immediately after movement
             }
@@ -638,7 +607,6 @@ function canvasClick(ev) {
                 if (board.selected && 
                     board.selected.x === tile.x && 
                     board.selected.y === tile.y) {
-                    console.log('🔄 DESELECTING: Clicking same unit, deselecting');
                     
                     // Deselect the unit
                     board.selected = null;
@@ -661,7 +629,6 @@ function canvasClick(ev) {
                         window.two.update();
                     }
                     
-                    console.log('✅ Unit deselected');
                     return;
                 }
                 
@@ -679,7 +646,6 @@ function canvasClick(ev) {
         
         // PRIORITY 4: Fallback movement check
         if (tile.can_be_moved_to) {
-            console.log('🚶 MOVING: Using can_be_moved_to flag');
             unitMove(tile);
             return;
         }
@@ -706,7 +672,6 @@ function canvasClick(ev) {
         
         // PRIORITY 6: Deselect when clicking empty tiles (LAST)
         if (board.selected) {
-            console.log('🔄 DESELECTING: Clicking empty/enemy tile');
             board.selected = null;
             
             // Clear all highlights
@@ -725,7 +690,6 @@ function canvasClick(ev) {
                 window.two.update();
             }
             
-            console.log('✅ Deselected by clicking empty tile');
         }
     }
 }
@@ -752,7 +716,6 @@ function canvasdblClick(ev) {
 }
 
 function unitSelectWithTransportAndRange(tile) {
-    console.log('SELECTION_FIX: Selecting unit with transport and range support');
     
     try {
         // Step 1: Basic unit selection
@@ -781,7 +744,6 @@ function unitSelectWithTransportAndRange(tile) {
 }
 
 function executeMovement(targetTile) {
-    console.log(`🚶 EXECUTING MOVEMENT to (${targetTile.x}, ${targetTile.y})`);
     
     if (!board.selected || !board.selected.unit) {
         console.error('❌ No unit selected for movement');
@@ -796,7 +758,6 @@ function executeMovement(targetTile) {
         x2: targetTile.x,
         y2: targetTile.y
     }, function(result) {
-        console.log('✅ Movement completed:', result);
         
         // Update the selected tile position
         board.selected = targetTile;
@@ -819,8 +780,6 @@ function handleTransportSelectionLogic(tile) {
         clearTransportHighlights();
         return;
     }
-    
-    
     // Get cargo/transport information (ONLY for transport units)
     if (tile.unit && isTransportUnit(tile.unit)) {
         jsonrpc('get_cargo_info', {x: tile.x, y: tile.y}, function(result) {
@@ -882,8 +841,6 @@ function showChat() {
     buttonchat.hidden = "true";
   }
 }
-
-
 function makeMapTile(tile) {
     var showMapTiles = document.getElementById('inputshowmap').checked;
     if (showMapTiles) {
@@ -1018,34 +975,34 @@ function makeMapTile(tile) {
                 switch (tile.mapTile.army) {
                     case 'RED':
                         y = y - 811;
-                        break;
                         _2xHeight = true;
+                        break;
                     case 'BLUE':
                         y = y - 844;
                         _2xHeight = true;
                         break;
                     default:
                         y = y - 765;
+                        _2xHeight = true;
                         break;
                 }
-                _2xHeight = true;
                 break;
             case 'BASE_TOWER_0':
                 x = x - 1;
                 switch (tile.mapTile.army) {
                     case 'RED':
                         y = y - 812;
-                        break;
                         _2xHeight = true;
+                        break;
                     case 'BLUE':
                         y = y - 845;
                         _2xHeight = true;
                         break;
                     default:
                         y = y - 757;
+                        _2xHeight = true;
                         break;
                 }
-                _2xHeight = true;
                 break;
             case 'BASE_TOWER_1':
                 x = x - 1;
@@ -1084,17 +1041,17 @@ function makeMapTile(tile) {
                 switch (tile.mapTile.army) {
                     case 'RED':
                         y = y - 812;
-                        break;
                         _2xHeight = true;
+                        break;
                     case 'BLUE':
                         y = y - 845;
                         _2xHeight = true;
                         break;
                     default:
                         y = y - 765;
+                        _2xHeight = true;
                         break;
                 }
-                _2xHeight = true;
                 break;
             case 'RIVER_HORT':
                 x = x - 386;
@@ -1251,7 +1208,6 @@ function makeMapTile(tile) {
                 _2xHeight = true;
                 break;
             default:
-                console.log(tile.mapTile.type);
                 return;
         }
         var tilesetSrc = '/static/img/Advance_Wars_Dual_Strike_Tileset_Normal_Transparent.png';
@@ -1370,11 +1326,11 @@ function makeSprite(tile) {
             break;
         case 'BLACKBOAT':
             y = y - 512;
-            x = x - 17
+            x = x - 17;
             break;
         case 'MEGATANK':
             y = y - 512;
-            x = x - 33
+            x = x - 33;
             break;
         case 'PIPERUNNER':
             y = y - 538;
@@ -1670,7 +1626,6 @@ async function enhancedAttack(attackerX, attackerY, defenderX, defenderY) {
         });
         
         if (result.success) {
-            console.log('Enhanced combat result:', result.combat_result);
             showCombatResult(result.combat_result);
             
             // Check if game ended
@@ -1758,7 +1713,6 @@ function confirmCombat(attackerX, attackerY, defenderX, defenderY) {
     // Execute enhanced attack
     enhancedAttack(attackerX, attackerY, defenderX, defenderY).then(() => {
         // ADDED: End unit turn after enhanced attack
-        console.log('✅ Enhanced attack completed, ending unit turn');
         endUnitTurn();
     }).catch((error) => {
         console.error('❌ Enhanced attack failed:', error);
@@ -1781,12 +1735,6 @@ function cancelCombat() {
 
 // Show combat result briefly
 function showCombatResult(combatResult) {
-    console.log('Combat Result:');
-    console.log(`- Attacker dealt ${combatResult.attacker_damage} damage`);
-    console.log(`- Defender dealt ${combatResult.defender_damage} damage`);
-    console.log(`- Counter attack: ${combatResult.counter_attack_occurred ? 'Yes' : 'No'}`);
-    console.log(`- Attacker destroyed: ${combatResult.attacker_destroyed ? 'Yes' : 'No'}`);
-    console.log(`- Defender destroyed: ${combatResult.defender_destroyed ? 'Yes' : 'No'}`);
     
     // You could add a visual notification here later
 }
@@ -1802,7 +1750,6 @@ function unitAttackRegular(defenderX, defenderY) {
 }
 
 function executeAttack(targetTile) {
-    console.log(`⚔️ EXECUTING ATTACK on (${targetTile.x}, ${targetTile.y})`);
     
     if (!board.selected || !board.selected.unit) {
         console.error('❌ No unit selected for attack');
@@ -1817,7 +1764,6 @@ function executeAttack(targetTile) {
         x2: targetTile.x,
         y2: targetTile.y
     }, function(result) {
-        console.log('✅ Attack completed:', result);
         clearAllHighlights();
         board.selected = null;
         
@@ -1846,7 +1792,6 @@ function highlightAttackRange(unitX, unitY) {
                 highlightTile(target.x, target.y, 'attack-range');
             });
             
-            console.log(`Highlighted ${result.targets.length} attack targets for unit at (${unitX}, ${unitY})`);
         }
     }).catch(error => {
         console.error('Failed to get attack targets:', error);
@@ -1857,7 +1802,6 @@ function highlightAttackRange(unitX, unitY) {
 function clearRangeHighlights() {
     // Since we're using Two.js canvas, we'll need to re-render
     // For now, just log that we're clearing highlights
-    console.log('Clearing attack range highlights');
     // The next board update will clear the highlights automatically
 }
 
@@ -1875,7 +1819,6 @@ function highlightTile(x, y, className) {
         type: className
     });
     
-    console.log(`Highlighting tile (${x}, ${y}) as ${className}`);
 }
 
 // Enhanced unit selection with range display
@@ -2068,42 +2011,6 @@ function handleTransportOperations(tile, event) {
         return false;
     }
 }
-
-// function showTransportFeedback(message, type = 'info') {
-//     // Remove existing feedback
-//     const existingFeedback = document.getElementById('transport-feedback');
-//     if (existingFeedback) {
-//         existingFeedback.remove();
-//     }
-    
-//     // Create new feedback element
-//     const feedback = document.createElement('div');
-//     feedback.id = 'transport-feedback';
-//     feedback.style.cssText = `
-//         position: fixed;
-//         top: 20px;
-//         right: 20px;
-//         background: ${type === 'error' ? '#e74c3c' : '#2c3e50'};
-//         color: white;
-//         padding: 10px 15px;
-//         border-radius: 5px;
-//         z-index: 1000;
-//         font-family: sans-serif;
-//         box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-//         max-width: 300px;
-//     `;
-//     feedback.textContent = message;
-    
-//     document.body.appendChild(feedback);
-    
-//     // Auto-remove after 3 seconds
-//     setTimeout(() => {
-//         if (feedback && feedback.parentNode) {
-//             feedback.remove();
-//         }
-//     }, 3000);
-// }
-
 function handleLoadingClick(tile) {
     // Check if this tile has a loadable unit highlighted
     const isLoadable = transportHighlights.loadableUnits.some(unit => 
@@ -2131,7 +2038,6 @@ function handleUnloadingClick(tile) {
     
     if (isUnloadable && transportHighlights.selectedTransport) {
         // For now, always unload first cargo unit (index 0)
-        // TODO: Add UI for selecting which cargo unit to unload
         attemptUnloadUnit(
             transportHighlights.selectedTransport.x,
             transportHighlights.selectedTransport.y,
@@ -2166,9 +2072,7 @@ function getTileElement(x, y) {
 function getTransportStatus() {
     jsonrpc('get_transport_units', {}, function(result) {
         if (result.success) {
-            console.log(`Transport Status: ${result.count} transport units found`);
             result.transport_units.forEach(transport => {
-                console.log(`${transport.unit_type} at (${transport.x}, ${transport.y}): ${transport.cargo_info.current_cargo}/${transport.cargo_info.max_capacity} cargo`);
             });
         }
     });
@@ -2195,7 +2099,6 @@ document.addEventListener('keydown', function(event) {
 // =============================================================================
 
 function initializeTransportSystem() {
-    console.log("Transport system initialized");
     
     // Add CSS for transport highlights if not already added
     if (!document.getElementById('transport-styles')) {
@@ -2227,7 +2130,6 @@ function updateBoard() {
 function clearIndicators() {
     // Clear any existing indicators
     // Since you're using Two.js, this might be handled by the next render
-    console.log("Clearing indicators");
 }
 
 function gameToken() {
@@ -2248,7 +2150,6 @@ window.movementHighlightGroup = null;
 // =============================================================================
 
 function highlightMovementRange(unitX, unitY) {
-    console.log(`🚶 MOVEMENT: Highlighting movement range for unit at (${unitX}, ${unitY})`);
     
     // Get movement range data from backend
     jsonrpc('get_unit_valid_moves', {x: unitX, y: unitY})
@@ -2260,9 +2161,7 @@ function highlightMovementRange(unitX, unitY) {
                     highlightMovementTile(move.x, move.y, 'movement-range');
                 });
                 
-                console.log(`✅ Highlighted ${result.moves.length} movement options`);
             } else {
-                console.log('❌ No movement data received, trying fallback calculation');
                 // Fallback: calculate movement range locally
                 calculateMovementRangeLocally(unitX, unitY);
             }
@@ -2275,11 +2174,9 @@ function highlightMovementRange(unitX, unitY) {
 }
 
 function calculateMovementRangeLocally(unitX, unitY) {
-    console.log('🔧 FALLBACK: Calculating movement range locally');
     
     // Don't clear if we already have highlights from a previous source
     if (window.movementHighlights && window.movementHighlights.length > 0) {
-        console.log('✅ Highlights already exist, skipping fallback');
         return;
     }
     
@@ -2291,13 +2188,11 @@ function calculateMovementRangeLocally(unitX, unitY) {
     }
     
     if (!selectedUnit) {
-        console.log('❌ No unit found for movement calculation');
         return;
     }
     
     // Basic movement range calculation (adjust based on your game rules)
     var movementRange = getUnitMovementRange(selectedUnit);
-    console.log(`Unit ${selectedUnit.type} has movement range: ${movementRange}`);
     
     // Check all tiles within movement range
     for (var x = 0; x < board.width; x++) {
@@ -2371,8 +2266,6 @@ function calculateMovementWithCosts(startX, startY, maxMovement, unit) {
     
     return validMoves;
 }
-
-
 function getUnitMovementRange(unit) {
     // Use actual Advance Wars movement values from config.ini
     var movementRanges = {
@@ -2479,7 +2372,6 @@ function highlightMovementTile(x, y, className) {
         type: className
     });
     
-    console.log(`🎯 Highlighting movement tile (${x}, ${y})`);
 }
 
 function clearMovementHighlights() {
@@ -2489,7 +2381,6 @@ function clearMovementHighlights() {
         window.movementHighlightGroup = null;
     }
     
-    console.log('🧹 Cleared movement highlight visuals');
 }
 
 function renderMovementHighlights() {
@@ -2531,7 +2422,6 @@ function renderMovementHighlights() {
     // Force Two.js update
     try {
         window.two.update();
-        console.log(`✅ Rendered ${renderedCount} movement highlights successfully`);
     } catch (error) {
         console.error('Error updating Two.js:', error);
     }
@@ -2542,7 +2432,6 @@ function clearMovementHighlightsData() {
     if (window.movementHighlights) {
         window.movementHighlights = [];
     }
-    console.log('🧹 Cleared movement highlights data');
 }
 
 // =============================================================================
@@ -2550,7 +2439,6 @@ function clearMovementHighlightsData() {
 // =============================================================================
 
 function unitSelectWithMovementHighlighting(tile) {
-    console.log('🎯 SELECTION: Enhanced unit selection with movement highlighting');
     
     try {
         // Step 1: Basic unit selection
@@ -2558,7 +2446,6 @@ function unitSelectWithMovementHighlighting(tile) {
             if (result && !result.error) {
                 // Set board selection
                 board.selected = tile;
-                console.log('✅ Unit selected successfully');
                 
                 // Step 2: Show movement range for selected unit
                 if (tile.unit && tile.unit.army === board.current_turn) {
@@ -2629,9 +2516,6 @@ window.clearMovementHighlights = clearMovementHighlights;
 window.unitSelectWithMovementHighlighting = unitSelectWithMovementHighlighting;
 window.addMovementHighlightsToScene = addMovementHighlightsToScene;
 window.updateMovementHighlights = updateMovementHighlights;
-
-console.log('✅ Movement highlighting system loaded successfully');
-
 // =============================================================================
 // ADVANCE WARS MOVEMENT SYSTEM - Complete Implementation
 // Replace your existing movement and selection functions with these
@@ -2651,7 +2535,6 @@ window.gameState = {
 // =============================================================================
 
 function advanceWarsUnitSelect(tile) {
-    console.log('⚔️ AW SELECT: Advanced unit selection');
     
     try {
         // Step 1: Backend unit selection
@@ -2662,9 +2545,6 @@ function advanceWarsUnitSelect(tile) {
                 window.gameState.selectedUnit = tile;
                 window.gameState.movementPhase = false;
                 window.gameState.showingAttackTargets = false;
-                
-                console.log('✅ Unit selected successfully');
-                
                 // Show movement range
                 if (tile.unit && tile.unit.army === board.current_turn) {
                     clearAllHighlights();
@@ -2696,12 +2576,10 @@ function advanceWarsUnitSelect(tile) {
 
 function advanceWarsMove(targetTile) {
     if (!window.gameState.selectedUnit) {
-        console.log('❌ No unit selected for movement');
         return false;
     }
     
     var source = window.gameState.selectedUnit;
-    console.log(`⚔️ AW MOVE: Moving from (${source.x}, ${source.y}) to (${targetTile.x}, ${targetTile.y})`);
     
     jsonrpc('unit_move', {
         x: source.x, 
@@ -2710,7 +2588,6 @@ function advanceWarsMove(targetTile) {
         y2: targetTile.y
     }).then(result => {
         if (result && !result.error) {
-            console.log('✅ Move completed successfully');
             
             // CRITICAL FIX: Update position immediately
             window.gameState.selectedUnit = {
@@ -2720,9 +2597,6 @@ function advanceWarsMove(targetTile) {
             
             // Enter movement phase
             window.gameState.movementPhase = true;
-            
-            console.log('🎯 Updated selected unit position to:', window.gameState.selectedUnit);
-            
             // Clear movement highlights
             clearMovementHighlights();
             
@@ -2742,7 +2616,6 @@ function advanceWarsMove(targetTile) {
 }
 
 function showAttackTargetsAfterMove(unitX, unitY) {
-    console.log('🎯 Showing attack targets after movement');
     
     jsonrpc('get_attack_targets', {
         unit_x: unitX,
@@ -2757,10 +2630,8 @@ function showAttackTargetsAfterMove(unitX, unitY) {
             });
             
             renderAttackHighlights();
-            console.log(`🎯 Highlighted ${result.targets.length} attack targets`);
         } else {
             // No attack targets - unit is done
-            console.log('No attack targets available, ending turn for unit');
             endUnitTurn();
         }
     }).catch(error => {
@@ -2771,12 +2642,10 @@ function showAttackTargetsAfterMove(unitX, unitY) {
 
 function advanceWarsAttack(targetTile) {
     if (!window.gameState.selectedUnit || !window.gameState.showingAttackTargets) {
-        console.log('❌ Cannot attack - no unit selected or not in attack phase');
         return false;
     }
     
     var source = window.gameState.selectedUnit;
-    console.log(`⚔️ AW ATTACK: Attacking from (${source.x}, ${source.y}) to (${targetTile.x}, ${targetTile.y})`);
     
     // Use the updated coordinates from gameState
     if (typeof unitAttackWithPreview === 'function') {
@@ -2790,7 +2659,6 @@ function advanceWarsAttack(targetTile) {
             x2: targetTile.x, 
             y2: targetTile.y
         }).then(result => {
-            console.log('✅ Attack completed successfully');
             // IMPORTANT: End the unit's turn to clear all highlights
             endUnitTurn();
         }).catch(error => {
@@ -2804,7 +2672,6 @@ function advanceWarsAttack(targetTile) {
 }
 
 function endUnitTurn() {
-    console.log('🏁 Ending unit turn');
     
     if (window.gameState && window.gameState.selectedUnit) {
         window.gameState.selectedUnit = null;
@@ -2842,7 +2709,6 @@ function checkIndirectUnitRestrictions(unitX, unitY) {
     const unit = tile?.unit;
     
     if (unit && isIndirectUnit(unit) && hasMoved(unit)) {
-        console.log(`🚀 ${unit.type} has moved - cannot attack this turn (Advance Wars rule)`);
         return true; // Restricted
     }
     
@@ -2864,7 +2730,6 @@ function highlightAttackTile(x, y) {
         type: 'attack-target'
     });
     
-    console.log(`🎯 Highlighting attack tile (${x}, ${y})`);
 }
 
 function clearAttackHighlights() {
@@ -2879,7 +2744,6 @@ function clearAttackHighlights() {
         window.gameState.attackHighlights = [];
     }
     
-    console.log('🧹 Cleared attack highlights');
 }
 
 function renderAttackHighlights() {
@@ -2921,7 +2785,6 @@ function renderAttackHighlights() {
     // Force Two.js update
     try {
         window.two.update();
-        console.log(`🎯 Rendered ${renderedCount} attack highlights successfully`);
     } catch (error) {
         console.error('Error updating Two.js:', error);
     }
@@ -2932,21 +2795,17 @@ function renderAttackHighlights() {
 // =============================================================================
 
 function showMovementRange(unitX, unitY) {
-    console.log(`🚶 AW: Showing movement range for unit at (${unitX}, ${unitY})`);
     
     // Use the backend movement highlights RPC
     jsonrpc('get_movement_highlights', {x: unitX, y: unitY})
         .then(result => {
             if (result && result.success && result.moves) {
-                console.log(`✅ Backend returned ${result.moves.length} valid moves for ${result.unit_type}`);
                 applyMovementHighlights(result.moves);
             } else {
-                console.log('❌ Backend highlights failed:', result.error || 'Unknown error');
                 calculateMovementRangeLocally(unitX, unitY);
             }
         })
         .catch(error => {
-            console.log('❌ Backend highlights error:', error.message);
             calculateMovementRangeLocally(unitX, unitY);
         });
 }
@@ -2961,9 +2820,6 @@ function applyMovementHighlights(moves) {
         y: move.y,
         type: 'movement-range'
     }));
-    
-    console.log(`📍 Applied ${window.movementHighlights.length} movement highlights`);
-    
     // Force immediate rendering
     renderMovementHighlights();
 }
@@ -2973,7 +2829,6 @@ function applyMovementHighlights(moves) {
 // =============================================================================
 
 function showAttackTargets(unitX, unitY) {
-    console.log(`🎯 Getting attack targets for unit at (${unitX}, ${unitY})`);
     
     // Get the unit to check if it's indirect and has moved
     const tile = board.grid.find(t => t.x === unitX && t.y === unitY);
@@ -2981,7 +2836,6 @@ function showAttackTargets(unitX, unitY) {
     
     // CHECK: If indirect unit has moved, don't show attack targets
     if (unit && isIndirectUnit(unit) && hasMoved(unit)) {
-        console.log('🚀 Indirect unit has moved - no attack allowed this turn');
         clearAttackHighlights();
         return;
     }
@@ -2991,7 +2845,6 @@ function showAttackTargets(unitX, unitY) {
         unit_y: unitY
     }, function(result) {
         if (result && result.success && result.targets && result.targets.length > 0) {
-            console.log(`🎯 Found ${result.targets.length} attack targets`);
             
             // Clear existing attack highlights
             clearAttackHighlights();
@@ -3005,7 +2858,6 @@ function showAttackTargets(unitX, unitY) {
             renderAttackHighlights();
             
         } else {
-            console.log('🎯 No attack targets found');
         }
     });
 }
@@ -3015,7 +2867,6 @@ function showAttackTargets(unitX, unitY) {
 // =============================================================================
 
 function clearAllHighlights() {
-    console.log('🧹 Clearing all highlights');
     
     // Clear movement highlights
     if (typeof clearMovementHighlights === 'function') {
@@ -3051,13 +2902,9 @@ function advanceWarsCanvasClick(ev) {
     var x = ev.offsetX;
     var y = ev.offsetY;
     var tile = tileAt(x, y);
-    
-    console.log(`⚔️ AW CLICK: Tile (${tile.x}, ${tile.y})`);
-    
     // PRIORITY 1: Frontend transport unload system (HIGHEST PRIORITY)
     if (typeof frontendTransportState !== 'undefined' && 
         frontendTransportState.showingUnloadOptions) {
-        console.log('🔧 PRIORITY 1: Frontend transport unload system active');
         
         // Check if clicked position is valid for unload
         const isValidUnload = frontendTransportState.validUnloadPositions.some(pos => 
@@ -3065,13 +2912,11 @@ function advanceWarsCanvasClick(ev) {
         );
         
         if (isValidUnload) {
-            console.log('✅ Valid unload position clicked');
             if (typeof attemptUnloadUnit === 'function') {
                 attemptUnloadUnit(tile);
             }
             return; // STOP - unload handled
         } else {
-            console.log('❌ Invalid unload position - closing unload mode');
             // Close unload mode if clicking elsewhere
             if (typeof closeTransportMenu === 'function') {
                 closeTransportMenu();
@@ -3083,17 +2928,14 @@ function advanceWarsCanvasClick(ev) {
     // PRIORITY 2: Frontend transport load system
     if (typeof frontendTransportState !== 'undefined' && 
         frontendTransportState.showingLoadOptions) {
-        console.log('🔧 PRIORITY 2: Frontend transport load system active');
         
         if (tile.unit && frontendTransportState.transportInfo && 
             frontendTransportState.transportInfo.compatible_units.includes(tile.unit.type)) {
-            console.log('✅ Valid load target clicked');
             if (typeof attemptLoadUnit === 'function') {
                 attemptLoadUnit(tile);
             }
             return; // STOP - load handled
         } else {
-            console.log('❌ Invalid load target - closing load mode');
             if (typeof closeTransportMenu === 'function') {
                 closeTransportMenu();
             }
@@ -3103,7 +2945,6 @@ function advanceWarsCanvasClick(ev) {
     
     // PRIORITY 3: Alt-click system for legacy unload/load
     if (ev.altKey && window.gameState && window.gameState.selectedUnit) {
-        console.log('🔧 PRIORITY 3: Alt-click system');
         
         const selectedTile = board.grid.find(t => 
             t.x === window.gameState.selectedUnit.x && t.y === window.gameState.selectedUnit.y
@@ -3112,7 +2953,6 @@ function advanceWarsCanvasClick(ev) {
         if (selectedTile && selectedTile.unit) {
             // Check if selected unit is a transport with cargo (UNLOAD)
             if (isTransportUnitForRender(selectedTile.unit) && getCargoCountForRender(selectedTile.unit) > 0) {
-                console.log('✅ Alt-click UNLOAD');
                 
                 jsonrpc('unit_unload', {
                     x: window.gameState.selectedUnit.x,
@@ -3122,19 +2962,16 @@ function advanceWarsCanvasClick(ev) {
                     index: 0
                 }, function(result) {
                     if (result.success) {
-                        console.log('✅ Alt-click unload successful');
                         window.gameState.selectedUnit = null;
                         clearAllHighlights();
                         update();
                     } else {
-                        console.log('❌ Alt-click unload failed:', result.error);
                     }
                 });
                 return; // STOP - unload handled
             }
             // Check if selected unit is cargo and clicked tile has transport (LOAD)
             else if (tile.unit && isTransportUnitForRender(tile.unit)) {
-                console.log('✅ Alt-click LOAD');
                 
                 jsonrpc('unit_load', {
                     x: window.gameState.selectedUnit.x,
@@ -3143,29 +2980,24 @@ function advanceWarsCanvasClick(ev) {
                     y2: tile.y
                 }, function(loadResult) {
                     if (loadResult.success) {
-                        console.log('✅ Alt-click load successful');
                         window.gameState.selectedUnit = null;
                         clearAllHighlights();
                         update();
                     } else {
-                        console.log('❌ Alt-click load failed:', loadResult.error);
                     }
                 });
                 return; // STOP - load handled
             }
         }
         
-        console.log('❌ Alt-click: No valid transport operation');
         return; // STOP - always stop after alt-click
     }
     
     // PRIORITY 4: Transport integration system (CONTROLLED)
     if (typeof handleTileClickWithTransport === 'function') {
-        console.log('🔧 PRIORITY 4: Transport integration system');
         
         const transportHandled = handleTileClickWithTransport(tile, ev);
         if (transportHandled) {
-            console.log('✅ Transport integration handled click');
             return; // STOP - transport integration handled it
         }
     }
@@ -3173,44 +3005,36 @@ function advanceWarsCanvasClick(ev) {
     // PRIORITY 5: New transport system
     if (typeof window.transportSystem !== 'undefined' && 
         typeof window.transportSystem.handleTransportClick === 'function') {
-        console.log('🔧 PRIORITY 5: New transport system');
         
         const newTransportHandled = window.transportSystem.handleTransportClick(tile, ev);
         if (newTransportHandled) {
-            console.log('✅ New transport system handled click');
             return; // STOP - new transport system handled it
         }
     }
     
     // PRIORITY 6: Normal movement system
     if (window.gameState && window.gameState.selectedUnit && tile.can_be_moved_to) {
-        console.log('🔧 PRIORITY 6: Normal movement system');
         advanceWarsMove(window.gameState.selectedUnit, tile);
         return;
     }
     
     // PRIORITY 7: Attack system
     if (window.gameState && window.gameState.selectedUnit && tile.can_be_attacked) {
-        console.log('🔧 PRIORITY 7: Attack system');
         advanceWarsAttack(window.gameState.selectedUnit, tile);
         return;
     }
     
     // PRIORITY 8: Unit selection
     if (tile.unit && tile.unit.army === board.current_turn) {
-        console.log('🔧 PRIORITY 8: Unit selection');
         advanceWarsUnitSelect(tile);
         return;
     }
     
     // PRIORITY 9: Deselect when clicking empty tiles
     if (window.gameState && window.gameState.selectedUnit) {
-        console.log('🔧 PRIORITY 9: Deselecting');
         endUnitTurn();
     }
 }
-
-
 // =============================================================================
 // DOUBLE CLICK HANDLER
 // =============================================================================
@@ -3219,9 +3043,6 @@ function advanceWarsDoubleClick(ev) {
     var x = ev.offsetX;
     var y = ev.offsetY;
     var tile = tileAt(x, y);
-    
-    console.log(`⚔️ AW DOUBLE CLICK: Tile (${tile.x}, ${tile.y})`);
-    
     // Double click on capturable properties
     if (tile.mapTile.type === 'CITY' ||
         tile.mapTile.type === 'BASE_TOWER_1' ||
@@ -3233,7 +3054,6 @@ function advanceWarsDoubleClick(ev) {
             tile.unit.can_capture &&
             tile.unit.army === board.current_turn) {
             if (tile.unit.type == 'INFANTRY' || tile.unit.type == 'MECH') {
-                console.log('🏗️ AW: Starting capture');
                 unitCapture(tile);
                 endUnitTurn();
                 return;
@@ -3243,7 +3063,6 @@ function advanceWarsDoubleClick(ev) {
     
     // Double click on any unit to wait
     if (tile.unit && tile.unit.army === board.current_turn) {
-        console.log('⏸️ AW: Unit waiting');
         unitWait(tile);
         endUnitTurn();
     }
@@ -3274,9 +3093,6 @@ window.endUnitTurn = endUnitTurn;
 window.clearAllHighlights = clearAllHighlights;
 window.showMovementRange = showMovementRange;
 window.renderAttackHighlights = renderAttackHighlights;
-
-console.log('⚔️ Advance Wars movement system loaded successfully!');
-
 // =============================================================================
 // UNIT SPRITE TESTING SYSTEM
 // =============================================================================
@@ -3303,8 +3119,6 @@ const UNIT_CATEGORIES = {
 // =============================================================================
 
 function testAllUnitSprites() {
-    console.log('🎨 TESTING ALL UNIT SPRITES');
-    console.log('============================');
     
     const results = {
         working: [],
@@ -3317,28 +3131,17 @@ function testAllUnitSprites() {
             const spriteInfo = getUnitSpriteInfo(unitType);
             if (spriteInfo.exists) {
                 results.working.push(unitType);
-                console.log(`✅ ${unitType}: Sprite found`);
             } else {
                 results.missing.push(unitType);
-                console.log(`❌ ${unitType}: No sprite case in makeSprite function`);
             }
         } catch (error) {
             results.errors.push({unit: unitType, error: error.message});
-            console.log(`🚨 ${unitType}: Error - ${error.message}`);
         }
     });
-    
-    console.log('\n📊 SPRITE TEST SUMMARY:');
-    console.log(`✅ Working: ${results.working.length}/${ALL_UNIT_TYPES.length}`);
-    console.log(`❌ Missing: ${results.missing.length}`);
-    console.log(`🚨 Errors: ${results.errors.length}`);
-    
     if (results.missing.length > 0) {
-        console.log('\n❌ Missing sprites for:', results.missing.join(', '));
     }
     
     if (results.errors.length > 0) {
-        console.log('\n🚨 Errors found:', results.errors);
     }
     
     return results;
@@ -3385,8 +3188,6 @@ function getUnitSpriteInfo(unitType) {
 // =============================================================================
 
 function testUnitCreation() {
-    console.log('🏭 TESTING UNIT CREATION');
-    console.log('=========================');
     
     // Find factory tiles for each type
     const factories = board.grid.filter(tile => 
@@ -3406,11 +3207,6 @@ function testUnitCreation() {
         tile.mapTile.army === board.current_turn &&
         tile.unit === null
     );
-    
-    console.log(`Found ${factories.length} available factories`);
-    console.log(`Found ${airports.length} available airports`);
-    console.log(`Found ${ports.length} available ports`);
-    
     return {
         factories: factories,
         airports: airports,
@@ -3422,7 +3218,6 @@ function testUnitCreation() {
 }
 
 function createTestUnit(unitType, army = 'RED') {
-    console.log(`🔨 Creating test unit: ${unitType}`);
     
     // Find appropriate production facility
     let targetTile = null;
@@ -3448,7 +3243,6 @@ function createTestUnit(unitType, army = 'RED') {
     }
     
     if (!targetTile) {
-        console.log(`❌ No available production facility for ${unitType}`);
         return false;
     }
     
@@ -3460,12 +3254,9 @@ function createTestUnit(unitType, army = 'RED') {
         y: targetTile.y
     }).then(result => {
         if (result && !result.error) {
-            console.log(`✅ ${unitType} created at (${targetTile.x}, ${targetTile.y})`);
         } else {
-            console.log(`❌ Failed to create ${unitType}:`, result.error);
         }
     }).catch(error => {
-        console.log(`🚨 Error creating ${unitType}:`, error);
     });
     
     return true;
@@ -3476,8 +3267,6 @@ function createTestUnit(unitType, army = 'RED') {
 // =============================================================================
 
 function testLandUnits() {
-    console.log('🚗 TESTING LAND UNITS');
-    console.log('======================');
     
     UNIT_CATEGORIES.LAND.forEach((unit, index) => {
         setTimeout(() => {
@@ -3487,8 +3276,6 @@ function testLandUnits() {
 }
 
 function testAirUnits() {
-    console.log('✈️ TESTING AIR UNITS');
-    console.log('====================');
     
     UNIT_CATEGORIES.AIR.forEach((unit, index) => {
         setTimeout(() => {
@@ -3498,8 +3285,6 @@ function testAirUnits() {
 }
 
 function testSeaUnits() {
-    console.log('🚢 TESTING SEA UNITS');
-    console.log('====================');
     
     UNIT_CATEGORIES.SEA.forEach((unit, index) => {
         setTimeout(() => {
@@ -3509,8 +3294,6 @@ function testSeaUnits() {
 }
 
 function testAllUnits() {
-    console.log('🎮 TESTING ALL UNIT TYPES');
-    console.log('==========================');
     
     let delay = 0;
     ALL_UNIT_TYPES.forEach(unit => {
@@ -3526,24 +3309,16 @@ function testAllUnits() {
 // =============================================================================
 
 function analyzeBoardUnits() {
-    console.log('🔍 ANALYZING UNITS ON BOARD');
-    console.log('============================');
     
     const unitsOnBoard = board.grid.filter(tile => tile.unit !== null);
-    
-    console.log(`Found ${unitsOnBoard.length} units on the board:`);
-    
     const unitCounts = {};
     unitsOnBoard.forEach(tile => {
         const unitType = tile.unit.type;
         unitCounts[unitType] = (unitCounts[unitType] || 0) + 1;
         
-        console.log(`- ${unitType} at (${tile.x}, ${tile.y}) - Army: ${tile.unit.army}`);
     });
     
-    console.log('\n📊 Unit type counts:');
     Object.entries(unitCounts).forEach(([type, count]) => {
-        console.log(`- ${type}: ${count}`);
     });
     
     return {
@@ -3554,17 +3329,13 @@ function analyzeBoardUnits() {
 }
 
 function checkMissingSprites() {
-    console.log('❓ CHECKING FOR MISSING SPRITES');
-    console.log('===============================');
     
     // Units that might not have sprite cases
     const potentiallyMissing = ['BLACKBOMB', 'STEALTH'];
     
     potentiallyMissing.forEach(unit => {
-        console.log(`Checking ${unit}...`);
         // Try to find this unit type in existing sprite switch statement
         const hasSprite = getUnitSpriteInfo(unit);
-        console.log(`${unit}: ${hasSprite.exists ? '✅ Has sprite' : '❌ Missing sprite'}`);
     });
 }
 
@@ -3582,24 +3353,11 @@ window.testSeaUnits = testSeaUnits;
 window.testAllUnits = testAllUnits;
 window.analyzeBoardUnits = analyzeBoardUnits;
 window.checkMissingSprites = checkMissingSprites;
-
-console.log('🎨 Unit sprite testing system loaded!');
-console.log('Available commands:');
-console.log('- testAllUnitSprites() - Check sprite coverage');
-console.log('- testUnitCreation() - Check production facilities');
-console.log('- testLandUnits() - Create all land units');
-console.log('- testAirUnits() - Create all air units'); 
-console.log('- testSeaUnits() - Create all naval units');
-console.log('- testAllUnits() - Create one of each unit type');
-console.log('- analyzeBoardUnits() - List current units on board');
-console.log('- checkMissingSprites() - Check for missing sprite cases');
-
 // =============================================================================
 // PERMANENT CLICK SYSTEM FIXES - Added to fix factory clicks and unit selection
 // =============================================================================
 
 function applyCompleteClickFix() {
-    console.log('🔧 APPLYING: Complete click system fix');
     
     // ========================================================================
     // FIX 1: Selection State Management
@@ -3629,12 +3387,10 @@ function applyCompleteClickFix() {
                 
                 if (restoredTile && restoredTile.unit) {
                     board.selected = restoredTile;
-                    console.log('✅ SELECTION RESTORED: Unit at', currentSelection.x, currentSelection.y);
                     
                     // Show visual feedback
                     showSelectionVisuals(restoredTile);
                 } else {
-                    console.log('⚠️ Could not restore selection - tile changed');
                 }
             }, 50);
         }
@@ -3646,7 +3402,6 @@ function applyCompleteClickFix() {
     // ========================================================================
     
     function showSelectionVisuals(tile) {
-        console.log('🎨 SHOWING: Visual selection feedback');
         
         try {
             // Show movement highlights
@@ -3667,9 +3422,6 @@ function applyCompleteClickFix() {
             if (window.two && window.two.update) {
                 window.two.update();
             }
-            
-            console.log('✅ Visual feedback applied');
-            
         } catch (error) {
             console.error('❌ Visual feedback error:', error);
         }
@@ -3683,7 +3435,6 @@ function applyCompleteClickFix() {
     const originalTransportHandler = window.handleTileClickWithTransport;
     
     window.handleTileClickWithTransport = function(tile) {
-        console.log(`🎯 SMART CLICK: Checking tile (${tile.x}, ${tile.y})`);
         
         // PRIORITY 1: Production buildings (factories, airports, ports)
         if ((tile.mapTile.type === 'FACTORY' || 
@@ -3692,7 +3443,6 @@ function applyCompleteClickFix() {
             tile.mapTile.army === board.current_turn &&
             !tile.unit) {
             
-            console.log(`🏭 PRODUCTION: ${tile.mapTile.type} click`);
             if (tile.mapTile.type === 'FACTORY') unitCreate(tile);
             else if (tile.mapTile.type === 'AIRPORT') airunitCreate(tile);
             else if (tile.mapTile.type === 'PORT') seaunitCreate(tile);
@@ -3704,7 +3454,6 @@ function applyCompleteClickFix() {
             window.movementHighlights && 
             window.movementHighlights.some(h => h.x === tile.x && h.y === tile.y)) {
             
-            console.log(`🚶 MOVEMENT: Executing move to (${tile.x}, ${tile.y})`);
             executeMovement(tile);
             return;
         }
@@ -3715,7 +3464,6 @@ function applyCompleteClickFix() {
             window.gameState?.attackHighlights &&
             window.gameState.attackHighlights.some(h => h.x === tile.x && h.y === tile.y)) {
             
-            console.log(`⚔️ ATTACK: Executing attack on (${tile.x}, ${tile.y})`);
             executeAttack(tile);
             return;
         }
@@ -3732,7 +3480,6 @@ function applyCompleteClickFix() {
     // ========================================================================
     
     window.executeMovement = function(targetTile) {
-        console.log(`🚶 EXECUTING: Movement to (${targetTile.x}, ${targetTile.y})`);
         
         if (!board.selected) {
             console.error('❌ No unit selected for movement');
@@ -3748,7 +3495,6 @@ function applyCompleteClickFix() {
             y2: targetTile.y
         }).then(result => {
             if (result && !result.error) {
-                console.log('✅ Movement successful! Clearing highlights...');
                 
                 // Clear all highlights and selection
                 board.selected = null;
@@ -3763,9 +3509,7 @@ function applyCompleteClickFix() {
                 // Force visual update
                 if (window.two?.update) window.two.update();
                 
-                console.log('🧹 All highlights cleared');
             } else {
-                console.log('❌ Movement failed:', result?.message);
             }
         }).catch(error => {
             console.error('❌ Movement error:', error);
@@ -3780,7 +3524,6 @@ function applyCompleteClickFix() {
     const originalSelectWithTransport = window.selectUnitWithTransportOptions;
     
     window.selectUnitWithTransportOptions = function(tile) {
-        console.log('🎯 ENHANCED SELECT: Setting selection immediately');
         
         // Set selection IMMEDIATELY
         board.selected = tile;
@@ -3799,7 +3542,6 @@ function applyCompleteClickFix() {
     // ========================================================================
     
     window.clearAllHighlights = function() {
-        console.log('🧹 MANUAL: Clearing all highlights');
         
         // Clear all highlight arrays
         if (window.movementHighlights) window.movementHighlights = [];
@@ -3826,9 +3568,7 @@ function applyCompleteClickFix() {
             if (typeof window[funcName] === 'function') {
                 try {
                     window[funcName]();
-                    console.log(`✅ Called ${funcName}`);
                 } catch (e) {
-                    console.log(`⚠️ Error calling ${funcName}:`, e);
                 }
             }
         });
@@ -3838,11 +3578,8 @@ function applyCompleteClickFix() {
             window.two.update();
         }
         
-        console.log('🧹 Manual clear complete');
     };
     
-    console.log('✅ COMPLETE CLICK SYSTEM FIX APPLIED');
-    console.log('💡 Use clearAllHighlights() in console if highlights get stuck');
 }
 
 // ========================================================================
@@ -3858,7 +3595,4 @@ document.addEventListener('DOMContentLoaded', function() {
 if (document.readyState !== 'loading') {
     setTimeout(applyCompleteClickFix, 200);
 }
-
-console.log('🎯 Click system fixes loaded - will apply after page initialization');
-
 // END OF CLICK SYSTEM FIXES

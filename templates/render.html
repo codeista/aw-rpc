@@ -1,68 +1,615 @@
-<!doctype html>
-<html>
-  <head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AW-RPC - Advance Wars Strategy Game</title>
     <link rel="stylesheet" type="text/css" href="/static/css/modal.css">
-    <div class="header">
-    <h1>AW-RPC</h1>
-      <h2></h2>
-    <p>Front end to aw-rpc</p>
-    <!-- link to JSONRPC API doc -->
-    <a href="/api/browse" target="_blank" >Browse API</a>
-    </div>
-  </head>
-  <body>
-    <!-- create unit modal -->
-    <div id="modalcreate" class="modal">
-      <div class="modal-content">
-        <span class="close">&times;</span>
-        <select id="selectcreate">
-        </select>
-        <button type="button" id="buttoncreate">Create unit</button>
-      </div>
-    </div>
-  <!-- table to hold game board and game info -->
-    <table>
-      <tr>
-        <th>Game:  {{token}} </th>
-      </tr>
-        <tr>
-            <td style="vertical-align: top">
+    <style>
+        /* ===== RESET & BASE STYLES ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            background: linear-gradient(90deg, #2c3e50 0%, #34495e 100%);
+            padding: 15px 20px;
+            border-bottom: 3px solid #3498db;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ecf0f1;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .header p {
+            font-size: 14px;
+            color: #bdc3c7;
+            margin-bottom: 10px;
+        }
+
+        .header .game-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .game-token {
+            background: rgba(52, 152, 219, 0.2);
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 1px solid #3498db;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        .api-link {
+            color: #3498db;
+            text-decoration: none;
+            padding: 8px 15px;
+            border: 1px solid #3498db;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .api-link:hover {
+            background: #3498db;
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        /* ===== MAIN LAYOUT ===== */
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+            padding: 20px;
+            min-height: calc(100vh - 120px);
+        }
+
+        @media (max-width: 1200px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto;
+            }
+        }
+
+        /* ===== GAME BOARD SECTION ===== */
+        .game-board-section {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+
+        .board-container {
+            position: relative;
+            background: #000;
+            border-radius: 10px;
+            border: 2px solid #34495e;
+            overflow: hidden;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        #draw {
+            background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 10px;
+        }
+        
+        #draw canvas {
+            border: 2px solid #34495e;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .info-panel {
+            background: rgba(44, 62, 80, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+            margin-top: 15px;
+        }
+
+        .info-panel h3 {
+            color: #3498db;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        /* ===== CONTROL PANEL ===== */
+        .control-panel {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .control-section {
+            background: rgba(255,255,255,0.03);
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .control-section h3 {
+            color: #3498db;
+            margin-bottom: 15px;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-section h3::before {
+            content: "▶";
+            color: #e74c3c;
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(45deg, #27ae60, #229954);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(45deg, #f39c12, #e67e22);
+            color: white;
+        }
+
+        .control-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        /* ===== CHECKBOXES & TOGGLES ===== */
+        .toggle-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toggle-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            border-radius: 5px;
+            transition: background 0.3s ease;
+        }
+
+        .toggle-item:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 24px;
+            background: #34495e;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-switch.active {
+            background: #3498db;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-switch.active::after {
+            transform: translateX(26px);
+        }
+
+        /* ===== CHAT SECTION ===== */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 200px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+            overflow-y: auto;
+            border: 1px solid rgba(255,255,255,0.1);
+            font-family: monospace;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .chat-input-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 8px 12px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 5px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .chat-input::placeholder {
+            color: rgba(255,255,255,0.5);
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: #3498db;
+            background: rgba(255,255,255,0.15);
+        }
+
+        /* ===== JSON DEBUG SECTION ===== */
+        .json-container {
+            height: 150px;
+        }
+
+        .json-display {
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 10px;
+            color: #2ecc71;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            resize: none;
+            overflow-y: auto;
+        }
+
+        .json-display:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        /* ===== MODAL IMPROVEMENTS ===== */
+        .modal {
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+
+        /* ===== RESPONSIVE DESIGN ===== */
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 10px;
+                gap: 15px;
+            }
+            
+            .header .game-info {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .control-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ===== LOADING ANIMATION ===== */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(52, 152, 219, 0.3);
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="game-info">
+            <div>
+                <h1>🎮 AW-RPC</h1>
+                <p>Advanced Wars Real-Time Strategy</p>
+            </div>
+            <div class="game-token">Game: {{token}}</div>
+            <a href="/api/browse" target="_blank" class="api-link">📡 Browse API</a>
+        </div>
+    </header>
+
+    <!-- Main Game Container -->
+    <div class="main-container">
+        <!-- Game Board Section -->
+        <section class="game-board-section">
+            <div class="board-container">
                 <div id="draw" x-token="{{token}}"></div>
-                <div id="infobox"></div>
-            </td>
-            <td style="vertical-align: top">
-                <div id="gamebox">
+            </div>
+            <div class="info-panel">
+                <h3>📊 Game Information</h3>
+                <div id="infobox">Select a unit or tile to view details</div>
+            </div>
+        </section>
+
+        <!-- Control Panel -->
+        <aside class="control-panel">
+            <!-- Game Controls -->
+            <div class="control-section">
+                <h3>🎮 Game Controls</h3>
+                <div class="control-buttons">
+                    <button class="btn btn-success buttonendturn" onclick="armyEndTurn();">
+                        ⏭️ End Turn
+                    </button>
+                    <button class="btn btn-danger buttonendgame" onclick="endGame();">
+                        🛑 End Game
+                    </button>
+                    <button class="btn btn-primary buttonrerender" onclick="rerender();">
+                        🔄 Re-render
+                    </button>
+                    <button class="btn btn-warning" onclick="showGameStats();">
+                        📈 Stats
+                    </button>
                 </div>
-                <hr>
-                <div id="showbox">
-                <input type="checkbox" id="inputshowmap" checked>Show Map</button>
-                <input type="checkbox" id="inputshowchat" checked>Show Chat</button>
-                <input type="checkbox" id="inputshowjson" checked>Show JSON</button>
+                <div id="gamebox" style="margin-top: 15px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 5px; min-height: 40px;">
+                    <small style="color: #bdc3c7;">Game status and notifications will appear here</small>
                 </div>
-                <hr>
-                <div id="controls">
-                <button class="buttonendturn" onclick="armyEndTurn();">End Turn</button>
-                <button class="buttonendgame" onclick="endGame();">End Game</button>
-                <button class="buttonrerender" onclick="rerender();">Re-render</button>
+            </div>
+
+            <!-- Display Options -->
+            <div class="control-section">
+                <h3>👁️ Display Options</h3>
+                <div class="toggle-container">
+                    <div class="toggle-item">
+                        <div class="toggle-switch active" id="toggleShowMap" onclick="toggleDisplay('map')"></div>
+                        <label>🗺️ Show Map Details</label>
+                    </div>
+                    <div class="toggle-item">
+                        <div class="toggle-switch active" id="toggleShowChat" onclick="toggleDisplay('chat')"></div>
+                        <label>💬 Show Chat</label>
+                    </div>
+                    <div class="toggle-item">
+                        <div class="toggle-switch active" id="toggleShowJson" onclick="toggleDisplay('json')"></div>
+                        <label>📋 Show Debug JSON</label>
+                    </div>
                 </div>
-                <hr/>
-                <div id="chatbox">
-                <textarea id="textareachat" rows="10" cols="40"></textarea>
-                <button type="button" id="buttonchat">Chat</button>
-                <input type="text" id="inputchat"></input>
+                
+                <!-- Hidden checkboxes for compatibility with render.js -->
+                <input type="checkbox" id="inputshowmap" checked style="display: none;">
+                <input type="checkbox" id="inputshowchat" checked style="display: none;">
+                <input type="checkbox" id="inputshowjson" checked style="display: none;">
+            </div>
+
+            <!-- Chat Section -->
+            <div class="control-section" id="chatSection">
+                <h3>💬 Battle Communications</h3>
+                <div class="chat-container">
+                    <div class="chat-messages" id="textareachat"></div>
+                    <div class="chat-input-container">
+                        <input type="text" class="chat-input" id="inputchat" placeholder="Type your message...">
+                        <button class="btn btn-primary" id="buttonchat">Send</button>
+                    </div>
                 </div>
-                <div id="jsonbox">
-                <textarea id="code" rows="10" cols="40"></textarea>
+            </div>
+
+            <!-- Debug JSON Section -->
+            <div class="control-section" id="jsonSection">
+                <h3>🔧 Debug Console</h3>
+                <div class="json-container">
+                    <textarea class="json-display" id="code" readonly placeholder="Game state data will appear here..."></textarea>
                 </div>
-            </td>
-        </tr>
-    </table>
-    <!-- JS -->
+            </div>
+        </aside>
+    </div>
+
+    <!-- Create Unit Modal -->
+    <div id="modalcreate" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3 style="margin-bottom: 15px; color: #3498db;">🏭 Create Unit</h3>
+            <select id="selectcreate" style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: 1px solid #bdc3c7;">
+            </select>
+            <button type="button" class="btn btn-success" id="buttoncreate" style="width: 100%;">Create Unit</button>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+        <div>
+            <div class="loading-spinner"></div>
+            <p style="margin-top: 20px; color: #3498db;">Loading game...</p>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.js"></script>
     <script src="/static/js/two.min.js"></script>
     <script src="/static/js/render.js"></script>
     <script src="/static/js/transport_integration.js"></script>
-    <!-- <script src="/static/js/transport_frontend.js"></script> -->
-  </body>
+
+    <script>
+        // Modern UI Enhancement Scripts
+        
+        // Toggle display sections
+        function toggleDisplay(section) {
+            const toggle = document.getElementById(`toggleShow${section.charAt(0).toUpperCase() + section.slice(1)}`);
+            const sectionElement = document.getElementById(`${section}Section`);
+            
+            toggle.classList.toggle('active');
+            
+            if (section === 'map') {
+                // Handle map display toggle
+                const inputshowmap = document.getElementById('inputshowmap');
+                if (inputshowmap) {
+                    inputshowmap.checked = toggle.classList.contains('active');
+                    inputshowmap.onchange();
+                }
+            } else if (section === 'chat') {
+                sectionElement.style.display = toggle.classList.contains('active') ? 'block' : 'none';
+            } else if (section === 'json') {
+                sectionElement.style.display = toggle.classList.contains('active') ? 'block' : 'none';
+            }
+        }
+
+        // Show game statistics
+        function showGameStats() {
+            // This would show a modal or panel with game statistics
+            alert('Game statistics feature coming soon!');
+        }
+
+        // Enhanced chat functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatInput = document.getElementById('inputchat');
+            const chatButton = document.getElementById('buttonchat');
+            const chatMessages = document.getElementById('textareachat');
+
+            // Handle enter key in chat
+            chatInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendChatMessage();
+                }
+            });
+
+            chatButton.addEventListener('click', sendChatMessage);
+
+            function sendChatMessage() {
+                const message = chatInput.value.trim();
+                if (message) {
+                    // Call the existing chat function
+                    if (typeof chat === 'function') {
+                        chat();
+                    }
+                    chatInput.value = '';
+                }
+            }
+        });
+
+        // Show loading overlay during operations
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        // Hide loading on page load
+        window.addEventListener('load', hideLoading);
+    </script>
+</body>
 </html>

@@ -238,6 +238,8 @@ class GameManager:
             self.board.red_funds += amount
         elif army == Army.BLUE:
             self.board.blue_funds += amount
+        elif hasattr(self.board, 'army_funds') and army in self.board.army_funds:
+            self.board.army_funds[army] += amount
 
     def _get_army_funds(self, army: Army) -> int:
         """Get current army funds."""
@@ -245,6 +247,8 @@ class GameManager:
             return self.board.red_funds
         elif army == Army.BLUE:
             return self.board.blue_funds
+        elif hasattr(self.board, 'army_funds') and army in self.board.army_funds:
+            return self.board.army_funds[army]
         return 0
 
     def _update_army_statistics(self) -> None:
