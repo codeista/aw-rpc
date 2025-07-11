@@ -1,0 +1,2707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advance Wars Sprite Extractor & Animator</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .upload-section {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 2px dashed #667eea;
+            text-align: center;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .upload-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+        
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .controls-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .control-group {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid #333;
+        }
+        
+        .control-group h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        
+        .extraction-controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+        
+        .extract-btn {
+            background: #e74c3c;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .extract-btn:hover {
+            background: #c0392b;
+            transform: scale(1.05);
+        }
+        
+        .sprites-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+            max-height: 400px;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.3);
+            padding: 20px;
+            border-radius: 10px;
+        }
+        
+        .sprite-item {
+            position: relative;
+            background: #000;
+            border: 2px solid #333;
+            border-radius: 5px;
+            padding: 5px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .sprite-item:hover {
+            border-color: #667eea;
+            transform: scale(1.1);
+        }
+        
+        .sprite-item.selected {
+            border-color: #e74c3c;
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.5);
+        }
+        
+        .sprite-canvas {
+            width: 64px;
+            height: 64px;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+            border-radius: 3px;
+        }
+        
+        .sprite-label {
+            font-size: 10px;
+            margin-top: 5px;
+            word-break: break-all;
+        }
+        
+        .animation-preview {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .animation-canvas {
+            background: #000;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+        
+        .animation-controls {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .anim-btn {
+            background: #2ecc71;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .anim-btn:hover {
+            background: #27ae60;
+        }
+        
+        .download-section {
+            background: rgba(46, 204, 113, 0.1);
+            border: 1px solid #2ecc71;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .download-btn {
+            background: #2ecc71;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .download-btn:hover {
+            background: #27ae60;
+            transform: translateY(-2px);
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .status-text {
+            text-align: center;
+            color: #667eea;
+            margin: 10px 0;
+        }
+        
+        .format-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .format-option {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .format-option:hover {
+            border-color: #667eea;
+        }
+        
+        .format-option.selected {
+            border-color: #e74c3c;
+            background: rgba(231, 76, 60, 0.1);
+        }
+        
+        .code-output {
+            background: #1e1e1e;
+            border: 1px solid #333;
+            border-radius: 5px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 10px 10px 0 0;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active {
+            background: #667eea;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="header">🎮 Advance Wars Sprite Extractor & Animator</h1>
+        
+        <div class="upload-section">
+            <h2>📁 Upload Sprite Sheets</h2>
+            <p>Upload your sprite sheets to extract individual sprites and create animations</p>
+            <input type="file" id="unitSpriteInput" class="file-input" accept="image/*">
+            <input type="file" id="tileSpriteInput" class="file-input" accept="image/*">
+            <input type="file" id="stealthSpriteInput" class="file-input" accept="image/*">
+            <input type="file" id="blackbombSpriteInput" class="file-input" accept="image/*">
+            <button class="upload-btn" onclick="document.getElementById('unitSpriteInput').click()">
+                🚁 Upload Unit Sprites
+            </button>
+            <button class="upload-btn" onclick="document.getElementById('tileSpriteInput').click()">
+                🗺️ Upload Tile Sprites
+            </button>
+            <button class="upload-btn" onclick="document.getElementById('stealthSpriteInput').click()">
+                🥷 Upload Stealth Animation
+            </button>
+            <button class="upload-btn" onclick="document.getElementById('blackbombSpriteInput').click()">
+                💣 Upload Blackbomb Animation
+            </button>
+        </div>
+
+        <!-- Console Output Section (moved to top) -->
+        <div class="control-group" style="margin-bottom: 20px;">
+            <h3>📊 Console Output & Progress</h3>
+            <div class="progress-bar">
+                <div class="progress-fill" id="extractProgress"></div>
+            </div>
+            <div class="status-text" id="extractStatus">Ready to extract sprites</div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span style="font-size: 14px; color: #667eea;">Real-time extraction log:</span>
+                <button class="extract-btn" onclick="clearConsole()" style="padding: 5px 15px; font-size: 12px;">🗑️ Clear Log</button>
+            </div>
+            <div class="code-output" id="consoleOutput" style="height: 150px;">
+                Console output will appear here...
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="extract">🔧 Extract Sprites</button>
+            <button class="tab" data-tab="animate">🎬 Create Animations</button>
+            <button class="tab" data-tab="export">📦 Export & Download</button>
+        </div>
+
+        <div id="extract-tab" class="tab-content active">
+            <div class="controls-panel">
+                <!-- Army Selection Section -->
+                <div class="control-group">
+                    <h3>🎯 Army Selection</h3>
+                    <div class="extraction-controls">
+                        <button class="extract-btn" onclick="extractAllUnits()">All Armies</button>
+                        <button class="extract-btn" onclick="extractByArmy('RED')">🔴 RED Army</button>
+                        <button class="extract-btn" onclick="extractByArmy('BLUE')">🔵 BLUE Army</button>
+                        <button class="extract-btn" onclick="extractByArmy('GREEN')">🟢 GREEN Army</button>
+                        <button class="extract-btn" onclick="extractByArmy('YELLOW')">🟡 YELLOW Army</button>
+                        <button class="extract-btn" onclick="extractByArmy('GREY')">⚫ GREY Army</button>
+                    </div>
+                </div>
+
+                <!-- Animation Type Selection -->
+                <div class="control-group">
+                    <h3>🎬 Animation Types</h3>
+                    <div class="extraction-controls">
+                        <button class="extract-btn" onclick="extractAnimationType('idle')">✨ Idle Animations</button>
+                        <button class="extract-btn" onclick="extractAnimationType('movement')">🏃 Movement Animations (Limited)</button>
+                        <button class="extract-btn" onclick="extractAnimationType('unavailable')">💤 Unavailable Animations</button>
+                    </div>
+                    <h4>Army-Specific Animation Extraction:</h4>
+                    <div class="extraction-controls">
+                        <button class="extract-btn" onclick="extractArmyAnimation('RED', 'idle')">🔴 RED Idle</button>
+                        <button class="extract-btn" onclick="extractArmyAnimation('RED', 'unavailable')">🔴 RED Unavailable</button>
+                        <button class="extract-btn" onclick="extractArmyAnimation('BLUE', 'idle')">🔵 BLUE Idle</button>
+                        <button class="extract-btn" onclick="extractArmyAnimation('BLUE', 'unavailable')">🔵 BLUE Unavailable</button>
+                        <button class="extract-btn" onclick="extractArmyAnimation('GREEN', 'idle')">🟢 GREEN Idle</button>
+                        <button class="extract-btn" onclick="extractArmyAnimation('GREEN', 'unavailable')">🟢 GREEN Unavailable</button>
+                        <button class="extract-btn" onclick="extractArmyAnimation('YELLOW', 'idle')">🟡 YELLOW Idle</button>
+                        <button class="extract-btn" onclick="extractArmyAnimation('YELLOW', 'unavailable')">🟡 YELLOW Unavailable</button>
+                        <button class="extract-btn" onclick="extractArmyAnimation('GREY', 'idle')">⚫ GREY Idle</button>
+                        <button class="extract-btn" onclick="extractArmyAnimation('GREY', 'unavailable')">⚫ GREY Unavailable</button>
+                    </div>
+                </div>
+
+                <!-- Unit Category Selection -->
+                <div class="control-group">
+                    <h3>🚁 Unit Categories</h3>
+                    <div class="extraction-controls">
+                        <button class="extract-btn" onclick="extractByCategory('LAND')">🚗 Land Units</button>
+                        <button class="extract-btn" onclick="extractByCategory('AIR')">✈️ Air Units</button>
+                        <button class="extract-btn" onclick="extractByCategory('SEA')">🚢 Naval Units</button>
+                        <button class="extract-btn" onclick="extractStealthFrames()">🥷 Stealth Frames</button>
+                        <button class="extract-btn" onclick="extractBlackbombFrames()">💣 Blackbomb Frames</button>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>🗺️ Tile Extraction</h3>
+                    <div class="extraction-controls">
+                        <button class="extract-btn" onclick="extractAllTiles()">Extract All Tiles</button>
+                        <button class="extract-btn" onclick="extractTileCategory('TERRAIN')">Terrain</button>
+                        <button class="extract-btn" onclick="extractTileCategory('BUILDINGS')">Buildings</button>
+                        <button class="extract-btn" onclick="extractTileCategory('SPECIAL')">Special Tiles</button>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>⚙️ Export Settings</h3>
+                    <div class="format-options">
+                        <div class="format-option selected" data-format="png">
+                            <strong>PNG Sprites</strong><br>
+                            <small>Individual PNG files</small>
+                        </div>
+                        <div class="format-option" data-format="spritesheet">
+                            <strong>Sprite Sheet</strong><br>
+                            <small>Combined sheet with JSON</small>
+                        </div>
+                        <div class="format-option" data-format="css">
+                            <strong>CSS Sprites</strong><br>
+                            <small>CSS background positions</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sprites-grid" id="extractedSprites">
+                <div class="status-text">Extracted sprites will appear here</div>
+            </div>
+        </div>
+
+        <div id="animate-tab" class="tab-content">
+            <div class="animation-preview">
+                <h3>🎬 Animation Preview</h3>
+                <canvas id="animationCanvas" class="animation-canvas" width="128" height="128"></canvas>
+                <div class="animation-controls">
+                    <button class="anim-btn" onclick="createUnitAnimation()">Create Unit Animation</button>
+                    <button class="anim-btn" onclick="createAnimationByType('available')">Create Available Animation</button>
+                    <button class="anim-btn" onclick="createAnimationByType('unavailable')">Create Unavailable Animation</button>
+                    <button class="anim-btn" onclick="createAnimationByType('movement')">Create Movement Animation</button>
+                    <button class="anim-btn" onclick="playAnimation()">▶️ Play</button>
+                    <button class="anim-btn" onclick="pauseAnimation()">⏸️ Pause</button>
+                    <button class="anim-btn" onclick="stopAnimation()">⏹️ Stop</button>
+                </div>
+                <div>
+                    <label>Animation Speed: </label>
+                    <input type="range" id="animSpeed" min="50" max="1000" value="500" oninput="updateAnimationSpeed()">
+                    <span id="speedDisplay">500ms</span>
+                </div>
+            </div>
+
+            <div class="controls-panel">
+                <div class="control-group">
+                    <h3>🎭 Animation Types</h3>
+                    <div class="extraction-controls">
+                        <button class="extract-btn" onclick="generateAnimationsByType('available')">Generate All Available</button>
+                        <button class="extract-btn" onclick="generateAnimationsByType('unavailable')">Generate All Unavailable</button>
+                        <button class="extract-btn" onclick="generateAnimationsByType('movement')">Generate All Movement</button>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>🔄 Animation Frames</h3>
+                    <p>Select sprites to create custom animation sequences</p>
+                    <div id="selectedFrames" class="sprites-grid" style="max-height: 200px;">
+                        <div class="status-text">Click sprites to add to animation</div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>📚 Generated Animations Library</h3>
+                    <div class="extraction-controls">
+                        <button class="extract-btn" onclick="saveCurrentAnimation()">Save Current Animation</button>
+                        <button class="extract-btn" onclick="clearAnimationsLibrary()">Clear Library</button>
+                    </div>
+                    <div id="animationsLibrary" class="sprites-grid" style="max-height: 300px;">
+                        <div class="status-text">Generated animations will appear here</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="export-tab" class="tab-content">
+            <div class="download-section">
+                <h3>📦 Export Options</h3>
+                <div class="controls-panel">
+                    <div class="control-group">
+                        <h3>📄 Generate Code</h3>
+                        <button class="download-btn" onclick="generateJavaScriptCode()">JavaScript Module</button>
+                        <button class="download-btn" onclick="generateJSONData()">JSON Data</button>
+                        <button class="download-btn" onclick="generateCSSSprites()">CSS Sprite Sheet</button>
+                        <button class="download-btn" onclick="generateUnityData()">Unity Animation Data</button>
+                    </div>
+
+                    <div class="control-group">
+                        <h3>💾 Download Files</h3>
+                        <button class="download-btn" onclick="downloadAllSprites()">Download All Sprites</button>
+                        <button class="download-btn" onclick="downloadAnimations()">Download Animations</button>
+                        <button class="download-btn" onclick="downloadAnimationFrames()">Download Animation Frames</button>
+                        <button class="download-btn" onclick="downloadAnimationJSON()">Download Animation Data</button>
+                        <button class="download-btn" onclick="downloadSpriteSheet()">Download Combined Sheet</button>
+                        <button class="download-btn" onclick="downloadProject()">Download Complete Project</button>
+                    </div>
+                </div>
+                
+                <div class="code-output" id="generatedCode">
+                    Generated code will appear here...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let unitSpriteSheet = null;
+        let tileSpriteSheet = null;
+        let stealthSpriteSheet = null;
+        let blackbombSpriteSheet = null;
+        let extractedSprites = [];
+        let selectedSprites = [];
+        let currentAnimation = null;
+        let animationInterval = null;
+        let animationFrame = 0;
+        let savedAnimations = [];
+        
+        // Sprite sheet dimensions from render.js
+        const SPRITE_SHEET_WIDTH = 781;
+        const SPRITE_SHEET_HEIGHT = 1790;
+        const SPRITE_SIZE = 16;
+        
+        // Precise sprite coordinates from sprite_corrections_config
+        const PRECISE_SPRITE_COORDS = {
+            'RED': {
+                'INFANTRY': [{ x: 3, y: 104 }, { x: 20, y: 104 }, { x: 37, y: 104 }],
+                'MECH': [{ x: 3, y: 199 }, { x: 20, y: 199 }, { x: 37, y: 199 }],
+                'RECON': [{ x: 3, y: 294 }, { x: 20, y: 294 }, { x: 37, y: 294 }],
+                'TANK': [{ x: 3, y: 313 }, { x: 20, y: 313 }, { x: 37, y: 313 }],
+                'MEDIUMTANK': [{ x: 3, y: 332 }, { x: 20, y: 332 }, { x: 37, y: 332 }],
+                'ANTIAIR': [{ x: 3, y: 389 }, { x: 20, y: 389 }, { x: 37, y: 389 }],
+                'ARTILLERY': [{ x: 3, y: 408 }, { x: 20, y: 408 }, { x: 37, y: 408 }],
+                'MISSILE': [{ x: 3, y: 446 }, { x: 20, y: 446 }, { x: 37, y: 446 }],
+                'ROCKET': [{ x: 3, y: 427 }, { x: 20, y: 427 }, { x: 37, y: 427 }],
+                'APC': [{ x: 3, y: 370 }, { x: 20, y: 370 }, { x: 37, y: 370 }],
+                'NEOTANK': [{ x: 3, y: 351 }, { x: 20, y: 351 }, { x: 37, y: 351 }],
+                'FIGHTER': [{ x: 3, y: 465 }, { x: 20, y: 465 }, { x: 37, y: 465 }],
+                'BCOPTER': [{ x: 3, y: 503 }, { x: 20, y: 503 }, { x: 37, y: 503 }],
+                'TCOPTER': [{ x: 3, y: 522 }, { x: 20, y: 522 }, { x: 37, y: 522 }],
+                'BATTLESHIP': [{ x: 3, y: 541 }, { x: 20, y: 541 }, { x: 37, y: 541 }],
+                'LANDER': [{ x: 3, y: 579 }, { x: 20, y: 579 }, { x: 37, y: 579 }],
+                'CRUISER': [{ x: 3, y: 560 }, { x: 20, y: 560 }, { x: 37, y: 560 }],
+                'SUB': [{ x: 3, y: 598 }, { x: 20, y: 598 }, { x: 37, y: 598 }],
+                'BOMBER': [{ x: 3, y: 484 }, { x: 20, y: 484 }, { x: 37, y: 484 }],
+                'CARRIER': [{ x: 3, y: 617 }, { x: 3, y: 617 }, { x: 3, y: 617 }],
+                'BLACKBOAT': [{ x: 20, y: 618 }, { x: 20, y: 617 }, { x: 20, y: 618 }],
+                'MEGATANK': [{ x: 37, y: 617 }, { x: 37, y: 617 }, { x: 37, y: 617 }],
+                'PIPERUNNER': [{ x: 3, y: 643 }, { x: 3, y: 643 }, { x: 3, y: 643 }]
+            },
+            'BLUE': {
+                'INFANTRY': [{ x: 392, y: 104 }, { x: 409, y: 104 }, { x: 426, y: 104 }],
+                'MECH': [{ x: 392, y: 199 }, { x: 409, y: 199 }, { x: 426, y: 199 }],
+                'RECON': [{ x: 392, y: 294 }, { x: 409, y: 294 }, { x: 426, y: 294 }],
+                'TANK': [{ x: 392, y: 313 }, { x: 409, y: 313 }, { x: 426, y: 313 }],
+                'MEDIUMTANK': [{ x: 392, y: 332 }, { x: 409, y: 332 }, { x: 426, y: 332 }],
+                'ANTIAIR': [{ x: 392, y: 389 }, { x: 409, y: 389 }, { x: 426, y: 389 }],
+                'ARTILLERY': [{ x: 392, y: 408 }, { x: 409, y: 408 }, { x: 426, y: 408 }],
+                'MISSILE': [{ x: 392, y: 446 }, { x: 409, y: 446 }, { x: 426, y: 446 }],
+                'ROCKET': [{ x: 392, y: 427 }, { x: 409, y: 427 }, { x: 426, y: 427 }],
+                'APC': [{ x: 392, y: 370 }, { x: 409, y: 370 }, { x: 426, y: 370 }],
+                'NEOTANK': [{ x: 392, y: 351 }, { x: 409, y: 351 }, { x: 426, y: 351 }],
+                'FIGHTER': [{ x: 392, y: 465 }, { x: 409, y: 465 }, { x: 426, y: 465 }],
+                'BCOPTER': [{ x: 392, y: 503 }, { x: 409, y: 503 }, { x: 426, y: 503 }],
+                'TCOPTER': [{ x: 392, y: 522 }, { x: 409, y: 522 }, { x: 426, y: 522 }],
+                'BATTLESHIP': [{ x: 392, y: 541 }, { x: 409, y: 541 }, { x: 426, y: 541 }],
+                'LANDER': [{ x: 392, y: 579 }, { x: 409, y: 579 }, { x: 426, y: 579 }],
+                'CRUISER': [{ x: 392, y: 560 }, { x: 409, y: 560 }, { x: 426, y: 560 }],
+                'SUB': [{ x: 392, y: 598 }, { x: 409, y: 598 }, { x: 426, y: 598 }],
+                'BOMBER': [{ x: 392, y: 484 }, { x: 409, y: 484 }, { x: 426, y: 484 }],
+                'CARRIER': [{ x: 392, y: 617 }, { x: 392, y: 617 }, { x: 392, y: 617 }],
+                'BLACKBOAT': [{ x: 409, y: 618 }, { x: 409, y: 617 }, { x: 409, y: 618 }],
+                'MEGATANK': [{ x: 426, y: 617 }, { x: 426, y: 617 }, { x: 426, y: 617 }],
+                'PIPERUNNER': [{ x: 392, y: 643 }, { x: 392, y: 643 }, { x: 392, y: 643 }]
+            },
+            'GREEN': {
+                'INFANTRY': { x: 3, y: 776 },
+                'MECH': { x: 3, y: 871 },
+                'RECON': { x: 3, y: 966 },
+                'TANK': { x: 3, y: 985 },
+                'MEDIUMTANK': { x: 3, y: 1004 },
+                'ANTIAIR': { x: 3, y: 1061 },
+                'ARTILLERY': { x: 3, y: 1080 },
+                'MISSILE': { x: 3, y: 1118 },
+                'ROCKET': { x: 3, y: 1099 },
+                'APC': { x: 3, y: 1042 },
+                'NEOTANK': { x: 3, y: 1023 },
+                'FIGHTER': { x: 3, y: 1137 },
+                'BCOPTER': { x: 3, y: 1175 },
+                'TCOPTER': { x: 3, y: 1194 },
+                'BATTLESHIP': { x: 3, y: 1213 },
+                'LANDER': { x: 3, y: 1251 },
+                'CRUISER': { x: 3, y: 1232 },
+                'SUB': { x: 3, y: 1270 },
+                'BOMBER': { x: 3, y: 1156 },
+                'CARRIER': { x: 3, y: 1289 },
+                'BLACKBOAT': { x: 20, y: 1289 },
+                'MEGATANK': { x: 37, y: 1289 },
+                'PIPERUNNER': { x: 3, y: 1315 },
+                'BLACKBOMB': { x: 3, y: 1137 },
+                'STEALTH': { x: 3, y: 1137 }
+            },
+            'YELLOW': {
+                'INFANTRY': { x: 392, y: 776 },
+                'MECH': { x: 392, y: 871 },
+                'RECON': { x: 392, y: 966 },
+                'TANK': { x: 392, y: 985 },
+                'MEDIUMTANK': { x: 392, y: 1004 },
+                'ANTIAIR': { x: 392, y: 1061 },
+                'ARTILLERY': { x: 392, y: 1080 },
+                'MISSILE': { x: 392, y: 1118 },
+                'ROCKET': { x: 392, y: 1099 },
+                'APC': { x: 392, y: 1042 },
+                'NEOTANK': { x: 392, y: 1023 },
+                'FIGHTER': { x: 392, y: 1137 },
+                'BCOPTER': { x: 392, y: 1175 },
+                'TCOPTER': { x: 392, y: 1194 },
+                'BATTLESHIP': { x: 392, y: 1213 },
+                'LANDER': { x: 392, y: 1251 },
+                'CRUISER': { x: 392, y: 1232 },
+                'SUB': { x: 392, y: 1270 },
+                'BOMBER': { x: 392, y: 1156 },
+                'CARRIER': { x: 392, y: 1289 },
+                'BLACKBOAT': { x: 409, y: 1289 },
+                'MEGATANK': { x: 426, y: 1289 },
+                'PIPERUNNER': { x: 392, y: 1315 },
+                'BLACKBOMB': { x: 392, y: 1137 },
+                'STEALTH': { x: 392, y: 1137 }
+            },
+            'GREY': {
+                'INFANTRY': { x: 3, y: 1343 },
+                'MECH': { x: 3, y: 1438 },
+                'RECON': { x: 3, y: 1533 },
+                'TANK': { x: 3, y: 1552 },
+                'MEDIUMTANK': { x: 3, y: 1571 },
+                'ANTIAIR': { x: 3, y: 1628 },
+                'ARTILLERY': { x: 3, y: 1647 },
+                'MISSILE': { x: 3, y: 1685 },
+                'ROCKET': { x: 3, y: 1666 },
+                'APC': { x: 3, y: 1609 },
+                'NEOTANK': { x: 3, y: 1590 },
+                'FIGHTER': { x: 3, y: 1704 },
+                'BCOPTER': { x: 3, y: 1742 },
+                'TCOPTER': { x: 3, y: 1761 },
+                'BATTLESHIP': { x: 3, y: 1780 },
+                'LANDER': { x: 3, y: 1780 },
+                'CRUISER': { x: 3, y: 1780 },
+                'SUB': { x: 3, y: 1780 },
+                'BOMBER': { x: 3, y: 1723 },
+                'CARRIER': { x: 3, y: 1780 },
+                'BLACKBOAT': { x: 20, y: 1780 },
+                'MEGATANK': { x: 37, y: 1780 },
+                'PIPERUNNER': { x: 3, y: 1780 },
+                'BLACKBOMB': { x: 3, y: 1704 },
+                'STEALTH': { x: 3, y: 1704 }
+            }
+        };
+        
+        // Animation type coordinates from sprite_corrections_config
+        const ANIMATION_COORDS = {
+            'idle': {
+                // RED army idle sprites
+                'INFANTRY_RED_idle_0': { x: 3, y: 104 },
+                'INFANTRY_RED_idle_1': { x: 20, y: 104 },
+                'INFANTRY_RED_idle_2': { x: 37, y: 104 },
+                'MECH_RED_idle_0': { x: 3, y: 199 },
+                'MECH_RED_idle_1': { x: 20, y: 199 },
+                'MECH_RED_idle_2': { x: 37, y: 199 },
+                'RECON_RED_idle_0': { x: 3, y: 294 },
+                'RECON_RED_idle_1': { x: 20, y: 294 },
+                'RECON_RED_idle_2': { x: 37, y: 294 },
+                'TANK_RED_idle_0': { x: 3, y: 313 },
+                'TANK_RED_idle_1': { x: 20, y: 313 },
+                'TANK_RED_idle_2': { x: 37, y: 313 },
+                'MEDIUMTANK_RED_idle_0': { x: 3, y: 332 },
+                'MEDIUMTANK_RED_idle_1': { x: 20, y: 332 },
+                'MEDIUMTANK_RED_idle_2': { x: 37, y: 332 },
+                'ANTIAIR_RED_idle_0': { x: 3, y: 389 },
+                'ANTIAIR_RED_idle_1': { x: 20, y: 389 },
+                'ANTIAIR_RED_idle_2': { x: 37, y: 389 },
+                'ARTILLERY_RED_idle_0': { x: 3, y: 408 },
+                'ARTILLERY_RED_idle_1': { x: 20, y: 408 },
+                'ARTILLERY_RED_idle_2': { x: 37, y: 408 },
+                'MISSILE_RED_idle_0': { x: 3, y: 446 },
+                'MISSILE_RED_idle_1': { x: 20, y: 446 },
+                'MISSILE_RED_idle_2': { x: 37, y: 446 },
+                'ROCKET_RED_idle_0': { x: 3, y: 427 },
+                'ROCKET_RED_idle_1': { x: 20, y: 427 },
+                'ROCKET_RED_idle_2': { x: 37, y: 427 },
+                'APC_RED_idle_0': { x: 3, y: 370 },
+                'APC_RED_idle_1': { x: 20, y: 370 },
+                'APC_RED_idle_2': { x: 37, y: 370 },
+                'NEOTANK_RED_idle_0': { x: 3, y: 351 },
+                'NEOTANK_RED_idle_1': { x: 20, y: 351 },
+                'NEOTANK_RED_idle_2': { x: 37, y: 351 },
+                'FIGHTER_RED_idle_0': { x: 3, y: 465 },
+                'FIGHTER_RED_idle_1': { x: 20, y: 465 },
+                'FIGHTER_RED_idle_2': { x: 37, y: 465 },
+                'BCOPTER_RED_idle_0': { x: 3, y: 503 },
+                'BCOPTER_RED_idle_1': { x: 20, y: 503 },
+                'BCOPTER_RED_idle_2': { x: 37, y: 503 },
+                'TCOPTER_RED_idle_0': { x: 3, y: 522 },
+                'TCOPTER_RED_idle_1': { x: 20, y: 522 },
+                'TCOPTER_RED_idle_2': { x: 37, y: 522 },
+                'BATTLESHIP_RED_idle_0': { x: 3, y: 541 },
+                'BATTLESHIP_RED_idle_1': { x: 20, y: 541 },
+                'BATTLESHIP_RED_idle_2': { x: 37, y: 541 },
+                'LANDER_RED_idle_0': { x: 3, y: 579 },
+                'LANDER_RED_idle_1': { x: 20, y: 579 },
+                'LANDER_RED_idle_2': { x: 37, y: 579 },
+                'CRUISER_RED_idle_0': { x: 3, y: 560 },
+                'CRUISER_RED_idle_1': { x: 20, y: 560 },
+                'CRUISER_RED_idle_2': { x: 37, y: 560 },
+                'SUB_RED_idle_0': { x: 3, y: 598 },
+                'SUB_RED_idle_1': { x: 20, y: 598 },
+                'SUB_RED_idle_2': { x: 37, y: 598 },
+                'BOMBER_RED_idle_0': { x: 3, y: 484 },
+                'BOMBER_RED_idle_1': { x: 20, y: 484 },
+                'BOMBER_RED_idle_2': { x: 37, y: 484 },
+                'CARRIER_RED_idle_0': { x: 3, y: 617 },
+                'CARRIER_RED_idle_1': { x: 3, y: 617 },
+                'CARRIER_RED_idle_2': { x: 3, y: 617 },
+                'BLACKBOAT_RED_idle_0': { x: 20, y: 618 },
+                'BLACKBOAT_RED_idle_1': { x: 20, y: 617 },
+                'BLACKBOAT_RED_idle_2': { x: 20, y: 618 },
+                'MEGATANK_RED_idle_0': { x: 37, y: 617 },
+                'MEGATANK_RED_idle_1': { x: 37, y: 617 },
+                'MEGATANK_RED_idle_2': { x: 37, y: 617 },
+                'PIPERUNNER_RED_idle_0': { x: 3, y: 643 },
+                'PIPERUNNER_RED_idle_1': { x: 3, y: 643 },
+                'PIPERUNNER_RED_idle_2': { x: 3, y: 643 },
+                
+                // BLUE army idle sprites (calculated with +389 X offset)
+                'INFANTRY_BLUE_idle_0': { x: 392, y: 104 },
+                'INFANTRY_BLUE_idle_1': { x: 409, y: 104 },
+                'INFANTRY_BLUE_idle_2': { x: 426, y: 104 },
+                'MECH_BLUE_idle_0': { x: 392, y: 199 },
+                'MECH_BLUE_idle_1': { x: 409, y: 199 },
+                'MECH_BLUE_idle_2': { x: 426, y: 199 },
+                'RECON_BLUE_idle_0': { x: 392, y: 294 },
+                'RECON_BLUE_idle_1': { x: 409, y: 294 },
+                'RECON_BLUE_idle_2': { x: 426, y: 294 },
+                'TANK_BLUE_idle_0': { x: 392, y: 313 },
+                'TANK_BLUE_idle_1': { x: 409, y: 313 },
+                'TANK_BLUE_idle_2': { x: 426, y: 313 },
+                'MEDIUMTANK_BLUE_idle_0': { x: 392, y: 332 },
+                'MEDIUMTANK_BLUE_idle_1': { x: 409, y: 332 },
+                'MEDIUMTANK_BLUE_idle_2': { x: 426, y: 332 },
+                'ANTIAIR_BLUE_idle_0': { x: 392, y: 389 },
+                'ANTIAIR_BLUE_idle_1': { x: 409, y: 389 },
+                'ANTIAIR_BLUE_idle_2': { x: 426, y: 389 },
+                'ARTILLERY_BLUE_idle_0': { x: 392, y: 408 },
+                'ARTILLERY_BLUE_idle_1': { x: 409, y: 408 },
+                'ARTILLERY_BLUE_idle_2': { x: 426, y: 408 },
+                'MISSILE_BLUE_idle_0': { x: 392, y: 446 },
+                'MISSILE_BLUE_idle_1': { x: 409, y: 446 },
+                'MISSILE_BLUE_idle_2': { x: 426, y: 446 },
+                'ROCKET_BLUE_idle_0': { x: 392, y: 427 },
+                'ROCKET_BLUE_idle_1': { x: 409, y: 427 },
+                'ROCKET_BLUE_idle_2': { x: 426, y: 427 },
+                'APC_BLUE_idle_0': { x: 392, y: 370 },
+                'APC_BLUE_idle_1': { x: 409, y: 370 },
+                'APC_BLUE_idle_2': { x: 426, y: 370 },
+                'NEOTANK_BLUE_idle_0': { x: 392, y: 351 },
+                'NEOTANK_BLUE_idle_1': { x: 409, y: 351 },
+                'NEOTANK_BLUE_idle_2': { x: 426, y: 351 },
+                'FIGHTER_BLUE_idle_0': { x: 392, y: 465 },
+                'FIGHTER_BLUE_idle_1': { x: 409, y: 465 },
+                'FIGHTER_BLUE_idle_2': { x: 426, y: 465 },
+                'BCOPTER_BLUE_idle_0': { x: 392, y: 503 },
+                'BCOPTER_BLUE_idle_1': { x: 409, y: 503 },
+                'BCOPTER_BLUE_idle_2': { x: 426, y: 503 },
+                'TCOPTER_BLUE_idle_0': { x: 392, y: 522 },
+                'TCOPTER_BLUE_idle_1': { x: 409, y: 522 },
+                'TCOPTER_BLUE_idle_2': { x: 426, y: 522 },
+                'BATTLESHIP_BLUE_idle_0': { x: 392, y: 541 },
+                'BATTLESHIP_BLUE_idle_1': { x: 409, y: 541 },
+                'BATTLESHIP_BLUE_idle_2': { x: 426, y: 541 },
+                'LANDER_BLUE_idle_0': { x: 392, y: 579 },
+                'LANDER_BLUE_idle_1': { x: 409, y: 579 },
+                'LANDER_BLUE_idle_2': { x: 426, y: 579 },
+                'CRUISER_BLUE_idle_0': { x: 392, y: 560 },
+                'CRUISER_BLUE_idle_1': { x: 409, y: 560 },
+                'CRUISER_BLUE_idle_2': { x: 426, y: 560 },
+                'SUB_BLUE_idle_0': { x: 392, y: 598 },
+                'SUB_BLUE_idle_1': { x: 409, y: 598 },
+                'SUB_BLUE_idle_2': { x: 426, y: 598 },
+                'BOMBER_BLUE_idle_0': { x: 392, y: 484 },
+                'BOMBER_BLUE_idle_1': { x: 409, y: 484 },
+                'BOMBER_BLUE_idle_2': { x: 426, y: 484 },
+                'CARRIER_BLUE_idle_0': { x: 392, y: 617 },
+                'CARRIER_BLUE_idle_1': { x: 392, y: 617 },
+                'CARRIER_BLUE_idle_2': { x: 392, y: 617 },
+                'BLACKBOAT_BLUE_idle_0': { x: 409, y: 618 },
+                'BLACKBOAT_BLUE_idle_1': { x: 409, y: 617 },
+                'BLACKBOAT_BLUE_idle_2': { x: 409, y: 618 },
+                'MEGATANK_BLUE_idle_0': { x: 426, y: 617 },
+                'MEGATANK_BLUE_idle_1': { x: 426, y: 617 },
+                'MEGATANK_BLUE_idle_2': { x: 426, y: 617 },
+                'PIPERUNNER_BLUE_idle_0': { x: 392, y: 643 },
+                'PIPERUNNER_BLUE_idle_1': { x: 392, y: 643 },
+                'PIPERUNNER_BLUE_idle_2': { x: 392, y: 643 }
+            },
+            'movement': {
+                'INFANTRY_RED_movement_3': { x: 94, y: 20 },
+                'INFANTRY_RED_movement_4': { x: 56, y: 105 }
+            },
+            'unavailable': {
+                // RED army unavailable sprites
+                'INFANTRY_RED_unavailable_0': { x: 339, y: 104 },
+                'INFANTRY_RED_unavailable_1': { x: 356, y: 104 },
+                'INFANTRY_RED_unavailable_2': { x: 373, y: 104 },
+                'MECH_RED_unavailable_0': { x: 339, y: 199 },
+                'MECH_RED_unavailable_1': { x: 356, y: 199 },
+                'MECH_RED_unavailable_2': { x: 373, y: 199 },
+                'RECON_RED_unavailable_0': { x: 339, y: 294 },
+                'RECON_RED_unavailable_1': { x: 356, y: 294 },
+                'RECON_RED_unavailable_2': { x: 373, y: 294 },
+                'TANK_RED_unavailable_0': { x: 339, y: 313 },
+                'TANK_RED_unavailable_1': { x: 356, y: 313 },
+                'TANK_RED_unavailable_2': { x: 373, y: 313 },
+                'MEDIUMTANK_RED_unavailable_0': { x: 339, y: 332 },
+                'MEDIUMTANK_RED_unavailable_1': { x: 356, y: 332 },
+                'MEDIUMTANK_RED_unavailable_2': { x: 373, y: 332 },
+                'ANTIAIR_RED_unavailable_0': { x: 339, y: 389 },
+                'ANTIAIR_RED_unavailable_1': { x: 356, y: 389 },
+                'ANTIAIR_RED_unavailable_2': { x: 373, y: 389 },
+                'ARTILLERY_RED_unavailable_1': { x: 356, y: 408 },
+                'ARTILLERY_RED_unavailable_2': { x: 373, y: 408 },
+                'MISSILE_RED_unavailable_0': { x: 373, y: 446 },
+                'MISSILE_RED_unavailable_1': { x: 356, y: 446 },
+                'MISSILE_RED_unavailable_2': { x: 373, y: 446 },
+                'ROCKET_RED_unavailable_0': { x: 339, y: 427 },
+                'ROCKET_RED_unavailable_1': { x: 356, y: 427 },
+                'ROCKET_RED_unavailable_2': { x: 373, y: 427 },
+                'APC_RED_unavailable_0': { x: 339, y: 370 },
+                'APC_RED_unavailable_1': { x: 356, y: 370 },
+                'APC_RED_unavailable_2': { x: 373, y: 370 },
+                'NEOTANK_RED_unavailable_0': { x: 339, y: 351 },
+                'NEOTANK_RED_unavailable_1': { x: 356, y: 351 },
+                'NEOTANK_RED_unavailable_2': { x: 373, y: 351 },
+                'FIGHTER_RED_unavailable_0': { x: 339, y: 465 },
+                'FIGHTER_RED_unavailable_1': { x: 356, y: 465 },
+                'FIGHTER_RED_unavailable_2': { x: 373, y: 465 },
+                'BCOPTER_RED_unavailable_0': { x: 339, y: 503 },
+                'BCOPTER_RED_unavailable_1': { x: 356, y: 503 },
+                'BCOPTER_RED_unavailable_2': { x: 373, y: 503 },
+                'TCOPTER_RED_unavailable_0': { x: 339, y: 522 },
+                'TCOPTER_RED_unavailable_1': { x: 356, y: 522 },
+                'TCOPTER_RED_unavailable_2': { x: 373, y: 522 },
+                'BATTLESHIP_RED_unavailable_0': { x: 339, y: 541 },
+                'BATTLESHIP_RED_unavailable_1': { x: 356, y: 541 },
+                'BATTLESHIP_RED_unavailable_2': { x: 373, y: 541 },
+                'LANDER_RED_unavailable_0': { x: 339, y: 579 },
+                'LANDER_RED_unavailable_1': { x: 356, y: 579 },
+                'LANDER_RED_unavailable_2': { x: 373, y: 579 },
+                'CRUISER_RED_unavailable_0': { x: 373, y: 560 },
+                'CRUISER_RED_unavailable_1': { x: 356, y: 560 },
+                'CRUISER_RED_unavailable_2': { x: 373, y: 560 },
+                'SUB_RED_unavailable_0': { x: 373, y: 598 },
+                'SUB_RED_unavailable_1': { x: 356, y: 598 },
+                'BOMBER_RED_unavailable_0': { x: 339, y: 484 },
+                'BOMBER_RED_unavailable_1': { x: 356, y: 484 },
+                'BOMBER_RED_unavailable_2': { x: 373, y: 484 },
+                'CARRIER_RED_unavailable_0': { x: 339, y: 617 },
+                'CARRIER_RED_unavailable_1': { x: 339, y: 618 },
+                'CARRIER_RED_unavailable_2': { x: 339, y: 617 },
+                'BLACKBOAT_RED_unavailable_0': { x: 356, y: 617 },
+                'BLACKBOAT_RED_unavailable_1': { x: 356, y: 618 },
+                'BLACKBOAT_RED_unavailable_2': { x: 356, y: 617 },
+                'MEGATANK_RED_unavailable_0': { x: 373, y: 617 },
+                'MEGATANK_RED_unavailable_1': { x: 373, y: 617 },
+                'MEGATANK_RED_unavailable_2': { x: 373, y: 617 },
+                'PIPERUNNER_RED_unavailable_0': { x: 337, y: 643 },
+                'PIPERUNNER_RED_unavailable_1': { x: 337, y: 643 },
+                'PIPERUNNER_RED_unavailable_2': { x: 337, y: 643 },
+                
+                // BLUE army unavailable sprites (calculated with +389 X offset)
+                'INFANTRY_BLUE_unavailable_0': { x: 728, y: 104 },
+                'INFANTRY_BLUE_unavailable_1': { x: 745, y: 104 },
+                'INFANTRY_BLUE_unavailable_2': { x: 762, y: 104 },
+                'MECH_BLUE_unavailable_0': { x: 728, y: 199 },
+                'MECH_BLUE_unavailable_1': { x: 745, y: 199 },
+                'MECH_BLUE_unavailable_2': { x: 762, y: 199 },
+                'RECON_BLUE_unavailable_0': { x: 728, y: 294 },
+                'RECON_BLUE_unavailable_1': { x: 745, y: 294 },
+                'RECON_BLUE_unavailable_2': { x: 762, y: 294 },
+                'TANK_BLUE_unavailable_0': { x: 728, y: 313 },
+                'TANK_BLUE_unavailable_1': { x: 745, y: 313 },
+                'TANK_BLUE_unavailable_2': { x: 762, y: 313 },
+                'MEDIUMTANK_BLUE_unavailable_0': { x: 728, y: 332 },
+                'MEDIUMTANK_BLUE_unavailable_1': { x: 745, y: 332 },
+                'MEDIUMTANK_BLUE_unavailable_2': { x: 762, y: 332 },
+                'ANTIAIR_BLUE_unavailable_0': { x: 728, y: 389 },
+                'ANTIAIR_BLUE_unavailable_1': { x: 745, y: 389 },
+                'ANTIAIR_BLUE_unavailable_2': { x: 762, y: 389 },
+                'ARTILLERY_BLUE_unavailable_1': { x: 745, y: 408 },
+                'ARTILLERY_BLUE_unavailable_2': { x: 762, y: 408 },
+                'MISSILE_BLUE_unavailable_0': { x: 762, y: 446 },
+                'MISSILE_BLUE_unavailable_1': { x: 745, y: 446 },
+                'MISSILE_BLUE_unavailable_2': { x: 762, y: 446 },
+                'ROCKET_BLUE_unavailable_0': { x: 728, y: 427 },
+                'ROCKET_BLUE_unavailable_1': { x: 745, y: 427 },
+                'ROCKET_BLUE_unavailable_2': { x: 762, y: 427 },
+                'APC_BLUE_unavailable_0': { x: 728, y: 370 },
+                'APC_BLUE_unavailable_1': { x: 745, y: 370 },
+                'APC_BLUE_unavailable_2': { x: 762, y: 370 },
+                'NEOTANK_BLUE_unavailable_0': { x: 728, y: 351 },
+                'NEOTANK_BLUE_unavailable_1': { x: 745, y: 351 },
+                'NEOTANK_BLUE_unavailable_2': { x: 762, y: 351 },
+                'FIGHTER_BLUE_unavailable_0': { x: 728, y: 465 },
+                'FIGHTER_BLUE_unavailable_1': { x: 745, y: 465 },
+                'FIGHTER_BLUE_unavailable_2': { x: 762, y: 465 },
+                'BCOPTER_BLUE_unavailable_0': { x: 728, y: 503 },
+                'BCOPTER_BLUE_unavailable_1': { x: 745, y: 503 },
+                'BCOPTER_BLUE_unavailable_2': { x: 762, y: 503 },
+                'TCOPTER_BLUE_unavailable_0': { x: 728, y: 522 },
+                'TCOPTER_BLUE_unavailable_1': { x: 745, y: 522 },
+                'TCOPTER_BLUE_unavailable_2': { x: 762, y: 522 },
+                'BATTLESHIP_BLUE_unavailable_0': { x: 728, y: 541 },
+                'BATTLESHIP_BLUE_unavailable_1': { x: 745, y: 541 },
+                'BATTLESHIP_BLUE_unavailable_2': { x: 762, y: 541 },
+                'LANDER_BLUE_unavailable_0': { x: 728, y: 579 },
+                'LANDER_BLUE_unavailable_1': { x: 745, y: 579 },
+                'LANDER_BLUE_unavailable_2': { x: 762, y: 579 },
+                'CRUISER_BLUE_unavailable_0': { x: 762, y: 560 },
+                'CRUISER_BLUE_unavailable_1': { x: 745, y: 560 },
+                'CRUISER_BLUE_unavailable_2': { x: 762, y: 560 },
+                'SUB_BLUE_unavailable_0': { x: 762, y: 598 },
+                'SUB_BLUE_unavailable_1': { x: 745, y: 598 },
+                'BOMBER_BLUE_unavailable_0': { x: 728, y: 484 },
+                'BOMBER_BLUE_unavailable_1': { x: 745, y: 484 },
+                'BOMBER_BLUE_unavailable_2': { x: 762, y: 484 },
+                'CARRIER_BLUE_unavailable_0': { x: 728, y: 617 },
+                'CARRIER_BLUE_unavailable_1': { x: 728, y: 618 },
+                'CARRIER_BLUE_unavailable_2': { x: 728, y: 617 },
+                'BLACKBOAT_BLUE_unavailable_0': { x: 745, y: 617 },
+                'BLACKBOAT_BLUE_unavailable_1': { x: 745, y: 618 },
+                'BLACKBOAT_BLUE_unavailable_2': { x: 745, y: 617 },
+                'MEGATANK_BLUE_unavailable_0': { x: 762, y: 617 },
+                'MEGATANK_BLUE_unavailable_1': { x: 762, y: 617 },
+                'MEGATANK_BLUE_unavailable_2': { x: 762, y: 617 },
+                'PIPERUNNER_BLUE_unavailable_0': { x: 726, y: 643 },
+                'PIPERUNNER_BLUE_unavailable_1': { x: 726, y: 643 },
+                'PIPERUNNER_BLUE_unavailable_2': { x: 726, y: 643 }
+            }
+        };
+        
+        // Load complete coordinates from sprite_corrections_config.json or use embedded fallback
+        async function loadCompleteCoordinates() {
+            try {
+                const response = await fetch('/templates/sprite_corrections_config.json');
+                const configData = await response.json();
+                
+                // Update ANIMATION_COORDS with complete data from JSON file
+                ANIMATION_COORDS.idle = { ...ANIMATION_COORDS.idle, ...configData.corrections.idle };
+                ANIMATION_COORDS.movement = { ...ANIMATION_COORDS.movement, ...configData.corrections.movement };
+                ANIMATION_COORDS.unavailable = { ...ANIMATION_COORDS.unavailable, ...configData.corrections.unavailable };
+                
+                logToConsole(`✅ Loaded ${configData.stats.totalCorrections} sprite coordinates from config file`);
+                showArmyStats();
+                updateStatus('All sprite coordinates loaded and ready!');
+                
+            } catch (error) {
+                console.error('Error loading sprite coordinates:', error);
+                logToConsole(`❌ Error loading sprite coordinates: ${error.message}`);
+                logToConsole(`🔄 Loading embedded coordinate fallback...`);
+                
+                // Use embedded fallback coordinates
+                loadEmbeddedCoordinates();
+            }
+        }
+        
+        function loadEmbeddedCoordinates() {
+            // Add GREEN army coordinates (RED + 0x, +568y)
+            const greenIdleCoords = {};
+            const greenUnavailableCoords = {};
+            
+            // Generate GREEN coordinates from RED (Y offset +568)
+            Object.keys(ANIMATION_COORDS.idle).forEach(key => {
+                if (key.includes('_RED_idle_')) {
+                    const greenKey = key.replace('_RED_', '_GREEN_');
+                    greenIdleCoords[greenKey] = {
+                        x: ANIMATION_COORDS.idle[key].x,
+                        y: ANIMATION_COORDS.idle[key].y + 568
+                    };
+                }
+            });
+            
+            Object.keys(ANIMATION_COORDS.unavailable).forEach(key => {
+                if (key.includes('_RED_unavailable_')) {
+                    const greenKey = key.replace('_RED_', '_GREEN_');
+                    greenUnavailableCoords[greenKey] = {
+                        x: ANIMATION_COORDS.unavailable[key].x,
+                        y: ANIMATION_COORDS.unavailable[key].y + 568
+                    };
+                }
+            });
+            
+            // Add YELLOW army coordinates (RED + 389x, +568y)
+            const yellowIdleCoords = {};
+            const yellowUnavailableCoords = {};
+            
+            Object.keys(ANIMATION_COORDS.idle).forEach(key => {
+                if (key.includes('_RED_idle_')) {
+                    const yellowKey = key.replace('_RED_', '_YELLOW_');
+                    yellowIdleCoords[yellowKey] = {
+                        x: ANIMATION_COORDS.idle[key].x + 389,
+                        y: ANIMATION_COORDS.idle[key].y + 568
+                    };
+                }
+            });
+            
+            Object.keys(ANIMATION_COORDS.unavailable).forEach(key => {
+                if (key.includes('_RED_unavailable_')) {
+                    const yellowKey = key.replace('_RED_', '_YELLOW_');
+                    yellowUnavailableCoords[yellowKey] = {
+                        x: ANIMATION_COORDS.unavailable[key].x + 389,
+                        y: ANIMATION_COORDS.unavailable[key].y + 568
+                    };
+                }
+            });
+            
+            // Add GREY army coordinates (RED + 336x, +1136y)  
+            const greyIdleCoords = {};
+            const greyUnavailableCoords = {};
+            
+            Object.keys(ANIMATION_COORDS.idle).forEach(key => {
+                if (key.includes('_RED_idle_')) {
+                    const greyKey = key.replace('_RED_', '_GREY_');
+                    greyIdleCoords[greyKey] = {
+                        x: ANIMATION_COORDS.idle[key].x + 336,
+                        y: ANIMATION_COORDS.idle[key].y + 1136
+                    };
+                }
+            });
+            
+            Object.keys(ANIMATION_COORDS.unavailable).forEach(key => {
+                if (key.includes('_RED_unavailable_')) {
+                    const greyKey = key.replace('_RED_', '_GREY_');
+                    greyUnavailableCoords[greyKey] = {
+                        x: ANIMATION_COORDS.unavailable[key].x + 336,
+                        y: ANIMATION_COORDS.unavailable[key].y + 1136
+                    };
+                }
+            });
+            
+            // Merge all new coordinates
+            ANIMATION_COORDS.idle = { ...ANIMATION_COORDS.idle, ...greenIdleCoords, ...yellowIdleCoords, ...greyIdleCoords };
+            ANIMATION_COORDS.unavailable = { ...ANIMATION_COORDS.unavailable, ...greenUnavailableCoords, ...yellowUnavailableCoords, ...greyUnavailableCoords };
+            
+            logToConsole(`✅ Generated coordinates for GREEN, YELLOW, and GREY armies`);
+            logToConsole(`📝 Note: Movement sprites use 3×3 grid (most units) or 2×3 grid (air/naval)`);
+            logToConsole(`⚠️  Missing movement coordinates: CARRIER, BLACKBOAT, MEGATANK, STEALTH`);
+            showArmyStats();
+            updateStatus('Embedded sprite coordinates loaded and ready!');
+        }
+        
+        function showArmyStats() {
+            logToConsole(`📊 Idle: ${Object.keys(ANIMATION_COORDS.idle).length}, Movement: ${Object.keys(ANIMATION_COORDS.movement).length}, Unavailable: ${Object.keys(ANIMATION_COORDS.unavailable).length}`);
+            
+            // Count sprites per army
+            ['RED', 'BLUE', 'GREEN', 'YELLOW', 'GREY'].forEach(army => {
+                const idleCount = Object.keys(ANIMATION_COORDS.idle).filter(key => key.includes(`_${army}_`)).length;
+                const unavailableCount = Object.keys(ANIMATION_COORDS.unavailable).filter(key => key.includes(`_${army}_`)).length;
+                logToConsole(`   ${army}: ${idleCount} idle + ${unavailableCount} unavailable = ${idleCount + unavailableCount} total`);
+            });
+        }
+        
+        // Load coordinates on page load
+        loadCompleteCoordinates();
+        
+        // Unit categories
+        const UNIT_CATEGORIES = {
+            LAND: ['INFANTRY', 'MECH', 'RECON', 'TANK', 'MEDIUMTANK', 'ANTIAIR', 
+                   'ARTILLERY', 'MISSILE', 'NEOTANK', 'ROCKET', 'APC', 'MEGATANK', 'PIPERUNNER'],
+            AIR: ['BCOPTER', 'BOMBER', 'FIGHTER', 'TCOPTER', 'BLACKBOMB', 'STEALTH'],
+            SEA: ['BATTLESHIP', 'BLACKBOAT', 'CARRIER', 'CRUISER', 'LANDER', 'SUB']
+        };
+        
+        // File upload handlers
+        document.getElementById('unitSpriteInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        unitSpriteSheet = img;
+                        updateStatus('Unit sprite sheet loaded successfully!');
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        document.getElementById('tileSpriteInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        tileSpriteSheet = img;
+                        updateStatus('Tile sprite sheet loaded successfully!');
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        document.getElementById('stealthSpriteInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        stealthSpriteSheet = img;
+                        updateStatus('Stealth animation loaded successfully!');
+                        console.log('Stealth image dimensions:', img.width, 'x', img.height);
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        document.getElementById('blackbombSpriteInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        blackbombSpriteSheet = img;
+                        updateStatus('Blackbomb animation loaded successfully!');
+                        console.log('Blackbomb image dimensions:', img.width, 'x', img.height);
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const targetTab = this.dataset.tab;
+                
+                // Update tab buttons
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Update tab content
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                document.getElementById(targetTab + '-tab').classList.add('active');
+            });
+        });
+        
+        // Format option selection
+        document.querySelectorAll('.format-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.format-option').forEach(o => o.classList.remove('selected'));
+                this.classList.add('selected');
+            });
+        });
+        
+        // Sprite extraction functions using precise coordinates
+        function calculateSpritePosition(unit, army, frame = 0) {
+            // Use precise coordinates from sprite_corrections_config
+            const coords = PRECISE_SPRITE_COORDS[army] && PRECISE_SPRITE_COORDS[army][unit];
+            if (coords) {
+                if (Array.isArray(coords)) {
+                    // If it's an array, get the specific frame (or last available frame)
+                    const frameIndex = Math.min(frame, coords.length - 1);
+                    return { x: coords[frameIndex].x, y: coords[frameIndex].y };
+                } else {
+                    // If it's a single coordinate, use it for all frames
+                    return { x: coords.x, y: coords.y };
+                }
+            }
+            
+            // Fallback to old method if precise coords not available
+            let x = Math.floor(SPRITE_SHEET_WIDTH / 2 - SPRITE_SIZE / 2);
+            let y = Math.floor(SPRITE_SHEET_HEIGHT / 2 - SPRITE_SIZE / 2);
+            
+            // Legacy fallback offsets
+            const armyOffsets = {
+                'RED': { x: -4, y: -105 },
+                'BLUE': { x: -393, y: -105 },
+                'GREEN': { x: -4, y: -672 },
+                'YELLOW': { x: -393, y: -672 },
+                'GREY': { x: -4, y: -1240 }
+            };
+            
+            if (armyOffsets[army]) {
+                x += armyOffsets[army].x;
+                y += armyOffsets[army].y;
+            }
+            
+            return { x, y };
+        }
+        
+        function extractSprite(unit, army, frame = 0) {
+            if (!unitSpriteSheet) {
+                alert('Please upload the unit sprite sheet first!');
+                return null;
+            }
+            
+            const pos = calculateSpritePosition(unit, army, frame);
+            console.log(`Extracting ${unit}_${army}_idle_${frame} at position:`, pos);
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = SPRITE_SIZE;
+            canvas.height = SPRITE_SIZE;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.drawImage(
+                unitSpriteSheet,
+                pos.x, pos.y, SPRITE_SIZE, SPRITE_SIZE,
+                0, 0, SPRITE_SIZE, SPRITE_SIZE
+            );
+            
+            return {
+                canvas: canvas,
+                unit: unit,
+                army: army,
+                frame: frame,
+                filename: `${unit}_${army}_idle_${frame}.png`,
+                dataURL: canvas.toDataURL('image/png')
+            };
+        }
+        
+        function extractAllUnits() {
+            if (!unitSpriteSheet) {
+                alert('Please upload the unit sprite sheet first!');
+                return;
+            }
+            
+            extractedSprites = [];
+            let totalSprites = 0;
+            let extracted = 0;
+            
+            // Count total sprites
+            Object.keys(PRECISE_SPRITE_COORDS).forEach(army => {
+                totalSprites += Object.keys(PRECISE_SPRITE_COORDS[army]).length;
+            });
+            
+            updateStatus('Extracting all unit sprites...');
+            logToConsole(`🚀 Starting extraction of all ${totalSprites} unit sprites from 5 armies...`);
+            
+            Object.keys(PRECISE_SPRITE_COORDS).forEach(army => {
+                logToConsole(`   🎯 Processing ${army} army...`);
+                Object.keys(PRECISE_SPRITE_COORDS[army]).forEach(unit => {
+                    const sprite = extractSprite(unit, army);
+                    if (sprite) {
+                        extractedSprites.push(sprite);
+                        extracted++;
+                        updateProgress((extracted / totalSprites) * 100);
+                    }
+                });
+                logToConsole(`   ✅ ${army} army extraction complete`);
+            });
+            
+            displayExtractedSprites();
+            updateStatus(`Extracted ${extracted} sprites successfully!`);
+            logToConsole(`🎉 All extraction complete! ${extracted} sprites ready for use.`);
+        }
+        
+        function extractByArmy(army) {
+            if (!unitSpriteSheet) {
+                alert('Please upload the unit sprite sheet first!');
+                return;
+            }
+            
+            extractedSprites = [];
+            let extracted = 0;
+            let totalSprites = 0;
+            
+            updateStatus(`Extracting ${army} army sprites (idle + unavailable)...`);
+            logToConsole(`🎯 Starting extraction of ${army} army (idle + unavailable sprites)...`);
+            
+            // Extract IDLE animations for this army
+            const idleAnimations = ANIMATION_COORDS['idle'] || {};
+            const armyIdleAnimations = Object.keys(idleAnimations).filter(key => 
+                key.includes(`_${army}_idle_`)
+            );
+            
+            // Extract UNAVAILABLE animations for this army  
+            const unavailableAnimations = ANIMATION_COORDS['unavailable'] || {};
+            const armyUnavailableAnimations = Object.keys(unavailableAnimations).filter(key => 
+                key.includes(`_${army}_unavailable_`)
+            );
+            
+            const allArmyAnimations = [...armyIdleAnimations, ...armyUnavailableAnimations];
+            totalSprites = allArmyAnimations.length;
+            
+            logToConsole(`   📊 Found ${armyIdleAnimations.length} idle + ${armyUnavailableAnimations.length} unavailable = ${totalSprites} total sprites`);
+            
+            if (totalSprites === 0) {
+                const message = `No sprites found for ${army} army!`;
+                alert(message);
+                logToConsole(`❌ ${message}`);
+                return;
+            }
+            
+            // Extract idle sprites
+            logToConsole(`   ✨ Extracting ${armyIdleAnimations.length} idle sprites...`);
+            armyIdleAnimations.forEach(animKey => {
+                const coords = idleAnimations[animKey];
+                const sprite = createSpriteFromCoords(animKey, coords, 'idle');
+                if (sprite) {
+                    extractedSprites.push(sprite);
+                    extracted++;
+                    updateProgress((extracted / totalSprites) * 100);
+                }
+            });
+            
+            // Extract unavailable sprites
+            logToConsole(`   💤 Extracting ${armyUnavailableAnimations.length} unavailable sprites...`);
+            armyUnavailableAnimations.forEach(animKey => {
+                const coords = unavailableAnimations[animKey];
+                const sprite = createSpriteFromCoords(animKey, coords, 'unavailable');
+                if (sprite) {
+                    extractedSprites.push(sprite);
+                    extracted++;
+                    updateProgress((extracted / totalSprites) * 100);
+                }
+            });
+            
+            displayExtractedSprites();
+            updateStatus(`Extracted ${extracted} ${army} army sprites (idle + unavailable)!`);
+            logToConsole(`✅ ${army} army extraction complete: ${extracted} sprites ready for use`);
+        }
+        
+        // Helper function to create sprite from coordinates
+        function createSpriteFromCoords(animKey, coords, animationType) {
+            const canvas = document.createElement('canvas');
+            canvas.width = SPRITE_SIZE;
+            canvas.height = SPRITE_SIZE;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.drawImage(
+                unitSpriteSheet,
+                coords.x, coords.y, SPRITE_SIZE, SPRITE_SIZE,
+                0, 0, SPRITE_SIZE, SPRITE_SIZE
+            );
+            
+            return {
+                canvas: canvas,
+                unit: animKey.split('_')[0], // Extract unit name
+                army: animKey.split('_')[1], // Extract army
+                animationType: animationType,
+                frame: animKey.split('_')[3] || 0, // Extract frame number
+                filename: `${animKey}.png`,
+                dataURL: canvas.toDataURL('image/png')
+            };
+        }
+        
+        function extractByCategory(category) {
+            if (!unitSpriteSheet) {
+                alert('Please upload the unit sprite sheet first!');
+                return;
+            }
+            
+            extractedSprites = [];
+            const units = UNIT_CATEGORIES[category];
+            const armies = Object.keys(ARMY_OFFSETS);
+            const totalSprites = units.length * armies.length;
+            let extracted = 0;
+            
+            updateStatus(`Extracting ${category} unit sprites...`);
+            
+            armies.forEach(army => {
+                units.forEach(unit => {
+                    const sprite = extractSprite(unit, army);
+                    if (sprite) {
+                        extractedSprites.push(sprite);
+                        extracted++;
+                        updateProgress((extracted / totalSprites) * 100);
+                    }
+                });
+            });
+            
+            displayExtractedSprites();
+            updateStatus(`Extracted ${extracted} ${category} unit sprites!`);
+        }
+        
+        function displayExtractedSprites() {
+            const container = document.getElementById('extractedSprites');
+            container.innerHTML = '';
+            
+            extractedSprites.forEach((sprite, index) => {
+                const item = document.createElement('div');
+                item.className = 'sprite-item';
+                item.onclick = () => selectSprite(index);
+                
+                const canvas = document.createElement('canvas');
+                canvas.className = 'sprite-canvas';
+                canvas.width = 64;
+                canvas.height = 64;
+                const ctx = canvas.getContext('2d');
+                ctx.imageSmoothingEnabled = false;
+                ctx.drawImage(sprite.canvas, 0, 0, 64, 64);
+                
+                const label = document.createElement('div');
+                label.className = 'sprite-label';
+                label.textContent = `${sprite.unit}_${sprite.army}_${sprite.frame}`;
+                
+                item.appendChild(canvas);
+                item.appendChild(label);
+                container.appendChild(item);
+            });
+        }
+        
+        function selectSprite(index) {
+            const items = document.querySelectorAll('.sprite-item');
+            items[index].classList.toggle('selected');
+            
+            const spriteIndex = selectedSprites.indexOf(index);
+            if (spriteIndex === -1) {
+                selectedSprites.push(index);
+            } else {
+                selectedSprites.splice(spriteIndex, 1);
+            }
+            
+            updateSelectedFrames();
+        }
+        
+        function updateSelectedFrames() {
+            const container = document.getElementById('selectedFrames');
+            container.innerHTML = '';
+            
+            if (selectedSprites.length === 0) {
+                container.innerHTML = '<div class="status-text">Click sprites to add to animation</div>';
+                return;
+            }
+            
+            selectedSprites.forEach(index => {
+                const sprite = extractedSprites[index];
+                const item = document.createElement('div');
+                item.className = 'sprite-item';
+                
+                const canvas = document.createElement('canvas');
+                canvas.className = 'sprite-canvas';
+                canvas.width = 64;
+                canvas.height = 64;
+                const ctx = canvas.getContext('2d');
+                ctx.imageSmoothingEnabled = false;
+                ctx.drawImage(sprite.canvas, 0, 0, 64, 64);
+                
+                const label = document.createElement('div');
+                label.className = 'sprite-label';
+                label.textContent = `${sprite.unit}_${sprite.army}_${sprite.frame}`;
+                
+                item.appendChild(canvas);
+                item.appendChild(label);
+                container.appendChild(item);
+            });
+        }
+        
+        // Animation functions
+        function createUnitAnimation() {
+            if (selectedSprites.length === 0) {
+                alert('Please select sprites first!');
+                return;
+            }
+            
+            // Automatically detect and group frames for the first selected unit
+            const firstSprite = extractedSprites[selectedSprites[0]];
+            const targetUnit = firstSprite.unit;
+            const targetArmy = firstSprite.army;
+            
+            // Determine animation type from the first sprite
+            let animationType = 'idle';
+            if (firstSprite.filename.includes('_unavailable_')) {
+                animationType = 'unavailable';
+            } else if (firstSprite.filename.includes('_movement_')) {
+                animationType = 'movement';
+            }
+            
+            // Find all frames for this specific unit and army with the same animation type
+            const unitFrames = [];
+            extractedSprites.forEach((sprite, index) => {
+                if (sprite.unit === targetUnit && 
+                    sprite.army === targetArmy && 
+                    sprite.filename.includes(`_${animationType}_`)) {
+                    unitFrames.push({index, sprite, frame: sprite.frame || 0});
+                }
+            });
+            
+            if (unitFrames.length === 0) {
+                alert(`No ${animationType} frames found for ${targetUnit} ${targetArmy}!`);
+                return;
+            }
+            
+            // Sort frames by frame number (0, 1, 2)
+            unitFrames.sort((a, b) => a.frame - b.frame);
+            
+            // Create animation from sorted frames
+            currentAnimation = unitFrames.map(frameData => frameData.sprite);
+            
+            updateStatus(`${animationType} animation created for ${targetUnit} ${targetArmy} with ${unitFrames.length} frames`);
+            
+            // Automatically save the animation to library
+            saveCurrentAnimation();
+        }
+        
+        // Animation library management
+        function saveCurrentAnimation() {
+            if (!currentAnimation || currentAnimation.length === 0) {
+                console.log('No animation to save');
+                return;
+            }
+            
+            // Generate animation name
+            const firstSprite = currentAnimation[0];
+            
+            // For multi-unit animations, create a general name
+            const uniqueUnits = [...new Set(currentAnimation.map(s => `${s.unit}_${s.army}`))];
+            let animationName;
+            
+            if (uniqueUnits.length === 1) {
+                // Single unit animation
+                animationName = `${firstSprite.unit}_${firstSprite.army}_${getAnimationType(firstSprite)}`;
+            } else {
+                // Multi-unit animation
+                const animType = getAnimationType(firstSprite);
+                animationName = `MultiUnit_${firstSprite.army}_${animType}_${Date.now()}`;
+            }
+            
+            // Check if animation already exists
+            const existingIndex = savedAnimations.findIndex(anim => anim.name === animationName);
+            if (existingIndex !== -1 && uniqueUnits.length === 1) {
+                // Only ask for confirmation on single-unit animations
+                savedAnimations[existingIndex] = {
+                    name: animationName,
+                    frames: [...currentAnimation],
+                    frameCount: currentAnimation.length,
+                    dateCreated: new Date().toLocaleString()
+                };
+            } else {
+                savedAnimations.push({
+                    name: animationName,
+                    frames: [...currentAnimation],
+                    frameCount: currentAnimation.length,
+                    dateCreated: new Date().toLocaleString()
+                });
+            }
+            
+            displayAnimationsLibrary();
+            console.log(`Animation "${animationName}" saved to library!`);
+        }
+        
+        function getAnimationType(sprite) {
+            if (sprite.filename.includes('_unavailable_')) return 'unavailable';
+            if (sprite.filename.includes('_movement_')) return 'movement';
+            return 'available';
+        }
+        
+        function displayAnimationsLibrary() {
+            const container = document.getElementById('animationsLibrary');
+            container.innerHTML = '';
+            
+            if (savedAnimations.length === 0) {
+                container.innerHTML = '<div class="status-text">No saved animations yet</div>';
+                return;
+            }
+            
+            savedAnimations.forEach((animation, index) => {
+                const item = document.createElement('div');
+                item.className = 'sprite-item';
+                item.style.width = 'auto';
+                item.style.minWidth = '150px';
+                item.onclick = () => loadAnimation(index);
+                
+                // Create preview canvas showing first frame
+                const canvas = document.createElement('canvas');
+                canvas.className = 'sprite-canvas';
+                canvas.width = 64;
+                canvas.height = 64;
+                const ctx = canvas.getContext('2d');
+                ctx.imageSmoothingEnabled = false;
+                if (animation.frames[0]) {
+                    ctx.drawImage(animation.frames[0].canvas, 0, 0, 64, 64);
+                }
+                
+                const label = document.createElement('div');
+                label.className = 'sprite-label';
+                label.innerHTML = `
+                    <strong>${animation.name}</strong><br>
+                    <small>${animation.frameCount} frames</small><br>
+                    <small>${animation.dateCreated}</small>
+                `;
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = '🗑️';
+                deleteBtn.style.cssText = 'position: absolute; top: 2px; right: 2px; background: red; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 10px; padding: 2px;';
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    deleteAnimation(index);
+                };
+                
+                item.appendChild(canvas);
+                item.appendChild(label);
+                item.appendChild(deleteBtn);
+                container.appendChild(item);
+            });
+        }
+        
+        function loadAnimation(index) {
+            const animation = savedAnimations[index];
+            currentAnimation = animation.frames;
+            updateStatus(`Loaded animation "${animation.name}" with ${animation.frameCount} frames`);
+        }
+        
+        function deleteAnimation(index) {
+            const animation = savedAnimations[index];
+            if (confirm(`Delete animation "${animation.name}"?`)) {
+                savedAnimations.splice(index, 1);
+                displayAnimationsLibrary();
+                updateStatus(`Animation "${animation.name}" deleted`);
+            }
+        }
+        
+        function clearAnimationsLibrary() {
+            if (savedAnimations.length === 0) {
+                alert('Animation library is already empty!');
+                return;
+            }
+            
+            if (confirm(`Delete all ${savedAnimations.length} saved animations?`)) {
+                savedAnimations = [];
+                displayAnimationsLibrary();
+                updateStatus('Animation library cleared');
+            }
+        }
+        
+        function createAnimationByType(animationType) {
+            if (extractedSprites.length === 0) {
+                alert('Please extract sprites first!');
+                return;
+            }
+            
+            // Auto-find all sprites of the specified animation type
+            const unitGroups = {};
+            extractedSprites.forEach((sprite, index) => {
+                const spriteType = getAnimationType(sprite);
+                
+                if (spriteType === animationType) {
+                    const key = `${sprite.unit}_${sprite.army}`;
+                    if (!unitGroups[key]) {
+                        unitGroups[key] = [];
+                    }
+                    unitGroups[key].push({index, sprite, frame: sprite.frame || 0});
+                }
+            });
+            
+            if (Object.keys(unitGroups).length === 0) {
+                alert(`No ${animationType} sprites found! Please extract ${animationType} sprites first.`);
+                return;
+            }
+            
+            // Create separate animations for each unit
+            const createdAnimations = [];
+            Object.keys(unitGroups).forEach(unitKey => {
+                const frames = unitGroups[unitKey];
+                // Sort frames by frame number (0, 1, 2)
+                frames.sort((a, b) => a.frame - b.frame);
+                
+                // Create individual unit animation
+                currentAnimation = frames.map(frameData => frameData.sprite);
+                
+                // Save individual unit animation
+                const firstSprite = frames[0].sprite;
+                const animationName = `${firstSprite.unit}_${firstSprite.army}_${animationType}`;
+                
+                // Check if animation already exists
+                const existingIndex = savedAnimations.findIndex(anim => anim.name === animationName);
+                if (existingIndex !== -1) {
+                    // Update existing animation
+                    savedAnimations[existingIndex] = {
+                        name: animationName,
+                        frames: [...currentAnimation],
+                        frameCount: currentAnimation.length,
+                        dateCreated: new Date().toLocaleString()
+                    };
+                } else {
+                    // Add new animation
+                    savedAnimations.push({
+                        name: animationName,
+                        frames: [...currentAnimation],
+                        frameCount: currentAnimation.length,
+                        dateCreated: new Date().toLocaleString()
+                    });
+                }
+                
+                createdAnimations.push(animationName);
+            });
+            
+            displayAnimationsLibrary();
+            updateStatus(`Created ${createdAnimations.length} ${animationType} animations: ${createdAnimations.join(', ')}`);
+            
+            // Set current animation to the first unit for preview
+            if (createdAnimations.length > 0) {
+                currentAnimation = savedAnimations[savedAnimations.length - createdAnimations.length].frames;
+            }
+        }
+        
+        function playAnimation() {
+            if (!currentAnimation || currentAnimation.length === 0) {
+                alert('No animation to play!');
+                return;
+            }
+            
+            if (animationInterval) {
+                clearInterval(animationInterval);
+            }
+            
+            const canvas = document.getElementById('animationCanvas');
+            const ctx = canvas.getContext('2d');
+            const speed = parseInt(document.getElementById('animSpeed').value);
+            
+            animationInterval = setInterval(() => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.imageSmoothingEnabled = false;
+                
+                const sprite = currentAnimation[animationFrame];
+                ctx.drawImage(sprite.canvas, 0, 0, canvas.width, canvas.height);
+                
+                animationFrame = (animationFrame + 1) % currentAnimation.length;
+            }, speed);
+            
+            updateStatus('Animation playing...');
+        }
+        
+        function pauseAnimation() {
+            if (animationInterval) {
+                clearInterval(animationInterval);
+                animationInterval = null;
+                updateStatus('Animation paused');
+            }
+        }
+        
+        function stopAnimation() {
+            if (animationInterval) {
+                clearInterval(animationInterval);
+                animationInterval = null;
+            }
+            animationFrame = 0;
+            
+            const canvas = document.getElementById('animationCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            updateStatus('Animation stopped');
+        }
+        
+        function updateAnimationSpeed() {
+            const speed = document.getElementById('animSpeed').value;
+            document.getElementById('speedDisplay').textContent = speed + 'ms';
+            
+            // Restart animation with new speed if playing
+            if (animationInterval && currentAnimation) {
+                pauseAnimation();
+                playAnimation();
+            }
+        }
+        
+        // Tile extraction functions
+        function extractAllTiles() {
+            updateStatus('Tile extraction feature coming soon!');
+        }
+        
+        function extractTileCategory(category) {
+            updateStatus(`${category} tile extraction feature coming soon!`);
+        }
+        
+        // Stealth sprite extraction
+        function extractStealthFrames() {
+            if (!stealthSpriteSheet) {
+                alert('Please upload the stealth animation file first!');
+                return;
+            }
+            
+            updateStatus('Extracting STEALTH animation frames...');
+            
+            // The stealth animation appears to be 16x16 pixels per frame
+            const frameWidth = 16;
+            const frameHeight = 16;
+            const totalFrames = Math.floor(stealthSpriteSheet.width / frameWidth);
+            
+            console.log(`Stealth animation: ${totalFrames} frames detected`);
+            
+            extractedSprites = [];
+            
+            for (let frame = 0; frame < totalFrames; frame++) {
+                const canvas = document.createElement('canvas');
+                canvas.width = frameWidth;
+                canvas.height = frameHeight;
+                const ctx = canvas.getContext('2d');
+                
+                // Extract each frame horizontally
+                ctx.drawImage(
+                    stealthSpriteSheet,
+                    frame * frameWidth, 0, frameWidth, frameHeight,
+                    0, 0, frameWidth, frameHeight
+                );
+                
+                const sprite = {
+                    canvas: canvas,
+                    unit: 'STEALTH',
+                    army: 'ALL',
+                    frame: frame,
+                    filename: `STEALTH_frame_${frame}.png`,
+                    dataURL: canvas.toDataURL('image/png')
+                };
+                
+                extractedSprites.push(sprite);
+                updateProgress(((frame + 1) / totalFrames) * 100);
+            }
+            
+            displayExtractedSprites();
+            updateStatus(`Extracted ${totalFrames} STEALTH animation frames!`);
+        }
+        
+        // Blackbomb sprite extraction
+        function extractBlackbombFrames() {
+            if (!blackbombSpriteSheet) {
+                alert('Please upload the blackbomb animation file first!');
+                return;
+            }
+            
+            updateStatus('Extracting BLACKBOMB animation frames...');
+            
+            // The blackbomb animation should be 16x16 pixels per frame
+            const frameWidth = 16;
+            const frameHeight = 16;
+            const totalFrames = Math.floor(blackbombSpriteSheet.width / frameWidth);
+            
+            console.log(`Blackbomb animation: ${totalFrames} frames detected`);
+            
+            extractedSprites = [];
+            
+            for (let frame = 0; frame < totalFrames; frame++) {
+                const canvas = document.createElement('canvas');
+                canvas.width = frameWidth;
+                canvas.height = frameHeight;
+                const ctx = canvas.getContext('2d');
+                
+                // Extract each frame horizontally
+                ctx.drawImage(
+                    blackbombSpriteSheet,
+                    frame * frameWidth, 0, frameWidth, frameHeight,
+                    0, 0, frameWidth, frameHeight
+                );
+                
+                const sprite = {
+                    canvas: canvas,
+                    unit: 'BLACKBOMB',
+                    army: 'ALL',
+                    frame: frame,
+                    filename: `BLACKBOMB_frame_${frame}.png`,
+                    dataURL: canvas.toDataURL('image/png')
+                };
+                
+                extractedSprites.push(sprite);
+                updateProgress(((frame + 1) / totalFrames) * 100);
+            }
+            
+            displayExtractedSprites();
+            updateStatus(`Extracted ${totalFrames} BLACKBOMB animation frames!`);
+        }
+        
+        // Extract specific animation types (movement, unavailable)
+        function extractAnimationType(animationType) {
+            if (!unitSpriteSheet) {
+                alert('Please upload the unit sprite sheet first!');
+                return;
+            }
+            
+            const animations = ANIMATION_COORDS[animationType];
+            if (!animations) {
+                alert(`No ${animationType} animations found in config!`);
+                return;
+            }
+            
+            updateStatus(`Extracting ${animationType} animations...`);
+            logToConsole(`🎯 Starting extraction of ${animationType} animations...`);
+            
+            // Special handling for movement animations
+            if (animationType === 'movement') {
+                const standardUnits = ['BCOPTER', 'TCOPTER', 'BATTLESHIP', 'LANDER', 'SUB'];
+                const missingUnits = ['CARRIER', 'BLACKBOAT', 'MEGATANK', 'STEALTH'];
+                
+                logToConsole(`   📊 Movement grid info:`);
+                logToConsole(`   • Air/Naval units (2×3 grid): ${standardUnits.join(', ')}`);
+                logToConsole(`   • Other units (3×3 grid): Most land units`);
+                logToConsole(`   ⚠️  Missing movement sprites: ${missingUnits.join(', ')}`);
+            }
+            
+            extractedSprites = [];
+            const animationKeys = Object.keys(animations);
+            let extracted = 0;
+            
+            animationKeys.forEach(animKey => {
+                const coords = animations[animKey];
+                const canvas = document.createElement('canvas');
+                canvas.width = SPRITE_SIZE;
+                canvas.height = SPRITE_SIZE;
+                const ctx = canvas.getContext('2d');
+                
+                ctx.drawImage(
+                    unitSpriteSheet,
+                    coords.x, coords.y, SPRITE_SIZE, SPRITE_SIZE,
+                    0, 0, SPRITE_SIZE, SPRITE_SIZE
+                );
+                
+                const sprite = {
+                    canvas: canvas,
+                    unit: animKey.split('_')[0], // Extract unit name (e.g., INFANTRY)
+                    army: animKey.split('_')[1], // Extract army (e.g., RED)
+                    frame: animKey.split('_')[3] || 0, // Extract frame number
+                    filename: `${animKey}.png`,
+                    dataURL: canvas.toDataURL('image/png')
+                };
+                
+                extractedSprites.push(sprite);
+                extracted++;
+                updateProgress((extracted / animationKeys.length) * 100);
+                
+                console.log(`Extracted ${animKey} at position:`, coords);
+            });
+            
+            displayExtractedSprites();
+            updateStatus(`Extracted ${extracted} ${animationType} animation frames!`);
+            logToConsole(`✅ Extracted ${extracted} ${animationType} animation frames successfully`);
+        }
+        
+        // Extract specific animation type for specific army
+        function extractArmyAnimation(army, animationType) {
+            if (!unitSpriteSheet) {
+                alert('Please upload the unit sprite sheet first!');
+                return;
+            }
+            
+            const animations = ANIMATION_COORDS[animationType];
+            if (!animations) {
+                alert(`No ${animationType} animations found in config!`);
+                return;
+            }
+            
+            updateStatus(`Extracting ${army} ${animationType} animations...`);
+            logToConsole(`🎯 Starting extraction of ${army} ${animationType} animations...`);
+            
+            extractedSprites = [];
+            let extracted = 0;
+            
+            // Filter animations for specific army and animation type
+            const armyAnimations = Object.keys(animations).filter(key => 
+                key.includes(`_${army}_${animationType}_`)
+            );
+            
+            if (armyAnimations.length === 0) {
+                const message = `No ${army} ${animationType} animations found in config!`;
+                alert(message);
+                logToConsole(`❌ ${message}`);
+                return;
+            }
+            
+            armyAnimations.forEach(animKey => {
+                const coords = animations[animKey];
+                const canvas = document.createElement('canvas');
+                canvas.width = SPRITE_SIZE;
+                canvas.height = SPRITE_SIZE;
+                const ctx = canvas.getContext('2d');
+                
+                ctx.drawImage(
+                    unitSpriteSheet,
+                    coords.x, coords.y, SPRITE_SIZE, SPRITE_SIZE,
+                    0, 0, SPRITE_SIZE, SPRITE_SIZE
+                );
+                
+                const sprite = {
+                    canvas: canvas,
+                    unit: animKey.split('_')[0], // Extract unit name
+                    army: animKey.split('_')[1], // Extract army
+                    frame: animKey.split('_')[3] || 0, // Extract frame number
+                    filename: `${animKey}.png`,
+                    dataURL: canvas.toDataURL('image/png')
+                };
+                
+                extractedSprites.push(sprite);
+                extracted++;
+                updateProgress((extracted / armyAnimations.length) * 100);
+                
+                logToConsole(`   📦 Extracted ${animKey} at (${coords.x}, ${coords.y})`);
+            });
+            
+            displayExtractedSprites();
+            updateStatus(`Extracted ${extracted} ${army} ${animationType} sprites!`);
+            logToConsole(`✅ Successfully extracted ${extracted} ${army} ${animationType} sprites`);
+        }
+        
+        // Extract unavailable sprites for specific army
+        function extractUnavailableByArmy(army) {
+            if (!unitSpriteSheet) {
+                alert('Please upload the unit sprite sheet first!');
+                return;
+            }
+            
+            const animations = ANIMATION_COORDS['unavailable'];
+            if (!animations) {
+                alert('No unavailable animations found in config!');
+                return;
+            }
+            
+            updateStatus(`Extracting ${army} unavailable sprites...`);
+            
+            extractedSprites = [];
+            let extracted = 0;
+            
+            // Filter animations for specific army
+            const armyAnimations = Object.keys(animations).filter(key => 
+                key.includes(`_${army}_unavailable_`)
+            );
+            
+            armyAnimations.forEach(animKey => {
+                const coords = animations[animKey];
+                const canvas = document.createElement('canvas');
+                canvas.width = SPRITE_SIZE;
+                canvas.height = SPRITE_SIZE;
+                const ctx = canvas.getContext('2d');
+                
+                ctx.drawImage(
+                    unitSpriteSheet,
+                    coords.x, coords.y, SPRITE_SIZE, SPRITE_SIZE,
+                    0, 0, SPRITE_SIZE, SPRITE_SIZE
+                );
+                
+                const sprite = {
+                    canvas: canvas,
+                    unit: animKey.split('_')[0], // Extract unit name
+                    army: animKey.split('_')[1], // Extract army
+                    frame: animKey.split('_')[3] || 0, // Extract frame number
+                    filename: `${animKey}.png`,
+                    dataURL: canvas.toDataURL('image/png')
+                };
+                
+                extractedSprites.push(sprite);
+                extracted++;
+                updateProgress((extracted / armyAnimations.length) * 100);
+                
+                console.log(`Extracted ${animKey} at position:`, coords);
+            });
+            
+            displayExtractedSprites();
+            updateStatus(`Extracted ${extracted} ${army} unavailable sprites!`);
+        }
+        
+        // Animation generation functions
+        function generateAnimationsByType(animationType) {
+            if (extractedSprites.length === 0) {
+                alert('Please extract sprites first!');
+                return;
+            }
+            
+            updateStatus(`Auto-generating all ${animationType} animations...`);
+            
+            // Auto-create all animations of this type
+            createAnimationByType(animationType);
+        }
+        
+        function generateAttackAnimations() {
+            updateStatus('Attack animation generation feature coming soon!');
+        }
+        
+        // Export functions
+        function generateJavaScriptCode() {
+            if (extractedSprites.length === 0) {
+                alert('Please extract sprites first!');
+                return;
+            }
+            
+            const code = `// Advance Wars Sprite Data
+// Generated automatically from sprite extractor
+
+export const SPRITE_DATA = {
+    SPRITE_SIZE: ${SPRITE_SIZE},
+    ARMIES: ${JSON.stringify(Object.keys(ARMY_OFFSETS), null, 4)},
+    UNITS: ${JSON.stringify(Object.keys(UNIT_OFFSETS), null, 4)},
+    
+    // Sprite file mapping
+    SPRITE_FILES: {
+${extractedSprites.map(sprite => 
+    `        "${sprite.unit}_${sprite.army}": "${sprite.filename}"`
+).join(',\n')}
+    },
+    
+    // Animation sequences
+    ANIMATIONS: {
+        IDLE: {
+            duration: 1000,
+            loop: true,
+            frames: [0] // Single frame for idle
+        },
+        MOVE: {
+            duration: 800,
+            loop: true,
+            frames: [0, 1, 0, 2] // Example movement cycle
+        },
+        ATTACK: {
+            duration: 600,
+            loop: false,
+            frames: [0, 3, 4, 3, 0] // Example attack sequence
+        }
+    }
+};
+
+// Sprite loading utility
+export class SpriteLoader {
+    constructor(basePath = './sprites/') {
+        this.basePath = basePath;
+        this.loadedSprites = new Map();
+    }
+    
+    async loadSprite(unit, army) {
+        const key = \`\${unit}_\${army}\`;
+        if (this.loadedSprites.has(key)) {
+            return this.loadedSprites.get(key);
+        }
+        
+        const img = new Image();
+        const promise = new Promise((resolve, reject) => {
+            img.onload = () => resolve(img);
+            img.onerror = reject;
+        });
+        
+        img.src = this.basePath + SPRITE_DATA.SPRITE_FILES[key];
+        this.loadedSprites.set(key, await promise);
+        return this.loadedSprites.get(key);
+    }
+    
+    async loadAllSprites() {
+        const loadPromises = [];
+        SPRITE_DATA.ARMIES.forEach(army => {
+            SPRITE_DATA.UNITS.forEach(unit => {
+                loadPromises.push(this.loadSprite(unit, army));
+            });
+        });
+        await Promise.all(loadPromises);
+    }
+}
+
+// Animation controller
+export class SpriteAnimator {
+    constructor(canvas, spriteLoader) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.spriteLoader = spriteLoader;
+        this.currentAnimation = null;
+        this.frameIndex = 0;
+        this.lastFrameTime = 0;
+        this.playing = false;
+    }
+    
+    playAnimation(unit, army, animationType = 'IDLE') {
+        this.currentAnimation = {
+            unit,
+            army,
+            type: animationType,
+            config: SPRITE_DATA.ANIMATIONS[animationType],
+            startTime: Date.now()
+        };
+        this.frameIndex = 0;
+        this.playing = true;
+        this.animate();
+    }
+    
+    animate() {
+        if (!this.playing || !this.currentAnimation) return;
+        
+        const now = Date.now();
+        const elapsed = now - this.currentAnimation.startTime;
+        const config = this.currentAnimation.config;
+        const frameDuration = config.duration / config.frames.length;
+        
+        if (now - this.lastFrameTime >= frameDuration) {
+            this.renderFrame();
+            this.frameIndex++;
+            
+            if (this.frameIndex >= config.frames.length) {
+                if (config.loop) {
+                    this.frameIndex = 0;
+                    this.currentAnimation.startTime = now;
+                } else {
+                    this.playing = false;
+                    return;
+                }
+            }
+            this.lastFrameTime = now;
+        }
+        
+        requestAnimationFrame(() => this.animate());
+    }
+    
+    async renderFrame() {
+        const sprite = await this.spriteLoader.loadSprite(
+            this.currentAnimation.unit,
+            this.currentAnimation.army
+        );
+        
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.imageSmoothingEnabled = false;
+        this.ctx.drawImage(
+            sprite,
+            0, 0, sprite.width, sprite.height,
+            0, 0, this.canvas.width, this.canvas.height
+        );
+    }
+    
+    stop() {
+        this.playing = false;
+        this.currentAnimation = null;
+    }
+}`;
+            
+            document.getElementById('generatedCode').textContent = code;
+            updateStatus('JavaScript code generated successfully!');
+        }
+        
+        function generateJSONData() {
+            if (extractedSprites.length === 0) {
+                alert('Please extract sprites first!');
+                return;
+            }
+            
+            const jsonData = {
+                metadata: {
+                    generated: new Date().toISOString(),
+                    spriteSize: SPRITE_SIZE,
+                    totalSprites: extractedSprites.length,
+                    sheetDimensions: {
+                        width: SPRITE_SHEET_WIDTH,
+                        height: SPRITE_SHEET_HEIGHT
+                    }
+                },
+                armies: Object.keys(ARMY_OFFSETS),
+                units: Object.keys(UNIT_OFFSETS),
+                sprites: extractedSprites.map(sprite => ({
+                    unit: sprite.unit,
+                    army: sprite.army,
+                    filename: sprite.filename,
+                    position: calculateSpritePosition(sprite.unit, sprite.army)
+                })),
+                animations: {
+                    idle: {
+                        duration: 1000,
+                        loop: true,
+                        frameCount: 1
+                    },
+                    move: {
+                        duration: 800,
+                        loop: true,
+                        frameCount: 4
+                    },
+                    attack: {
+                        duration: 600,
+                        loop: false,
+                        frameCount: 5
+                    }
+                }
+            };
+            
+            document.getElementById('generatedCode').textContent = JSON.stringify(jsonData, null, 2);
+            updateStatus('JSON data generated successfully!');
+        }
+        
+        function generateCSSSprites() {
+            if (extractedSprites.length === 0) {
+                alert('Please extract sprites first!');
+                return;
+            }
+            
+            let css = `/* Advance Wars CSS Sprites */
+/* Generated automatically from sprite extractor */
+
+.aw-sprite {
+    width: ${SPRITE_SIZE * 4}px;
+    height: ${SPRITE_SIZE * 4}px;
+    background-image: url('aw2_blackhole_units_map_transparent.png');
+    background-size: ${SPRITE_SHEET_WIDTH * 4}px ${SPRITE_SHEET_HEIGHT * 4}px;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+}
+
+`;
+            
+            extractedSprites.forEach(sprite => {
+                const pos = calculateSpritePosition(sprite.unit, sprite.army);
+                css += `.aw-sprite.${sprite.unit.toLowerCase()}.${sprite.army.toLowerCase()} {
+    background-position: -${pos.x * 4}px -${pos.y * 4}px;
+}
+
+`;
+            });
+            
+            css += `/* Animation classes */
+.aw-sprite.animate {
+    animation-duration: 1s;
+    animation-iteration-count: infinite;
+}
+
+@keyframes aw-idle {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+}
+
+@keyframes aw-move {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(2px); }
+    75% { transform: translateX(-2px); }
+}
+
+.aw-sprite.idle {
+    animation-name: aw-idle;
+}
+
+.aw-sprite.move {
+    animation-name: aw-move;
+    animation-duration: 0.8s;
+}`;
+            
+            document.getElementById('generatedCode').textContent = css;
+            updateStatus('CSS sprite code generated successfully!');
+        }
+        
+        function generateUnityData() {
+            if (extractedSprites.length === 0) {
+                alert('Please extract sprites first!');
+                return;
+            }
+            
+            const unityData = `// Unity Sprite Animation Data
+// Generated for Advance Wars sprites
+
+using UnityEngine;
+using System.Collections.Generic;
+
+[System.Serializable]
+public class SpriteData
+{
+    public string unit;
+    public string army;
+    public Vector2 position;
+    public string filename;
+}
+
+[System.Serializable]
+public class AnimationData
+{
+    public string name;
+    public float duration;
+    public bool loop;
+    public int frameCount;
+}
+
+[CreateAssetMenu(fileName = "AdvanceWarsSpriteData", menuName = "Advance Wars/Sprite Data")]
+public class AdvanceWarsSpriteData : ScriptableObject
+{
+    [Header("Sprite Configuration")]
+    public int spriteSize = ${SPRITE_SIZE};
+    public Vector2 sheetDimensions = new Vector2(${SPRITE_SHEET_WIDTH}, ${SPRITE_SHEET_HEIGHT});
+    
+    [Header("Sprite Data")]
+    public List<SpriteData> sprites = new List<SpriteData>
+    {
+${extractedSprites.map(sprite => {
+    const pos = calculateSpritePosition(sprite.unit, sprite.army);
+    return `        new SpriteData { unit = "${sprite.unit}", army = "${sprite.army}", position = new Vector2(${pos.x}, ${pos.y}), filename = "${sprite.filename}" }`;
+}).join(',\n')}
+    };
+    
+    [Header("Animation Data")]
+    public List<AnimationData> animations = new List<AnimationData>
+    {
+        new AnimationData { name = "Idle", duration = 1.0f, loop = true, frameCount = 1 },
+        new AnimationData { name = "Move", duration = 0.8f, loop = true, frameCount = 4 },
+        new AnimationData { name = "Attack", duration = 0.6f, loop = false, frameCount = 5 }
+    };
+    
+    public SpriteData GetSpriteData(string unit, string army)
+    {
+        return sprites.Find(s => s.unit == unit && s.army == army);
+    }
+    
+    public AnimationData GetAnimationData(string animationName)
+    {
+        return animations.Find(a => a.name == animationName);
+    }
+}`;
+            
+            document.getElementById('generatedCode').textContent = unityData;
+            updateStatus('Unity animation data generated successfully!');
+        }
+        
+        function downloadAllSprites() {
+            if (extractedSprites.length === 0) {
+                alert('Please extract sprites first!');
+                return;
+            }
+            
+            updateStatus('Preparing sprite downloads...');
+            
+            extractedSprites.forEach((sprite, index) => {
+                setTimeout(() => {
+                    const link = document.createElement('a');
+                    link.download = sprite.filename;
+                    link.href = sprite.dataURL;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    updateProgress(((index + 1) / extractedSprites.length) * 100);
+                    if (index === extractedSprites.length - 1) {
+                        updateStatus('All sprites downloaded successfully!');
+                    }
+                }, index * 100); // Stagger downloads
+            });
+        }
+        
+        function downloadAnimations() {
+            if (savedAnimations.length === 0) {
+                alert('No animations to download! Please create animations first.');
+                return;
+            }
+            
+            updateStatus('Preparing animation downloads...');
+            
+            // Download each animation as animated GIF
+            savedAnimations.forEach((animation, index) => {
+                setTimeout(() => {
+                    createAnimatedGIF(animation);
+                    updateProgress(((index + 1) / savedAnimations.length) * 100);
+                    if (index === savedAnimations.length - 1) {
+                        updateStatus('All animations downloaded!');
+                    }
+                }, index * 200); // Stagger downloads
+            });
+        }
+        
+        function createAnimatedGIF(animation) {
+            // Create canvas for GIF frames
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            
+            // For now, download first frame as PNG (GIF creation requires external library)
+            // TODO: Implement proper GIF creation
+            if (animation.frames.length > 0) {
+                ctx.imageSmoothingEnabled = false;
+                ctx.drawImage(animation.frames[0].canvas, 0, 0, 64, 64);
+                
+                const link = document.createElement('a');
+                link.download = `${animation.name}.png`;
+                link.href = canvas.toDataURL('image/png');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+        
+        function downloadAnimationFrames() {
+            if (savedAnimations.length === 0) {
+                alert('No animations to download! Please create animations first.');
+                return;
+            }
+            
+            updateStatus('Downloading animation frames...');
+            
+            let totalFrames = 0;
+            let downloadedFrames = 0;
+            
+            // Count total frames
+            savedAnimations.forEach(animation => {
+                totalFrames += animation.frames.length;
+            });
+            
+            // Download all frames from all animations
+            savedAnimations.forEach(animation => {
+                animation.frames.forEach((frame, frameIndex) => {
+                    setTimeout(() => {
+                        const link = document.createElement('a');
+                        link.download = `${animation.name}_frame_${frameIndex}.png`;
+                        link.href = frame.dataURL;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        
+                        downloadedFrames++;
+                        updateProgress((downloadedFrames / totalFrames) * 100);
+                        
+                        if (downloadedFrames === totalFrames) {
+                            updateStatus(`Downloaded ${totalFrames} animation frames from ${savedAnimations.length} animations!`);
+                        }
+                    }, downloadedFrames * 100); // Stagger downloads
+                });
+            });
+        }
+        
+        function downloadAnimationJSON() {
+            if (savedAnimations.length === 0) {
+                alert('No animations to download! Please create animations first.');
+                return;
+            }
+            
+            // Create comprehensive animation data
+            const animationData = {
+                metadata: {
+                    generated: new Date().toISOString(),
+                    totalAnimations: savedAnimations.length,
+                    tool: "Advance Wars Sprite Extractor & Animator"
+                },
+                animations: savedAnimations.map(animation => ({
+                    name: animation.name,
+                    frameCount: animation.frameCount,
+                    dateCreated: animation.dateCreated,
+                    frames: animation.frames.map((frame, index) => ({
+                        index: index,
+                        filename: `${animation.name}_frame_${index}.png`,
+                        unit: frame.unit,
+                        army: frame.army,
+                        frame: frame.frame || 0
+                    })),
+                    animationSettings: {
+                        duration: animation.frameCount * 500, // 500ms per frame
+                        loop: true,
+                        fps: 2 // 2 frames per second
+                    }
+                }))
+            };
+            
+            // Download JSON file
+            const jsonBlob = new Blob([JSON.stringify(animationData, null, 2)], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.download = 'animations_data.json';
+            link.href = URL.createObjectURL(jsonBlob);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            updateStatus(`Animation data exported! ${savedAnimations.length} animations saved to animations_data.json`);
+        }
+        
+        function downloadSpriteSheet() {
+            if (extractedSprites.length === 0) {
+                alert('Please extract sprites first!');
+                return;
+            }
+            
+            // Create combined sprite sheet
+            const canvas = document.createElement('canvas');
+            const cols = Math.ceil(Math.sqrt(extractedSprites.length));
+            const rows = Math.ceil(extractedSprites.length / cols);
+            
+            canvas.width = cols * SPRITE_SIZE;
+            canvas.height = rows * SPRITE_SIZE;
+            const ctx = canvas.getContext('2d');
+            
+            extractedSprites.forEach((sprite, index) => {
+                const x = (index % cols) * SPRITE_SIZE;
+                const y = Math.floor(index / cols) * SPRITE_SIZE;
+                ctx.drawImage(sprite.canvas, x, y);
+            });
+            
+            // Download combined sheet
+            const link = document.createElement('a');
+            link.download = 'advance_wars_sprites_combined.png';
+            link.href = canvas.toDataURL('image/png');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Generate and download JSON mapping
+            const mapping = {
+                metadata: {
+                    generated: new Date().toISOString(),
+                    spriteSize: SPRITE_SIZE,
+                    sheetDimensions: { width: canvas.width, height: canvas.height },
+                    cols: cols,
+                    rows: rows
+                },
+                sprites: extractedSprites.map((sprite, index) => ({
+                    unit: sprite.unit,
+                    army: sprite.army,
+                    index: index,
+                    position: {
+                        x: (index % cols) * SPRITE_SIZE,
+                        y: Math.floor(index / cols) * SPRITE_SIZE
+                    }
+                }))
+            };
+            
+            const jsonBlob = new Blob([JSON.stringify(mapping, null, 2)], { type: 'application/json' });
+            const jsonLink = document.createElement('a');
+            jsonLink.download = 'sprite_mapping.json';
+            jsonLink.href = URL.createObjectURL(jsonBlob);
+            document.body.appendChild(jsonLink);
+            jsonLink.click();
+            document.body.removeChild(jsonLink);
+            
+            updateStatus('Combined sprite sheet and mapping downloaded!');
+        }
+        
+        function downloadProject() {
+            if (extractedSprites.length === 0) {
+                alert('Please extract sprites first!');
+                return;
+            }
+            
+            updateStatus('Preparing complete project download...');
+            
+            // This would ideally create a ZIP file with all sprites, code, and documentation
+            // For now, we'll download the main files separately
+            downloadSpriteSheet();
+            
+            setTimeout(() => {
+                generateJavaScriptCode();
+                const jsCode = document.getElementById('generatedCode').textContent;
+                const jsBlob = new Blob([jsCode], { type: 'text/javascript' });
+                const jsLink = document.createElement('a');
+                jsLink.download = 'advance_wars_sprites.js';
+                jsLink.href = URL.createObjectURL(jsBlob);
+                document.body.appendChild(jsLink);
+                jsLink.click();
+                document.body.removeChild(jsLink);
+            }, 1000);
+            
+            setTimeout(() => {
+                generateCSSSprites();
+                const cssCode = document.getElementById('generatedCode').textContent;
+                const cssBlob = new Blob([cssCode], { type: 'text/css' });
+                const cssLink = document.createElement('a');
+                cssLink.download = 'advance_wars_sprites.css';
+                cssLink.href = URL.createObjectURL(cssBlob);
+                document.body.appendChild(cssLink);
+                cssLink.click();
+                document.body.removeChild(cssLink);
+            }, 2000);
+            
+            setTimeout(() => {
+                updateStatus('Complete project files downloaded!');
+            }, 3000);
+        }
+        
+        // Utility functions
+        function updateStatus(message) {
+            document.getElementById('extractStatus').textContent = message;
+        }
+        
+        function updateProgress(percentage) {
+            document.getElementById('extractProgress').style.width = percentage + '%';
+        }
+        
+        function logToConsole(message) {
+            const consoleOutput = document.getElementById('consoleOutput');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            
+            // Add new message to console
+            consoleOutput.textContent += logEntry;
+            
+            // Auto-scroll to bottom
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            
+            // Limit console output to last 50 lines
+            const lines = consoleOutput.textContent.split('\n');
+            if (lines.length > 50) {
+                consoleOutput.textContent = lines.slice(-50).join('\n');
+            }
+        }
+        
+        function clearConsole() {
+            document.getElementById('consoleOutput').textContent = 'Console output will appear here...\n';
+        }
+        
+        // Initialize
+        updateStatus('Ready to extract sprites');
+        logToConsole('🎮 Advance Wars Sprite Extractor initialized and ready!');
+    </script>
+</body>
+</html>
