@@ -163,6 +163,35 @@
             box-shadow: 0 0 10px rgba(255,255,255,0.5);
         }
         
+        .indicator-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+            margin: 10px 0;
+        }
+        
+        .indicator-btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 11px;
+            background: #667eea;
+            color: white;
+            transition: all 0.2s;
+        }
+        
+        .indicator-btn.active {
+            background: #2ecc71;
+            transform: scale(1.05);
+            box-shadow: 0 0 10px rgba(46,204,113,0.5);
+        }
+        
+        .indicator-btn:hover {
+            transform: scale(1.02);
+        }
+        
         .unit-select, .state-select {
             width: 100%;
             padding: 8px;
@@ -416,6 +445,16 @@
                 </div>
 
                 <div class="control-group">
+                    <h3>🔢 Indicator Type</h3>
+                    <div class="indicator-buttons">
+                        <button class="indicator-btn active" data-type="units">Unit Sprites</button>
+                        <button class="indicator-btn" data-type="hp_indicators">HP Available</button>
+                        <button class="indicator-btn" data-type="hp_unavailable">HP Unavailable</button>
+                        <button class="indicator-btn" data-type="status_icons">Status Icons</button>
+                    </div>
+                </div>
+
+                <div class="control-group">
                     <h3>🚁 Unit & State</h3>
                     <select id="unitSelect" class="unit-select">
                         <option value="INFANTRY">INFANTRY</option>
@@ -522,6 +561,7 @@
         let selectedUnit = 'INFANTRY';
         let selectedState = 'idle';
         let selectedFrame = 0;
+        let selectedIndicatorType = 'units';
         let currentZoom = 1;
         let correctPosition = null;
         
@@ -538,6 +578,9 @@
             idle: {},
             movement: {},
             unavailable: {},
+            hp_indicators: {},
+            hp_unavailable: {},
+            status_icons: {},
             config: {
                 ...spriteConfig
             }
@@ -645,6 +688,25 @@
             });
         });
         
+        // Indicator type selection
+        document.querySelectorAll('.indicator-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.indicator-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                selectedIndicatorType = this.dataset.type;
+                
+                if (selectedIndicatorType === 'units') {
+                    selectedState = 'idle'; // Default to idle for units
+                } else {
+                    selectedState = selectedIndicatorType; // hp_indicators, hp_unavailable, status_icons
+                }
+                
+                updateFrameControls();
+                updateArmyControls();
+                updateDisplay();
+            });
+        });
+        
         // Unit and state selection
         document.getElementById('unitSelect').addEventListener('change', function() {
             selectedUnit = this.value;
@@ -654,15 +716,41 @@
         document.getElementById('stateSelect').addEventListener('change', function() {
             selectedState = this.value;
             updateFrameControls();
+            updateArmyControls();
             updateDisplay();
         });
         
+        // Army controls visibility
+        function updateArmyControls() {
+            try {
+                // Find sections by looking for specific elements inside them
+                const armySection = document.querySelector('.army-buttons')?.closest('.control-group');
+                const unitSection = document.querySelector('.unit-select')?.closest('.control-group');
+                
+                if (selectedIndicatorType === 'units') {
+                    // Show army and unit selection for regular unit sprites
+                    if (armySection) armySection.style.display = 'block';
+                    if (unitSection) unitSection.style.display = 'block';
+                } else {
+                    // Hide army and unit selection for HP/status icons
+                    if (armySection) armySection.style.display = 'none';
+                    if (unitSection) unitSection.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error updating army controls:', error);
+            }
+        }
+
         // Frame controls
         function updateFrameControls() {
-            const frameSelector = document.getElementById('frameSelector');
-            frameSelector.innerHTML = '';
-            
-            if (selectedState === 'idle' || selectedState === 'unavailable') {
+            try {
+                const frameSelector = document.getElementById('frameSelector');
+                if (!frameSelector) return;
+                
+                frameSelector.innerHTML = '';
+                selectedFrame = 0; // Reset frame selection
+                
+                if (selectedState === 'idle' || selectedState === 'unavailable') {
                 for (let i = 0; i < 3; i++) {
                     const btn = document.createElement('button');
                     btn.className = `frame-btn ${i === 0 ? 'active' : ''}`;
@@ -671,6 +759,42 @@
                     btn.onclick = () => selectFrame(i);
                     frameSelector.appendChild(btn);
                 }
+            } else if (selectedState === 'hp_indicators' || selectedState === 'hp_unavailable') {
+                // HP indicators: 1-9 plus hidden (? icon)
+                const hpLabels = ['1 HP', '2 HP', '3 HP', '4 HP', '5 HP', '6 HP', '7 HP', '8 HP', '9 HP', 'Hidden (?)'];
+                hpLabels.forEach((label, i) => {
+                    const btn = document.createElement('button');
+                    btn.className = `frame-btn ${i === 0 ? 'active' : ''}`;
+                    btn.dataset.frame = i;
+                    btn.textContent = label;
+                    btn.onclick = () => selectFrame(i);
+                    frameSelector.appendChild(btn);
+                });
+                
+                // Update sprite dimensions for 8x8 HP indicators
+                document.getElementById('spriteWidth').value = 8;
+                document.getElementById('spriteHeight').value = 8;
+                spriteConfig.width = 8;
+                spriteConfig.height = 8;
+                
+            } else if (selectedState === 'status_icons') {
+                // Status icons: Loaded, Capturing, Submerged, Unknown
+                const statusLabels = ['Loaded', 'Capturing', 'Submerged', 'Unknown'];
+                statusLabels.forEach((label, i) => {
+                    const btn = document.createElement('button');
+                    btn.className = `frame-btn ${i === 0 ? 'active' : ''}`;
+                    btn.dataset.frame = i;
+                    btn.textContent = label;
+                    btn.onclick = () => selectFrame(i);
+                    frameSelector.appendChild(btn);
+                });
+                
+                // Update sprite dimensions for 8x8 status icons
+                document.getElementById('spriteWidth').value = 8;
+                document.getElementById('spriteHeight').value = 8;
+                spriteConfig.width = 8;
+                spriteConfig.height = 8;
+                
             } else if (selectedState === 'movement') {
                 // Check if this unit has special 2x3 grid (copters and naval units)
                 const specialUnits = ['BCOPTER', 'TCOPTER', 'BATTLESHIP', 'LANDER', 'SUB'];
@@ -718,24 +842,50 @@
                 document.getElementById('movementInfo').style.display = 'none';
             }
             selectedFrame = 0; // Always start with first frame/direction
+            } catch (error) {
+                console.error('Error updating frame controls:', error);
+            }
         }
         
         function selectFrame(frame) {
-            document.querySelectorAll('.frame-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelector(`[data-frame="${frame}"]`).classList.add('active');
-            selectedFrame = frame;
-            updateDisplay();
+            try {
+                document.querySelectorAll('.frame-btn').forEach(btn => btn.classList.remove('active'));
+                const targetBtn = document.querySelector(`[data-frame="${frame}"]`);
+                if (targetBtn) targetBtn.classList.add('active');
+                selectedFrame = frame;
+                updateDisplay();
+            } catch (error) {
+                console.error('Error selecting frame:', error);
+            }
         }
         
         // Calculate current position with variable dimensions and spacing
         function calculateCurrentPosition() {
-            if (!spriteSheet) return null;
-            
-            const key = `${selectedUnit}_${selectedArmy}_${selectedState}_${selectedFrame}`;
-            
-            // Check if we have a correction for this specific sprite
-            if (spriteCorrections[selectedState][key]) {
-                return spriteCorrections[selectedState][key];
+            try {
+                if (!spriteSheet) return null;
+                
+                // Generate different keys for HP/status icons vs units
+                let key;
+                if (selectedState === 'hp_indicators' || selectedState === 'hp_unavailable' || selectedState === 'status_icons') {
+                    // HP/status icons are independent of unit and army
+                    key = `${selectedState}_${selectedFrame}`;
+                } else {
+                    // Regular unit sprites use unit + army + state + frame
+                    key = `${selectedUnit}_${selectedArmy}_${selectedState}_${selectedFrame}`;
+                }
+                
+                // Check if we have a correction for this specific sprite
+                if (spriteCorrections[selectedState] && spriteCorrections[selectedState][key]) {
+                    return spriteCorrections[selectedState][key];
+                }
+                
+                // For HP/status icons, return a placeholder position
+                if (selectedState === 'hp_indicators' || selectedState === 'hp_unavailable' || selectedState === 'status_icons') {
+                    return { x: 100, y: 100 }; // Click on sprite sheet to set correct position
+                }
+            } catch (error) {
+                console.error('Error calculating position:', error);
+                return { x: 100, y: 100 }; // Fallback position
             }
             
             // Calculate base position
@@ -802,10 +952,26 @@
         function saveCorrection() {
             if (!correctPosition) return;
             
-            const key = `${selectedUnit}_${selectedArmy}_${selectedState}_${selectedFrame}`;
+            // Generate different keys for HP/status icons vs units
+            let key, description;
+            if (selectedState === 'hp_indicators' || selectedState === 'hp_unavailable' || selectedState === 'status_icons') {
+                key = `${selectedState}_${selectedFrame}`;
+                if (selectedState === 'hp_indicators') {
+                    description = `HP indicator ${selectedFrame < 9 ? selectedFrame + 1 : 'Hidden'}`;
+                } else if (selectedState === 'hp_unavailable') {
+                    description = `HP unavailable ${selectedFrame < 9 ? selectedFrame + 1 : 'Hidden'}`;
+                } else {
+                    const statusLabels = ['Loaded', 'Capturing', 'Submerged', 'Unknown'];
+                    description = `Status icon ${statusLabels[selectedFrame]}`;
+                }
+            } else {
+                key = `${selectedUnit}_${selectedArmy}_${selectedState}_${selectedFrame}`;
+                description = `${selectedUnit} ${selectedState} frame ${selectedFrame + 1}`;
+            }
+            
             spriteCorrections[selectedState][key] = { ...correctPosition };
             
-            showStatus(`Corrected ${selectedUnit} ${selectedState} frame ${selectedFrame + 1}`, 'success');
+            showStatus(`Corrected ${description}`, 'success');
         }
         
         // Manual adjustment
@@ -818,7 +984,14 @@
                 y: currentPos.y + deltaY
             };
             
-            const key = `${selectedUnit}_${selectedArmy}_${selectedState}_${selectedFrame}`;
+            // Generate different keys for HP/status icons vs units
+            let key;
+            if (selectedState === 'hp_indicators' || selectedState === 'hp_unavailable' || selectedState === 'status_icons') {
+                key = `${selectedState}_${selectedFrame}`;
+            } else {
+                key = `${selectedUnit}_${selectedArmy}_${selectedState}_${selectedFrame}`;
+            }
+            
             spriteCorrections[selectedState][key] = newPos;
             
             updateDisplay();
@@ -827,31 +1000,45 @@
         
         // Reset current position
         function resetCurrentPosition() {
-            const key = `${selectedUnit}_${selectedArmy}_${selectedState}_${selectedFrame}`;
+            // Generate different keys for HP/status icons vs units
+            let key, description;
+            if (selectedState === 'hp_indicators' || selectedState === 'hp_unavailable' || selectedState === 'status_icons') {
+                key = `${selectedState}_${selectedFrame}`;
+                description = `${selectedState} ${selectedFrame}`;
+            } else {
+                key = `${selectedUnit}_${selectedArmy}_${selectedState}_${selectedFrame}`;
+                description = `${selectedUnit} ${selectedState}`;
+            }
+            
             delete spriteCorrections[selectedState][key];
             correctPosition = null;
             updateDisplay();
-            showStatus(`Reset ${selectedUnit} ${selectedState} to calculated position`, 'warning');
+            showStatus(`Reset ${description} to calculated position`, 'warning');
         }
         
         // Update display
         function updateDisplay() {
-            if (!spriteSheet) return;
-            
-            const currentPos = calculateCurrentPosition();
-            if (!currentPos) return;
-            
-            // Update overlays with current sprite dimensions
-            updateOverlay('currentOverlay', currentPos, '#ff6b6b');
-            if (correctPosition) {
-                updateOverlay('correctOverlay', correctPosition, '#2ecc71');
+            try {
+                if (!spriteSheet) return;
+                
+                const currentPos = calculateCurrentPosition();
+                if (!currentPos) return;
+                
+                // Update overlays with current sprite dimensions
+                updateOverlay('currentOverlay', currentPos, '#ff6b6b');
+                if (correctPosition) {
+                    updateOverlay('correctOverlay', correctPosition, '#2ecc71');
+                }
+                
+                // Update coordinates display
+                updateCoordinatesDisplay(currentPos);
+                
+                // Update preview
+                updatePreview(currentPos);
+            } catch (error) {
+                console.error('Error updating display:', error);
+                showStatus('Display update error: ' + error.message, 'warning');
             }
-            
-            // Update coordinates display
-            updateCoordinatesDisplay(currentPos);
-            
-            // Update preview
-            updatePreview(currentPos);
         }
         
         // Update overlay with variable dimensions
@@ -873,12 +1060,32 @@
         
         // Update coordinates display
         function updateCoordinatesDisplay(pos) {
-            const key = `${selectedUnit}_${selectedArmy}_${selectedState}_${selectedFrame}`;
-            const hasCorrected = spriteCorrections[selectedState][key];
+            // Generate different keys and descriptions for HP/status icons vs units
+            let key, displayTitle, frameLabel;
+            if (selectedState === 'hp_indicators' || selectedState === 'hp_unavailable' || selectedState === 'status_icons') {
+                key = `${selectedState}_${selectedFrame}`;
+                if (selectedState === 'hp_indicators') {
+                    displayTitle = 'HP Indicators (Available)';
+                    frameLabel = selectedFrame < 9 ? `HP ${selectedFrame + 1}` : 'Hidden (?)';
+                } else if (selectedState === 'hp_unavailable') {
+                    displayTitle = 'HP Indicators (Unavailable)';
+                    frameLabel = selectedFrame < 9 ? `HP ${selectedFrame + 1}` : 'Hidden (?)';
+                } else {
+                    displayTitle = 'Status Icons';
+                    const statusLabels = ['Loaded', 'Capturing', 'Submerged', 'Unknown'];
+                    frameLabel = statusLabels[selectedFrame];
+                }
+            } else {
+                key = `${selectedUnit}_${selectedArmy}_${selectedState}_${selectedFrame}`;
+                displayTitle = `${selectedUnit} (${selectedArmy}) - ${selectedState}`;
+                frameLabel = `Frame ${selectedFrame + 1}`;
+            }
+            
+            const hasCorrected = spriteCorrections[selectedState] && spriteCorrections[selectedState][key];
             
             const info = [
-                `${selectedUnit} (${selectedArmy}) - ${selectedState}`,
-                `Frame: ${selectedFrame + 1}`,
+                displayTitle,
+                `Type: ${frameLabel}`,
                 `Position: (${pos.x}, ${pos.y})`,
                 `Size: ${spriteConfig.width}×${spriteConfig.height}`,
                 `Spacing: ${spriteConfig.spacingX}×${spriteConfig.spacingY}`,
@@ -992,7 +1199,10 @@
                 stats: {
                     totalCorrections: Object.keys(spriteCorrections.idle).length + 
                                     Object.keys(spriteCorrections.movement).length + 
-                                    Object.keys(spriteCorrections.unavailable).length
+                                    Object.keys(spriteCorrections.unavailable).length +
+                                    Object.keys(spriteCorrections.hp_indicators).length +
+                                    Object.keys(spriteCorrections.hp_unavailable).length +
+                                    Object.keys(spriteCorrections.status_icons).length
                 }
             };
             
@@ -1011,23 +1221,50 @@
                 reader.onload = function(e) {
                     try {
                         const importData = JSON.parse(e.target.result);
+                        console.log('Imported data structure:', importData);
                         
+                        // Safely import sprite config
                         if (importData.spriteConfig) {
-                            spriteConfig = importData.spriteConfig;
-                        }
-                        if (importData.corrections) {
-                            spriteCorrections = importData.corrections;
+                            spriteConfig = {
+                                width: importData.spriteConfig.width || 16,
+                                height: importData.spriteConfig.height || 16,
+                                spacingX: importData.spriteConfig.spacingX || 0,
+                                spacingY: importData.spriteConfig.spacingY || 0
+                            };
                         }
                         
-                        // Update UI
-                        document.getElementById('spriteWidth').value = spriteConfig.width;
-                        document.getElementById('spriteHeight').value = spriteConfig.height;
-                        document.getElementById('spacingX').value = spriteConfig.spacingX;
-                        document.getElementById('spacingY').value = spriteConfig.spacingY;
+                        // Safely import corrections with structure validation
+                        if (importData.corrections) {
+                            spriteCorrections = {
+                                idle: importData.corrections.idle || {},
+                                movement: importData.corrections.movement || {},
+                                unavailable: importData.corrections.unavailable || {},
+                                hp_indicators: importData.corrections.hp_indicators || {},
+                                hp_unavailable: importData.corrections.hp_unavailable || {},
+                                status_icons: importData.corrections.status_icons || {},
+                                config: importData.corrections.config || spriteConfig
+                            };
+                        }
+                        
+                        // Safely update UI elements
+                        try {
+                            const widthEl = document.getElementById('spriteWidth');
+                            const heightEl = document.getElementById('spriteHeight');
+                            const spacingXEl = document.getElementById('spacingX');
+                            const spacingYEl = document.getElementById('spacingY');
+                            
+                            if (widthEl) widthEl.value = spriteConfig.width;
+                            if (heightEl) heightEl.value = spriteConfig.height;
+                            if (spacingXEl) spacingXEl.value = spriteConfig.spacingX;
+                            if (spacingYEl) spacingYEl.value = spriteConfig.spacingY;
+                        } catch (uiError) {
+                            console.error('Error updating UI elements:', uiError);
+                        }
                         
                         updateDisplay();
                         showStatus('Configuration imported successfully!', 'success');
                     } catch (error) {
+                        console.error('Import error details:', error);
                         showStatus('Error importing config: ' + error.message, 'warning');
                     }
                 };

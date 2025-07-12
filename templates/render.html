@@ -24,26 +24,26 @@
         /* ===== HEADER ===== */
         .header {
             background: linear-gradient(90deg, #2c3e50 0%, #34495e 100%);
-            padding: 15px 20px;
-            border-bottom: 3px solid #3498db;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            padding: 8px 15px;
+            border-bottom: 2px solid #3498db;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.3);
             position: sticky;
             top: 0;
             z-index: 100;
         }
 
         .header h1 {
-            font-size: 24px;
+            font-size: 18px;
             font-weight: bold;
             color: #ecf0f1;
-            margin-bottom: 5px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            margin-bottom: 2px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
         }
 
         .header p {
-            font-size: 14px;
+            font-size: 11px;
             color: #bdc3c7;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
         }
 
         .header .game-info {
@@ -51,24 +51,25 @@
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 15px;
+            gap: 6px;
         }
 
         .game-token {
             background: rgba(52, 152, 219, 0.2);
-            padding: 8px 15px;
-            border-radius: 20px;
+            padding: 4px 8px;
+            border-radius: 12px;
             border: 1px solid #3498db;
             font-family: monospace;
-            font-size: 14px;
+            font-size: 11px;
         }
 
         .api-link {
             color: #3498db;
             text-decoration: none;
-            padding: 8px 15px;
+            padding: 4px 8px;
             border: 1px solid #3498db;
-            border-radius: 5px;
+            border-radius: 3px;
+            font-size: 11px;
             transition: all 0.3s ease;
         }
 
@@ -81,10 +82,10 @@
         /* ===== MAIN LAYOUT ===== */
         .main-container {
             display: grid;
-            grid-template-columns: 1fr 350px;
-            gap: 20px;
-            padding: 20px;
-            min-height: calc(100vh - 120px);
+            grid-template-columns: 1fr 220px;
+            gap: 8px;
+            padding: 8px;
+            min-height: calc(100vh - 60px);
         }
 
         @media (max-width: 1200px) {
@@ -97,21 +98,21 @@
         /* ===== GAME BOARD SECTION ===== */
         .game-board-section {
             background: rgba(255,255,255,0.05);
-            border-radius: 15px;
-            padding: 20px;
+            border-radius: 8px;
+            padding: 10px;
             border: 1px solid rgba(255,255,255,0.1);
             backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
         }
 
         .board-container {
             position: relative;
             background: #000;
-            border-radius: 10px;
-            border: 2px solid #34495e;
+            border-radius: 5px;
+            border: 1px solid #34495e;
             overflow: hidden;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            margin-bottom: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
         }
 
         #draw {
@@ -119,13 +120,13 @@
             display: flex;
             justify-content: center;
             align-items: flex-start;
-            padding: 10px;
+            padding: 5px;
         }
         
         #draw canvas {
-            border: 2px solid #34495e;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            border: 1px solid #34495e;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
             image-rendering: pixelated;
             image-rendering: -moz-crisp-edges;
             image-rendering: crisp-edges;
@@ -135,45 +136,59 @@
 
         .info-panel {
             background: rgba(44, 62, 80, 0.3);
-            border-radius: 8px;
-            padding: 15px;
+            border-radius: 5px;
+            padding: 6px;
             border: 1px solid rgba(255,255,255,0.1);
-            margin-top: 15px;
+            margin-top: 6px;
+            max-height: 120px;
+            overflow-y: auto;
         }
 
         .info-panel h3 {
             color: #3498db;
-            margin-bottom: 10px;
-            font-size: 16px;
+            margin-bottom: 3px;
+            font-size: 11px;
+        }
+
+        #infobox {
+            font-size: 9px;
+            line-height: 1.3;
+            color: #ffffff;
+            background: rgba(0,0,0,0.2);
+            padding: 4px;
+            border-radius: 3px;
+            white-space: pre-wrap;
         }
 
         /* ===== CONTROL PANEL ===== */
         .control-panel {
             background: rgba(255,255,255,0.05);
-            border-radius: 15px;
-            padding: 20px;
+            border-radius: 6px;
+            padding: 6px;
             border: 1px solid rgba(255,255,255,0.1);
             backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 4px;
+            max-height: calc(100vh - 80px);
+            overflow-y: auto;
         }
 
         .control-section {
             background: rgba(255,255,255,0.03);
-            border-radius: 10px;
-            padding: 15px;
+            border-radius: 3px;
+            padding: 4px;
             border: 1px solid rgba(255,255,255,0.1);
         }
 
         .control-section h3 {
             color: #3498db;
-            margin-bottom: 15px;
-            font-size: 16px;
+            margin-bottom: 4px;
+            font-size: 10px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 2px;
         }
 
         .control-section h3::before {
@@ -183,16 +198,16 @@
 
         /* ===== BUTTONS ===== */
         .btn {
-            padding: 10px 20px;
+            padding: 3px 6px;
             border: none;
-            border-radius: 8px;
-            font-size: 14px;
+            border-radius: 3px;
+            font-size: 9px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin: 5px;
+            letter-spacing: 0.2px;
+            margin: 1px;
             position: relative;
             overflow: hidden;
         }
@@ -240,23 +255,24 @@
         .control-buttons {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            gap: 2px;
         }
 
         /* ===== CHECKBOXES & TOGGLES ===== */
         .toggle-container {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 3px;
         }
 
         .toggle-item {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 8px;
-            border-radius: 5px;
+            gap: 4px;
+            padding: 2px;
+            border-radius: 2px;
             transition: background 0.3s ease;
+            font-size: 9px;
         }
 
         .toggle-item:hover {
@@ -265,10 +281,10 @@
 
         .toggle-switch {
             position: relative;
-            width: 50px;
-            height: 24px;
+            width: 28px;
+            height: 14px;
             background: #34495e;
-            border-radius: 12px;
+            border-radius: 7px;
             cursor: pointer;
             transition: all 0.3s ease;
         }
@@ -280,52 +296,59 @@
         .toggle-switch::after {
             content: '';
             position: absolute;
-            top: 2px;
-            left: 2px;
-            width: 20px;
-            height: 20px;
+            top: 1px;
+            left: 1px;
+            width: 12px;
+            height: 12px;
             background: white;
             border-radius: 50%;
             transition: all 0.3s ease;
         }
 
         .toggle-switch.active::after {
-            transform: translateX(26px);
+            transform: translateX(14px);
         }
 
         /* ===== CHAT SECTION ===== */
         .chat-container {
             display: flex;
             flex-direction: column;
-            height: 200px;
+            height: 80px;
         }
 
         .chat-messages {
             flex: 1;
             background: rgba(0,0,0,0.3);
-            border-radius: 8px;
-            padding: 10px;
-            margin-bottom: 10px;
+            border-radius: 3px;
+            padding: 3px;
+            margin-bottom: 3px;
             overflow-y: auto;
             border: 1px solid rgba(255,255,255,0.1);
             font-family: monospace;
-            font-size: 12px;
-            line-height: 1.4;
+            font-size: 8px;
+            line-height: 1.2;
+            color: #fff;
+            resize: none;
+        }
+
+        .chat-messages:focus {
+            outline: none;
+            border-color: #3498db;
         }
 
         .chat-input-container {
             display: flex;
-            gap: 10px;
+            gap: 2px;
         }
 
         .chat-input {
             flex: 1;
-            padding: 8px 12px;
+            padding: 2px 4px;
             background: rgba(255,255,255,0.1);
             border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 5px;
+            border-radius: 2px;
             color: white;
-            font-size: 14px;
+            font-size: 9px;
         }
 
         .chat-input::placeholder {
@@ -340,7 +363,7 @@
 
         /* ===== JSON DEBUG SECTION ===== */
         .json-container {
-            height: 150px;
+            height: 60px;
         }
 
         .json-display {
@@ -348,11 +371,11 @@
             height: 100%;
             background: rgba(0,0,0,0.5);
             border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 8px;
-            padding: 10px;
+            border-radius: 3px;
+            padding: 3px;
             color: #2ecc71;
             font-family: 'Courier New', monospace;
-            font-size: 11px;
+            font-size: 7px;
             resize: none;
             overflow-y: auto;
         }
@@ -378,8 +401,8 @@
         /* ===== RESPONSIVE DESIGN ===== */
         @media (max-width: 768px) {
             .main-container {
-                padding: 10px;
-                gap: 15px;
+                padding: 5px;
+                gap: 8px;
             }
             
             .header .game-info {
@@ -430,7 +453,49 @@
                 <p>Advanced Wars Real-Time Strategy</p>
             </div>
             <div class="game-token">Game: {{token}}</div>
+            
+            <!-- Display Options in Header -->
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 9px;">
+                <div style="display: flex; align-items: center; gap: 3px;">
+                    <div class="toggle-switch active" id="toggleShowMap" onclick="toggleDisplay('map')"></div>
+                    <label>🗺️ Map</label>
+                </div>
+                <div style="display: flex; align-items: center; gap: 3px;">
+                    <div class="toggle-switch active" id="toggleShowChat" onclick="toggleDisplay('chat')"></div>
+                    <label>💬 Chat</label>
+                </div>
+                <div style="display: flex; align-items: center; gap: 3px;">
+                    <div class="toggle-switch" id="toggleShowJson" onclick="toggleDisplay('json')"></div>
+                    <label>📋 JSON</label>
+                </div>
+            </div>
+            
+            <!-- Graphics Options in Header -->
+            <div style="display: flex; align-items: center; gap: 6px; font-size: 8px;">
+                <div style="display: flex; align-items: center; gap: 2px;">
+                    <label style="color: #bdc3c7;">Terrain:</label>
+                    <select id="terrainTilesetSelect" style="padding: 1px; border-radius: 2px; border: 1px solid #bdc3c7; font-size: 8px; background: rgba(255,255,255,0.1); color: white;" onchange="changeTileset()">
+                        <option value="transparent" style="color: black;">AW:DS (T)</option>
+                        <option value="normal" style="color: black;">AW:DS (N)</option>
+                        <option value="blackhole_transparent" style="color: black;">BH (T)</option>
+                        <option value="blackhole_normal" style="color: black;">BH (N)</option>
+                    </select>
+                </div>
+                <div style="display: flex; align-items: center; gap: 2px;">
+                    <label style="color: #bdc3c7;">Units:</label>
+                    <select id="unitTilesetSelect" style="padding: 1px; border-radius: 2px; border: 1px solid #bdc3c7; font-size: 8px; background: rgba(255,255,255,0.1); color: white;" onchange="changeTileset()">
+                        <option value="blackhole_transparent" style="color: black;">BH (T)</option>
+                        <option value="blackhole_normal" style="color: black;">BH (N)</option>
+                    </select>
+                </div>
+            </div>
+            
             <a href="/api/browse" target="_blank" class="api-link">📡 Browse API</a>
+            
+            <!-- Hidden checkboxes for compatibility with render.js -->
+            <input type="checkbox" id="inputshowmap" checked style="display: none;">
+            <input type="checkbox" id="inputshowchat" checked style="display: none;">
+            <input type="checkbox" id="inputshowjson" style="display: none;">
         </div>
     </header>
 
@@ -466,40 +531,16 @@
                         📈 Stats
                     </button>
                 </div>
-                <div id="gamebox" style="margin-top: 15px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 5px; min-height: 40px;">
-                    <small style="color: #bdc3c7;">Game status and notifications will appear here</small>
+                <div id="gamebox" style="margin-top: 4px; padding: 3px; background: rgba(0,0,0,0.2); border-radius: 2px; min-height: 18px; font-size: 8px;">
+                    <small style="color: #bdc3c7;">Game status</small>
                 </div>
-            </div>
-
-            <!-- Display Options -->
-            <div class="control-section">
-                <h3>👁️ Display Options</h3>
-                <div class="toggle-container">
-                    <div class="toggle-item">
-                        <div class="toggle-switch active" id="toggleShowMap" onclick="toggleDisplay('map')"></div>
-                        <label>🗺️ Show Map Details</label>
-                    </div>
-                    <div class="toggle-item">
-                        <div class="toggle-switch active" id="toggleShowChat" onclick="toggleDisplay('chat')"></div>
-                        <label>💬 Show Chat</label>
-                    </div>
-                    <div class="toggle-item">
-                        <div class="toggle-switch active" id="toggleShowJson" onclick="toggleDisplay('json')"></div>
-                        <label>📋 Show Debug JSON</label>
-                    </div>
-                </div>
-                
-                <!-- Hidden checkboxes for compatibility with render.js -->
-                <input type="checkbox" id="inputshowmap" checked style="display: none;">
-                <input type="checkbox" id="inputshowchat" checked style="display: none;">
-                <input type="checkbox" id="inputshowjson" checked style="display: none;">
             </div>
 
             <!-- Chat Section -->
             <div class="control-section" id="chatSection">
                 <h3>💬 Battle Communications</h3>
                 <div class="chat-container">
-                    <div class="chat-messages" id="textareachat"></div>
+                    <textarea class="chat-messages" id="textareachat" readonly></textarea>
                     <div class="chat-input-container">
                         <input type="text" class="chat-input" id="inputchat" placeholder="Type your message...">
                         <button class="btn btn-primary" id="buttonchat">Send</button>
@@ -560,8 +601,16 @@
                     inputshowmap.onchange();
                 }
             } else if (section === 'chat') {
+                const inputshowchat = document.getElementById('inputshowchat');
+                if (inputshowchat) {
+                    inputshowchat.checked = toggle.classList.contains('active');
+                }
                 sectionElement.style.display = toggle.classList.contains('active') ? 'block' : 'none';
             } else if (section === 'json') {
+                const inputshowjson = document.getElementById('inputshowjson');
+                if (inputshowjson) {
+                    inputshowjson.checked = toggle.classList.contains('active');
+                }
                 sectionElement.style.display = toggle.classList.contains('active') ? 'block' : 'none';
             }
         }
@@ -574,29 +623,40 @@
 
         // Enhanced chat functionality
         document.addEventListener('DOMContentLoaded', function() {
-            const chatInput = document.getElementById('inputchat');
-            const chatButton = document.getElementById('buttonchat');
-            const chatMessages = document.getElementById('textareachat');
-
-            // Handle enter key in chat
-            chatInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    sendChatMessage();
+            // Hide only JSON section by default, keep chat visible
+            const jsonSection = document.getElementById('jsonSection');
+            if (jsonSection) jsonSection.style.display = 'none';
+            
+            // The original render.js handles chat functionality, so we don't override it
+            // But we need to clean up any JSON that might appear in chat messages
+            
+            // Override ONLY the message handler to clean JSON from chat messages
+            // DO NOT interfere with other socket handlers (update, connect, disconnect)
+            setTimeout(function() {
+                if (typeof io !== 'undefined') {
+                    const socket = io('/');
+                    // Only remove and replace the 'message' handler, leave others intact
+                    socket.off('message');
+                    socket.on('message', (msg) => {
+                        var textareachat = document.getElementById('textareachat');
+                        // Clean the message - only show the actual text, not JSON
+                        let cleanMsg = msg;
+                        if (typeof msg === 'object') {
+                            cleanMsg = msg.message || msg.msg || JSON.stringify(msg);
+                        } else if (typeof msg === 'string') {
+                            // If it looks like JSON, try to extract just the message
+                            try {
+                                const parsed = JSON.parse(msg);
+                                cleanMsg = parsed.message || parsed.msg || msg;
+                            } catch (e) {
+                                cleanMsg = msg; // Not JSON, use as-is
+                            }
+                        }
+                        textareachat.value = textareachat.value + cleanMsg + '\n';
+                        textareachat.scrollTop = textareachat.scrollHeight;
+                    });
                 }
-            });
-
-            chatButton.addEventListener('click', sendChatMessage);
-
-            function sendChatMessage() {
-                const message = chatInput.value.trim();
-                if (message) {
-                    // Call the existing chat function
-                    if (typeof chat === 'function') {
-                        chat();
-                    }
-                    chatInput.value = '';
-                }
-            }
+            }, 300); // Increased delay to ensure render.js handlers are set up first
         });
 
         // Show loading overlay during operations
@@ -610,6 +670,14 @@
 
         // Hide loading on page load
         window.addEventListener('load', hideLoading);
+
+        // Tileset management function
+        function changeTileset() {
+            // Force a re-render to apply new tileset
+            if (typeof rerender === 'function') {
+                rerender();
+            }
+        }
     </script>
 </body>
 </html>

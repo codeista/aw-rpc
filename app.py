@@ -653,12 +653,20 @@ def get_available_maps():
         for map_id in maps:
             map_obj = map_repository.get_map(map_id)
             if map_obj:
+                # Handle turn_order safely
+                armies = []
+                if hasattr(map_obj, 'turn_order') and map_obj.turn_order:
+                    armies = [army.name for army in map_obj.turn_order]
+                elif hasattr(map_obj, 'armies') and map_obj.armies:
+                    armies = [army.name for army in map_obj.armies]
+                
                 map_data.append({
                     'id': map_id,
                     'name': map_obj.name,
                     'width': map_obj.width,
                     'height': map_obj.height,
-                    'armies': [army.name for army in map_obj.turn_order]
+                    'armies': armies,
+                    'turn_order': armies  # Add turn_order field for backward compatibility
                 })
         
         return {'success': True, 'maps': map_data}
@@ -1981,7 +1989,33 @@ def tile_rpc(token: str, x: int, y: int) -> dict:
         if x < 0 or y < 0 or x >= mngr.board.width or y >= mngr.board.height:
             raise Exception(f'coordinate out of range: x={x}, y={y}, max=({mngr.board.width-1},{mngr.board.height-1})')
         
-        return jsons.dump(mngr.tile_get(x, y))
+        tile = mngr.tile_get(x, y)
+        
+        # Add terrain defense stars before serialization
+        from map_system import TERRAIN_DEFENSE
+        defense_stars = 0
+        if tile.mapTile:
+            defense_stars = TERRAIN_DEFENSE.get(tile.mapTile.type, 0)
+        
+        result = jsons.dump(tile)
+        
+        # Ensure defense_stars is in the result
+        if isinstance(result, dict):
+            result['defense_stars'] = defense_stars
+        else:
+            # If jsons.dump returned something else, create a proper dict
+            result = {
+                'x': tile.x,
+                'y': tile.y,
+                'mapTile': jsons.dump(tile.mapTile) if tile.mapTile else None,
+                'unit': jsons.dump(tile.unit) if tile.unit else None,
+                'capture_hp': tile.capture_hp,
+                'can_be_moved_to': tile.can_be_moved_to,
+                'can_be_attacked': tile.can_be_attacked,
+                'defense_stars': defense_stars
+            }
+        
+        return result
     except Exception as ex:
         app_logger.error(f'tile_rpc failed for {token} at ({x},{y}): {str(ex)}')
         return handle_rpc_error('tile', token, ex)
@@ -2412,7 +2446,7 @@ def get_unload_positions_rpc(token: str, transport_x: int, transport_y: int) -> 
             return {"success": False, "error": "Not your turn"}
         
         # Get valid exit positions
-        transport_system = CompleteTransportSystem
+        transport_system = CompleteTransportSystem(mngr)
         valid_positions = transport_system.get_valid_exit_positions(transport_x, transport_y)
         
         return {

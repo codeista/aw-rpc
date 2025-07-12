@@ -73,7 +73,7 @@ class EnhancedCombatSystem:
                                 defender_tile: 'GameTile', 
                                 preview_mode: bool = False) -> int:
         """
-        Enhanced damage calculation with all Phase 2A features
+        Enhanced damage calculation using authentic Advance Wars formula
         
         Args:
             attacker: Attacking unit
@@ -81,47 +81,8 @@ class EnhancedCombatSystem:
             defender_tile: Tile defender is on (for terrain bonus)
             preview_mode: If True, return average damage (no luck/crits)
         """
-        from unit import DAMAGE_TABLE
-        from map_system import TERRAIN_DEFENSE
-        
-        # Get base damage from damage table
-        try:
-            base_damage = DAMAGE_TABLE[attacker.type][defender.type.value]
-        except (KeyError, IndexError):
-            return 0
-            
-        if base_damage == 0:
-            return 0
-            
-        # HP factor for attacker (1-100 HP = 1.0-10.0 displayed HP)
-        attacker_hp_factor = math.ceil(attacker.status.hp / 10) / 10
-        
-        # Terrain defense stars
-        terrain_stars = TERRAIN_DEFENSE.get(defender_tile.mapTile.type, 0)
-        defender_hp_display = math.ceil(defender.status.hp / 10)
-        
-        # Calculate defense multiplier
-        defense_reduction = terrain_stars * defender_hp_display
-        defense_multiplier = (100 - defense_reduction) / 100
-        defense_multiplier = max(0.1, defense_multiplier)  # Minimum 10% damage
-        
-        # Luck factor (0-9 random damage in Advance Wars)
-        if preview_mode or not self.luck_enabled:
-            luck_bonus = 0
-        else:
-            luck_bonus = random.randint(0, 9)
-            
-        # CO power effects (future expansion)
-        co_multiplier = 1.0
-        
-        # Weather effects (future expansion)  
-        weather_multiplier = 1.0
-        
-        # Final damage calculation (authentic Advance Wars formula)
-        final_damage = ((base_damage + luck_bonus) * attacker_hp_factor * 
-                       defense_multiplier * co_multiplier * weather_multiplier)
-                       
-        return max(1, int(final_damage))  # Minimum 1 damage
+        # Use the unit's enhanced damage method which implements the authentic formula
+        return attacker.enhanced_attack_damage(defender, defender_tile, luck_enabled=not preview_mode)
     
     def get_damage_range(self, attacker: 'Unit', defender: 'Unit', 
                         defender_tile: 'GameTile') -> Tuple[int, int]:
@@ -155,9 +116,9 @@ class EnhancedCombatSystem:
         if not self._has_ammo_for_attack(defender):
             return False
             
-        # Defender must be able to damage attacker
+        # Defender must be able to damage attacker using available weapons
         try:
-            counter_base_damage = DAMAGE_TABLE[defender.type][attacker.type.value]
+            counter_base_damage = defender._select_weapon_damage(attacker)
             if counter_base_damage == 0:
                 return False
         except (KeyError, IndexError):
@@ -307,8 +268,9 @@ class EnhancedCombatSystem:
         
         defender.status.hp = max(0, defender.status.hp - attacker_damage)
         
-        # Consume attacker's ammo
-        if hasattr(attacker.status, 'ammo') and attacker.status.ammo > 0:
+        # Consume attacker's ammo only if using primary weapon
+        if (hasattr(attacker.status, 'ammo') and attacker.status.ammo > 0 and 
+            not attacker._uses_secondary_weapon(defender)):
             attacker.status.ammo -= 1
         
         # Check for counter-attack
@@ -327,8 +289,9 @@ class EnhancedCombatSystem:
             attacker.status.hp = max(0, attacker.status.hp - counter_damage)
             counter_attack_occurred = True
             
-            # Consume defender's ammo
-            if hasattr(defender.status, 'ammo') and defender.status.ammo > 0:
+            # Consume defender's ammo only if using primary weapon
+            if (hasattr(defender.status, 'ammo') and defender.status.ammo > 0 and 
+                not defender._uses_secondary_weapon(attacker)):
                 defender.status.ammo -= 1
         
         # Get terrain bonus used

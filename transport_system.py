@@ -278,6 +278,10 @@ class CompleteTransportSystem:
             # Remove from transport cargo
             transport.status.cargo[cargo_index] = None
             
+            # CRITICAL: Ensure cargo array cleanup
+            # Remove all None values and compact the array
+            transport.status.cargo = [unit for unit in transport.status.cargo if unit is not None]
+            
             return TransportResult(
                 success=True,
                 message=f"{cargo_unit.type.name} unloaded and cannot act this turn",

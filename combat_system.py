@@ -33,42 +33,10 @@ class CombatSystem:
     
     def calculate_damage(self, attacker: 'Unit', defender: 'Unit', 
                         defender_tile: 'GameTile', luck_enabled: bool = True) -> int:
-        """Enhanced damage calculation using proper Advance Wars formula"""
+        """Authentic Advance Wars damage calculation"""
         
-        # Import here to avoid circular imports
-        from unit import DAMAGE_TABLE
-        from map_system import TERRAIN_DEFENSE
-        
-        # Get base damage from damage table
-        try:
-            base_damage = DAMAGE_TABLE[attacker.type][defender.type.value]
-        except (KeyError, IndexError):
-            return 0  # Unit can't attack this target
-        
-        # No damage if unit can't attack this target
-        if base_damage == 0:
-            return 0
-        
-        # Luck factor (0-9 random)
-        luck = random.randint(0, 9) if luck_enabled else 0
-        
-        # Attacker HP factor (displayed HP 1-10)
-        attacker_hp_factor = math.ceil(attacker.status.hp / 10) / 10
-        
-        # Terrain defense
-        terrain_stars = TERRAIN_DEFENSE.get(defender_tile.mapTile.type, 0)
-        
-        # Defender HP (displayed HP 1-10) 
-        defender_hp_display = math.ceil(defender.status.hp / 10)
-        
-        # Defense calculation - ensure it doesn't go below 10%
-        defense_multiplier = (100 - terrain_stars * defender_hp_display) / 100
-        defense_multiplier = max(0.1, defense_multiplier)  # Minimum 10% damage
-        
-        # Final damage calculation
-        damage = (base_damage + luck) * attacker_hp_factor * defense_multiplier
-        
-        return max(0, int(damage))
+        # Use the unit's enhanced damage method which implements the authentic formula
+        return attacker.enhanced_attack_damage(defender, defender_tile, luck_enabled)
     
     def can_counter_attack(self, attacker: 'Unit', defender: 'Unit', 
                           attacker_pos: Tuple[int, int], defender_pos: Tuple[int, int]) -> bool:
@@ -89,9 +57,9 @@ class CombatSystem:
         # Calculate distance
         distance = abs(attacker_pos[0] - defender_pos[0]) + abs(attacker_pos[1] - defender_pos[1])
         
-        # Defender must be able to attack attacker type
+        # Defender must be able to attack attacker type using available weapons
         try:
-            counter_damage = DAMAGE_TABLE[defender.type][attacker.type.value]
+            counter_damage = defender._select_weapon_damage(attacker)
             if counter_damage == 0:
                 return False
         except (KeyError, IndexError):
@@ -124,8 +92,9 @@ class CombatSystem:
         attacker_damage = self.calculate_damage(attacker, defender, defender_tile)
         defender.status.hp = max(0, defender.status.hp - attacker_damage)
         
-        # Consume attacker's ammo (if applicable)
-        if hasattr(attacker.status, 'ammo') and attacker.status.ammo > 0:
+        # Consume attacker's ammo only if using primary weapon
+        if (hasattr(attacker.status, 'ammo') and attacker.status.ammo > 0 and 
+            not attacker._uses_secondary_weapon(defender)):
             attacker.status.ammo -= 1
         
         # Check for counter-attack
@@ -137,8 +106,9 @@ class CombatSystem:
             attacker.status.hp = max(0, attacker.status.hp - counter_damage)
             counter_attack_occurred = True
             
-            # Consume defender's ammo (if applicable)
-            if hasattr(defender.status, 'ammo') and defender.status.ammo > 0:
+            # Consume defender's ammo only if using primary weapon
+            if (hasattr(defender.status, 'ammo') and defender.status.ammo > 0 and 
+                not defender._uses_secondary_weapon(attacker)):
                 defender.status.ammo -= 1
         
         # Create combat result

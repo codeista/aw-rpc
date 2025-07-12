@@ -5,6 +5,39 @@
 // constants
 const TILESIZE = 16;
 
+// Tileset management functions
+function getSelectedTerrainTileset() {
+    const select = document.getElementById('terrainTilesetSelect');
+    if (!select) return '/static/img/Advance_Wars_Dual_Strike_Tileset_Normal_Transparent.png'; // fallback
+    
+    switch (select.value) {
+        case 'transparent':
+            return '/static/img/Advance_Wars_Dual_Strike_Tileset_Normal_Transparent.png';
+        case 'normal':
+            return '/static/img/Advance_Wars_Dual_Strike_Tileset_Normal.png';
+        case 'blackhole_transparent':
+            return '/static/img/aw2_blackhole_tileset_normal_transparent.png';
+        case 'blackhole_normal':
+            return '/static/img/aw2_blackhole_tileset_normal.png';
+        default:
+            return '/static/img/Advance_Wars_Dual_Strike_Tileset_Normal_Transparent.png';
+    }
+}
+
+function getSelectedUnitTileset() {
+    const select = document.getElementById('unitTilesetSelect');
+    if (!select) return '/static/img/aw2_blackhole_units_map_transparent.png'; // fallback
+    
+    switch (select.value) {
+        case 'blackhole_transparent':
+            return '/static/img/aw2_blackhole_units_map_transparent.png';
+        case 'blackhole_normal':
+            return '/static/img/aw2_blackhole_units_map.png';
+        default:
+            return '/static/img/aw2_blackhole_units_map_transparent.png';
+    }
+}
+
 // Transport visual constants
 const TRANSPORT_HIGHLIGHT_OPACITY = 0.3;
 const TRANSPORT_BORDER_WIDTH = 2;
@@ -26,7 +59,6 @@ if (!window.gameState) {
 
 // Transport rendering globals
 var transportHighlightGroup = null;
-var cargoIndicatorGroup = null;
 
 // update board data
 update();
@@ -195,7 +227,9 @@ function jsonrpc(method, params, callback) {
 }
 
 function update() {
+    console.log('Update function called');
     jsonrpc('game_board', {}, function(res) {
+        console.log('Game board response received:', res);
         // Preserve the current selection before updating board
         var previousSelection = board ? board.selected : null;
 
@@ -243,7 +277,6 @@ function update() {
                 // Initialize transport visual system
                 window.transportHighlights = [];
                 transportHighlightGroup = null;
-                cargoIndicatorGroup = null;
                 console.log('RENDER: Transport visual system initialized');
                 console.log('Two.js initialized successfully');
                 
@@ -304,30 +337,34 @@ function update() {
 
         two.update();
         // update info
-
+        console.log('Updating game info...');
         var gamebox = document.getElementById('gamebox');
-        gamebox.innerText =
-                           `Game info:
-                             - Day: ${board.days}
-                             - Current Turn: ${board.current_turn}
-                             - Game Active: ${board.game_active}
-                             Blue:
-                             - Troops: ${board.total_blue_troops}
-                             - Income: ${board.total_blue_properties}
-                             - Funds: ${board.blue_funds}
-                            Red:
-                            - Troops: ${board.total_red_troops}
-                            - Income: ${board.total_red_properties}
-                            - Funds: ${board.red_funds}
-                            `;
-
+        console.log('Gamebox element found:', gamebox);
+        // Main info panel gets the detailed game stats
         var infobox = document.getElementById('infobox');
-        infobox.innerText =
-                        `Instructions:
-                        - Single click: move, attack
-                        -  + ctrl: load unit
-                        -  + alt: unload unit
-                        - Double click: capture, wait`;
+        console.log('Infobox element found:', infobox);
+        if (infobox) {
+            const gameStats = `Game Statistics:
+Day: ${board.days} | Turn: ${board.current_turn} | Active: ${board.game_active}
+
+Blue Army: ${board.army_troops.BLUE || 0} troops, ${board.army_properties.BLUE || 0} income, ${board.blue_funds} funds
+Red Army: ${board.army_troops.RED || 0} troops, ${board.army_properties.RED || 0} income, ${board.red_funds} funds
+
+Controls: Click=move/attack, Ctrl+Click=load, Alt+Click=unload, Double-click=capture/wait`;
+            
+            infobox.innerText = gameStats;
+            console.log('Infobox updated with:', gameStats);
+        } else {
+            console.error('Infobox element not found!');
+        }
+
+        // Small control panel box gets brief status
+        if (gamebox) {
+            gamebox.innerText = `Day ${board.days} | ${board.current_turn}'s Turn | Active: ${board.game_active}`;
+            console.log('Game info updated successfully');
+        } else {
+            console.error('Gamebox element not found!');
+        }
         // update code
         var code = document.getElementById('code');
         code.value = JSON.stringify(board, null, 2);
@@ -380,15 +417,7 @@ function cleanupTransportState() {
         transportHighlightGroup = null;
     }
     
-    if (typeof cargoIndicatorGroup !== 'undefined' && cargoIndicatorGroup) {
-        if (two && two.remove) {
-            try {
-                two.remove(cargoIndicatorGroup);
-            } catch (e) {
-            }
-        }
-        cargoIndicatorGroup = null;
-    }
+    // Cargo indicators now handled by authentic AW system
 }
 
 function endGame() {
@@ -841,9 +870,42 @@ function showChat() {
     buttonchat.hidden = "true";
   }
 }
+
+function renderBaseTile(tile) {
+    // Render a PLAIN tile as base layer for structures
+    // ALWAYS use transparent tileset for base layer to prevent black backgrounds
+    var spriteSheetWidth = 445;
+    var spriteSheetHeight = 1163;
+    const SPRITESIZE = 16;
+    var x = spriteSheetWidth/2 - SPRITESIZE/2;
+    var y = spriteSheetHeight/2 - SPRITESIZE/2;
+    
+    // PLAIN tile coordinates
+    x = x - 8;
+    y = y - 64;
+    
+    // Always use AW:DS transparent tileset for base layer, regardless of user selection
+    var baseTilesetSrc = '/static/img/Advance_Wars_Dual_Strike_Tileset_Normal_Transparent.png';
+    var baseTexture = new Two.Texture(baseTilesetSrc, () => ontextureLoad(baseTilesetSrc));
+    baseTexture.offset = new Two.Vector(x, y);
+    
+    var baseRect = two.makeRectangle(tile.x * TILESIZE + TILESIZE/2, tile.y * TILESIZE + TILESIZE/2, SPRITESIZE, SPRITESIZE);
+    baseRect.fill = baseTexture;
+    baseRect.stroke = 'transparent';
+}
+
 function makeMapTile(tile) {
     var showMapTiles = document.getElementById('inputshowmap').checked;
     if (showMapTiles) {
+        // Check if this terrain type needs a base layer (structures)
+        const structureTypes = ['CITY', 'FACTORY', 'AIRPORT', 'PORT', 'COM_TOWER', 'LAB', 'MISSILE_SILO', 'EMPTY_SILO', 
+                              'BASE_TOWER_0', 'BASE_TOWER_1', 'BASE_TOWER_2', 'BASE_TOWER_3', 'BASE_TOWER_4', 'MOUNTAIN'];
+        
+        if (structureTypes.includes(tile.mapTile.type)) {
+            // First render a PLAIN tile as base layer
+            renderBaseTile(tile);
+        }
+        
         // tile sprite
         var spriteSheetWidth = 445;
         var spriteSheetHeight = 1163;
@@ -1210,7 +1272,7 @@ function makeMapTile(tile) {
             default:
                 return;
         }
-        var tilesetSrc = '/static/img/Advance_Wars_Dual_Strike_Tileset_Normal_Transparent.png';
+        var tilesetSrc = getSelectedTerrainTileset();
         var spriteTexture = new Two.Texture(tilesetSrc, () => ontextureLoad(tilesetSrc));
         spriteTexture.offset = new Two.Vector(x, y);
         var rect = null;
@@ -1346,7 +1408,7 @@ function makeSprite(tile) {
     }
     if (!tile.unit.can_move && !tile.unit.can_attack)
         x = x - 336; // unavailable sprite
-    var unitsSrc = '/static/img/aw2_blackhole_units_map_transparent.png';
+    var unitsSrc = getSelectedUnitTileset();
     var spriteTexture = new Two.Texture(unitsSrc, () => ontextureLoad(unitsSrc));
     spriteTexture.offset = new Two.Vector(x, y);
     var rect = two.makeRectangle(tile.x * TILESIZE + TILESIZE/2, tile.y * TILESIZE + TILESIZE/2, SPRITESIZE, SPRITESIZE);
@@ -1361,8 +1423,8 @@ function makeSprite(tile) {
         y = spriteSheetHeight/2 - HEALTHSIZE/2;
         x = x - 557;
         y = y - 1234;
-        var xMult = Math.ceil(tile.unit.status.hp / 10) - 1;
-        x = x - xMult - xMult * HEALTHSIZE;
+        var xMult = 9 - Math.ceil(tile.unit.status.hp / 10);
+        x = x - xMult * HEALTHSIZE;
         var healthTexture = new Two.Texture(unitsSrc, () => ontextureLoad(unitsSrc));
         healthTexture.offset = new Two.Vector(x, y);
         health = two.makeRectangle(tile.x * TILESIZE + TILESIZE - HEALTHSIZE/2, tile.y * TILESIZE + TILESIZE - HEALTHSIZE/2, HEALTHSIZE, HEALTHSIZE);
@@ -1375,8 +1437,8 @@ function makeSprite(tile) {
         y = spriteSheetHeight/2 - HEALTHSIZE/2;
         x = x - 428;
         y = y - 1234;
-        var xMult = Math.ceil(tile.unit.status.hp / 10) - 1;
-        x = x - xMult - xMult * HEALTHSIZE;
+        var xMult = 9 - Math.ceil(tile.unit.status.hp / 10);
+        x = x - xMult * HEALTHSIZE;
         var healthTexture = new Two.Texture(unitsSrc, () => ontextureLoad(unitsSrc));
         healthTexture.offset = new Two.Vector(x, y);
         health = two.makeRectangle(tile.x * TILESIZE + TILESIZE - HEALTHSIZE/2, tile.y * TILESIZE + TILESIZE - HEALTHSIZE/2, HEALTHSIZE, HEALTHSIZE);
@@ -1447,8 +1509,7 @@ function renderTransportIndicators() {
     // Render transport highlights (green for boarding, blue for exits)
     renderTransportHighlights();
     
-    // Render cargo indicators on transport units
-    renderCargoIndicators();
+    // Transport cargo indicators are now handled by authentic AW load icon in makeUnitTile()
 }
 
 function renderTransportHighlights() {
@@ -1498,72 +1559,7 @@ function renderTransportHighlights() {
     two.add(transportHighlightGroup);
 }
 
-function renderCargoIndicators() {
-    // Clear existing cargo indicators
-    if (cargoIndicatorGroup) {
-        two.remove(cargoIndicatorGroup);
-        cargoIndicatorGroup = null;
-    }
-    
-    // Create new cargo indicator group
-    cargoIndicatorGroup = two.makeGroup();
-    
-    // Check all tiles for transport units (using your existing board structure)
-    if (!board || !board.grid) return;
-    
-    for (var i = 0; i < board.height; i++) {
-        for (var j = 0; j < board.width; j++) {
-            var tile = board.grid[j + i * board.width];
-            
-            if (tile.unit && isTransportUnitForRender(tile.unit)) {
-                const cargoCount = getCargoCountForRender(tile.unit);
-                if (cargoCount > 0) {
-                    renderCargoCountBadge(tile.x, tile.y, cargoCount);
-                    renderTransportBorder(tile.x, tile.y);
-                }
-            }
-        }
-    }
-    
-    // Add the group to the scene
-    two.add(cargoIndicatorGroup);
-}
-
-function renderCargoCountBadge(tileX, tileY, count) {
-    const x = (tileX * TILESIZE) + TILESIZE - 6;
-    const y = (tileY * TILESIZE) + 6;
-    
-    // Create background circle
-    const badgeBackground = two.makeCircle(x, y, 6);
-    badgeBackground.fill = '#FFD700'; // Gold background
-    badgeBackground.stroke = '#000000';
-    badgeBackground.linewidth = 1;
-    
-    // Create text (Two.js text)
-    const badgeText = two.makeText(count.toString(), x, y);
-    badgeText.fill = '#000000';
-    badgeText.size = 8;
-    badgeText.weight = 'bold';
-    badgeText.family = 'Arial, sans-serif';
-    
-    // Add to cargo indicator group
-    cargoIndicatorGroup.add(badgeBackground);
-    cargoIndicatorGroup.add(badgeText);
-}
-
-function renderTransportBorder(tileX, tileY) {
-    const x = (tileX * TILESIZE) + (TILESIZE / 2);
-    const y = (tileY * TILESIZE) + (TILESIZE / 2);
-    
-    // Create yellow border to indicate transport has cargo
-    const border = two.makeRectangle(x, y, TILESIZE - 2, TILESIZE - 2);
-    border.fill = 'transparent';
-    border.stroke = '#FFD700'; // Gold border
-    border.linewidth = 2;
-    
-    // Add to cargo indicator group
-    cargoIndicatorGroup.add(border);
-}
+// Custom cargo indicator functions removed - using authentic AW load icon from tileset instead
 
 function createScene() {
     // create game tiles

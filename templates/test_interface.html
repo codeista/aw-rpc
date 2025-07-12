@@ -5,42 +5,44 @@
     <style>
         body { 
             font-family: Arial, sans-serif; 
-            padding: 20px; 
+            padding: 10px; 
             background: #f5f5f5;
             margin: 0;
+            font-size: 12px;
         }
         .header {
             background: #2c3e50;
             color: white;
-            padding: 20px;
-            margin: -20px -20px 20px -20px;
+            padding: 10px;
+            margin: -10px -10px 10px -10px;
             text-align: center;
+            font-size: 14px;
         }
         .test-section { 
-            margin: 20px 0; 
-            padding: 20px; 
+            margin: 10px 0; 
+            padding: 10px; 
             border: 1px solid #ddd; 
-            border-radius: 8px; 
+            border-radius: 4px; 
             background: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
         .test-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin: 20px 0;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 10px;
+            margin: 10px 0;
         }
         .test-card {
             background: white;
             border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 20px;
+            border-radius: 4px;
+            padding: 10px;
             text-align: center;
-            transition: transform 0.2s;
+            transition: transform 0.1s;
         }
         .test-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
         }
         .pass { color: #27ae60; font-weight: bold; }
         .fail { color: #e74c3c; font-weight: bold; }
@@ -48,18 +50,18 @@
         .info { color: #3498db; font-weight: bold; }
         
         button { 
-            padding: 12px 20px; 
-            margin: 8px; 
+            padding: 6px 12px; 
+            margin: 4px; 
             border: none;
-            border-radius: 5px;
+            border-radius: 3px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 11px;
             font-weight: bold;
-            transition: all 0.2s;
+            transition: all 0.1s;
         }
         button:hover {
             transform: translateY(-1px);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
         
         .btn-primary { background: #3498db; color: white; }
@@ -69,34 +71,36 @@
         .btn-info { background: #17a2b8; color: white; }
         
         .btn-large {
-            padding: 15px 30px;
-            font-size: 16px;
+            padding: 8px 16px;
+            font-size: 12px;
         }
         
         .results-area {
             background: #f8f9fa;
             border: 1px solid #dee2e6;
-            border-radius: 5px;
-            padding: 15px;
-            margin: 10px 0;
+            border-radius: 3px;
+            padding: 8px;
+            margin: 5px 0;
             font-family: monospace;
+            font-size: 10px;
             white-space: pre-wrap;
-            max-height: 300px;
+            max-height: 200px;
             overflow-y: auto;
         }
         
         .status-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin: 15px 0;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 8px;
+            margin: 8px 0;
         }
         
         .status-item {
             background: #f8f9fa;
-            padding: 10px;
-            border-radius: 5px;
-            border-left: 4px solid #3498db;
+            padding: 6px;
+            border-radius: 3px;
+            border-left: 3px solid #3498db;
+            font-size: 11px;
         }
         
         .quick-links {
@@ -380,6 +384,99 @@
         </div>
     </div>
 
+    <!-- Multi-Player Testing -->
+    <div class="test-section">
+        <h2>👥 Multi-Player Testing</h2>
+        <div class="test-grid">
+            <div class="test-card">
+                <h3>🔺 3-Player Maps</h3>
+                <p>Test 3-army scenarios with triangle configurations:</p>
+                <button class="btn-success" onclick="testMultiPlayerMap('triangle', 3)">Test Triangle Arena</button>
+                <div id="triangle-test-result" class="results-area" style="height: 100px; margin-top: 10px;">
+Triangle test results will appear here...
+                </div>
+            </div>
+            
+            <div class="test-card">
+                <h3>✚ 4-Player Maps</h3>
+                <p>Test 4-army cross battle scenarios:</p>
+                <button class="btn-success" onclick="testMultiPlayerMap('cross', 4)">Test Cross Battle</button>
+                <div id="cross-test-result" class="results-area" style="height: 100px; margin-top: 10px;">
+Cross battle test results will appear here...
+                </div>
+            </div>
+            
+            <div class="test-card">
+                <h3>⬟ 5-Player Maps</h3>
+                <p>Test maximum 5-army pentagon chaos:</p>
+                <button class="btn-success" onclick="testMultiPlayerMap('pentagon', 5)">Test Pentagon Chaos</button>
+                <div id="pentagon-test-result" class="results-area" style="height: 100px; margin-top: 10px;">
+Pentagon test results will appear here...
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-card">
+            <h3>🎯 Multi-Army Fund Allocation Test</h3>
+            <p>Test fund distribution across multiple armies:</p>
+            <button class="btn-warning" onclick="testMultiArmyFunds()">Test Fund Allocation</button>
+            <div id="multi-army-funds-result" class="results-area" style="height: 150px; margin-top: 10px;">
+Multi-army fund test results will appear here...
+            </div>
+        </div>
+    </div>
+
+    <!-- Combat System Testing -->
+    <div class="test-section">
+        <h2>⚔️ Combat System Testing</h2>
+        <div class="test-grid">
+            <div class="test-card">
+                <h3>🎯 Damage Preview Testing</h3>
+                <p>Test damage calculations and previews:</p>
+                <button class="btn-success" onclick="testDamagePreviews()">Test Damage Preview</button>
+                <div id="damage-preview-result" class="results-area" style="height: 150px; margin-top: 10px;">
+Damage preview test results will appear here...
+                </div>
+            </div>
+            
+            <div class="test-card">
+                <h3>🔄 Counter-Attack Testing</h3>
+                <p>Test counter-attack damage calculations:</p>
+                <button class="btn-warning" onclick="testCounterAttackDamage()">Test Counter-Attacks</button>
+                <div id="counter-attack-result" class="results-area" style="height: 150px; margin-top: 10px;">
+Counter-attack test results will appear here...
+                </div>
+            </div>
+            
+            <div class="test-card">
+                <h3>⚔️ Unit Matchup Testing</h3>
+                <p>Test damage calculations across different unit types:</p>
+                <button class="btn-primary" onclick="testUnitMatchups()">Test Unit Matchups</button>
+                <div id="unit-matchup-result" class="results-area" style="height: 200px; margin-top: 10px;">
+Unit matchup test results will appear here...
+                </div>
+            </div>
+            
+            <div class="test-card">
+                <h3>🛡️ Terrain Defense Testing</h3>
+                <p>Test terrain defense bonuses:</p>
+                <button class="btn-info" onclick="testTerrainDefense()">Test Terrain Defense</button>
+                <div id="terrain-defense-result" class="results-area" style="height: 150px; margin-top: 10px;">
+Terrain defense test results will appear here...
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-card">
+            <h3>📊 Combat Balance Analysis</h3>
+            <p>Comprehensive combat balance testing across unit types:</p>
+            <button class="btn-primary" onclick="runCombatBalanceTests()">Run Balance Analysis</button>
+            <div id="combat-balance-result" class="results-area" style="height: 200px; margin-top: 10px;">
+Combat balance analysis will appear here...
+            </div>
+        </div>
+    </div>
+
     <!-- Automated Test Suites -->
     <div class="test-section">
         <h2>🤖 Automated Test Suites</h2>
@@ -538,13 +635,18 @@ Integration test results will appear here...
                     return result;
                 } else {
                     // Fallback to fetch for testing
+                    const rpcParams = {...params};
+                    if (currentGameToken) {
+                        rpcParams.token = currentGameToken;
+                    }
+                    
                     const response = await fetch('/api', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify({
                             jsonrpc: '2.0',
                             method: method,
-                            params: {...params, token: currentGameToken},
+                            params: rpcParams,
                             id: Date.now()
                         })
                     });
@@ -932,6 +1034,66 @@ Integration test results will appear here...
             log('💡 Use the live console to send RPC commands directly');
             log('💡 Use "Sync Logs" to see server logs alongside client logs');
         });
+
+        // Terrain defense testing function
+        async function testTerrainDefenseImpact(resultsDiv) {
+            const terrainTests = [
+                {x: 1, y: 1, expectedStars: 0, desc: 'Road/Sea (0 stars)'},
+                {x: 2, y: 2, expectedStars: 1, desc: 'Plains (1 star)'},
+                {x: 3, y: 3, expectedStars: 2, desc: 'Woods (2 stars)'},
+                {x: 4, y: 4, expectedStars: 4, desc: 'Mountain (4 stars)'},
+                {x: 5, y: 5, expectedStars: 3, desc: 'City (3 stars)'},
+                {x: 6, y: 6, expectedStars: 4, desc: 'HQ (4 stars)'}
+            ];
+            
+            for (const terrainTest of terrainTests) {
+                try {
+                    // Clear any existing units
+                    try {
+                        await testRPC('unit_remove', {x: terrainTest.x, y: terrainTest.y});
+                        await testRPC('unit_remove', {x: terrainTest.x, y: terrainTest.y + 1});
+                    } catch (e) {}
+                    
+                    // Create test units
+                    await testRPC('unit_create', {
+                        army: 'RED', 
+                        unit_type: 'INFANTRY', 
+                        x: terrainTest.x, 
+                        y: terrainTest.y
+                    });
+                    
+                    await testRPC('unit_create', {
+                        army: 'BLUE', 
+                        unit_type: 'INFANTRY', 
+                        x: terrainTest.x, 
+                        y: terrainTest.y + 1
+                    });
+                    
+                    // Check actual terrain
+                    const defenderTile = await testRPC('tile', {x: terrainTest.x, y: terrainTest.y + 1});
+                    
+                    // Test damage on this terrain
+                    const preview = await testRPC('combat_preview', {
+                        attacker_x: terrainTest.x, attacker_y: terrainTest.y,
+                        defender_x: terrainTest.x, defender_y: terrainTest.y + 1
+                    });
+                    
+                    if (preview.success) {
+                        const actualStars = defenderTile.defense_stars || 0;
+                        resultsDiv.textContent += `🏞️ ${terrainTest.desc}: ${defenderTile.mapTile?.type || 'unknown'} (${actualStars} stars)\n`;
+                        resultsDiv.textContent += `  Damage: ${preview.attacker_damage} | Counter: ${preview.counter_damage}\n`;
+                        
+                        if (actualStars !== terrainTest.expectedStars) {
+                            resultsDiv.textContent += `  ⚠️ Expected ${terrainTest.expectedStars} stars, got ${actualStars}\n`;
+                        }
+                    }
+                    
+                } catch (error) {
+                    resultsDiv.textContent += `❌ ${terrainTest.desc}: ${error.message}\n`;
+                }
+                resultsDiv.textContent += `\n`;
+            }
+        }
 
         // Add more testing functions as needed
         async function verifyCombatMap() {
@@ -1602,6 +1764,759 @@ Integration test results will appear here...
             }
             
             log(`🔧 Full integration check complete: ${passedChecks}/${checks.length} checks passed (${percentage}%)`);
+        }
+
+        // Multi-player testing functions
+        async function testMultiPlayerMap(mapId, expectedPlayers) {
+            log(`👥 Testing ${mapId} map for ${expectedPlayers} players...`);
+            const resultsDiv = document.getElementById(`${mapId}-test-result`);
+            resultsDiv.textContent = `Testing ${mapId} map creation...\n`;
+            
+            try {
+                // Test map availability through maps API
+                const mapsResponse = await fetch('/api/maps');
+                const mapsData = await mapsResponse.json();
+                
+                const mapInfo = mapsData.maps.find(map => map.id === mapId);
+                if (!mapInfo) {
+                    throw new Error(`Map '${mapId}' not found in available maps`);
+                }
+                
+                resultsDiv.textContent += `✅ Map found: ${mapInfo.name}\n`;
+                resultsDiv.textContent += `✅ Turn order: ${mapInfo.turn_order ? mapInfo.turn_order.join(', ') : 'Not defined'}\n`;
+                resultsDiv.textContent += `✅ Size: ${mapInfo.width}x${mapInfo.height}\n`;
+                
+                if (!mapInfo.turn_order || mapInfo.turn_order.length !== expectedPlayers) {
+                    const actualPlayers = mapInfo.turn_order ? mapInfo.turn_order.length : 0;
+                    throw new Error(`Expected ${expectedPlayers} players, got ${actualPlayers}`);
+                }
+                
+                // Test game creation with this map
+                const gameResponse = await fetch('/api/create_game', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        map: mapId,
+                        playerCount: mapInfo.turn_order ? mapInfo.turn_order.length : expectedPlayers,
+                        players: (mapInfo.turn_order || []).map((army, index) => ({
+                            slot: index + 1,
+                            co: ['andy', 'max', 'sami', 'grit', 'nell'][index] || 'andy',
+                            color: army,
+                            name: `${army} Army`
+                        })),
+                        turnLimit: 50,
+                        gameMode: 'standard'
+                    })
+                });
+                
+                if (!gameResponse.ok) {
+                    throw new Error(`Game creation failed: ${gameResponse.status}`);
+                }
+                
+                const gameData = await gameResponse.json();
+                resultsDiv.textContent += `✅ Game created: ${gameData.token}\n`;
+                
+                // Test game board loading
+                const boardResponse = await fetch('/api', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        jsonrpc: '2.0',
+                        method: 'game_board',
+                        params: {token: gameData.token},
+                        id: Date.now()
+                    })
+                });
+                
+                const boardData = await boardResponse.json();
+                if (boardData.error) {
+                    throw new Error(`Board loading failed: ${boardData.error.message}`);
+                }
+                
+                const board = boardData.result;
+                resultsDiv.textContent += `✅ Board loaded: ${board.width}x${board.height}\n`;
+                resultsDiv.textContent += `✅ Current turn: ${board.current_turn}\n`;
+                
+                // Test army fund allocation
+                if (board.army_funds) {
+                    const armyFundKeys = Object.keys(board.army_funds);
+                    resultsDiv.textContent += `✅ Army funds tracked: ${armyFundKeys.length} armies\n`;
+                } else {
+                    resultsDiv.textContent += `⚠️ Using legacy fund system\n`;
+                }
+                
+                log(`✅ ${mapId} map test completed successfully`);
+                
+            } catch (error) {
+                resultsDiv.textContent += `❌ Test failed: ${error.message}\n`;
+                log(`❌ ${mapId} map test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testMultiArmyFunds() {
+            log('💰 Testing multi-army fund allocation...');
+            const resultsDiv = document.getElementById('multi-army-funds-result');
+            resultsDiv.textContent = 'Testing multi-army fund allocation...\n';
+            
+            try {
+                // Create a 5-player game for comprehensive testing
+                const gameResponse = await fetch('/api/create_game', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        map: 'pentagon',
+                        playerCount: 5,
+                        players: [
+                            {slot: 1, co: 'andy', color: 'RED', name: 'Red Army'},
+                            {slot: 2, co: 'max', color: 'BLUE', name: 'Blue Army'},
+                            {slot: 3, co: 'sami', color: 'GREEN', name: 'Green Army'},
+                            {slot: 4, co: 'grit', color: 'YELLOW', name: 'Yellow Army'},
+                            {slot: 5, co: 'nell', color: 'GREY', name: 'Grey Army'}
+                        ],
+                        turnLimit: 75,
+                        gameMode: 'standard'
+                    })
+                });
+                
+                if (!gameResponse.ok) {
+                    throw new Error(`Failed to create 5-player game: ${gameResponse.status}`);
+                }
+                
+                const gameData = await gameResponse.json();
+                resultsDiv.textContent += `✅ 5-player game created: ${gameData.token}\n`;
+                
+                // Test board and fund allocation
+                const boardResponse = await fetch('/api', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        jsonrpc: '2.0',
+                        method: 'game_board',
+                        params: {token: gameData.token},
+                        id: Date.now()
+                    })
+                });
+                
+                const boardData = await boardResponse.json();
+                if (boardData.error) {
+                    throw new Error(`Board loading failed: ${boardData.error.message}`);
+                }
+                
+                const board = boardData.result;
+                
+                // Check fund allocation
+                if (board.army_funds) {
+                    resultsDiv.textContent += `✅ New fund system active:\n`;
+                    for (const [army, funds] of Object.entries(board.army_funds)) {
+                        resultsDiv.textContent += `  ${army}: ${funds} funds\n`;
+                    }
+                } else {
+                    resultsDiv.textContent += `⚠️ Legacy fund system:\n`;
+                    resultsDiv.textContent += `  RED: ${board.red_funds || 0} funds\n`;
+                    resultsDiv.textContent += `  BLUE: ${board.blue_funds || 0} funds\n`;
+                }
+                
+                // Check property allocation
+                if (board.army_properties) {
+                    resultsDiv.textContent += `✅ Property tracking:\n`;
+                    for (const [army, properties] of Object.entries(board.army_properties)) {
+                        resultsDiv.textContent += `  ${army}: ${properties} properties\n`;
+                    }
+                }
+                
+                // Test turn progression through multiple armies
+                resultsDiv.textContent += `✅ Current turn: ${board.current_turn}\n`;
+                
+                log('✅ Multi-army fund allocation test completed');
+                
+            } catch (error) {
+                resultsDiv.textContent += `❌ Test failed: ${error.message}\n`;
+                log(`❌ Multi-army fund test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Combat System Testing Functions
+        async function testDamagePreviews() {
+            log('🎯 Testing damage preview system...');
+            const resultsDiv = document.getElementById('damage-preview-result');
+            resultsDiv.textContent = 'Testing damage preview calculations...\n';
+            
+            if (!currentGameToken) {
+                try {
+                    await ensureActiveGame();
+                } catch (error) {
+                    resultsDiv.textContent += `❌ No active game: ${error.message}\n`;
+                    return;
+                }
+            }
+            
+            try {
+                // Find empty positions for test units
+                const boardResponse = await testRPC('game_board', {});
+                const board = boardResponse;
+                
+                // Find two adjacent empty tiles
+                let redPos = null, bluePos = null;
+                for (let y = 0; y < board.height && (!redPos || !bluePos); y++) {
+                    for (let x = 0; x < board.width - 1 && (!redPos || !bluePos); x++) {
+                        const tile1 = board.grid.find(t => t.x === x && t.y === y);
+                        const tile2 = board.grid.find(t => t.x === x + 1 && t.y === y);
+                        
+                        if (tile1 && tile2 && !tile1.unit && !tile2.unit) {
+                            redPos = {x: x, y: y};
+                            bluePos = {x: x + 1, y: y};
+                            break;
+                        }
+                    }
+                }
+                
+                if (!redPos || !bluePos) {
+                    resultsDiv.textContent += `❌ Could not find empty adjacent positions for test units\n`;
+                    return;
+                }
+                
+                resultsDiv.textContent += `📍 Using positions: RED(${redPos.x},${redPos.y}) vs BLUE(${bluePos.x},${bluePos.y})\n`;
+                
+                // Create RED unit first (should be RED's turn initially)
+                await testRPC('unit_create', {army: 'RED', unit_type: 'INFANTRY', x: redPos.x, y: redPos.y});
+                resultsDiv.textContent += `✅ Created RED Infantry at (${redPos.x}, ${redPos.y})\n`;
+                
+                // End RED's turn to switch to BLUE
+                await testRPC('army_end_turn', {});
+                resultsDiv.textContent += `🔄 Switched to BLUE's turn\n`;
+                
+                // Create BLUE unit
+                await testRPC('unit_create', {army: 'BLUE', unit_type: 'INFANTRY', x: bluePos.x, y: bluePos.y});
+                resultsDiv.textContent += `✅ Created BLUE Infantry at (${bluePos.x}, ${bluePos.y})\n`;
+                
+                // End BLUE's turn to switch back to RED
+                await testRPC('army_end_turn', {});
+                resultsDiv.textContent += `🔄 Switched back to RED's turn\n`;
+                
+                // Now test damage preview from RED attacking BLUE
+                const previewResponse = await testRPC('combat_preview', {
+                    attacker_x: redPos.x, attacker_y: redPos.y,
+                    defender_x: bluePos.x, defender_y: bluePos.y
+                });
+                
+                if (previewResponse && previewResponse.success) {
+                    resultsDiv.textContent += `✅ Damage preview successful:\n`;
+                    resultsDiv.textContent += `  Attacker damage: ${previewResponse.attacker_damage}\n`;
+                    resultsDiv.textContent += `  Counter damage: ${previewResponse.counter_damage}\n`;
+                    resultsDiv.textContent += `  Can counter: ${previewResponse.can_counter}\n`;
+                    resultsDiv.textContent += `  Attacker HP after: ${previewResponse.attacker_hp_after}\n`;
+                    resultsDiv.textContent += `  Defender HP after: ${previewResponse.defender_hp_after}\n`;
+                    
+                    // Validate damage calculations
+                    if (previewResponse.attacker_damage >= 45 && previewResponse.attacker_damage <= 75) {
+                        resultsDiv.textContent += `✅ Attacker damage within expected range (45-75)\n`;
+                    } else {
+                        resultsDiv.textContent += `⚠️ WARNING: Attacker damage outside expected range (${previewResponse.attacker_damage})\n`;
+                    }
+                    
+                    // Counter damage should be lower due to HP damage and counter-attack mechanics
+                    const expectedCounterRange = Math.floor(previewResponse.attacker_damage * 0.6); // ~60% of attacker damage
+                    if (previewResponse.counter_damage >= expectedCounterRange && previewResponse.counter_damage <= previewResponse.attacker_damage) {
+                        resultsDiv.textContent += `✅ Counter damage within expected range (${expectedCounterRange}-${previewResponse.attacker_damage})\n`;
+                    } else {
+                        resultsDiv.textContent += `⚠️ INFO: Counter damage ${previewResponse.counter_damage} (expected ${expectedCounterRange}-${previewResponse.attacker_damage})\n`;
+                    }
+                    
+                    if (previewResponse.attacker_damage <= 0) {
+                        resultsDiv.textContent += `❌ ERROR: No damage dealt by attacker!\n`;
+                    }
+                } else {
+                    resultsDiv.textContent += `❌ Damage preview failed: ${previewResponse?.error || 'Unknown error'}\n`;
+                }
+                
+                log('✅ Damage preview test completed');
+                
+            } catch (error) {
+                resultsDiv.textContent += `❌ Test failed: ${error.message}\n`;
+                log(`❌ Damage preview test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testUnitMatchups() {
+            log('⚔️ Testing unit matchup damage calculations...');
+            const resultsDiv = document.getElementById('unit-matchup-result');
+            resultsDiv.textContent = 'Testing damage calculations across different unit types...\n';
+            
+            if (!currentGameToken) {
+                try {
+                    await ensureActiveGame();
+                } catch (error) {
+                    resultsDiv.textContent += `❌ No active game: ${error.message}\n`;
+                    return;
+                }
+            }
+            
+            try {
+                // Get board information
+                const boardResponse = await testRPC('game_board', {});
+                const board = boardResponse;
+                
+                // Define test matchups with expected damage ranges
+                const matchups = [
+                    {
+                        attacker: 'INFANTRY', defender: 'TANK', 
+                        expectedMin: 1, expectedMax: 10, 
+                        description: 'Infantry vs Tank (weak vs armor)'
+                    },
+                    {
+                        attacker: 'TANK', defender: 'INFANTRY', 
+                        expectedMin: 60, expectedMax: 90, 
+                        description: 'Tank vs Infantry (armor vs weak)'
+                    },
+                    {
+                        attacker: 'ANTIAIR', defender: 'BCOPTER', 
+                        expectedMin: 80, expectedMax: 120, 
+                        description: 'Anti-Air vs B-Copter (hard counter)'
+                    },
+                    {
+                        attacker: 'MECH', defender: 'INFANTRY', 
+                        expectedMin: 40, expectedMax: 70, 
+                        description: 'Mech vs Infantry (similar units)'
+                    },
+                    {
+                        attacker: 'RECON', defender: 'INFANTRY', 
+                        expectedMin: 50, expectedMax: 80, 
+                        description: 'Recon vs Infantry (light vehicle)'
+                    }
+                ];
+                
+                // Find empty positions - need space for all units
+                let testPositions = [];
+                let foundPositions = 0;
+                
+                for (let y = 0; y < board.height && foundPositions < matchups.length * 2; y++) {
+                    for (let x = 0; x < board.width - 1 && foundPositions < matchups.length * 2; x++) {
+                        const tile1 = board.grid.find(t => t.x === x && t.y === y);
+                        const tile2 = board.grid.find(t => t.x === x + 1 && t.y === y);
+                        
+                        if (tile1 && tile2 && !tile1.unit && !tile2.unit) {
+                            testPositions.push({
+                                red: {x: x, y: y},
+                                blue: {x: x + 1, y: y}
+                            });
+                            foundPositions += 2;
+                        }
+                    }
+                }
+                
+                if (testPositions.length < matchups.length) {
+                    resultsDiv.textContent += `❌ Insufficient empty space. Need ${matchups.length} pairs, found ${testPositions.length}\n`;
+                    return;
+                }
+                
+                resultsDiv.textContent += `📍 Found ${testPositions.length} test positions\n\n`;
+                
+                // Test each matchup
+                let successCount = 0;
+                let failCount = 0;
+                
+                for (let i = 0; i < matchups.length; i++) {
+                    const matchup = matchups[i];
+                    const positions = testPositions[i];
+                    
+                    resultsDiv.textContent += `🎯 Testing: ${matchup.description}\n`;
+                    
+                    try {
+                        // Create RED attacker
+                        const createResult1 = await testRPC('unit_create', {
+                            army: 'RED', 
+                            unit_type: matchup.attacker, 
+                            x: positions.red.x, 
+                            y: positions.red.y
+                        });
+                        
+                        // Check if creation failed (error property exists) or succeeded (tile data returned)
+                        if (createResult1.error) {
+                            console.log('Create result 1 full response:', createResult1);
+                            throw new Error(`Failed to create ${matchup.attacker}: ${createResult1.message || createResult1.error_code || createResult1.error}`);
+                        }
+                        
+                        // Switch to BLUE's turn
+                        await testRPC('army_end_turn', {});
+                        
+                        // Create BLUE defender
+                        const createResult2 = await testRPC('unit_create', {
+                            army: 'BLUE', 
+                            unit_type: matchup.defender, 
+                            x: positions.blue.x, 
+                            y: positions.blue.y
+                        });
+                        
+                        // Check if creation failed (error property exists) or succeeded (tile data returned)
+                        if (createResult2.error) {
+                            console.log('Create result 2 full response:', createResult2);
+                            throw new Error(`Failed to create ${matchup.defender}: ${createResult2.message || createResult2.error_code || createResult2.error}`);
+                        }
+                        
+                        // Switch back to RED's turn
+                        await testRPC('army_end_turn', {});
+                        
+                        // Test damage preview
+                        const previewResponse = await testRPC('combat_preview', {
+                            attacker_x: positions.red.x, attacker_y: positions.red.y,
+                            defender_x: positions.blue.x, defender_y: positions.blue.y
+                        });
+                        
+                        if (previewResponse && previewResponse.success) {
+                            const damage = previewResponse.attacker_damage;
+                            const inRange = damage >= matchup.expectedMin && damage <= matchup.expectedMax;
+                            
+                            if (inRange) {
+                                resultsDiv.textContent += `✅ ${matchup.attacker} → ${matchup.defender}: ${damage} damage (${matchup.expectedMin}-${matchup.expectedMax})\n`;
+                                successCount++;
+                            } else {
+                                resultsDiv.textContent += `⚠️ ${matchup.attacker} → ${matchup.defender}: ${damage} damage (expected ${matchup.expectedMin}-${matchup.expectedMax})\n`;
+                                failCount++;
+                            }
+                            
+                            // Show counter damage if applicable
+                            if (previewResponse.can_counter) {
+                                resultsDiv.textContent += `   Counter: ${previewResponse.counter_damage} damage\n`;
+                            }
+                        } else {
+                            const errorMsg = previewResponse ? previewResponse.error || 'Unknown error' : 'No response';
+                            resultsDiv.textContent += `❌ ${matchup.attacker} → ${matchup.defender}: Preview failed - ${errorMsg}\n`;
+                            failCount++;
+                        }
+                        
+                    } catch (error) {
+                        resultsDiv.textContent += `❌ ${matchup.description}: ${error.message}\n`;
+                        failCount++;
+                    }
+                    
+                    resultsDiv.textContent += `\n`;
+                }
+                
+                // Summary
+                resultsDiv.textContent += `📊 Summary: ${successCount} passed, ${failCount} failed\n`;
+                
+                if (failCount === 0) {
+                    resultsDiv.textContent += `🎉 All unit matchups working correctly!\n`;
+                } else {
+                    resultsDiv.textContent += `⚠️ Some matchups need investigation\n`;
+                }
+                
+                log('✅ Unit matchup test completed');
+                
+            } catch (error) {
+                resultsDiv.textContent += `❌ Test failed: ${error.message}\n`;
+                log(`❌ Unit matchup test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testCounterAttackDamage() {
+            log('🔄 Testing counter-attack damage calculations...');
+            const resultsDiv = document.getElementById('counter-attack-result');
+            resultsDiv.textContent = 'Testing counter-attack damage with terrain analysis...\n';
+            
+            if (!currentGameToken) {
+                try {
+                    await ensureActiveGame();
+                } catch (error) {
+                    resultsDiv.textContent += `❌ No active game: ${error.message}\n`;
+                    return;
+                }
+            }
+            
+            try {
+                // Test different unit matchups for counter-attack balance
+                const testCases = [
+                    {attacker: 'INFANTRY', defender: 'INFANTRY', desc: 'Infantry vs Infantry'},
+                    {attacker: 'TANK', defender: 'INFANTRY', desc: 'Tank vs Infantry'},
+                    {attacker: 'INFANTRY', defender: 'TANK', desc: 'Infantry vs Tank'},
+                    {attacker: 'MECH', defender: 'INFANTRY', desc: 'Mech vs Infantry'}
+                ];
+                
+                resultsDiv.textContent += '=== BASELINE TEST (0 Defense Terrain) ===\n';
+                
+                for (let i = 0; i < testCases.length; i++) {
+                    const testCase = testCases[i];
+                    
+                    try {
+                        // Find a 0-defense terrain (try multiple locations)
+                        let testX = 7, testY = 7; // Try a different location that might have roads
+                        
+                        // Clear any existing units first
+                        try {
+                            await testRPC('unit_remove', {x: testX, y: testY});
+                            await testRPC('unit_remove', {x: testX, y: testY + 1});
+                        } catch (e) {}
+                        
+                        // Create attacker on 0-defense terrain
+                        await testRPC('unit_create', {
+                            army: 'RED', 
+                            unit_type: testCase.attacker, 
+                            x: testX, 
+                            y: testY
+                        });
+                        
+                        // Create defender on 0-defense terrain
+                        await testRPC('unit_create', {
+                            army: 'BLUE', 
+                            unit_type: testCase.defender, 
+                            x: testX, 
+                            y: testY + 1
+                        });
+                        
+                        // Check terrain types
+                        const attackerTile = await testRPC('tile', {x: testX, y: testY});
+                        const defenderTile = await testRPC('tile', {x: testX, y: testY + 1});
+                        
+                        // Get damage preview
+                        const preview = await testRPC('combat_preview', {
+                            attacker_x: testX, attacker_y: testY,
+                            defender_x: testX, defender_y: testY + 1
+                        });
+                        
+                        if (preview.success) {
+                            resultsDiv.textContent += `✅ ${testCase.desc}:\n`;
+                            resultsDiv.textContent += `  Terrain: ${defenderTile.mapTile?.type || 'unknown'} (${defenderTile.defense_stars || 0} stars)\n`;
+                            resultsDiv.textContent += `  Attack: ${preview.attacker_damage} | Counter: ${preview.counter_damage}\n`;
+                            
+                            // Calculate counter-attack ratio
+                            const ratio = preview.counter_damage / Math.max(preview.attacker_damage, 1);
+                            resultsDiv.textContent += `  Counter ratio: ${ratio.toFixed(2)}x\n`;
+                            
+                            if (ratio > 1.2) {
+                                resultsDiv.textContent += `  ⚠️ HIGH counter-attack damage!\n`;
+                            } else if (ratio < 0.5 && preview.can_counter) {
+                                resultsDiv.textContent += `  ⚠️ LOW counter-attack damage!\n`;
+                            } else {
+                                resultsDiv.textContent += `  ✅ Balanced counter-attack\n`;
+                            }
+                        } else {
+                            resultsDiv.textContent += `❌ ${testCase.desc}: Failed\n`;
+                        }
+                        
+                    } catch (error) {
+                        resultsDiv.textContent += `❌ ${testCase.desc}: ${error.message}\n`;
+                    }
+                    
+                    resultsDiv.textContent += `\n`;
+                }
+                
+                // Test terrain defense
+                resultsDiv.textContent += '=== TERRAIN DEFENSE TEST ===\n';
+                await testTerrainDefenseImpact(resultsDiv);
+                
+                log('✅ Counter-attack damage test completed');
+                
+            } catch (error) {
+                resultsDiv.textContent += `❌ Test failed: ${error.message}\n`;
+                log(`❌ Counter-attack test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testTerrainDefense() {
+            log('🛡️ Testing terrain defense bonuses...');
+            const resultsDiv = document.getElementById('terrain-defense-result');
+            resultsDiv.textContent = 'Testing terrain defense system...\n';
+            
+            if (!currentGameToken) {
+                try {
+                    await ensureActiveGame();
+                } catch (error) {
+                    resultsDiv.textContent += `❌ No active game: ${error.message}\n`;
+                    return;
+                }
+            }
+            
+            try {
+                // Get board to find different terrain types
+                const board = await testRPC('game_board');
+                
+                resultsDiv.textContent += `✅ Analyzing ${board.width}x${board.height} board for terrain types...\n`;
+                
+                // Find different terrain types on the board
+                const terrainTypes = new Set();
+                const terrainLocations = {};
+                
+                board.grid.forEach((tile, index) => {
+                    const x = index % board.width;
+                    const y = Math.floor(index / board.width);
+                    const terrainType = tile.mapTile.type;
+                    
+                    terrainTypes.add(terrainType);
+                    if (!terrainLocations[terrainType]) {
+                        terrainLocations[terrainType] = {x, y};
+                    }
+                });
+                
+                resultsDiv.textContent += `✅ Found terrain types: ${Array.from(terrainTypes).join(', ')}\n\n`;
+                
+                // Test damage on different terrain types
+                const testTerrains = ['PLAIN', 'WOOD', 'MOUNTAIN', 'CITY'];
+                
+                for (const terrain of testTerrains) {
+                    if (terrainLocations[terrain]) {
+                        const loc = terrainLocations[terrain];
+                        
+                        try {
+                            // Try to find empty adjacent coordinates for testing
+                            let defenderX = loc.x;
+                            let defenderY = loc.y;
+                            let attackerX = loc.x - 1;
+                            let attackerY = loc.y;
+                            
+                            // If x-1 would be negative, try x+1
+                            if (attackerX < 0) {
+                                attackerX = loc.x + 1;
+                            }
+                            
+                            // Create defender on this terrain
+                            await testRPC('unit_create', {
+                                army: 'BLUE', 
+                                unit_type: 'INFANTRY', 
+                                x: defenderX, 
+                                y: defenderY
+                            });
+                            
+                            // Create attacker nearby
+                            await testRPC('unit_create', {
+                                army: 'RED', 
+                                unit_type: 'INFANTRY', 
+                                x: attackerX, 
+                                y: attackerY
+                            });
+                            
+                            // Test damage preview on this terrain
+                            const preview = await testRPC('combat_preview', {
+                                attacker_x: attackerX, attacker_y: attackerY,
+                                defender_x: loc.x, defender_y: loc.y
+                            });
+                            
+                            if (preview.success) {
+                                resultsDiv.textContent += `${terrain}: ${preview.attacker_damage} damage`;
+                                
+                                if (preview.terrain_bonus) {
+                                    resultsDiv.textContent += ` (${preview.terrain_bonus} defense)\n`;
+                                } else {
+                                    resultsDiv.textContent += ` (no defense data)\n`;
+                                }
+                            } else {
+                                resultsDiv.textContent += `${terrain}: Test failed\n`;
+                            }
+                            
+                        } catch (error) {
+                            resultsDiv.textContent += `${terrain}: Error - ${error.message}\n`;
+                        }
+                    }
+                }
+                
+                log('✅ Terrain defense test completed');
+                
+            } catch (error) {
+                resultsDiv.textContent += `❌ Test failed: ${error.message}\n`;
+                log(`❌ Terrain defense test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function runCombatBalanceTests() {
+            log('📊 Running comprehensive combat balance analysis...');
+            const resultsDiv = document.getElementById('combat-balance-result');
+            resultsDiv.textContent = 'Running combat balance analysis...\n';
+            
+            if (!currentGameToken) {
+                try {
+                    await ensureActiveGame();
+                } catch (error) {
+                    resultsDiv.textContent += `❌ No active game: ${error.message}\n`;
+                    return;
+                }
+            }
+            
+            try {
+                // Test damage chart functionality
+                const damageChart = await testRPC('get_damage_chart');
+                
+                if (damageChart.success) {
+                    resultsDiv.textContent += `✅ Damage chart loaded\n`;
+                    
+                    // Analyze the damage chart for balance issues
+                    const chart = damageChart.damage_chart;
+                    let highDamageCount = 0;
+                    let zeroDamageCount = 0;
+                    let totalCombinations = 0;
+                    
+                    for (const attacker in chart) {
+                        for (const defender in chart[attacker]) {
+                            const damage = chart[attacker][defender];
+                            totalCombinations++;
+                            
+                            if (damage === 0) {
+                                zeroDamageCount++;
+                            } else if (damage > 100) {
+                                highDamageCount++;
+                                resultsDiv.textContent += `⚠️ High damage: ${attacker} vs ${defender} = ${damage}\n`;
+                            }
+                        }
+                    }
+                    
+                    resultsDiv.textContent += `\n📊 Balance Analysis:\n`;
+                    resultsDiv.textContent += `Total combinations: ${totalCombinations}\n`;
+                    resultsDiv.textContent += `Zero damage: ${zeroDamageCount} (${(zeroDamageCount/totalCombinations*100).toFixed(1)}%)\n`;
+                    resultsDiv.textContent += `High damage (>100): ${highDamageCount}\n`;
+                    
+                    // Test actual combat scenarios
+                    resultsDiv.textContent += `\n🔬 Live Combat Tests:\n`;
+                    
+                    // Test common scenarios
+                    const scenarios = [
+                        {att: 'INFANTRY', def: 'INFANTRY', expected: 'balanced'},
+                        {att: 'TANK', def: 'INFANTRY', expected: 'tank_advantage'},
+                        {att: 'ANTI_AIR', def: 'FIGHTER', expected: 'aa_advantage'},
+                        {att: 'ARTILLERY', def: 'TANK', expected: 'balanced_indirect'}
+                    ];
+                    
+                    for (const scenario of scenarios) {
+                        try {
+                            // This would require actual unit testing...
+                            const chartDamage = chart[scenario.att] && chart[scenario.att][scenario.def];
+                            if (chartDamage !== undefined) {
+                                resultsDiv.textContent += `${scenario.att} vs ${scenario.def}: ${chartDamage} damage\n`;
+                            }
+                        } catch (error) {
+                            resultsDiv.textContent += `${scenario.att} vs ${scenario.def}: Test error\n`;
+                        }
+                    }
+                    
+                } else {
+                    resultsDiv.textContent += `❌ Could not load damage chart\n`;
+                }
+                
+                log('✅ Combat balance analysis completed');
+                
+            } catch (error) {
+                resultsDiv.textContent += `❌ Analysis failed: ${error.message}\n`;
+                log(`❌ Combat balance analysis failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function ensureActiveGame() {
+            if (!currentGameToken) {
+                // Try to get existing game or create new one
+                const response = await fetch('/debug');
+                const data = await response.json();
+                if (data.active_games && data.active_games.length > 0) {
+                    currentGameToken = data.active_games[0].token;
+                    log(`🎮 Using existing game: ${currentGameToken}`);
+                } else {
+                    // Create new test game
+                    const createResponse = await fetch('/test_optimized');
+                    if (createResponse.ok) {
+                        const gameUrl = createResponse.url;
+                        currentGameToken = gameUrl.split('/').pop();
+                        log(`🎮 Created new test game: ${currentGameToken}`);
+                    } else {
+                        throw new Error('Could not create test game');
+                    }
+                }
+            }
         }
 
         // Enhanced initialization

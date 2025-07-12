@@ -401,16 +401,43 @@ class GameManager:
 
     def _execute_combat(self, attacker: Unit, defender: Unit, attacker_tile: GameTile, defender_tile: GameTile) -> None:
         """Execute combat between two units."""
+        # Store initial HP for debugging
+        attacker_initial_hp = attacker.status.hp
+        defender_initial_hp = defender.status.hp
+        
         # Attacker damages defender
         damage = attacker.attack_damage(defender, defender_tile)
         defender.status.hp -= damage
         attacker.status.ammo -= 1
         
+        # Log to app logger instead of print
+        try:
+            from logging import getLogger
+            logger = getLogger('awrpc')
+            logger.info(f"🔥 COMBAT: {attacker.type.name}({attacker_initial_hp}HP) → {defender.type.name}({defender_initial_hp}HP) = {damage} damage")
+            logger.info(f"   Defender HP after: {defender.status.hp}")
+        except:
+            print(f"🔥 COMBAT: {attacker.type.name}({attacker_initial_hp}HP) → {defender.type.name}({defender_initial_hp}HP) = {damage} damage")
+            print(f"   Defender HP after: {defender.status.hp}")
+        
         # Counter-attack if defender survives and can counter
+        counter_damage = 0
         if defender.status.hp > 0 and defender.is_direct() and attacker.is_direct():
+            defender_hp_for_counter = defender.status.hp  # Store defender HP before counter calculation
             counter_damage = defender.attack_damage(attacker, attacker_tile)
             attacker.status.hp -= counter_damage
             defender.status.ammo -= 1
+            try:
+                logger.info(f"💥 COUNTER: {defender.type.name}({defender_hp_for_counter}HP) → {attacker.type.name}({attacker_initial_hp}HP) = {counter_damage} damage")
+                logger.info(f"   Attacker HP after: {attacker.status.hp}")
+            except:
+                print(f"💥 COUNTER: {defender.type.name}({defender_hp_for_counter}HP) → {attacker.type.name}({attacker_initial_hp}HP) = {counter_damage} damage")
+                print(f"   Attacker HP after: {attacker.status.hp}")
+        else:
+            try:
+                logger.info(f"❌ NO COUNTER: Defender HP={defender.status.hp}, Direct={defender.is_direct()}, Attacker Direct={attacker.is_direct()}")
+            except:
+                print(f"❌ NO COUNTER: Defender HP={defender.status.hp}, Direct={defender.is_direct()}, Attacker Direct={attacker.is_direct()}")
 
     def unit_attack_enhanced(self, attacker_x: int, attacker_y: int, 
                         defender_x: int, defender_y: int):
@@ -452,8 +479,7 @@ class GameManager:
 
     def get_damage_preview(self, attacker_x: int, attacker_y: int, 
                         defender_x: int, defender_y: int) -> Dict:
-        """Get damage preview without executing combat"""
-        from combat_system import CombatSystem
+        """Get damage preview using authentic AW damage calculations"""
         
         attacker = self.unit_at(attacker_x, attacker_y)
         defender = self.unit_at(defender_x, defender_y)
@@ -464,19 +490,28 @@ class GameManager:
         attacker_tile = self.tile_at(attacker_x, attacker_y)
         defender_tile = self.tile_at(defender_x, defender_y)
         
-        combat_system = CombatSystem(self)
+        # Use unit's built-in enhanced damage calculation (authentic AW formula)
+        attacker_damage = attacker.enhanced_attack_damage(defender, defender_tile, luck_enabled=False)
         
-        # Calculate potential damage
-        attacker_damage = combat_system.calculate_damage(attacker, defender, defender_tile)
-        
-        # Check for potential counter
+        # Check for potential counter-attack
         counter_damage = 0
-        can_counter = combat_system.can_counter_attack(
-            attacker, defender, (attacker_x, attacker_y), (defender_x, defender_y)
-        )
+        can_counter = False
         
-        if can_counter:
-            counter_damage = combat_system.calculate_damage(defender, attacker, attacker_tile)
+        # Authentic AW counter-attack logic: defender can counter ONLY if alive AFTER taking damage
+        if defender.status.hp > 0 and defender._select_weapon_damage(attacker) > 0:
+            # Calculate distance for range check
+            distance = abs(attacker_x - defender_x) + abs(attacker_y - defender_y)
+            if defender.status.rangemin <= distance <= defender.status.rangemax:
+                # Check if defender survives the attack
+                defender_hp_after = defender.status.hp - attacker_damage
+                if defender_hp_after > 0:  # Only counter if defender survives
+                    can_counter = True
+                    
+                    # Calculate counter damage using defender's HP AFTER taking damage
+                    original_hp = defender.status.hp
+                    defender.status.hp = defender_hp_after  # Use actual reduced HP
+                    counter_damage = defender.enhanced_attack_damage(attacker, attacker_tile, luck_enabled=False)
+                    defender.status.hp = original_hp  # Restore original HP (this is just a preview)
         
         return {
             "attacker_damage": attacker_damage,

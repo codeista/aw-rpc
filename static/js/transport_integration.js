@@ -70,8 +70,11 @@ function handleTileClickWithTransport(tile, event) {
         return false; // Let alt-click system handle
     }
     
-    // Clear previous highlights
-    clearAllTransportHighlights();
+    // Only clear highlights if we're not currently showing exit options
+    if (!transportState.showingExitOptions) {
+        clearAllTransportHighlights();
+    }
+    // If showing exit options, don't clear anything - preserve the blue highlights
     
     // Handle transport integration logic only if no other system is active
     if (board.selected) {
@@ -138,6 +141,13 @@ function safelyPerformEnhancedMovement(fromX, fromY, toX, toY) {
                 const newTile = board.grid.find(t => t.x === toX && t.y === toY);
                 if (newTile) {
                     board.selected = newTile;
+                    // CRITICAL: Update transport state if this was the selected transport
+                    if (transportState.selectedTransport && 
+                        transportState.selectedTransport.x === fromX && 
+                        transportState.selectedTransport.y === fromY) {
+                        transportState.selectedTransport = newTile;
+                        console.log('🚛 Updated selected transport position:', fromX, fromY, '->', toX, toY);
+                    }
                 }
                 
                 clearAllTransportHighlights();
@@ -228,8 +238,15 @@ function attemptToBoardTransport(cargoX, cargoY, transportX, transportY) {
             board.selected = null;
         }
         
-        // Update board display
+        // Update board display - force fresh data from server
         updateBoardDisplay();
+        
+        // Also force a complete rerender to ensure cargo icons update
+        setTimeout(() => {
+            if (typeof update === 'function') {
+                update();
+            }
+        }, 100);
     }else {
             console.error(`AW_TRANSPORT: Boarding failed - ${result.error}`);
             showTransportMessage(result.error, 'error');
@@ -265,52 +282,67 @@ function showLoadableTransports(cargoX, cargoY) {
 // =============================================================================
 
 function showTransportExitOptions(transportX, transportY) {
+    console.log('🔍 Getting cargo info for transport at:', transportX, transportY);
     
     // ✅ NEW: First check if transport has cargo
     jsonrpc('get_cargo_info', {x: transportX, y: transportY}).then(cargoResult => {
+        console.log('📦 Cargo info result:', cargoResult);
         if (!cargoResult.success) {
+            console.error('❌ get_cargo_info failed:', cargoResult.error);
             showTransportMessage('Could not get transport information', 'error');
             return;
         }
         
         const cargoInfo = cargoResult.cargo_info;
+        console.log('📋 Cargo info details:', cargoInfo);
         
         // ✅ NEW: Only show exit options if transport has cargo
         if (!cargoInfo.is_transport) {
+            console.log('❌ Unit is not a transport');
             showTransportMessage('Unit is not a transport', 'warning');
             return;
         }
         
         if (cargoInfo.current_cargo === 0) {
+            console.log('❌ Transport is empty, current_cargo:', cargoInfo.current_cargo);
             showTransportMessage('Transport is empty - no units to deploy', 'warning');
             return;
         }
         
+        console.log('✅ Transport has cargo:', cargoInfo.current_cargo, 'units');
+        
         // Transport has cargo, proceed with getting exit positions
+        console.log('🔍 Getting exit positions for transport...');
         jsonrpc('get_exit_positions', {
             transport_x: transportX,
             transport_y: transportY
         }).then(result => {
+            console.log('📍 Exit positions result:', result);
             if (result.success && result.valid_positions.length > 0) {
+                console.log('✅ Found', result.valid_positions.length, 'exit positions:', result.valid_positions);
                 transportState.exitPositions = result.valid_positions;
                 transportState.showingExitOptions = true;
                 
                 // Highlight exit positions in blue
+                console.log('🎯 Highlighting exit positions...');
                 result.valid_positions.forEach(pos => {
+                    console.log('  Highlighting position:', pos.x, pos.y);
                     highlightTile(pos.x, pos.y, 'exit-position');
                 });
                 
                 // Show cargo selection UI if multiple cargo units
                 if (result.transport_info && result.transport_info.cargo_units && result.transport_info.cargo_units.length > 1) {
+                    console.log('🎮 Multiple cargo units, showing selection menu');
                     showCargoSelectionMenu(result.transport_info.cargo_units, transportX, transportY);
                 }
                 
                 showTransportMessage(`${cargoInfo.current_cargo} unit(s) ready to deploy. Alt-click blue tiles to deploy.`, 'info');
             } else {
+                console.log('❌ No valid exit positions found');
                 showTransportMessage('No valid positions to deploy units', 'info');
             }
         }).catch(error => {
-            console.error('AW_TRANSPORT: Failed to get exit positions:', error);
+            console.error('❌ Error getting exit positions:', error);
             showTransportMessage('Failed to get exit positions', 'error');
         });
         
@@ -329,17 +361,71 @@ function attemptToExitTransport(transportX, transportY, exitX, exitY, cargoIndex
         exit_y: exitY,
         cargo_index: cargoIndex
     }).then(result => {
+        console.log('🚛 Unload result:', result);
         if (result.success) {
             
             // Show success message
             showTransportMessage(result.message, 'success');
             
-            // Clear highlights and selection
-            clearAllTransportHighlights();
-            transportState.showingExitOptions = false;
+            // Store transport position before clearing state
+            const originalTransportX = transportX;
+            const originalTransportY = transportY;
             
-            // Update board display
+            // CRITICAL: Force clear all highlights after successful unload
+            transportState.showingExitOptions = false; // Clear the flag first
+            transportState.showingBoardingOptions = false;
+            window.transportHighlights = []; // Force clear highlights array
+            transportState.loadableTransports = [];
+            transportState.exitPositions = [];
+            transportState.selectedTransport = null;
+            board.selected = null; // Clear board selection too
+            
+            console.log('🧹 Cleared all transport highlights and state after successful unload');
+            
+            // Update board display - force fresh data from server
             updateBoardDisplay();
+            
+            // Force multiple board updates to ensure cargo icons disappear
+            setTimeout(() => {
+                console.log('🔄 Forcing first board update after unload...');
+                if (typeof update === 'function') {
+                    update();
+                }
+                
+                // Force a second update after a short delay
+                setTimeout(() => {
+                    console.log('🔄 Forcing second board update...');
+                    if (typeof update === 'function') {
+                        update();
+                    }
+                    
+                    // Additional debug and manual cargo clearing
+                    setTimeout(() => {
+                        const updatedTile = board.grid.find(t => t.x === originalTransportX && t.y === originalTransportY);
+                        if (updatedTile && updatedTile.unit) {
+                            // MANUAL CARGO CLEARING: Force the client unit to have empty cargo
+                            if (updatedTile.unit.cargo) {
+                                updatedTile.unit.cargo = [];
+                            }
+                            if (updatedTile.unit.status && updatedTile.unit.status.cargo) {
+                                updatedTile.unit.status.cargo = [];
+                            }
+                            
+                            const cargoCount = getCargoCountForRender(updatedTile.unit);
+                            console.log('🚛 Post-unload cargo count check:', {
+                                position: `${originalTransportX},${originalTransportY}`,
+                                cargoCount: cargoCount,
+                                manuallyCleared: true
+                            });
+                            
+                            // Force one final render
+                            if (typeof rerender === 'function') {
+                                rerender();
+                            }
+                        }
+                    }, 300);
+                }, 200);
+            }, 100);
         } else {
             console.error(`AW_TRANSPORT: Exit failed - ${result.error}`);
             showTransportMessage(result.error, 'error');
@@ -392,13 +478,25 @@ function highlightTile(x, y, className) {
     
 }
 
-function clearAllTransportHighlights() {
+function clearAllTransportHighlights(force = false) {
+    // Don't clear if we're currently showing exit options (preserve blue highlights)
+    // unless force is true
+    if (transportState.showingExitOptions && !force) {
+        console.log('🚧 Prevented clearing highlights - exit options are showing');
+        return;
+    }
+    
     window.transportHighlights = [];
     transportState.loadableTransports = [];
     transportState.exitPositions = [];
     transportState.showingExitOptions = false;
     transportState.showingBoardingOptions = false;
     
+}
+
+function clearOnlyHighlights() {
+    // Clear just the visual highlights without affecting state
+    window.transportHighlights = [];
 }
 
 // =============================================================================
@@ -554,7 +652,8 @@ function handleKeyboardControls(event) {
             break;
             
         case 'escape': // Cancel transport actions
-            clearAllTransportHighlights();
+            clearAllTransportHighlights(true); // Force clear everything
+            showTransportMessage('Transport actions cancelled', 'info');
             break;
     }
 }
@@ -651,11 +750,13 @@ function updateBoardDisplay() {
 
 // Add this function to transport_integration.js (before the exports)
 function handleTransportAltClick(tile, event) {
+    console.log('🔄 Alt-click detected on tile:', tile.x, tile.y, tile.unit ? tile.unit.type : 'no unit');
     
     // Check if we're showing exit options and this is a valid exit position
     if (transportState.showingExitOptions && 
         transportState.exitPositions.some(pos => pos.x === tile.x && pos.y === tile.y)) {
         
+        console.log('📍 Clicking on exit position');
         // Find the selected transport
         const transport = transportState.selectedTransport;
         if (transport) {
@@ -668,6 +769,7 @@ function handleTransportAltClick(tile, event) {
     
     // Check if this is a transport with cargo (select it and show options)
     if (tile.unit && isTransportUnit(tile.unit) && tile.unit.army === board.current_turn) {
+        console.log('🚛 Alt-clicked on transport unit:', tile.unit.type);
         
         // Select the transport
         board.selected = tile;
@@ -679,6 +781,37 @@ function handleTransportAltClick(tile, event) {
         showTransportMessage('Alt-clicked transport - showing exit options. Alt-click blue tiles to deploy.', 'info');
         return true;
     }
+    
+    // Alternative: Check if we're alt-clicking near a transport that was just moved
+    // Look for nearby transports that might have cargo
+    if (!tile.unit) {
+        const nearbyTransports = board.grid.filter(t => 
+            t.unit && 
+            isTransportUnit(t.unit) && 
+            t.unit.army === board.current_turn &&
+            Math.abs(t.x - tile.x) <= 1 && Math.abs(t.y - tile.y) <= 1
+        );
+        
+        if (nearbyTransports.length === 1) {
+            const transport = nearbyTransports[0];
+            console.log('🚛 Found nearby transport at:', transport.x, transport.y, '- checking for cargo');
+            
+            // Check if this transport has cargo and can unload here
+            jsonrpc('get_cargo_info', {x: transport.x, y: transport.y}).then(cargoResult => {
+                if (cargoResult.success && cargoResult.cargo_info.current_cargo > 0) {
+                    console.log('🚛 Nearby transport has cargo - showing exit options');
+                    board.selected = transport;
+                    transportState.selectedTransport = transport;
+                    showTransportExitOptions(transport.x, transport.y);
+                    showTransportMessage('Found nearby loaded transport - showing exit options.', 'info');
+                }
+            });
+            return true;
+        }
+    }
+    
+    console.log('❌ Alt-click not handled - no valid transport or exit position');
+    return false;
     
     // Regular alt-click on empty tile or non-transport
     showTransportMessage('Alt-click on transport to show exit options, then alt-click blue tiles to deploy', 'info');

@@ -40,59 +40,85 @@ class UnitType(Enum):
 ''' damage table for the primary weapon.'''
 
 
+# Primary weapon damage table (authentic AWBW values)
 DAMAGE_TABLE = {
-    UnitType.ANTIAIR: ([45, 50, 50, 120, 0, 0, 120, 75, 0, 0, 65, 105, 0, 10,
-                        105, 1, 55, 5, 25, 60, 55, 75, 0, 120, 25]),
-    UnitType.APC: ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                    0, 0, 0, 0, 0]),
-    UnitType.ARTILLERY: ([75, 70, 75, 0, 40, 55, 0, 0, 45, 65, 0, 90, 55, 45,
-                          85, 15, 80, 40, 70, 80, 80, 0, 60, 0, 70]),
-    UnitType.BCOPTER: ([25, 60, 65, 65, 25, 25, 0, 0, 25, 55, 0, 75, 25, 25,
-                        75, 10, 65, 20, 55, 55, 65, 0, 25, 95, 55]),
-    UnitType.BATTLESHIP: ([85, 80, 80, 0, 50, 95, 0, 0, 60, 95, 0, 95, 95, 55,
-                           90, 25, 90, 50, 80, 90, 85, 0, 95, 0, 80]),
-    UnitType.BLACKBOAT: ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                          0, 0, 0, 0, 0, 0, 0, 0]),
-    UnitType.BLACKBOMB: ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                          0, 0, 0, 0, 0, 0, 0, 0]),
-    UnitType.BOMBER: ([95, 105, 105, 0, 75, 95, 0, 0, 75, 85, 0, 110, 95, 95,
-                       110, 35, 105, 90, 105, 105, 105, 0, 95, 0, 105, ]),
-    UnitType.CARRIER: ([0, 0, 0, 115, 0, 0, 120, 100, 0, 0, 100, 0, 0, 0, 0, 0,
-                        0, 0, 0, 0, 0, 100, 0, 115, 0]),
-    UnitType.CRUISER: ([0, 0, 0, 115, 0, 25, 120, 65, 5, 0, 55, 0, 0, 0, 0, 0,
-                        0, 0, 0, 0, 0, 100, 90, 115, 0]),
-    UnitType.FIGHTER: ([0, 0, 0, 100, 0, 0, 120, 100, 0, 0, 55, 0, 0, 0, 0, 0,
-                        0, 0, 0, 0, 0, 85, 0, 100, 0]),
-    UnitType.INFANTRY: ([5, 14, 15, 7, 0, 0, 0, 0, 0, 0, 0, 55, 0, 1, 45, 1,
-                         26, 1, 5, 12, 25, 0, 0, 30, 5]),
-    UnitType.LANDER: ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                       0, 0, 0, 0, 0, 0]),
-    UnitType.MEDIUMTANK: ([105, 105, 105, 12, 10, 35, 0, 0, 10, 45, 0, 105, 35,
-                           55, 95, 25, 105, 45, 85, 105, 105, 0, 10, 45, 85]),
-    UnitType.MECH: ([65, 75, 70, 9, 0, 0, 0, 0, 0, 0, 0, 65, 0, 15, 55, 5, 85,
-                     15, 55, 85, 85, 0, 0, 35, 55]),
-    UnitType.MEGATANK: ([195, 195, 195, 22, 45, 105, 0, 0, 45, 65, 0, 135, 75,
-                         125, 125, 65, 195, 115, 180, 195, 195, 0, 45, 55,
-                         180]),
-    UnitType.MISSILE: ([0, 0, 0, 120, 0, 0, 120, 100, 0, 0, 100, 0, 0, 0,
-                        0, 0, 0, 0, 0, 0, 0, 100, 0, 120, 0]),
-    UnitType.NEOTANK: ([115, 125, 115, 22, 15, 40, 0, 0, 15, 50, 0, 125, 50,
-                        75, 115, 35, 125, 55, 105, 125, 125, 0, 15, 55, 105]),
-    UnitType.PIPERUNNER: ([85, 80, 80, 105, 55, 60, 120, 75, 60, 85, 65, 95,
-                           60, 55, 90, 25, 90, 50, 80, 90, 85, 75, 85, 105,
-                           80]),
-    UnitType.RECON: ([4, 45, 45, 12, 0, 0, 0, 0, 0, 0, 0, 70, 0, 1, 65, 1, 28,
-                      1, 6, 35, 55, 0, 0, 35, 6]),
-    UnitType.ROCKET: ([85, 80, 80, 0, 55, 60, 0, 0, 60, 85, 0, 95, 60, 55, 90,
-                       25, 90, 50, 80, 90, 85, 0, 85, 0, 80]),
-    UnitType.STEALTH: ([50, 85, 75, 85, 45, 65, 120, 70, 45, 35, 45, 90, 65,
-                        70, 90, 15, 85, 60, 80, 85, 85, 55, 55, 95, 75]),
-    UnitType.SUB: ([0, 0, 0, 0, 55, 95, 0, 0, 75, 25, 0, 0, 95, 0, 0, 0, 0, 0,
-                    0, 0, 0, 0, 55, 0, 0]),
-    UnitType.TCOPTER: ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                        0, 0, 0, 0, 0, 0, 0]),
-    UnitType.TANK: ([65, 75, 70, 10, 1, 10, 0, 0, 1, 5, 0, 75, 10, 15, 70, 10,
-                     85, 15, 55, 85, 85, 0, 1, 40, 55]),
+    UnitType.ANTIAIR: ([45, 50, 50, 120, 0, 0, 120, 75, 0, 0, 65, 105, 0, 10, 105, 1, 55, 5, 25, 60, 55, 75, 0, 120, 25]),
+    UnitType.APC: ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+    UnitType.ARTILLERY: ([75, 70, 75, 0, 40, 55, 0, 0, 45, 65, 0, 90, 55, 45, 85, 15, 80, 40, 70, 80, 80, 0, 60, 0, 70]),
+    UnitType.BCOPTER: ([25, 60, 65, 0, 25, 25, 0, 0, 25, 55, 0, 0, 25, 25, 0, 10, 65, 20, 55, 55, 65, 0, 25, 0, 55]),
+    UnitType.BATTLESHIP: ([85, 80, 80, 0, 50, 95, 0, 0, 60, 95, 0, 95, 95, 55, 90, 25, 90, 50, 80, 90, 85, 0, 95, 0, 80]),
+    UnitType.BLACKBOAT: ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+    UnitType.BLACKBOMB: ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+    UnitType.BOMBER: ([95, 105, 105, 0, 75, 95, 0, 0, 75, 85, 0, 110, 95, 95, 110, 35, 105, 90, 105, 105, 105, 0, 95, 0, 105]),
+    UnitType.CARRIER: ([0, 0, 0, 115, 0, 0, 120, 100, 0, 0, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 0, 115, 0]),
+    UnitType.CRUISER: ([0, 0, 0, 0, 0, 25, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 90, 0, 0]),
+    UnitType.FIGHTER: ([0, 0, 0, 100, 0, 0, 120, 100, 0, 0, 55, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 85, 0, 100, 0]),
+    UnitType.INFANTRY: ([5, 12, 15, 7, 0, 0, 0, 0, 0, 0, 0, 55, 0, 1, 45, 1, 25, 1, 5, 12, 25, 0, 0, 30, 5]),
+    UnitType.LANDER: ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+    UnitType.MEDIUMTANK: ([105, 105, 105, 0, 10, 35, 0, 0, 10, 45, 0, 0, 35, 55, 0, 25, 105, 45, 85, 105, 105, 0, 10, 0, 85]),
+    UnitType.MECH: ([65, 75, 70, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 0, 5, 85, 15, 55, 85, 85, 0, 0, 0, 55]),
+    UnitType.MEGATANK: ([195, 195, 195, 0, 45, 105, 0, 0, 45, 65, 0, 0, 75, 125, 0, 65, 195, 115, 180, 195, 195, 0, 45, 0, 180]),
+    UnitType.MISSILE: ([0, 0, 0, 120, 0, 0, 120, 100, 0, 0, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 0, 120, 0]),
+    UnitType.NEOTANK: ([115, 125, 115, 0, 15, 40, 0, 0, 15, 50, 0, 0, 40, 75, 0, 35, 125, 55, 105, 125, 125, 0, 15, 0, 105]),
+    UnitType.PIPERUNNER: ([85, 80, 80, 105, 55, 60, 120, 75, 60, 60, 65, 95, 60, 55, 90, 25, 90, 50, 80, 90, 85, 75, 85, 105, 80]),
+    UnitType.RECON: ([4, 45, 45, 10, 0, 0, 0, 0, 0, 0, 0, 70, 0, 1, 65, 1, 28, 1, 6, 35, 55, 0, 0, 35, 6]),
+    UnitType.ROCKET: ([85, 80, 80, 0, 55, 60, 0, 0, 60, 85, 0, 95, 60, 55, 90, 25, 90, 50, 80, 90, 85, 0, 85, 0, 80]),
+    UnitType.STEALTH: ([50, 85, 75, 85, 45, 65, 120, 70, 45, 35, 45, 90, 65, 70, 90, 15, 85, 60, 80, 85, 85, 55, 55, 95, 75]),
+    UnitType.SUB: ([0, 0, 0, 0, 55, 95, 0, 0, 75, 25, 0, 0, 95, 0, 0, 0, 0, 0, 0, 0, 0, 0, 55, 0, 0]),
+    UnitType.TCOPTER: ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+    UnitType.TANK: ([65, 75, 70, 0, 1, 10, 0, 0, 1, 5, 0, 0, 10, 15, 0, 10, 85, 15, 55, 85, 85, 0, 1, 0, 55]),
+}
+
+# Secondary weapon damage table (for when out of primary ammo or specific targets)
+# Used for machine guns, defensive weapons, etc.
+# Unit attack values (authentic AW values)
+UNIT_ATTACK_VALUES = {
+    UnitType.INFANTRY: 100, UnitType.MECH: 100, UnitType.RECON: 100,
+    UnitType.TANK: 100, UnitType.MEDIUMTANK: 100, UnitType.NEOTANK: 100, UnitType.MEGATANK: 100,
+    UnitType.ANTIAIR: 100, UnitType.ARTILLERY: 100, UnitType.ROCKET: 100, UnitType.MISSILE: 100,
+    UnitType.BCOPTER: 100, UnitType.TCOPTER: 100, UnitType.FIGHTER: 100, UnitType.BOMBER: 100,
+    UnitType.STEALTH: 100, UnitType.BATTLESHIP: 100, UnitType.CRUISER: 100, UnitType.SUB: 100,
+    UnitType.LANDER: 100, UnitType.CARRIER: 100, UnitType.BLACKBOAT: 100, UnitType.BLACKBOMB: 100,
+    UnitType.APC: 100, UnitType.PIPERUNNER: 100
+}
+
+# Unit defense values (authentic AW values)  
+UNIT_DEFENSE_VALUES = {
+    UnitType.INFANTRY: 100, UnitType.MECH: 100, UnitType.RECON: 100,
+    UnitType.TANK: 100, UnitType.MEDIUMTANK: 100, UnitType.NEOTANK: 100, UnitType.MEGATANK: 100,
+    UnitType.ANTIAIR: 100, UnitType.ARTILLERY: 100, UnitType.ROCKET: 100, UnitType.MISSILE: 100,
+    UnitType.BCOPTER: 100, UnitType.TCOPTER: 100, UnitType.FIGHTER: 100, UnitType.BOMBER: 100,
+    UnitType.STEALTH: 100, UnitType.BATTLESHIP: 100, UnitType.CRUISER: 100, UnitType.SUB: 100,
+    UnitType.LANDER: 100, UnitType.CARRIER: 100, UnitType.BLACKBOAT: 100, UnitType.BLACKBOMB: 100,
+    UnitType.APC: 100, UnitType.PIPERUNNER: 100
+}
+
+SECONDARY_DAMAGE_TABLE = {
+    UnitType.ANTIAIR: ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),  # No secondary
+    UnitType.APC: ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),  # No weapons
+    UnitType.ARTILLERY: ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),  # No secondary
+    UnitType.BCOPTER: ([6, 20, 25, 65, 0, 0, 0, 0, 0, 0, 0, 75, 0, 1, 75, 1, 35, 1, 6, 30, 35, 0, 0, 95, 6]),  # Machine gun
+    UnitType.BATTLESHIP: ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),  # No secondary
+    UnitType.BLACKBOAT: ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),  # No weapons
+    UnitType.BLACKBOMB: ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),  # No weapons
+    UnitType.BOMBER: ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),  # No secondary
+    UnitType.CARRIER: ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),  # Uses fighters
+    UnitType.CRUISER: ([0, 0, 0, 115, 0, 0, 120, 65, 0, 0, 55, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 0, 115, 0]),  # Anti-air
+    UnitType.FIGHTER: ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),  # No secondary
+    UnitType.INFANTRY: ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),  # Only one weapon
+    UnitType.LANDER: ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),  # No weapons
+    UnitType.MEDIUMTANK: ([7, 45, 45, 12, 0, 0, 0, 0, 0, 0, 0, 105, 0, 1, 95, 1, 35, 1, 8, 45, 45, 0, 0, 45, 8]),  # Machine gun
+    UnitType.MECH: ([6, 20, 32, 9, 0, 0, 0, 0, 0, 0, 0, 65, 0, 1, 55, 1, 35, 1, 6, 18, 35, 0, 0, 35, 6]),  # Machine gun
+    UnitType.MEGATANK: ([17, 65, 65, 22, 0, 0, 0, 0, 0, 0, 0, 135, 0, 1, 125, 1, 55, 1, 10, 65, 75, 0, 0, 55, 10]),  # Machine gun
+    UnitType.MISSILE: ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),  # No secondary
+    UnitType.NEOTANK: ([17, 65, 65, 22, 0, 0, 0, 0, 0, 0, 0, 125, 0, 1, 115, 1, 55, 1, 10, 65, 75, 0, 0, 55, 10]),  # Machine gun
+    UnitType.PIPERUNNER: ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),  # No secondary
+    UnitType.RECON: ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),  # No secondary in authentic table
+    UnitType.ROCKET: ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),  # No secondary
+    UnitType.STEALTH: ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),  # No secondary
+    UnitType.SUB: ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),  # Only torpedoes
+    UnitType.TCOPTER: ([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),  # No weapons
+    UnitType.TANK: ([5, 54, 45, 10, 0, 0, 0, 0, 0, 0, 0, 75, 0, 1, 70, 1, 30, 1, 6, 40, 55, 0, 0, 40, 6]),  # Machine gun
 }
 
 
@@ -135,18 +161,109 @@ class Unit:
     can_capture: bool
 
     def attack_damage(self, target, tile):
-        '''Returns the attack damamge from the attacker to the defender
-            taking into account the terrain.'''
-        damage_const = DAMAGE_TABLE[self.type][target.type.value]
-        def_const = TERRAIN_DEFENSE[tile.mapTile.type]
-        atk_hp = math.ceil(self.status.hp / 10)
-        # The displayed HP of the defender, from 1 through 10.
-        def_hp = math.ceil(target.status.hp / 10)
-        attack_term = damage_const + random.randrange(10)
-        hp_term = atk_hp / 10
-        defense_term = (100 - def_const * def_hp) / 100
-        result = attack_term * hp_term * defense_term
-        return int(result)
+        '''Returns the attack damage using authentic Advance Wars formula.
+        Formula: Damage% = ((B * AV/100 + L - LB) * HPA/10) * ((200 - (DV + DTR * HPD))/100)'''
+        
+        # B: Base damage from weapon selection
+        base_damage = self._select_weapon_damage(target)
+        if base_damage == 0:
+            return 0
+        
+        # AV: Attacker's attack value (default 100, modified by COs)
+        attack_value = UNIT_ATTACK_VALUES.get(self.type, 100)
+        
+        # L: Luck damage (0-9 random bonus)
+        luck = random.randint(0, 9)
+        
+        # LB: Bad luck damage (0 for now, could be implemented for some COs)
+        bad_luck = 0
+        
+        # HPA: Attacker's visual HP (1-10)
+        attacker_visual_hp = math.ceil(self.status.hp / 10)
+        
+        # DV: Defender's defense value (default 100, modified by COs)
+        defense_value = UNIT_DEFENSE_VALUES.get(target.type, 100)
+        
+        # DTR: Defending terrain defense stars
+        terrain_defense = TERRAIN_DEFENSE[tile.mapTile.type]
+        
+        # HPD: Defender's visual HP (1-10)
+        defender_visual_hp = math.ceil(target.status.hp / 10)
+        
+        # Apply authentic AW damage formula
+        attack_factor = (base_damage * attack_value / 100 + luck - bad_luck) * attacker_visual_hp / 10
+        defense_factor = (200 - (defense_value + terrain_defense * defender_visual_hp)) / 100
+        
+        damage = attack_factor * defense_factor
+        return max(0, int(damage))
+    
+    def _select_weapon_damage(self, target):
+        '''Selects appropriate weapon damage based on authentic AW mechanics.
+        
+        Rules:
+        1. Units with secondary weapons use them against specific targets (infantry/mechs/copters)
+        2. Primary weapon used when: has ammo AND (no secondary OR secondary can't target OR primary preferred)
+        3. Secondary weapon used when: out of primary ammo OR secondary is specialized for target
+        4. Infantry/Mech have infinite ammo (no ammo limitation)
+        '''
+        
+        primary_damage = DAMAGE_TABLE[self.type][target.type.value]
+        secondary_damage = 0
+        
+        # Check if unit has secondary weapon capability
+        if self.type in SECONDARY_DAMAGE_TABLE:
+            secondary_damage = SECONDARY_DAMAGE_TABLE[self.type][target.type.value]
+        
+        # Infantry always uses primary (infinite ammo)
+        if self.type == UnitType.INFANTRY:
+            return primary_damage
+        
+        # Check primary weapon ammo
+        has_primary_ammo = getattr(self.status, 'ammo', 0) > 0
+        
+        # Use secondary weapon when primary can't target (authentic AW behavior)
+        if secondary_damage > 0 and primary_damage == 0:
+            # Primary weapon cannot target this unit type - must use secondary
+            return secondary_damage
+        
+        # Use primary weapon if we have ammo and it can damage the target
+        if has_primary_ammo and primary_damage > 0:
+            return primary_damage
+        
+        # Fall back to secondary weapon if available (out of primary ammo)
+        if secondary_damage > 0:
+            return secondary_damage
+        
+        # No weapon can damage this target
+        return 0
+    
+    def _uses_secondary_weapon(self, target):
+        '''Returns True if this attack will use secondary weapon (for ammo consumption logic).'''
+        
+        # Infantry always uses primary (infinite ammo)
+        if self.type == UnitType.INFANTRY:
+            return False
+        
+        # Check if we have secondary weapon
+        if self.type not in SECONDARY_DAMAGE_TABLE:
+            return False
+        
+        secondary_damage = SECONDARY_DAMAGE_TABLE[self.type][target.type.value]
+        if secondary_damage == 0:
+            return False
+        
+        # Check if secondary weapon will be used
+        primary_damage = DAMAGE_TABLE[self.type][target.type.value]
+        
+        # Use secondary when primary can't target this unit type
+        if secondary_damage > 0 and primary_damage == 0:
+            return True
+        
+        # Use secondary when out of primary ammo
+        has_primary_ammo = getattr(self.status, 'ammo', 0) > 0
+        primary_damage = DAMAGE_TABLE[self.type][target.type.value]
+        
+        return not has_primary_ammo and primary_damage > 0
 
     def is_indirect(self):
         '''Returns true if the unit is an indirect unit.'''
@@ -260,30 +377,40 @@ class Unit:
             return True
         
     def enhanced_attack_damage(self, target, tile, luck_enabled=True):
-        """Enhanced attack damage calculation with proper Advance Wars formula"""
+        """Enhanced attack damage using authentic Advance Wars formula"""
         
-        # Get base damage from damage table
-        base_damage = DAMAGE_TABLE[self.type][target.type.value]
-        
+        # B: Base damage from weapon selection
+        base_damage = self._select_weapon_damage(target)
         if base_damage == 0:
             return 0
         
-        # Luck factor (0-9)
+        # AV: Attacker's attack value (default 100, modified by COs)
+        attack_value = UNIT_ATTACK_VALUES.get(self.type, 100)
+        
+        # L: Luck damage (0-9 random bonus)
         luck = random.randint(0, 9) if luck_enabled else 0
         
-        # Attacker HP factor (1-10 displayed HP converted to 0.1-1.0)
-        attacker_hp_factor = math.ceil(self.status.hp / 10) / 10
+        # LB: Bad luck damage (0 for now)
+        bad_luck = 0
         
-        # Terrain defense factor
-        terrain_stars = TERRAIN_DEFENSE.get(tile.mapTile.type, 0)
-        defender_hp_display = math.ceil(target.status.hp / 10)
+        # HPA: Attacker's visual HP (1-10)
+        attacker_visual_hp = math.ceil(self.status.hp / 10)
         
-        # Defense multiplier: (100 - terrain_defense * defender_hp) / 100
-        defense_multiplier = (100 - terrain_stars * defender_hp_display) / 100
+        # DV: Defender's defense value (default 100, modified by COs)
+        defense_value = UNIT_DEFENSE_VALUES.get(target.type, 100)
         
-        # Final calculation
-        damage = (base_damage + luck) * attacker_hp_factor * defense_multiplier
+        # DTR: Defending terrain defense stars
+        terrain_defense = TERRAIN_DEFENSE.get(tile.mapTile.type, 0)
         
+        # HPD: Defender's visual HP (1-10)
+        defender_visual_hp = math.ceil(target.status.hp / 10)
+        
+        # Apply authentic AW damage formula
+        # Damage% = ((B * AV/100 + L - LB) * HPA/10) * ((200 - (DV + DTR * HPD))/100)
+        attack_factor = (base_damage * attack_value / 100 + luck - bad_luck) * attacker_visual_hp / 10
+        defense_factor = (200 - (defense_value + terrain_defense * defender_visual_hp)) / 100
+        
+        damage = attack_factor * defense_factor
         return max(0, int(damage))
 
     @classmethod
