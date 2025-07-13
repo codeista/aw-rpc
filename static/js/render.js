@@ -276,8 +276,13 @@ function update() {
                     console.error('Draw element not found');
                     return;
                 }
-                var params = { type: Two.Types.canvas, width: board.width * TILESIZE, height: board.height * TILESIZE };
+                // Add extra height to accommodate double-height sprites at the top
+                var extraHeight = TILESIZE; // One extra tile height for overlapping sprites
+                var params = { type: Two.Types.canvas, width: board.width * TILESIZE, height: board.height * TILESIZE + extraHeight };
                 two = new Two(params).appendTo(elem);
+                
+                // Offset all rendering down by extraHeight to create top margin
+                two.scene.translation.set(0, extraHeight);
                 // Initialize transport visual system
                 window.transportHighlights = [];
                 transportHighlightGroup = null;
@@ -625,8 +630,16 @@ function handleTransportRightClick(tile, event) {
 //
 
 function tileAt(px, py) {
+    // Account for the extra height offset at the top
+    var adjustedY = py - TILESIZE;
     var tileX = Math.floor(px / TILESIZE);
-    var tileY = Math.floor(py / TILESIZE);
+    var tileY = Math.floor(adjustedY / TILESIZE);
+    
+    // Bounds checking
+    if (tileY < 0 || tileY >= board.height || tileX < 0 || tileX >= board.width) {
+        return null;
+    }
+    
     var tile = board.grid[tileX + tileY * board.width];
     return tile;
 }
@@ -1431,7 +1444,8 @@ function makeMapTile(tile) {
         spriteTexture.offset = new Two.Vector(x, y);
         var rect = null;
         if (_2xHeight) {
-            rect = two.makeRectangle(tile.x * TILESIZE + TILESIZE/2, tile.y * TILESIZE , SPRITESIZE, SPRITESIZE * 2);
+            // Double-height tiles (like missile silos) should overlap the top border
+            rect = two.makeRectangle(tile.x * TILESIZE + TILESIZE/2, tile.y * TILESIZE, SPRITESIZE, SPRITESIZE * 2);
         } else {
             rect = two.makeRectangle(tile.x * TILESIZE + TILESIZE/2, tile.y * TILESIZE + TILESIZE/2, SPRITESIZE, SPRITESIZE);
         }
