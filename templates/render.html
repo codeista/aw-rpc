@@ -555,6 +555,7 @@
         .modal {
             background: rgba(0,0,0,0.8);
             backdrop-filter: blur(5px);
+            z-index: 10000 !important; /* Ensure modal is always on top */
         }
 
         .modal-content {
@@ -562,6 +563,25 @@
             border-radius: 15px;
             border: 1px solid rgba(255,255,255,0.1);
             box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            z-index: 10001 !important; /* Content above background */
+        }
+        
+        /* Override modal.css colors for better visibility */
+        #modalcreate .modal-content {
+            background: #2c3e50;
+            color: #ecf0f1;
+        }
+        
+        #modalcreate h3 {
+            color: #3498db !important;
+        }
+        
+        #modalcreate .close {
+            color: #ecf0f1;
+        }
+        
+        #modalcreate .close:hover {
+            color: #3498db;
         }
 
         /* ===== RESPONSIVE DESIGN ===== */
@@ -806,10 +826,16 @@
     <div id="modalcreate" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
-            <h3 style="margin-bottom: 15px; color: #3498db;">🏭 Create Unit</h3>
-            <select id="selectcreate" style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: 1px solid #bdc3c7;">
-            </select>
-            <button type="button" class="btn btn-success" id="buttoncreate" style="width: 100%;">Create Unit</button>
+            <h3 style="margin-bottom: 15px;">🏭 Create Unit</h3>
+            <div style="margin-bottom: 10px;">
+                <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #bdc3c7;">Select unit type:</label>
+                <select id="selectcreate" style="width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 5px; border: 1px solid #34495e; background: rgba(255,255,255,0.1); color: #ecf0f1; font-size: 16px; -webkit-appearance: none; -moz-appearance: none; appearance: none;">
+                </select>
+            </div>
+            <button type="button" class="btn btn-success" id="buttoncreate" style="width: 100%; padding: 12px; font-size: 16px; background: linear-gradient(135deg, #27ae60, #2ecc71); border: none; color: white; border-radius: 5px; cursor: pointer; font-weight: 600;">Create Unit</button>
+            <div style="margin-top: 10px; font-size: 12px; color: #7f8c8d; text-align: center;">
+                Cost will be deducted from your funds
+            </div>
         </div>
     </div>
 
@@ -1369,6 +1395,32 @@
             `;
             document.body.appendChild(mobileButtons);
         }
+        
+        // Improve modal behavior on mobile
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('modalcreate');
+            const modalContent = modal.querySelector('.modal-content');
+            
+            // Close modal when clicking backdrop
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+            
+            // Prevent closing when clicking content
+            modalContent.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+            
+            // Ensure select dropdown works on mobile
+            const selectCreate = document.getElementById('selectcreate');
+            if (selectCreate) {
+                selectCreate.addEventListener('touchstart', function(e) {
+                    e.stopPropagation();
+                });
+            }
+        });
         
         // Mobile menu function
         window.showMobileMenu = function() {
