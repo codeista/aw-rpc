@@ -27,7 +27,10 @@ let transportState = {
     exitPositions: [],
     showingExitOptions: false,
     showingBoardingOptions: false,
-    selectedCargoIndex: 0
+    selectedCargoIndex: 0,
+    // SELECTION PRESERVATION
+    preservedSelection: null,  // Store original selection during transport operations
+    preserveSelection: false   // Flag to indicate if we should preserve selection
 };
 
 // =============================================================================
@@ -141,6 +144,11 @@ function safelyPerformEnhancedMovement(fromX, fromY, toX, toY) {
                 const newTile = board.grid.find(t => t.x === toX && t.y === toY);
                 if (newTile) {
                     board.selected = newTile;
+                    // Update preserved selection if we're preserving
+                    if (transportState.preserveSelection) {
+                        transportState.preservedSelection.x = toX;
+                        transportState.preservedSelection.y = toY;
+                    }
                     // CRITICAL: Update transport state if this was the selected transport
                     if (transportState.selectedTransport && 
                         transportState.selectedTransport.x === fromX && 
@@ -285,11 +293,12 @@ function showTransportExitOptions(transportX, transportY) {
     console.log('🔍 Getting cargo info for transport at:', transportX, transportY);
     
     // ✅ NEW: First check if transport has cargo
+    console.log('🔄 Calling get_cargo_info RPC for transport at:', transportX, transportY);
     jsonrpc('get_cargo_info', {x: transportX, y: transportY}).then(cargoResult => {
         console.log('📦 Cargo info result:', cargoResult);
         if (!cargoResult.success) {
             console.error('❌ get_cargo_info failed:', cargoResult.error);
-            showTransportMessage('Could not get transport information', 'error');
+            showTransportMessage(`Could not get transport info: ${cargoResult.error || 'Unknown error'}`, 'error');
             return;
         }
         
@@ -347,8 +356,9 @@ function showTransportExitOptions(transportX, transportY) {
         });
         
     }).catch(error => {
-        console.error('AW_TRANSPORT: Failed to get cargo info:', error);
-        showTransportMessage('Failed to get transport information', 'error');
+        console.error('❌ get_cargo_info RPC call failed:', error);
+        console.error('❌ Error details:', error.message, error.stack);
+        showTransportMessage(`RPC call failed: ${error.message || 'Unknown error'}`, 'error');
     });
 }
 
@@ -378,7 +388,9 @@ function attemptToExitTransport(transportX, transportY, exitX, exitY, cargoIndex
             transportState.loadableTransports = [];
             transportState.exitPositions = [];
             transportState.selectedTransport = null;
-            board.selected = null; // Clear board selection too
+            
+            // Restore preserved selection instead of clearing
+            restorePreservedSelection();
             
             console.log('🧹 Cleared all transport highlights and state after successful unload');
             
@@ -492,6 +504,53 @@ function clearAllTransportHighlights(force = false) {
     transportState.showingExitOptions = false;
     transportState.showingBoardingOptions = false;
     
+    // CRITICAL FIX: Force re-render to actually remove visual highlights
+    if (typeof rerender === 'function') {
+        rerender();
+    } else if (typeof two !== 'undefined') {
+        // Force Two.js update to clear visual highlights
+        two.update();
+    }
+    
+    console.log('🧹 Cleared all transport highlights and forced re-render');
+}
+
+// =============================================================================
+// SELECTION PRESERVATION SYSTEM
+// =============================================================================
+
+function preserveCurrentSelection() {
+    if (board.selected) {
+        transportState.preservedSelection = {
+            x: board.selected.x,
+            y: board.selected.y,
+            unit: board.selected.unit
+        };
+        transportState.preserveSelection = true;
+        console.log('💾 Preserved selection:', transportState.preservedSelection);
+    }
+}
+
+function restorePreservedSelection() {
+    if (transportState.preserveSelection && transportState.preservedSelection) {
+        // Find the tile at the preserved coordinates
+        const restoredTile = board.grid.find(t => 
+            t.x === transportState.preservedSelection.x && 
+            t.y === transportState.preservedSelection.y
+        );
+        
+        if (restoredTile) {
+            board.selected = restoredTile;
+            console.log('🔄 Restored selection to:', restoredTile.x, restoredTile.y);
+        } else {
+            console.log('⚠️ Could not restore selection - tile not found');
+            board.selected = null;
+        }
+        
+        // Clear preservation state
+        transportState.preservedSelection = null;
+        transportState.preserveSelection = false;
+    }
 }
 
 function clearOnlyHighlights() {
@@ -577,7 +636,7 @@ function showCargoSelectionMenu(cargoUnits, transportX, transportY) {
     const cargoList = menu.querySelector('#cargo-list');
     cargoUnits.forEach((cargo, index) => {
         const cargoButton = document.createElement('button');
-        cargoButton.textContent = `${cargo.unit_type} (HP: ${cargo.hp})`;
+        cargoButton.textContent = `${cargo.type} (HP: ${cargo.hp})`;
         cargoButton.style.cssText = `
             display: block;
             width: 100%;
@@ -770,6 +829,10 @@ function handleTransportAltClick(tile, event) {
     // Check if this is a transport with cargo (select it and show options)
     if (tile.unit && isTransportUnit(tile.unit) && tile.unit.army === board.current_turn) {
         console.log('🚛 Alt-clicked on transport unit:', tile.unit.type);
+        console.log('🔍 Transport details:', { x: tile.x, y: tile.y, army: tile.unit.army, currentTurn: board.current_turn });
+        
+        // Preserve current selection before changing it
+        preserveCurrentSelection();
         
         // Select the transport
         board.selected = tile;

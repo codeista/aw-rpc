@@ -387,6 +387,65 @@ MOVEMENT_COST = {
 }
 
 
+# Unit class name to index mapping for MOVEMENT_COST lookups
+UNIT_CLASS_TO_INDEX = {
+    'BOOTS': 0,
+    'TREADS': 1, 
+    'TYRES': 2,
+    'SEA': 3,
+    'AIR': 4,
+    'LANDER': 5,
+    'FOOT': 6,
+    'PIPE': 7
+}
+
+
+def get_movement_cost_for_unit_on_terrain(unit_type: str, terrain_type: str) -> int:
+    """
+    Get movement cost for a specific unit type on a specific terrain type.
+    
+    Args:
+        unit_type: Unit type name (e.g., 'INFANTRY', 'TANK', 'BATTLESHIP')
+        terrain_type: Terrain type name (e.g., 'PLAIN', 'WOOD', 'SEA')
+        
+    Returns:
+        Movement cost as integer (99999999 means impassable)
+        
+    Raises:
+        ValueError: If unit_type or terrain_type is invalid
+    """
+    from config import Config
+    
+    # Load unit configuration to get movement class
+    try:
+        config = Config()
+        unit_config = config.units.get(unit_type)
+        if not unit_config:
+            raise ValueError(f"Unknown unit type: {unit_type}")
+        
+        unit_class = unit_config.get('cls', '').upper()
+        if unit_class not in UNIT_CLASS_TO_INDEX:
+            raise ValueError(f"Unknown unit class: {unit_class} for unit {unit_type}")
+        
+        class_index = UNIT_CLASS_TO_INDEX[unit_class]
+        
+    except Exception as e:
+        raise ValueError(f"Error getting unit class for {unit_type}: {e}")
+    
+    # Convert terrain type string to MapType enum
+    try:
+        terrain_enum = MapType[terrain_type.upper()]
+    except KeyError:
+        raise ValueError(f"Unknown terrain type: {terrain_type}")
+    
+    # Look up movement cost
+    if terrain_enum not in MOVEMENT_COST:
+        raise ValueError(f"No movement cost data for terrain: {terrain_type}")
+    
+    cost = MOVEMENT_COST[terrain_enum][class_index]
+    return cost
+
+
 class MapRepository:
     """Repository for managing predefined maps."""
     

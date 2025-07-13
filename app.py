@@ -209,11 +209,11 @@ def game_load(token):
             if isinstance(board_data, str):
                 import json
                 board_dict = json.loads(board_data)
-                print(f"SERIALIZATION_FIX: Parsed JSON string to dict")
+                app_logger.debug(f"Parsed JSON string to dict")
             else:
                 # It's already a dict (most common case)
                 board_dict = board_data
-                print(f"SERIALIZATION_FIX: Board data is already a dict")
+                app_logger.debug(f"Board data is already a dict")
             
             # RECONSTRUCT UNITS: Fix any dict units in the grid
             units_reconstructed = 0
@@ -224,25 +224,25 @@ def game_load(token):
                         
                         # If unit is a dict, reconstruct it
                         if isinstance(unit_data, dict):
-                            print(f"SERIALIZATION_FIX: Reconstructing unit at grid index {i}")
+                            # Reconstructing unit at grid index {i}
                             try:
                                 reconstructed_unit = reconstruct_unit_from_dict(unit_data)
                                 tile_data['unit'] = reconstructed_unit
                                 units_reconstructed += 1
-                                print(f"SERIALIZATION_FIX: Successfully reconstructed unit {units_reconstructed}")
+                                # Successfully reconstructed unit {units_reconstructed}
                             except Exception as unit_error:
-                                print(f"SERIALIZATION_FIX: Failed to reconstruct unit at index {i}: {unit_error}")
+                                app_logger.warning(f"Failed to reconstruct unit at index {i}: {unit_error}")
                                 # Set unit to None instead of leaving a broken dict
                                 tile_data['unit'] = None
             
-            print(f"SERIALIZATION_FIX: Reconstructed {units_reconstructed} units total")
+            app_logger.debug(f"Reconstructed {units_reconstructed} units total")
             
             # Now try to deserialize with jsons - pass the dict directly, not as JSON
             try:
                 board = jsons.loads(board_dict, GameBoard)
-                print(f"SERIALIZATION_FIX: jsons.loads succeeded")
+                app_logger.debug(f"jsons.loads succeeded")
             except Exception as jsons_error:
-                print(f"SERIALIZATION_FIX: jsons.loads failed: {jsons_error}")
+                app_logger.debug(f"jsons.loads failed: {jsons_error}")
                 # Try alternative approach - create GameBoard manually
                 board = create_board_from_dict(board_dict)
             
@@ -308,7 +308,7 @@ def create_board_from_dict(board_dict):
                 else:
                     turn_order.append(army_data)
             board.turn_order = turn_order
-            print(f"SERIALIZATION_FIX: Restored turn_order: {[army.name for army in turn_order]}")
+            app_logger.debug(f"Restored turn_order: {[army.name for army in turn_order]}")
         
         if 'current_turn' in board_dict:
             current_turn_data = board_dict['current_turn']
@@ -318,7 +318,7 @@ def create_board_from_dict(board_dict):
                 board.current_turn = Army[current_turn_data.name]
             else:
                 board.current_turn = current_turn_data
-            print(f"SERIALIZATION_FIX: Restored current_turn: {board.current_turn.name}")
+            app_logger.debug(f"Restored current_turn: {board.current_turn.name}")
         
         # Copy other important properties
         if 'days' in board_dict:
@@ -346,12 +346,12 @@ def create_board_from_dict(board_dict):
                 if isinstance(tile_data, dict) and 'unit' in tile_data:
                     board.grid[i].unit = tile_data['unit']  # Units should already be reconstructed
         
-        print(f"SERIALIZATION_FIX: Created board from dict manually with proper turn system")
+        app_logger.debug(f"Created board from dict manually with proper turn system")
         return board
         
     except Exception as e:
-        print(f"SERIALIZATION_FIX: Manual board creation failed: {e}")
-        print(f"SERIALIZATION_FIX: Board dict keys: {list(board_dict.keys()) if isinstance(board_dict, dict) else 'Not a dict'}")
+        app_logger.error(f"Manual board creation failed: {e}")
+        app_logger.debug(f"Board dict keys: {list(board_dict.keys()) if isinstance(board_dict, dict) else 'Not a dict'}")
         
         # Final fallback - create completely new board but try to preserve basic state
         try:
@@ -370,10 +370,10 @@ def create_board_from_dict(board_dict):
                 if 'blue_funds' in board_dict:
                     board.blue_funds = board_dict['blue_funds']
             
-            print(f"SERIALIZATION_FIX: Using minimal fallback board")
+            app_logger.warning(f"Using minimal fallback board")
             return board
         except Exception as e2:
-            print(f"SERIALIZATION_FIX: Even minimal fallback failed: {e2}")
+            app_logger.error(f"Even minimal fallback failed: {e2}")
             # Absolute last resort
             from map_system import Map
             return GameBoard.create(Map())
@@ -437,13 +437,13 @@ def reconstruct_unit_from_dict(unit_dict: dict):
             can_capture=unit_dict.get('can_capture', True)
         )
         
-        print(f"SERIALIZATION_FIX: Successfully reconstructed {unit_type_name} unit with proper status")
+        # Successfully reconstructed {unit_type_name} unit with proper status
         return unit
         
     except Exception as e:
         # Enhanced fallback with proper UnitConfig
-        print(f"SERIALIZATION_FIX: Failed to reconstruct unit from dict: {e}")
-        print(f"SERIALIZATION_FIX: Unit dict keys: {list(unit_dict.keys()) if isinstance(unit_dict, dict) else 'Not a dict'}")
+        app_logger.warning(f"Failed to reconstruct unit from dict: {e}")
+        app_logger.debug(f"Unit dict keys: {list(unit_dict.keys()) if isinstance(unit_dict, dict) else 'Not a dict'}")
         
         try:
             # Create a fallback unit with basic UnitConfig
@@ -473,7 +473,7 @@ def reconstruct_unit_from_dict(unit_dict: dict):
                 can_capture=True
             )
         except Exception as e2:
-            print(f"SERIALIZATION_FIX: Even fallback failed: {e2}")
+            app_logger.error(f"Even fallback failed: {e2}")
             raise e2
 
 def game_save(mngr, token):
@@ -731,6 +731,12 @@ def create_game_api():
 def game(token: str):
     app_logger.info(f"Game page accessed: {token}")
     return render_template('render.html', token=token)
+
+@app.route('/templates/<path:filename>')
+def serve_template_files(filename):
+    """Serve files from templates directory for sprite corrections"""
+    from flask import send_from_directory
+    return send_from_directory('templates', filename)
 
 @app.route('/logs')
 def view_logs():
@@ -3472,10 +3478,19 @@ def get_cargo_info_rpc(token: str, x: int, y: int) -> dict:
         transport_system = CompleteTransportSystem(mngr)
         cargo_info = transport_system.get_cargo_info(unit)
         
+        # Get compatible types safely (only if unit is actually a transport)
+        compatible_types = []
+        if cargo_info.get("is_transport", False):
+            try:
+                compatible_types = transport_system.get_compatible_cargo_types(unit)
+            except (AttributeError, TypeError) as e:
+                app_logger.warning(f"Could not get compatible types for unit: {str(e)}")
+                compatible_types = []
+        
         return {
             "success": True,
             "cargo_info": cargo_info,
-            "compatible_types": transport_system.get_compatible_cargo_types(unit) if cargo_info["is_transport"] else []
+            "compatible_types": compatible_types
         }
         
     except Exception as e:
@@ -3980,7 +3995,7 @@ def get_damage_chart_rpc(token: str) -> dict:
         }
 
 @jsonrpc.method('get_movement_costs')
-def get_movement_costs(unit_type: str, token: str):
+def get_movement_costs(unit_type: str, token: str) -> dict:
     """Get movement costs for a unit type across all terrain types"""
     try:
         mngr = game_load(token)
@@ -4088,6 +4103,63 @@ def get_movement_highlights(x: int, y: int, token: str) -> dict:
             "error": f"Server error: {str(e)}"
         }
         
+@app.route('/run_test', methods=['POST'])
+def run_test():
+    """Execute a test script and return results"""
+    try:
+        data = request.get_json()
+        script_name = data.get('script')
+        
+        if not script_name:
+            return "No script specified", 400
+        
+        # Security check - only allow specific test scripts
+        allowed_scripts = [
+            'test_combat_system.py',
+            'test_economic_system.py', 
+            'test_movement_system.py',
+            'test_victory_conditions.py',
+            'test_transport_final.py',
+            'updated_test_phase1.py'
+        ]
+        
+        if script_name not in allowed_scripts:
+            return f"Script {script_name} not allowed", 403
+        
+        # Execute the test script
+        script_path = f"/home/box/Documents/aw-rpc/{script_name}"
+        
+        if not os.path.exists(script_path):
+            return f"Script {script_name} not found", 404
+        
+        try:
+            result = subprocess.run(
+                ['python3', script_path],
+                capture_output=True,
+                text=True,
+                timeout=60,  # 60 second timeout
+                cwd='/home/box/Documents/aw-rpc'
+            )
+            
+            output = f"Exit Code: {result.returncode}\n\n"
+            
+            if result.stdout:
+                output += f"STDOUT:\n{result.stdout}\n\n"
+            
+            if result.stderr:
+                output += f"STDERR:\n{result.stderr}\n"
+            
+            return output
+            
+        except subprocess.TimeoutExpired:
+            return "Test script timeout (60 seconds)", 408
+        except Exception as e:
+            return f"Error executing script: {str(e)}", 500
+        
+    except Exception as e:
+        app_logger.error(f"Error in run_test endpoint: {e}")
+        return f"Internal server error: {str(e)}", 500
+
 if __name__ == '__main__':
     app_logger.info("=== AW-RPC Application Starting ===")
     

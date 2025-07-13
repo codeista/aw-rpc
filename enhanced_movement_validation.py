@@ -231,8 +231,8 @@ class EnhancedMovementValidator:
         
         try:
             unit_class_index = unit.status.cls.value
-            MOVEMENT_COST = MOVEMENT_COST[terrain_type][unit_class_index]
-            return MOVEMENT_COST != INF
+            movement_cost = MOVEMENT_COST[terrain_type][unit_class_index]
+            return movement_cost != INF
         except (KeyError, IndexError):
             # Unknown terrain or unit class - default to false for safety
             return False

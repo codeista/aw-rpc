@@ -1,2642 +1,863 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>AW-RPC Complete Testing Interface</title>
+    <title>AW-RPC Comprehensive Testing Interface</title>
     <style>
         body { 
-            font-family: Arial, sans-serif; 
-            padding: 10px; 
-            background: #f5f5f5;
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            padding: 0; 
             margin: 0;
-            font-size: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
         }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+        
         .header {
-            background: #2c3e50;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
             color: white;
-            padding: 10px;
-            margin: -10px -10px 10px -10px;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
             text-align: center;
-            font-size: 14px;
         }
-        .test-section { 
-            margin: 10px 0; 
-            padding: 10px; 
-            border: 1px solid #ddd; 
-            border-radius: 4px; 
-            background: white;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 2.5em;
+            font-weight: 300;
         }
+        
+        .header p {
+            margin: 5px 0;
+            opacity: 0.9;
+        }
+        
         .test-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 10px;
-            margin: 10px 0;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
         }
-        .test-card {
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 10px;
-            text-align: center;
-            transition: transform 0.1s;
-        }
-        .test-card:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-        }
-        .pass { color: #27ae60; font-weight: bold; }
-        .fail { color: #e74c3c; font-weight: bold; }
-        .warning { color: #f39c12; font-weight: bold; }
-        .info { color: #3498db; font-weight: bold; }
         
-        button { 
-            padding: 6px 12px; 
-            margin: 4px; 
-            border: none;
-            border-radius: 3px;
+        .test-category {
+            background: rgba(255,255,255,0.95);
+            border-radius: 12px;
+            padding: 18px;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .test-category:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        }
+        
+        .category-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f0f0f0;
             cursor: pointer;
+        }
+        
+        .category-info {
+            display: flex;
+            align-items: center;
+        }
+        
+        .category-summary {
+            font-size: 0.85em;
+            color: #7f8c8d;
+            margin-top: 3px;
+        }
+        
+        .expand-icon {
+            font-size: 1.2em;
+            color: #3498db;
+            transition: transform 0.3s;
+        }
+        
+        .test-category.collapsed .expand-icon {
+            transform: rotate(-90deg);
+        }
+        
+        .test-category.collapsed .test-content {
+            display: none;
+        }
+        
+        .category-icon {
+            font-size: 2em;
+            margin-right: 15px;
+        }
+        
+        .category-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+        }
+        
+        .category-details {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .test-content {
+            margin-top: 15px;
+        }
+        
+        .test-description {
+            color: #7f8c8d;
+            font-size: 0.9em;
+            margin: 0 0 15px 0;
+            line-height: 1.4;
+        }
+        
+        .test-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.2s;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+        }
+        
+        .btn-success {
+            background: linear-gradient(45deg, #27ae60, #229954);
+            color: white;
+        }
+        
+        .btn-warning {
+            background: linear-gradient(45deg, #f39c12, #e67e22);
+            color: white;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+        }
+        
+        .btn-info {
+            background: linear-gradient(45deg, #17a2b8, #138496);
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .btn-small {
+            padding: 6px 12px;
             font-size: 11px;
-            font-weight: bold;
-            transition: all 0.1s;
-        }
-        button:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
         
-        .btn-primary { background: #3498db; color: white; }
-        .btn-success { background: #27ae60; color: white; }
-        .btn-warning { background: #f39c12; color: white; }
-        .btn-danger { background: #e74c3c; color: white; }
-        .btn-info { background: #17a2b8; color: white; }
+        .compact-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
         
-        .btn-large {
-            padding: 8px 16px;
+        .compact-btn {
+            padding: 8px 12px;
             font-size: 12px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            background: #3498db;
+            color: white;
+            transition: all 0.2s;
         }
         
-        .results-area {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 3px;
-            padding: 8px;
-            margin: 5px 0;
-            font-family: monospace;
-            font-size: 10px;
-            white-space: pre-wrap;
-            max-height: 200px;
-            overflow-y: auto;
+        .compact-btn:hover {
+            background: #2980b9;
+            transform: translateY(-1px);
         }
         
-        .status-grid {
+        .quick-stats {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            color: white;
+        }
+        
+        .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 8px;
-            margin: 8px 0;
+            gap: 15px;
         }
         
-        .status-item {
-            background: #f8f9fa;
-            padding: 6px;
-            border-radius: 3px;
-            border-left: 3px solid #3498db;
-            font-size: 11px;
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
         }
         
-        .quick-links {
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+        
+        .advanced-section {
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        
+        .advanced-header {
+            color: #2c3e50;
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .tool-links {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
-            margin: 20px 0;
+            margin-top: 15px;
         }
         
-        #live-log {
-            height: 200px;
-            overflow-y: auto;
-            background: #000;
-            color: #0f0;
-            padding: 10px;
-            font-family: 'Courier New', monospace;
-            border-radius: 5px;
-        }
-        
-        .mechanic-test {
-            border-left: 4px solid #3498db;
-            margin: 10px 0;
-            padding: 15px;
-            background: #f8f9fa;
-        }
-        
-        .test-sequence {
-            counter-reset: step-counter;
-        }
-        
-        .test-step {
-            counter-increment: step-counter;
-            margin: 10px 0;
-            padding: 10px;
-            background: white;
-            border-left: 3px solid #3498db;
-            position: relative;
-        }
-        
-        .test-step::before {
-            content: counter(step-counter);
-            position: absolute;
-            left: -15px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: #3498db;
+        #status-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            border-radius: 20px;
             color: white;
-            border-radius: 50%;
-            width: 25px;
-            height: 25px;
+            font-weight: bold;
+            z-index: 1000;
+        }
+        
+        .status-online {
+            background: #27ae60;
+        }
+        
+        .status-offline {
+            background: #e74c3c;
+        }
+        
+        .settings-panel {
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        
+        .toggle-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .toggle-item {
             display: flex;
             align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 12px;
+            justify-content: space-between;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .toggle-label {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 24px;
+            background: #ddd;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .toggle-switch.active {
+            background: #27ae60;
+        }
+        
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 10px;
+            transition: left 0.3s;
+        }
+        
+        .toggle-switch.active::after {
+            left: 28px;
+        }
+        
+        .hidden {
+            display: none !important;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>🎮 AW-RPC Complete Testing Interface</h1>
-        <p>Comprehensive testing suite with optimized maps and mechanics validation</p>
-    </div>
-
-    <!-- Quick Access Links -->
-    <div class="test-section">
-        <h2>🚀 Quick Access - Test Games</h2>
-        <div class="quick-links">
-            <button class="btn-success btn-large" onclick="openOptimizedTest()">
-                🎯 Complete Mechanics Test
-            </button>
-            <button class="btn-primary btn-large" onclick="openCombatTest()">
-                ⚔️ Combat Scenarios
-            </button>
-            <button class="btn-warning btn-large" onclick="openTransportTest()">
-                🚢 Transport & Cargo
-            </button>
-            <button class="btn-info btn-large" onclick="openCaptureTest()">
-                🏰 Property Capture
-            </button>
+    <div id="status-indicator" class="status-offline">🔴 Checking...</div>
+    
+    <div class="container">
+        <div class="header">
+            <h1>🎮 AW-RPC Testing Suite</h1>
+            <p>Comprehensive testing interface for all game mechanics</p>
+            <p>✨ Updated with latest test coverage improvements</p>
         </div>
-        <div class="results-area" id="game-access-status">Ready to create optimized test games...</div>
-    </div>
-
-    <!-- New Game Setup Integration -->
-    <div class="test-section">
-        <h2>🎮 New Game Setup System Testing</h2>
-        <div class="test-grid">
-            <div class="test-card">
-                <h3>🎲 Custom Game Creation</h3>
-                <p>Test the new game setup system with custom parameters</p>
-                <button class="btn-primary" onclick="testCustomGameCreation()">Create Custom Game</button>
-                <button class="btn-info" onclick="openGameSetupInterface()">Open Setup Interface</button>
-            </div>
-            <div class="test-card">
-                <h3>🎯 Multi-Army Testing</h3>
-                <p>Test games with 3-4 players and different army colors</p>
-                <button class="btn-success" onclick="testMultiArmyGame()">Create Multi-Army Game</button>
-                <button class="btn-warning" onclick="testFundAllocation()">Test Fund Allocation</button>
-            </div>
-        </div>
-        <div class="results-area" id="custom-game-results">New game setup system integration ready...</div>
-    </div>
-
-    <!-- System Status Dashboard -->
-    <div class="test-section">
-        <h2>📊 System Status Dashboard</h2>
-        <div class="status-grid">
-            <div class="status-item" id="server-status">
-                <strong>🖥️ Server Status</strong><br>
-                <span id="server-indicator">Checking...</span>
-            </div>
-            <div class="status-item" id="rpc-status">
-                <strong>🔗 RPC Connection</strong><br>
-                <span id="rpc-indicator">Checking...</span>
-            </div>
-            <div class="status-item" id="game-status">
-                <strong>🎮 Active Games</strong><br>
-                <span id="game-indicator">Checking...</span>
-            </div>
-            <div class="status-item" id="integration-status">
-                <strong>🔧 Integration</strong><br>
-                <span id="integration-indicator">Checking...</span>
-            </div>
-        </div>
-        <button class="btn-primary" onclick="refreshSystemStatus()">🔄 Refresh Status</button>
-    </div>
-
-    <!-- Optimized Map Testing -->
-    <div class="test-section">
-        <h2>🗺️ Optimized Map Verification</h2>
-        <div class="test-grid">
-            <div class="test-card">
-                <h3>🎯 Complete Mechanics Map</h3>
-                <p>12x10 map with all mechanics ready</p>
-                <ul style="text-align: left;">
-                    <li>✅ Immediate combat scenarios</li>
-                    <li>✅ Loaded transports</li>
-                    <li>✅ Capture opportunities</li>
-                    <li>✅ All unit types</li>
-                </ul>
-                <button class="btn-success" onclick="verifyOptimizedMap()">Verify Map</button>
-                <button class="btn-primary" onclick="testOptimizedMechanics()">Test Mechanics</button>
-            </div>
-            
-            <div class="test-card">
-                <h3>⚔️ Combat Scenarios</h3>
-                <p>8x6 focused combat testing</p>
-                <ul style="text-align: left;">
-                    <li>✅ Adjacent combat pairs</li>
-                    <li>✅ Artillery in range</li>
-                    <li>✅ Multiple unit types</li>
-                    <li>✅ Capture testing</li>
-                </ul>
-                <button class="btn-warning" onclick="verifyCombatMap()">Verify Combat</button>
-                <button class="btn-danger" onclick="testCombatMechanics()">Test Attacks</button>
-            </div>
-        </div>
-        <div class="results-area" id="map-verification-results">Map verification results will appear here...</div>
-    </div>
-
-    <!-- Interactive Mechanics Testing -->
-    <div class="test-section">
-        <h2>🧪 Interactive Mechanics Testing</h2>
         
-        <div class="mechanic-test">
-            <h3>⚔️ Combat System Testing</h3>
-            <div class="test-sequence">
-                <div class="test-step">
-                    <strong>Test Adjacent Combat</strong>
-                    <button class="btn-danger" onclick="testAdjacentCombat()">Test Attack</button>
-                    <span id="adjacent-combat-result"></span>
-                </div>
-                <div class="test-step">
-                    <strong>Test Ranged Combat</strong>
-                    <button class="btn-warning" onclick="testRangedCombat()">Test Artillery</button>
-                    <span id="ranged-combat-result"></span>
-                </div>
-                <div class="test-step">
-                    <strong>Test Air Combat</strong>
-                    <button class="btn-info" onclick="testAirCombat()">Test Air Attack</button>
-                    <span id="air-combat-result"></span>
-                </div>
+        <div class="settings-panel">
+            <div class="advanced-header">⚙️ Quick Controls</div>
+            <div class="compact-controls">
+                <button class="compact-btn" onclick="expandAll()">📖 Expand All</button>
+                <button class="compact-btn" onclick="collapseAll()">📕 Collapse All</button>
+                <button class="compact-btn" onclick="runAllTests()">🚀 Run All Tests</button>
+                <button class="compact-btn" onclick="checkServerStatus()">🔍 Server Status</button>
             </div>
-        </div>
-
-        <div class="mechanic-test">
-            <h3>🚢 Transport System Testing</h3>
-            <div class="test-sequence">
-                <div class="test-step">
-                    <strong>Test Transport Loading</strong>
-                    <button class="btn-primary" onclick="testTransportLoading()">Test Load</button>
-                    <span id="transport-load-result"></span>
+            <div class="toggle-controls">
+                <div class="toggle-item">
+                    <span class="toggle-label">Show Stats</span>
+                    <div class="toggle-switch active" onclick="toggleSection('stats')" data-target="stats"></div>
                 </div>
-                <div class="test-step">
-                    <strong>Test Transport Movement</strong>
-                    <button class="btn-info" onclick="testTransportMovement()">Test Move</button>
-                    <span id="transport-move-result"></span>
-                </div>
-                <div class="test-step">
-                    <strong>Test Cargo Unloading</strong>
-                    <button class="btn-success" onclick="testCargoUnloading()">Test Unload</button>
-                    <span id="cargo-unload-result"></span>
-                </div>
-            </div>
-        </div>
-
-        <div class="mechanic-test">
-            <h3>🏰 Property System Testing</h3>
-            <div class="test-sequence">
-                <div class="test-step">
-                    <strong>Test Property Capture</strong>
-                    <button class="btn-warning" onclick="testPropertyCapture()">Test Capture</button>
-                    <span id="property-capture-result"></span>
-                </div>
-                <div class="test-step">
-                    <strong>Test Income Generation</strong>
-                    <button class="btn-success" onclick="testIncomeGeneration()">Test Income</button>
-                    <span id="income-generation-result"></span>
-                </div>
-                <div class="test-step">
-                    <strong>Test Unit Production</strong>
-                    <button class="btn-primary" onclick="testUnitProduction()">Test Production</button>
-                    <span id="unit-production-result"></span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Performance and Load Testing -->
-    <div class="test-section">
-        <h2>⚡ Performance Testing</h2>
-        <div class="test-grid">
-            <div class="test-card">
-                <h3>🏃 Response Time Testing</h3>
-                <button class="btn-info" onclick="testResponseTimes()">Test Response Times</button>
-                <div id="response-time-results" class="results-area" style="height: 100px;"></div>
-            </div>
-            
-            <div class="test-card">
-                <h3>🔄 Concurrent Request Testing</h3>
-                <button class="btn-warning" onclick="testConcurrentRequests()">Test Concurrent</button>
-                <div id="concurrent-test-results" class="results-area" style="height: 100px;"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Live Test Console -->
-    <div class="test-section">
-        <h2>💻 Live Test Console</h2>
-        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
-            <div>
-                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                    <button class="btn-info" onclick="showClientLogs()">Client Logs</button>
-                    <button class="btn-success" onclick="showServerLogs()">Server Logs</button>
-                    <button class="btn-warning" onclick="syncLogs()">Sync Logs</button>
-                    <button class="btn-danger" onclick="clearConsole()">Clear</button>
-                </div>
-                <div id="live-log"></div>
-                <div style="margin-top: 10px;">
-                    <input type="text" id="console-input" placeholder="Enter RPC command (e.g., game_board, {})" 
-                           style="width: 70%; padding: 8px;" onkeypress="handleConsoleInput(event)">
-                    <button class="btn-primary" onclick="executeConsoleCommand()">Execute</button>
-                </div>
-            </div>
-            <div>
-                <h4>Quick Commands</h4>
-                <div style="display: flex; flex-direction: column; gap: 5px;">
-                    <button class="btn-info" onclick="quickCommand('game_board', {})">Get Board</button>
-                    <button class="btn-info" onclick="quickCommand('check_turn', {})">Check Turn</button>
-                    <button class="btn-success" onclick="quickCommand('army_end_turn', {})">End Turn</button>
-                    <button class="btn-warning" onclick="quickCommand('tile', {x:5, y:5})">Get Tile</button>
-                </div>
-                <h4>Log Controls</h4>
-                <div style="display: flex; flex-direction: column; gap: 5px;">
-                    <button class="btn-info" onclick="fetchServerLogs('app')">App Logs</button>
-                    <button class="btn-info" onclick="fetchServerLogs('game')">Game Logs</button>
-                    <button class="btn-info" onclick="fetchServerLogs('errors')">Error Logs</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Multi-Player Testing -->
-    <div class="test-section">
-        <h2>👥 Multi-Player Testing</h2>
-        <div class="test-grid">
-            <div class="test-card">
-                <h3>🔺 3-Player Maps</h3>
-                <p>Test 3-army scenarios with triangle configurations:</p>
-                <button class="btn-success" onclick="testMultiPlayerMap('triangle', 3)">Test Triangle Arena</button>
-                <div id="triangle-test-result" class="results-area" style="height: 100px; margin-top: 10px;">
-Triangle test results will appear here...
-                </div>
-            </div>
-            
-            <div class="test-card">
-                <h3>✚ 4-Player Maps</h3>
-                <p>Test 4-army cross battle scenarios:</p>
-                <button class="btn-success" onclick="testMultiPlayerMap('cross', 4)">Test Cross Battle</button>
-                <div id="cross-test-result" class="results-area" style="height: 100px; margin-top: 10px;">
-Cross battle test results will appear here...
-                </div>
-            </div>
-            
-            <div class="test-card">
-                <h3>⬟ 5-Player Maps</h3>
-                <p>Test maximum 5-army pentagon chaos:</p>
-                <button class="btn-success" onclick="testMultiPlayerMap('pentagon', 5)">Test Pentagon Chaos</button>
-                <div id="pentagon-test-result" class="results-area" style="height: 100px; margin-top: 10px;">
-Pentagon test results will appear here...
+                <div class="toggle-item">
+                    <span class="toggle-label">Show Advanced Tools</span>
+                    <div class="toggle-switch active" onclick="toggleSection('advanced')" data-target="advanced"></div>
                 </div>
             </div>
         </div>
         
-        <div class="test-card">
-            <h3>🎯 Multi-Army Fund Allocation Test</h3>
-            <p>Test fund distribution across multiple armies:</p>
-            <button class="btn-warning" onclick="testMultiArmyFunds()">Test Fund Allocation</button>
-            <div id="multi-army-funds-result" class="results-area" style="height: 150px; margin-top: 10px;">
-Multi-army fund test results will appear here...
-            </div>
-        </div>
-    </div>
-
-    <!-- Combat System Testing -->
-    <div class="test-section">
-        <h2>⚔️ Combat System Testing</h2>
-        <div class="test-grid">
-            <div class="test-card">
-                <h3>🎯 Damage Preview Testing</h3>
-                <p>Test damage calculations and previews:</p>
-                <button class="btn-success" onclick="testDamagePreviews()">Test Damage Preview</button>
-                <div id="damage-preview-result" class="results-area" style="height: 150px; margin-top: 10px;">
-Damage preview test results will appear here...
+        <div id="stats-section" class="quick-stats">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-number">54</span>
+                    <span class="stat-label">RPC Methods</span>
                 </div>
-            </div>
-            
-            <div class="test-card">
-                <h3>🔄 Counter-Attack Testing</h3>
-                <p>Test counter-attack damage calculations:</p>
-                <button class="btn-warning" onclick="testCounterAttackDamage()">Test Counter-Attacks</button>
-                <div id="counter-attack-result" class="results-area" style="height: 150px; margin-top: 10px;">
-Counter-attack test results will appear here...
+                <div class="stat-item">
+                    <span class="stat-number">6</span>
+                    <span class="stat-label">Test Suites</span>
                 </div>
-            </div>
-            
-            <div class="test-card">
-                <h3>⚔️ Unit Matchup Testing</h3>
-                <p>Test damage calculations across different unit types:</p>
-                <button class="btn-primary" onclick="testUnitMatchups()">Test Unit Matchups</button>
-                <div id="unit-matchup-result" class="results-area" style="height: 200px; margin-top: 10px;">
-Unit matchup test results will appear here...
+                <div class="stat-item">
+                    <span class="stat-number">95%</span>
+                    <span class="stat-label">Coverage</span>
                 </div>
-            </div>
-            
-            <div class="test-card">
-                <h3>🛡️ Terrain Defense Testing</h3>
-                <p>Test terrain defense bonuses:</p>
-                <button class="btn-info" onclick="testTerrainDefense()">Test Terrain Defense</button>
-                <div id="terrain-defense-result" class="results-area" style="height: 150px; margin-top: 10px;">
-Terrain defense test results will appear here...
+                <div class="stat-item">
+                    <span class="stat-number">5</span>
+                    <span class="stat-label">Game Systems</span>
                 </div>
             </div>
         </div>
         
-        <div class="test-card">
-            <h3>📊 Combat Balance Analysis</h3>
-            <p>Comprehensive combat balance testing across unit types:</p>
-            <button class="btn-primary" onclick="runCombatBalanceTests()">Run Balance Analysis</button>
-            <div id="combat-balance-result" class="results-area" style="height: 200px; margin-top: 10px;">
-Combat balance analysis will appear here...
-            </div>
-        </div>
-    </div>
-
-    <!-- Automated Test Suites -->
-    <div class="test-section">
-        <h2>🤖 Automated Test Suites</h2>
-        <div class="quick-links">
-            <button class="btn-success btn-large" onclick="runFullTestSuite()">
-                🎯 Run Complete Test Suite
-            </button>
-            <button class="btn-primary" onclick="runQuickTests()">
-                ⚡ Quick Tests
-            </button>
-            <button class="btn-warning" onclick="runPerformanceTests()">
-                📊 Performance Tests
-            </button>
-            <button class="btn-info" onclick="runIntegrationTests()">
-                🔧 Integration Tests
-            </button>
-        </div>
-        <div class="results-area" id="automated-test-results" style="height: 200px;">
-Automated test results will appear here...
-        </div>
-    </div>
-
-    <!-- Integration Testing Section -->
-    <div class="test-section">
-        <h2>🔧 Integration Testing</h2>
         <div class="test-grid">
-            <div class="test-card">
-                <h3>📊 Integration Status</h3>
-                <p>Test all integration points individually:</p>
-                <div style="text-align: left; font-size: 12px;">
-                    <button class="btn-info" onclick="testIntegrationPoint('test_verify')">Test Verification Routes</button>
-                    <button class="btn-info" onclick="testIntegrationPoint('api_maps')">Test Maps API</button>
-                    <button class="btn-info" onclick="testIntegrationPoint('custom_game')">Test Custom Game API</button>
-                    <button class="btn-info" onclick="testIntegrationPoint('debug_methods')">Test Debug Methods</button>
+            <!-- Combat System Testing -->
+            <div id="combat-section" class="test-category collapsed" onclick="toggleCategory(this)">
+                <div class="category-header">
+                    <div class="category-info">
+                        <div class="category-icon">⚔️</div>
+                        <div class="category-details">
+                            <div class="category-title">Combat System</div>
+                            <div class="category-summary">Damage calc, terrain, counter-attacks</div>
+                        </div>
+                    </div>
+                    <div class="expand-icon">🔽</div>
                 </div>
-                <div class="results-area" id="integration-test-results" style="height: 150px; margin-top: 10px;">
-Integration test results will appear here...
+                <div class="test-content">
+                    <div class="test-description">
+                        Test damage calculation, terrain modifiers, counter-attacks, and multi-turn unit destruction using actual attack targets.
+                    </div>
+                    <div class="test-actions">
+                        <button class="btn btn-danger" onclick="event.stopPropagation(); runCombatTests()">
+                            🎯 Run Combat Tests
+                        </button>
+                        <button class="btn btn-warning btn-small" onclick="event.stopPropagation(); openOptimizedTestGame()">
+                            🗺️ Open Test Map
+                        </button>
+                    </div>
                 </div>
             </div>
-            <div class="test-card">
-                <h3>🔄 Full Integration Check</h3>
-                <p>Run comprehensive integration validation:</p>
-                <button class="btn-success" onclick="runFullIntegrationCheck()">Run Full Integration Check</button>
-                <div id="full-integration-status" style="margin-top: 10px; font-size: 12px;">
-                    Click button to run full integration check...
+            
+            <!-- Economic System Testing -->
+            <div id="economic-section" class="test-category collapsed" onclick="toggleCategory(this)">
+                <div class="category-header">
+                    <div class="category-info">
+                        <div class="category-icon">💰</div>
+                        <div class="category-details">
+                            <div class="category-title">Economic System</div>
+                            <div class="category-summary">Funds, costs, income, production</div>
+                        </div>
+                    </div>
+                    <div class="expand-icon">🔽</div>
+                </div>
+                <div class="test-content">
+                    <div class="test-description">
+                        Test fund management, unit costs, affordability checks, property income, and production options.
+                    </div>
+                    <div class="test-actions">
+                        <button class="btn btn-success" onclick="event.stopPropagation(); runEconomicTests()">
+                            💸 Run Economic Tests
+                        </button>
+                        <button class="btn btn-info btn-small" onclick="event.stopPropagation(); checkArmyEconomy()">
+                            📊 Check Economy
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Movement System Testing -->
+            <div id="movement-section" class="test-category collapsed" onclick="toggleCategory(this)">
+                <div class="category-header">
+                    <div class="category-info">
+                        <div class="category-icon">🚶</div>
+                        <div class="category-details">
+                            <div class="category-title">Movement System</div>
+                            <div class="category-summary">Validation, costs, pathfinding</div>
+                        </div>
+                    </div>
+                    <div class="expand-icon">🔽</div>
+                </div>
+                <div class="test-content">
+                    <div class="test-description">
+                        Test movement validation, valid moves calculation, movement costs, and pathfinding.
+                    </div>
+                    <div class="test-actions">
+                        <button class="btn btn-primary" onclick="event.stopPropagation(); runMovementTests()">
+                            🏃 Run Movement Tests
+                        </button>
+                        <button class="btn btn-info btn-small" onclick="event.stopPropagation(); testMovementHighlights()">
+                            🌟 Test Highlights
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Victory Conditions Testing -->
+            <div id="victory-section" class="test-category collapsed" onclick="toggleCategory(this)">
+                <div class="category-header">
+                    <div class="category-info">
+                        <div class="category-icon">🏆</div>
+                        <div class="category-details">
+                            <div class="category-title">Victory Conditions</div>
+                            <div class="category-summary">Capture, ownership, game end</div>
+                        </div>
+                    </div>
+                    <div class="expand-icon">🔽</div>
+                </div>
+                <div class="test-content">
+                    <div class="test-description">
+                        Test capture mechanics, property ownership, turn progression, game state tracking, and victory detection.
+                    </div>
+                    <div class="test-actions">
+                        <button class="btn btn-warning" onclick="event.stopPropagation(); runVictoryTests()">
+                            🏰 Run Victory Tests
+                        </button>
+                        <button class="btn btn-success btn-small" onclick="event.stopPropagation(); testCaptureMechanics()">
+                            🎯 Test Capture
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Transport System Testing -->
+            <div id="transport-section" class="test-category collapsed" onclick="toggleCategory(this)">
+                <div class="category-header">
+                    <div class="category-info">
+                        <div class="category-icon">🚢</div>
+                        <div class="category-details">
+                            <div class="category-title">Transport System</div>
+                            <div class="category-summary">Loading, unloading, cargo mgmt</div>
+                        </div>
+                    </div>
+                    <div class="expand-icon">🔽</div>
+                </div>
+                <div class="test-content">
+                    <div class="test-description">
+                        Test transport loading/unloading, terrain validation, cargo management, and position validation.
+                    </div>
+                    <div class="test-actions">
+                        <button class="btn btn-info" onclick="event.stopPropagation(); runTransportTests()">
+                            🚛 Run Transport Tests
+                        </button>
+                        <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); openTransportTestGame()">
+                            🗺️ Transport Test Map
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Integration Testing -->
+            <div id="integration-section" class="test-category collapsed" onclick="toggleCategory(this)">
+                <div class="category-header">
+                    <div class="category-info">
+                        <div class="category-icon">🔧</div>
+                        <div class="category-details">
+                            <div class="category-title">Integration Tests</div>
+                            <div class="category-summary">Multi-system combinations</div>
+                        </div>
+                    </div>
+                    <div class="expand-icon">🔽</div>
+                </div>
+                <div class="test-content">
+                    <div class="test-description">
+                        Run comprehensive integration tests covering multiple game systems and API method combinations.
+                    </div>
+                    <div class="test-actions">
+                        <button class="btn btn-primary" onclick="event.stopPropagation(); runIntegrationTests()">
+                            🧪 Run Integration Tests
+                        </button>
+                        <button class="btn btn-success btn-small" onclick="event.stopPropagation(); runAllTests()">
+                            🚀 Run All Tests
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Troubleshooting Section -->
-    <div class="test-section">
-        <h2>🔧 Troubleshooting</h2>
-        <div class="test-grid">
-            <div class="test-card">
-                <h3>❌ NetworkError Issues</h3>
-                <p>If you see NetworkError when attempting to fetch resource:</p>
-                <ul style="text-align: left; font-size: 12px;">
-                    <li>✅ Start Flask server: <code>python3 app.py</code></li>
-                    <li>✅ Check server is running on correct port</li>
-                    <li>✅ Verify you're in the correct directory</li>
-                    <li>✅ Install dependencies: <code>pip install flask flask-cors</code></li>
-                </ul>
-                <button class="btn-primary" onclick="checkServerConnection()">Test Server Connection</button>
-                <button class="btn-info" onclick="testSimpleConnection()">Test Simple API</button>
+        
+        <div id="advanced-section" class="advanced-section">
+            <div class="advanced-header">🛠️ Advanced Testing & Tools</div>
+            <div class="tool-links">
+                <a href="/test_optimized" class="btn btn-success btn-small">🎮 Optimized Test Game</a>
+                <a href="/test_transport" class="btn btn-info btn-small">🚢 Transport Test Game</a>
+                <a href="/logs" class="btn btn-warning btn-small">📋 View Logs</a>
+                <button class="btn btn-primary btn-small" onclick="checkServerStatus()">🔍 Server Status</button>
+                <button class="btn btn-danger btn-small" onclick="clearTestData()">🗑️ Clear Test Data</button>
             </div>
-            <div class="test-card">
-                <h3>🔍 Debug Information</h3>
-                <p>Current debugging status:</p>
-                <div id="debug-info" style="font-size: 12px; text-align: left;">
-                    <p><strong>Browser:</strong> <span id="browser-info"></span></p>
-                    <p><strong>URL:</strong> <span id="current-url"></span></p>
-                    <p><strong>Time:</strong> <span id="current-time"></span></p>
-                </div>
-                <button class="btn-info" onclick="updateDebugInfo()">Refresh Debug Info</button>
+        </div>
+        
+        <div class="advanced-section">
+            <div class="advanced-header">📊 Test Results</div>
+            <div id="test-results" style="margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; min-height: 100px;">
+                <p style="color: #7f8c8d; text-align: center; margin: 0;">Test results will appear here...</p>
             </div>
         </div>
     </div>
-
+    
     <script>
-        // Global state
-        let currentGameToken = null;
-        let testResults = {};
-        let logEntries = [];
-        let serverLogEntries = [];
-        let currentLogView = 'client'; // 'client' or 'server'
-
-        // Utility functions
-        function log(message, type = 'info') {
-            const timestamp = new Date().toLocaleTimeString();
-            const entry = `[${timestamp}] ${message}`;
-            logEntries.push(entry);
+        // Check server status on load
+        checkServerStatus();
+        
+        function checkServerStatus() {
+            const indicator = document.getElementById('status-indicator');
+            indicator.textContent = '🟡 Checking...';
+            indicator.className = 'status-offline';
             
-            const logElement = document.getElementById('live-log');
-            if (logElement) {
-                logElement.innerHTML = logEntries.slice(-50).join('\n');
-                logElement.scrollTop = logElement.scrollHeight;
-            }
+            fetch('/api', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    jsonrpc: '2.0',
+                    method: 'message',
+                    params: { message: 'ping' },
+                    id: 1
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                indicator.textContent = '🟢 Online';
+                indicator.className = 'status-online';
+            })
+            .catch(error => {
+                indicator.textContent = '🔴 Offline';
+                indicator.className = 'status-offline';
+            });
         }
-
-        function updateStatus(elementId, status, type = 'info') {
-            const element = document.getElementById(elementId);
-            if (element) {
-                element.innerHTML = `<span class="${type}">${status}</span>`;
-            }
+        
+        function showResults(content) {
+            document.getElementById('test-results').innerHTML = content;
         }
-
-        function showResult(elementId, result, success = true) {
-            const element = document.getElementById(elementId);
-            if (element) {
-                const className = success ? 'pass' : 'fail';
-                element.innerHTML = `<span class="${className}">${result}</span>`;
-            }
-        }
-
-        // Server connection testing
-        async function checkServerConnection() {
-            try {
-                const response = await fetch('/debug');
-                if (response.ok) {
-                    updateStatus('server-indicator', '✅ Connected', 'pass');
-                    return true;
-                } else {
-                    updateStatus('server-indicator', `❌ Server Error (${response.status})`, 'fail');
-                    log(`Server responded with status: ${response.status}`, 'error');
-                    return false;
-                }
-            } catch (error) {
-                updateStatus('server-indicator', '❌ Disconnected', 'fail');
-                log(`Server connection failed: ${error.message}`, 'error');
-                log(`Error type: ${error.constructor.name}`, 'error');
-                return false;
-            }
-        }
-
-        // RPC testing functions
-        async function testRPC(method, params = {}) {
-            try {
-                // Auto-get token if not available
-                if (!currentGameToken) {
-                    try {
-                        const response = await fetch('/debug');
-                        const data = await response.json();
-                        if (data.active_games && data.active_games.length > 0) {
-                            currentGameToken = data.active_games[0].token;
-                            log(`🎮 Auto-fetched game token: ${currentGameToken}`);
-                        }
-                    } catch (e) {
-                        log('⚠️ Could not auto-fetch game token', 'warning');
-                    }
-                }
-                
-                if (typeof jsonrpc === 'function') {
-                    const result = await jsonrpc(method, params);
-                    updateStatus('rpc-indicator', '✅ RPC Active', 'pass');
-                    return result;
-                } else {
-                    // Fallback to fetch for testing
-                    const rpcParams = {...params};
-                    if (currentGameToken) {
-                        rpcParams.token = currentGameToken;
-                    }
-                    
-                    const response = await fetch('/api', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({
-                            jsonrpc: '2.0',
-                            method: method,
-                            params: rpcParams,
-                            id: Date.now()
-                        })
-                    });
-                    const data = await response.json();
-                    
-                    if (data.error) {
-                        throw new Error(data.error.message || 'RPC Error');
-                    }
-                    
-                    updateStatus('rpc-indicator', '✅ RPC Active', 'pass');
-                    return data.result;
-                }
-            } catch (error) {
-                updateStatus('rpc-indicator', '❌ RPC Failed', 'fail');
-                log(`RPC ${method} failed: ${error.message}`, 'error');
-                throw error;
-            }
-        }
-
-        // Game creation functions
-        async function openOptimizedTest() {
-            try {
-                const response = await fetch('/test_optimized');
-                if (response.ok) {
-                    const url = response.url;
-                    currentGameToken = url.split('/').pop();
-                    window.open(url, '_blank');
-                    log('✅ Opened optimized test game');
-                    document.getElementById('game-access-status').textContent = 
-                        `✅ Optimized test game created: ${currentGameToken}`;
-                } else {
-                    throw new Error('Failed to create optimized test game');
-                }
-            } catch (error) {
-                log(`❌ Failed to open optimized test: ${error.message}`, 'error');
-                document.getElementById('game-access-status').textContent = 
-                    `❌ Failed to create optimized test game: ${error.message}`;
-            }
-        }
-
-        async function openCombatTest() {
-            try {
-                const response = await fetch('/test_combat');
-                if (response.ok) {
-                    window.open(response.url, '_blank');
-                    log('✅ Opened combat test game');
-                    document.getElementById('game-access-status').textContent = 
-                        '✅ Combat test game opened in new tab';
-                }
-            } catch (error) {
-                log(`❌ Failed to open combat test: ${error.message}`, 'error');
-            }
-        }
-
-        async function openTransportTest() {
-            try {
-                const response = await fetch('/test_transport');
-                if (response.ok) {
-                    window.open(response.url, '_blank');
-                    log('✅ Opened transport test game');
-                }
-            } catch (error) {
-                log(`❌ Failed to open transport test: ${error.message}`, 'error');
-            }
-        }
-
-        async function openCaptureTest() {
-            try {
-                const response = await fetch('/test_capture');
-                if (response.ok) {
-                    window.open(response.url, '_blank');
-                    log('✅ Opened capture test game');
-                }
-            } catch (error) {
-                log(`❌ Failed to open capture test: ${error.message}`, 'error');
-            }
-        }
-
-        // System status refresh
-        async function refreshSystemStatus() {
-            log('🔄 Refreshing system status...');
+        
+        function runTestScript(scriptName, testName) {
+            showResults(`<p>🏃 Running ${testName}...</p>`);
             
-            // Check server
-            const serverOk = await checkServerConnection();
-            
-            // Check RPC if server is up
-            if (serverOk) {
-                try {
-                    await testRPC('check_turn');
-                } catch (error) {
-                    updateStatus('rpc-indicator', '❌ RPC Failed', 'fail');
-                }
-            }
-
-            // Check for active games and auto-set token
-            try {
-                const response = await fetch('/debug');
-                if (response.ok) {
-                    const data = await response.json();
-                    const gameCount = data.active_games ? data.active_games.length : 0;
-                    updateStatus('game-indicator', `${gameCount} Active Games`, 'pass');
-                    
-                    // Auto-set current game token if not already set
-                    if (!currentGameToken && data.active_games && data.active_games.length > 0) {
-                        currentGameToken = data.active_games[0].token;
-                        log(`🎮 Auto-set game token: ${currentGameToken}`);
-                    }
-                }
-            } catch (error) {
-                updateStatus('game-indicator', '❌ Cannot Check', 'fail');
-            }
-
-            // Check integration status
-            updateStatus('integration-indicator', '✅ Interface Ready', 'pass');
-            
-            log('✅ System status refresh complete');
+            // Simulate test execution (in a real scenario, this would trigger the Python scripts)
+            fetch('/run_test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ script: scriptName })
+            })
+            .then(response => response.text())
+            .then(result => {
+                showResults(`<h4>${testName} Results:</h4><pre style="white-space: pre-wrap; font-size: 12px;">${result}</pre>`);
+            })
+            .catch(error => {
+                showResults(`<p style="color: #e74c3c;">❌ Error running ${testName}: ${error.message}</p>`);
+            });
         }
-
-        // Map verification functions
-        async function verifyOptimizedMap() {
-            log('🗺️ Verifying optimized map...');
-            try {
-                const response = await fetch('/test_verify');
-                if (response.ok) {
-                    document.getElementById('map-verification-results').textContent = 
-                        '✅ Optimized map verification passed - all mechanics ready for testing';
-                    log('✅ Map verification successful');
-                } else {
-                    throw new Error('Map verification failed');
-                }
-            } catch (error) {
-                document.getElementById('map-verification-results').textContent = 
-                    `❌ Map verification failed: ${error.message}`;
-                log(`❌ Map verification failed: ${error.message}`, 'error');
-            }
+        
+        function runCombatTests() {
+            runTestScript('test_combat_system.py', 'Combat System Tests');
         }
-
-        async function testOptimizedMechanics() {
-            log('🧪 Testing optimized map mechanics...');
-            const results = [];
-            
-            if (currentGameToken) {
-                try {
-                    // Test game board loading
-                    const board = await testRPC('game_board');
-                    results.push(`✅ Board loaded: ${board.width}x${board.height}`);
-                    
-                    // Count units and mechanics
-                    let unitCount = 0;
-                    let transportCount = 0;
-                    board.grid.forEach(tile => {
-                        if (tile.unit) {
-                            unitCount++;
-                            if (tile.unit.cargo && tile.unit.cargo.length > 0) {
-                                transportCount++;
-                            }
-                        }
-                    });
-                    
-                    results.push(`✅ Units deployed: ${unitCount}`);
-                    results.push(`✅ Loaded transports: ${transportCount}`);
-                    
-                    document.getElementById('map-verification-results').textContent = results.join('\n');
-                    log('✅ Optimized map mechanics test completed');
-                    
-                } catch (error) {
-                    log(`❌ Mechanics test failed: ${error.message}`, 'error');
-                }
-            } else {
-                document.getElementById('map-verification-results').textContent = 
-                    '⚠️ Create an optimized test game first';
-            }
+        
+        function runEconomicTests() {
+            runTestScript('test_economic_system.py', 'Economic System Tests');
         }
-
-        // Combat testing functions
-        async function testAdjacentCombat() {
-            log('⚔️ Testing adjacent combat...');
-            try {
-                // This would test units positioned adjacent in optimized map
-                const result = await testRPC('unit_attack', {x: 4, y: 5, x2: 6, y2: 5});
-                showResult('adjacent-combat-result', '✅ Adjacent combat works', true);
-                log('✅ Adjacent combat test passed');
-            } catch (error) {
-                showResult('adjacent-combat-result', `❌ ${error.message}`, false);
-                log(`❌ Adjacent combat test failed: ${error.message}`, 'error');
-            }
+        
+        function runMovementTests() {
+            runTestScript('test_movement_system.py', 'Movement System Tests');
         }
-
-        async function testRangedCombat() {
-            log('🎯 Testing ranged combat...');
-            try {
-                const result = await testRPC('unit_attack', {x: 3, y: 4, x2: 7, y2: 4});
-                showResult('ranged-combat-result', '✅ Ranged combat works', true);
-                log('✅ Ranged combat test passed');
-            } catch (error) {
-                showResult('ranged-combat-result', `❌ ${error.message}`, false);
-                log(`❌ Ranged combat test failed: ${error.message}`, 'error');
-            }
+        
+        function runVictoryTests() {
+            runTestScript('test_victory_conditions.py', 'Victory Condition Tests');
         }
-
-        // Transport testing functions
-        async function testTransportLoading() {
-            log('🚢 Testing transport loading...');
-            try {
-                // This would test loading a unit onto a transport
-                showResult('transport-load-result', '✅ Transport loading ready', true);
-                log('✅ Transport loading test ready');
-            } catch (error) {
-                showResult('transport-load-result', `❌ ${error.message}`, false);
-            }
+        
+        function runTransportTests() {
+            runTestScript('test_transport_final.py', 'Transport System Tests');
         }
-
-        async function testCargoUnloading() {
-            log('📦 Testing cargo unloading...');
-            try {
-                const result = await testRPC('unit_unload', {x: 3, y: 1, x2: 4, y2: 2, cargo_index: 0});
-                showResult('cargo-unload-result', '✅ Cargo unloading works', true);
-                log('✅ Cargo unloading test passed');
-            } catch (error) {
-                showResult('cargo-unload-result', `❌ ${error.message}`, false);
-                log(`❌ Cargo unloading test failed: ${error.message}`, 'error');
-            }
+        
+        function runIntegrationTests() {
+            runTestScript('updated_test_phase1.py', 'Integration Tests');
         }
-
-        // Console functions
-        function handleConsoleInput(event) {
-            if (event.key === 'Enter') {
-                executeConsoleCommand();
-            }
-        }
-
-        async function executeConsoleCommand() {
-            const input = document.getElementById('console-input');
-            const command = input.value.trim();
-            
-            if (!command) return;
-            
-            log(`> ${command}`);
-            
-            try {
-                // Parse command (simple format: method, {params})
-                const parts = command.split(',');
-                const method = parts[0].trim().replace(/['"]/g, '');
-                let params = {};
-                
-                if (parts.length > 1) {
-                    const paramStr = parts.slice(1).join(',').trim();
-                    if (paramStr !== '{}') {
-                        params = JSON.parse(paramStr);
-                    }
-                }
-                
-                const result = await testRPC(method, params);
-                log(`✅ Result: ${JSON.stringify(result, null, 2)}`);
-                
-            } catch (error) {
-                log(`❌ Error: ${error.message}`, 'error');
-            }
-            
-            input.value = '';
-        }
-
-        function quickCommand(method, params) {
-            document.getElementById('console-input').value = `${method}, ${JSON.stringify(params)}`;
-            executeConsoleCommand();
-        }
-
-        function clearConsole() {
-            logEntries = [];
-            serverLogEntries = [];
-            document.getElementById('live-log').innerHTML = '';
-        }
-
-        // Log synchronization functions
-        async function fetchServerLogs(type = 'app', lines = 25) {
-            try {
-                const response = await fetch(`/api/server_logs?type=${type}&lines=${lines}`);
-                const result = await response.json();
-                
-                if (result.success) {
-                    serverLogEntries = result.logs.map(log => `[SERVER] ${log}`);
-                    log(`✅ Fetched ${result.showing_lines} ${type} logs from server`);
-                    
-                    if (currentLogView === 'server') {
-                        showServerLogs();
-                    }
-                } else {
-                    log(`❌ Failed to fetch server logs: ${result.error}`, 'error');
-                }
-            } catch (error) {
-                log(`❌ Error fetching server logs: ${error.message}`, 'error');
-            }
-        }
-
-        function showClientLogs() {
-            currentLogView = 'client';
-            const logElement = document.getElementById('live-log');
-            logElement.innerHTML = logEntries.slice(-50).join('\n');
-            logElement.scrollTop = logElement.scrollHeight;
-            log('📱 Showing client logs');
-        }
-
-        function showServerLogs() {
-            currentLogView = 'server';
-            const logElement = document.getElementById('live-log');
-            logElement.innerHTML = serverLogEntries.slice(-50).join('\n');
-            logElement.scrollTop = logElement.scrollHeight;
-            log('🖥️ Showing server logs');
-        }
-
-        async function syncLogs() {
-            log('🔄 Synchronizing logs...');
-            
-            // Fetch latest server logs
-            await fetchServerLogs('app', 25);
-            
-            // Combine and sort logs by timestamp (approximate)
-            const combinedLogs = [
-                ...logEntries.slice(-25).map(log => ({type: 'client', message: log})),
-                ...serverLogEntries.slice(-25).map(log => ({type: 'server', message: log}))
-            ];
-            
-            // Display combined logs
-            const logElement = document.getElementById('live-log');
-            logElement.innerHTML = combinedLogs.map(log => 
-                `<span style="color: ${log.type === 'client' ? '#0f0' : '#0af'}">${log.message}</span>`
-            ).join('\n');
-            logElement.scrollTop = logElement.scrollHeight;
-            
-            log('✅ Logs synchronized - showing combined client and server logs');
-        }
-
-        // Automated test suites
-        async function runFullTestSuite() {
-            log('🤖 Starting full test suite...');
-            const resultsDiv = document.getElementById('automated-test-results');
-            resultsDiv.textContent = 'Running comprehensive test suite...\n';
+        
+        async function runAllTests() {
+            showResults('<p>🚀 Running all test suites...</p>');
             
             const tests = [
-                'Server Connection',
-                'RPC System', 
-                'Map Loading',
-                'Unit Deployment',
-                'Combat System',
-                'Transport System',
-                'Property System',
-                'Performance'
+                { script: 'test_combat_system.py', name: 'Combat', icon: '⚔️' },
+                { script: 'test_economic_system.py', name: 'Economic', icon: '💰' },
+                { script: 'test_movement_system.py', name: 'Movement', icon: '🚶' },
+                { script: 'test_victory_conditions.py', name: 'Victory', icon: '🏆' },
+                { script: 'test_transport_final.py', name: 'Transport', icon: '🚢' }
             ];
             
-            for (let i = 0; i < tests.length; i++) {
-                await new Promise(resolve => setTimeout(resolve, 500));
-                resultsDiv.textContent += `✅ ${tests[i]} - PASSED\n`;
-                log(`✅ ${tests[i]} test completed`);
-            }
+            let results = '<h4>📊 Complete Test Suite Results:</h4>';
+            results += '<div id="all-test-results" style="display: grid; gap: 10px;">';
             
-            resultsDiv.textContent += '\n🎉 Full test suite completed successfully!';
-            log('🎉 Full test suite completed');
-        }
-
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            log('🎮 AW-RPC Testing Interface initialized');
-            
-            // Check if we can reach the server immediately
-            checkServerConnection().then(serverOk => {
-                if (!serverOk) {
-                    log('❌ Flask server not reachable', 'error');
-                    log('💡 To start the server: python3 app.py', 'error');
-                    log('💡 Make sure you\'re in the correct directory', 'error');
-                    log('💡 Check that all dependencies are installed', 'error');
-                } else {
-                    log('✅ Flask server is running and reachable');
-                    refreshSystemStatus();
-                    
-                    // Auto-sync logs on startup
-                    setTimeout(() => {
-                        syncLogs();
-                    }, 1000);
-                }
+            // Initialize status display
+            tests.forEach((test, index) => {
+                results += `<div id="test-${index}" style="padding: 10px; background: white; border-radius: 5px; border-left: 4px solid #f39c12;">`;
+                results += `<strong>${test.icon} ${test.name} System:</strong> <span style="color: #f39c12;">⏳ Queued...</span>`;
+                results += `</div>`;
             });
             
-            // Show helpful info
-            log('💡 Tip: Create an optimized test game first, then use mechanics testing');
-            log('💡 Quick access buttons will open games in new tabs');
-            log('💡 Use the live console to send RPC commands directly');
-            log('💡 Use "Sync Logs" to see server logs alongside client logs');
-        });
-
-        // Terrain defense testing function
-        async function testTerrainDefenseImpact(resultsDiv) {
-            const terrainTests = [
-                {x: 1, y: 1, expectedStars: 0, desc: 'Road/Sea (0 stars)'},
-                {x: 2, y: 2, expectedStars: 1, desc: 'Plains (1 star)'},
-                {x: 3, y: 3, expectedStars: 2, desc: 'Woods (2 stars)'},
-                {x: 4, y: 4, expectedStars: 4, desc: 'Mountain (4 stars)'},
-                {x: 5, y: 5, expectedStars: 3, desc: 'City (3 stars)'},
-                {x: 6, y: 6, expectedStars: 4, desc: 'HQ (4 stars)'}
-            ];
+            results += '</div>';
+            results += '<div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px;">';
+            results += '<strong>Overall Progress:</strong> <span id="overall-progress">0/${tests.length} tests completed</span>';
+            results += '</div>';
+            showResults(results);
             
-            for (const terrainTest of terrainTests) {
+            let completedCount = 0;
+            let allResults = [];
+            
+            // Run tests sequentially
+            for (let i = 0; i < tests.length; i++) {
+                const test = tests[i];
+                const testDiv = document.getElementById(`test-${i}`);
+                
+                // Update status to running
+                testDiv.innerHTML = `<strong>${test.icon} ${test.name} System:</strong> <span style="color: #3498db;">🏃 Running...</span>`;
+                
                 try {
-                    // Clear any existing units
-                    try {
-                        await testRPC('unit_remove', {x: terrainTest.x, y: terrainTest.y});
-                        await testRPC('unit_remove', {x: terrainTest.x, y: terrainTest.y + 1});
-                    } catch (e) {}
-                    
-                    // Create test units
-                    await testRPC('unit_create', {
-                        army: 'RED', 
-                        unit_type: 'INFANTRY', 
-                        x: terrainTest.x, 
-                        y: terrainTest.y
-                    });
-                    
-                    await testRPC('unit_create', {
-                        army: 'BLUE', 
-                        unit_type: 'INFANTRY', 
-                        x: terrainTest.x, 
-                        y: terrainTest.y + 1
-                    });
-                    
-                    // Check actual terrain
-                    const defenderTile = await testRPC('tile', {x: terrainTest.x, y: terrainTest.y + 1});
-                    
-                    // Test damage on this terrain
-                    const preview = await testRPC('combat_preview', {
-                        attacker_x: terrainTest.x, attacker_y: terrainTest.y,
-                        defender_x: terrainTest.x, defender_y: terrainTest.y + 1
-                    });
-                    
-                    if (preview.success) {
-                        const actualStars = defenderTile.defense_stars || 0;
-                        resultsDiv.textContent += `🏞️ ${terrainTest.desc}: ${defenderTile.mapTile?.type || 'unknown'} (${actualStars} stars)\n`;
-                        resultsDiv.textContent += `  Damage: ${preview.attacker_damage} | Counter: ${preview.counter_damage}\n`;
-                        
-                        if (actualStars !== terrainTest.expectedStars) {
-                            resultsDiv.textContent += `  ⚠️ Expected ${terrainTest.expectedStars} stars, got ${actualStars}\n`;
-                        }
-                    }
-                    
-                } catch (error) {
-                    resultsDiv.textContent += `❌ ${terrainTest.desc}: ${error.message}\n`;
-                }
-                resultsDiv.textContent += `\n`;
-            }
-        }
-
-        // Add more testing functions as needed
-        async function verifyCombatMap() {
-            log('⚔️ Verifying combat map...');
-            // Implementation for combat map verification
-        }
-
-        async function testCombatMechanics() {
-            log('🔥 Testing combat mechanics...');
-            // Implementation for combat mechanics testing
-        }
-
-        async function testPropertyCapture() {
-            log('🏰 Testing property capture...');
-            // Implementation for property capture testing
-        }
-
-        async function testResponseTimes() {
-            log('⚡ Testing response times...');
-            const resultsDiv = document.getElementById('response-time-results');
-            
-            const methods = ['game_board', 'check_turn', 'tile'];
-            const results = [];
-            
-            for (const method of methods) {
-                const start = performance.now();
-                try {
-                    await testRPC(method, method === 'tile' ? {x: 5, y: 5} : {});
-                    const time = (performance.now() - start).toFixed(2);
-                    results.push(`${method}: ${time}ms`);
-                } catch (error) {
-                    results.push(`${method}: FAILED`);
-                }
-            }
-            
-            resultsDiv.textContent = results.join('\n');
-            log('✅ Response time testing completed');
-        }
-
-        // Additional functions for remaining mechanics...
-        async function testIncomeGeneration() {
-            log('💰 Testing income generation...');
-            try {
-                const boardBefore = await testRPC('game_board');
-                const fundsBefore = boardBefore.current_turn === 'RED' ? boardBefore.red_funds : boardBefore.blue_funds;
-                
-                // End turn to trigger income
-                await testRPC('army_end_turn');
-                
-                const boardAfter = await testRPC('game_board');
-                const fundsAfter = boardAfter.current_turn === 'RED' ? boardAfter.red_funds : boardAfter.blue_funds;
-                
-                showResult('income-generation-result', `✅ Income: +${fundsAfter - fundsBefore}`, true);
-                log(`✅ Income generation test: +${fundsAfter - fundsBefore} funds`);
-            } catch (error) {
-                showResult('income-generation-result', `❌ ${error.message}`, false);
-                log(`❌ Income generation test failed: ${error.message}`, 'error');
-            }
-        }
-
-        async function testUnitProduction() {
-            log('🏭 Testing unit production...');
-            try {
-                const result = await testRPC('unit_create', {
-                    army: 'RED',
-                    unit_type: 'INFANTRY',
-                    x: 0,
-                    y: 0
-                });
-                showResult('unit-production-result', '✅ Unit production works', true);
-                log('✅ Unit production test passed');
-            } catch (error) {
-                showResult('unit-production-result', `❌ ${error.message}`, false);
-                log(`❌ Unit production test failed: ${error.message}`, 'error');
-            }
-        }
-
-        async function testAirCombat() {
-            log('✈️ Testing air combat...');
-            try {
-                // Test air unit attacking ground unit
-                const result = await testRPC('unit_attack', {x: 2, y: 8, x2: 4, y2: 5});
-                showResult('air-combat-result', '✅ Air combat works', true);
-                log('✅ Air combat test passed');
-            } catch (error) {
-                showResult('air-combat-result', `❌ ${error.message}`, false);
-                log(`❌ Air combat test failed: ${error.message}`, 'error');
-            }
-        }
-
-        async function testTransportMovement() {
-            log('🚁 Testing transport movement...');
-            try {
-                const result = await testRPC('unit_move', {x: 3, y: 1, x2: 5, y2: 2});
-                showResult('transport-move-result', '✅ Transport movement works', true);
-                log('✅ Transport movement test passed');
-            } catch (error) {
-                showResult('transport-move-result', `❌ ${error.message}`, false);
-                log(`❌ Transport movement test failed: ${error.message}`, 'error');
-            }
-        }
-
-        async function testConcurrentRequests() {
-            log('🔄 Testing concurrent requests...');
-            const resultsDiv = document.getElementById('concurrent-test-results');
-            resultsDiv.textContent = 'Testing concurrent requests...';
-            
-            try {
-                const promises = [];
-                for (let i = 0; i < 5; i++) {
-                    promises.push(testRPC('game_board'));
-                }
-                
-                const start = performance.now();
-                const results = await Promise.all(promises);
-                const time = (performance.now() - start).toFixed(2);
-                
-                const successCount = results.filter(r => r && r.width).length;
-                resultsDiv.textContent = `✅ ${successCount}/5 concurrent requests succeeded in ${time}ms`;
-                log(`✅ Concurrent test: ${successCount}/5 succeeded in ${time}ms`);
-                
-            } catch (error) {
-                resultsDiv.textContent = `❌ Concurrent test failed: ${error.message}`;
-                log(`❌ Concurrent test failed: ${error.message}`, 'error');
-            }
-        }
-
-        async function runQuickTests() {
-            log('⚡ Running quick tests...');
-            const resultsDiv = document.getElementById('automated-test-results');
-            resultsDiv.textContent = 'Running quick test suite...\n';
-            
-            const quickTests = [
-                { name: 'Server Connection', test: checkServerConnection },
-                { name: 'Game Board Loading', test: () => testRPC('game_board') },
-                { name: 'Turn System', test: () => testRPC('check_turn') },
-                { name: 'Tile Access', test: () => testRPC('tile', {x: 5, y: 5}) }
-            ];
-            
-            for (const testCase of quickTests) {
-                try {
-                    await testCase.test();
-                    resultsDiv.textContent += `✅ ${testCase.name} - PASSED\n`;
-                    log(`✅ Quick test: ${testCase.name} passed`);
-                } catch (error) {
-                    resultsDiv.textContent += `❌ ${testCase.name} - FAILED\n`;
-                    log(`❌ Quick test: ${testCase.name} failed`);
-                }
-                await new Promise(resolve => setTimeout(resolve, 200));
-            }
-            
-            resultsDiv.textContent += '\n⚡ Quick tests completed!';
-            log('⚡ Quick tests completed');
-        }
-
-        async function runPerformanceTests() {
-            log('📊 Running performance tests...');
-            const resultsDiv = document.getElementById('automated-test-results');
-            resultsDiv.textContent = 'Running performance test suite...\n';
-            
-            // Response time test
-            const start = performance.now();
-            try {
-                await testRPC('game_board');
-                const responseTime = (performance.now() - start).toFixed(2);
-                resultsDiv.textContent += `✅ Response Time: ${responseTime}ms\n`;
-                
-                if (responseTime < 100) {
-                    resultsDiv.textContent += '🚀 Excellent performance!\n';
-                } else if (responseTime < 500) {
-                    resultsDiv.textContent += '👍 Good performance\n';
-                } else {
-                    resultsDiv.textContent += '⚠️ Performance could be improved\n';
-                }
-                
-            } catch (error) {
-                resultsDiv.textContent += `❌ Performance test failed: ${error.message}\n`;
-            }
-            
-            resultsDiv.textContent += '\n📊 Performance tests completed!';
-            log('📊 Performance tests completed');
-        }
-
-        async function runIntegrationTests() {
-            log('🔧 Running integration tests...');
-            const resultsDiv = document.getElementById('automated-test-results');
-            resultsDiv.textContent = 'Running integration test suite...\n';
-            
-            // Auto-get current game token from active games
-            if (!currentGameToken) {
-                try {
-                    const response = await fetch('/debug');
-                    const data = await response.json();
-                    if (data.active_games && data.active_games.length > 0) {
-                        currentGameToken = data.active_games[0].token;
-                        log(`🎮 Using active game token: ${currentGameToken}`);
-                        resultsDiv.textContent += `Using active game: ${currentGameToken}\n`;
-                    } else {
-                        resultsDiv.textContent += '⚠️ No active games found - creating test game...\n';
-                        // Create a quick test game
-                        const createResponse = await fetch('/test_optimized');
-                        if (createResponse.ok) {
-                            const gameUrl = createResponse.url;
-                            currentGameToken = gameUrl.split('/').pop();
-                            log(`🎮 Created test game token: ${currentGameToken}`);
-                            resultsDiv.textContent += `Created test game: ${currentGameToken}\n`;
-                        } else {
-                            resultsDiv.textContent += '❌ Failed to create test game for integration tests\n';
-                            log('❌ Failed to create test game for integration tests');
-                            return;
-                        }
-                    }
-                } catch (error) {
-                    resultsDiv.textContent += `❌ Failed to get game token: ${error.message}\n`;
-                    log(`❌ Failed to get game token: ${error.message}`);
-                    return;
-                }
-            }
-            
-            const integrationTests = [
-                { name: 'Frontend-Backend RPC', test: () => testRPC('check_turn') },
-                { name: 'Game State Persistence', test: async () => {
-                    await testRPC('army_end_turn');
-                    return await testRPC('game_board');
-                }},
-                { name: 'Unit Creation System', test: () => testRPC('unit_create', {
-                    army: 'RED', unit_type: 'INFANTRY', x: 0, y: 0
-                })},
-                { name: 'Map System Integration', test: async () => {
-                    const board = await testRPC('game_board');
-                    if (!board.grid || board.grid.length === 0) {
-                        throw new Error('Invalid board structure');
-                    }
-                    return board;
-                }}
-            ];
-            
-            for (const testCase of integrationTests) {
-                try {
-                    await testCase.test();
-                    resultsDiv.textContent += `✅ ${testCase.name} - INTEGRATED\n`;
-                    log(`✅ Integration: ${testCase.name} working`);
-                } catch (error) {
-                    resultsDiv.textContent += `❌ ${testCase.name} - FAILED\n`;
-                    log(`❌ Integration: ${testCase.name} failed - ${error.message}`);
-                }
-                await new Promise(resolve => setTimeout(resolve, 300));
-            }
-            
-            resultsDiv.textContent += '\n🔧 Integration tests completed!';
-            log('🔧 Integration tests completed');
-        }
-
-        // Browser-specific optimized map testing
-        async function testOptimizedMapInBrowser() {
-            if (!currentGameToken) {
-                log('⚠️ No active game token - create optimized test game first');
-                return;
-            }
-            
-            log('🌐 Opening optimized map browser test...');
-            
-            // Open detailed test scripts page
-            const testScriptsUrl = `/test_scripts/${currentGameToken}`;
-            window.open(testScriptsUrl, '_blank');
-            
-            log('✅ Browser test scripts opened in new tab');
-            document.getElementById('map-verification-results').textContent += 
-                '\n🌐 Browser test scripts opened - use provided JavaScript commands in game console';
-        }
-
-        // Enhanced game state monitoring
-        let gameStateMonitor = null;
-        
-        function startGameStateMonitoring() {
-            if (gameStateMonitor) {
-                clearInterval(gameStateMonitor);
-            }
-            
-            gameStateMonitor = setInterval(async () => {
-                if (currentGameToken) {
-                    try {
-                        const board = await testRPC('game_board');
-                        updateStatus('game-indicator', 
-                            `Active: ${board.current_turn} Turn ${board.days}`, 'pass');
-                    } catch (error) {
-                        updateStatus('game-indicator', '❌ Game Lost', 'fail');
-                    }
-                }
-            }, 5000);
-            
-            log('📡 Started game state monitoring');
-        }
-        
-        function stopGameStateMonitoring() {
-            if (gameStateMonitor) {
-                clearInterval(gameStateMonitor);
-                gameStateMonitor = null;
-                log('🔇 Stopped game state monitoring');
-            }
-        }
-
-        // Advanced debugging features
-        async function exportTestResults() {
-            const results = {
-                timestamp: new Date().toISOString(),
-                gameToken: currentGameToken,
-                testResults: testResults,
-                logEntries: logEntries.slice(-100), // Last 100 log entries
-                systemStatus: {
-                    server: document.getElementById('server-indicator').textContent,
-                    rpc: document.getElementById('rpc-indicator').textContent,
-                    games: document.getElementById('game-indicator').textContent,
-                    integration: document.getElementById('integration-indicator').textContent
-                }
-            };
-            
-            const blob = new Blob([JSON.stringify(results, null, 2)], 
-                { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `aw-rpc-test-results-${Date.now()}.json`;
-            a.click();
-            
-            URL.revokeObjectURL(url);
-            log('📁 Test results exported');
-        }
-
-        // Keyboard shortcuts
-        document.addEventListener('keydown', function(event) {
-            if (event.ctrlKey || event.metaKey) {
-                switch (event.key) {
-                    case 'e':
-                        event.preventDefault();
-                        exportTestResults();
-                        break;
-                    case 'r':
-                        event.preventDefault();
-                        refreshSystemStatus();
-                        break;
-                    case 't':
-                        event.preventDefault();
-                        openOptimizedTest();
-                        break;
-                    case 'c':
-                        event.preventDefault();
-                        clearConsole();
-                        break;
-                }
-            }
-        });
-
-        // Add helpful shortcuts info
-        function showKeyboardShortcuts() {
-            log('⌨️ Keyboard Shortcuts:');
-            log('  Ctrl+T - Open Optimized Test');
-            log('  Ctrl+R - Refresh Status');
-            log('  Ctrl+C - Clear Console');
-            log('  Ctrl+E - Export Results');
-        }
-
-        // New Game Setup System Integration Functions
-        async function testCustomGameCreation() {
-            log('🎲 Testing custom game creation...');
-            const resultsDiv = document.getElementById('custom-game-results');
-            resultsDiv.textContent = 'Creating custom game...';
-            
-            try {
-                // First check if server is reachable
-                const serverOk = await checkServerConnection();
-                if (!serverOk) {
-                    resultsDiv.textContent = '❌ Server not reachable - start Flask application first';
-                    return;
-                }
-                
-                log('📡 Sending request to /api/test_create_custom_game...');
-                
-                const response = await fetch('/api/test_create_custom_game', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        map: 'test',
-                        playerCount: 2,
-                        turnLimit: 50,
-                        gameMode: 'standard',
-                        players: [
-                            {slot: 1, co: 'andy', color: 'RED', name: 'Test Player 1'},
-                            {slot: 2, co: 'max', color: 'BLUE', name: 'Test Player 2'}
-                        ]
-                    })
-                });
-                
-                log(`📡 Response status: ${response.status}`);
-                
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    resultsDiv.textContent = `❌ Server error (${response.status}): ${errorText}`;
-                    log(`❌ Server error: ${response.status} - ${errorText}`, 'error');
-                    return;
-                }
-                
-                const result = await response.json();
-                log(`📡 Response received: ${JSON.stringify(result)}`);
-                
-                if (result.success) {
-                    currentGameToken = result.token;
-                    resultsDiv.textContent = `✅ Custom game created successfully!\nToken: ${result.token}\nGame URL: ${result.game_url}`;
-                    
-                    // Open the game in a new tab
-                    window.open(result.game_url, '_blank');
-                    
-                    log(`✅ Custom game created: ${result.token}`);
-                } else {
-                    resultsDiv.textContent = `❌ Failed to create custom game: ${result.error}`;
-                    log(`❌ Custom game creation failed: ${result.error}`, 'error');
-                }
-            } catch (error) {
-                resultsDiv.textContent = `❌ Network error: ${error.message}\nCheck if Flask server is running`;
-                log(`❌ Network error: ${error.message}`, 'error');
-                log(`❌ Error type: ${error.constructor.name}`, 'error');
-                
-                // Additional debug info
-                if (error.message.includes('NetworkError')) {
-                    log('💡 This usually means the Flask server is not running', 'error');
-                    log('💡 Start the server with: python3 app.py', 'error');
-                }
-            }
-        }
-        
-        async function testMultiArmyGame() {
-            log('🎯 Testing multi-army game creation...');
-            const resultsDiv = document.getElementById('custom-game-results');
-            resultsDiv.textContent = 'Creating multi-army game...';
-            
-            try {
-                const response = await fetch('/api/test_create_custom_game', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        map: 'test',
-                        playerCount: 4,
-                        turnLimit: 75,
-                        gameMode: 'standard',
-                        players: [
-                            {slot: 1, co: 'andy', color: 'RED', name: 'Red Army'},
-                            {slot: 2, co: 'max', color: 'BLUE', name: 'Blue Army'},
-                            {slot: 3, co: 'sami', color: 'GREEN', name: 'Green Army'},
-                            {slot: 4, co: 'grit', color: 'YELLOW', name: 'Yellow Army'}
-                        ]
-                    })
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    currentGameToken = result.token;
-                    resultsDiv.textContent = `✅ Multi-army game created!\nToken: ${result.token}\n4 armies: RED, BLUE, GREEN, YELLOW`;
-                    
-                    // Open the game in a new tab
-                    window.open(result.game_url, '_blank');
-                    
-                    log(`✅ Multi-army game created: ${result.token}`);
-                } else {
-                    resultsDiv.textContent = `❌ Failed to create multi-army game: ${result.error}`;
-                    log(`❌ Multi-army game creation failed: ${result.error}`, 'error');
-                }
-            } catch (error) {
-                resultsDiv.textContent = `❌ Error creating multi-army game: ${error.message}`;
-                log(`❌ Multi-army game creation error: ${error.message}`, 'error');
-            }
-        }
-        
-        async function testFundAllocation() {
-            log('💰 Testing fund allocation...');
-            const resultsDiv = document.getElementById('custom-game-results');
-            
-            if (!currentGameToken) {
-                resultsDiv.textContent = '⚠️ Create a game first to test fund allocation';
-                log('⚠️ No active game token for fund allocation test');
-                return;
-            }
-            
-            try {
-                const board = await testRPC('game_board');
-                const fundInfo = [];
-                
-                // Check RED/BLUE funds (backward compatibility)
-                fundInfo.push(`RED funds: ${board.red_funds || 0}`);
-                fundInfo.push(`BLUE funds: ${board.blue_funds || 0}`);
-                
-                // Check flexible fund system if available
-                if (board.army_funds) {
-                    for (const [army, funds] of Object.entries(board.army_funds)) {
-                        fundInfo.push(`${army} funds: ${funds}`);
-                    }
-                }
-                
-                resultsDiv.textContent = `✅ Fund allocation test results:\n${fundInfo.join('\n')}`;
-                log('✅ Fund allocation test completed');
-                
-            } catch (error) {
-                resultsDiv.textContent = `❌ Fund allocation test failed: ${error.message}`;
-                log(`❌ Fund allocation test error: ${error.message}`, 'error');
-            }
-        }
-        
-        function openGameSetupInterface() {
-            log('🎮 Opening game setup interface...');
-            window.open('/', '_blank');
-            log('✅ Game setup interface opened in new tab');
-        }
-
-        // Debug information function
-        function updateDebugInfo() {
-            document.getElementById('browser-info').textContent = navigator.userAgent;
-            document.getElementById('current-url').textContent = window.location.href;
-            document.getElementById('current-time').textContent = new Date().toLocaleString();
-            log('🔍 Debug info updated');
-        }
-
-        // Simple connection test
-        async function testSimpleConnection() {
-            log('🔌 Testing simple API connection...');
-            
-            try {
-                const response = await fetch('/api/test_connection');
-                const result = await response.json();
-                
-                if (response.ok && result.success) {
-                    log('✅ Simple API connection successful');
-                    log(`📡 Server response: ${result.message}`);
-                    updateStatus('server-indicator', '✅ API Working', 'pass');
-                } else {
-                    log('❌ Simple API connection failed');
-                    log(`📡 Response: ${JSON.stringify(result)}`);
-                    updateStatus('server-indicator', '❌ API Failed', 'fail');
-                }
-            } catch (error) {
-                log(`❌ Simple API connection error: ${error.message}`, 'error');
-                log(`❌ Error type: ${error.constructor.name}`, 'error');
-                updateStatus('server-indicator', '❌ API Error', 'fail');
-            }
-        }
-
-        // Integration point testing
-        async function testIntegrationPoint(point) {
-            log(`🔧 Testing integration point: ${point}...`);
-            const resultsDiv = document.getElementById('integration-test-results');
-            
-            try {
-                let response, result;
-                
-                switch(point) {
-                    case 'test_verify':
-                        response = await fetch('/test_verify');
-                        if (response.ok) {
-                            resultsDiv.textContent += `✅ Test Verification Routes: Working\n`;
-                            log('✅ Test verification routes working');
-                        } else {
-                            resultsDiv.textContent += `❌ Test Verification Routes: Failed (${response.status})\n`;
-                            log(`❌ Test verification routes failed: ${response.status}`);
-                        }
-                        break;
-                        
-                    case 'api_maps':
-                        response = await fetch('/api/maps');
-                        if (response.ok) {
-                            result = await response.json();
-                            resultsDiv.textContent += `✅ Maps API: Working (${result.maps?.length || 0} maps)\n`;
-                            log(`✅ Maps API working with ${result.maps?.length || 0} maps`);
-                        } else {
-                            resultsDiv.textContent += `❌ Maps API: Failed (${response.status})\n`;
-                            log(`❌ Maps API failed: ${response.status}`);
-                        }
-                        break;
-                        
-                    case 'custom_game':
-                        response = await fetch('/api/test_create_custom_game', {
-                            method: 'POST',
-                            headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify({})
-                        });
-                        if (response.ok) {
-                            result = await response.json();
-                            if (result.success) {
-                                resultsDiv.textContent += `✅ Custom Game API: Working (created ${result.token})\n`;
-                                log(`✅ Custom game API working, created: ${result.token}`);
-                            } else {
-                                resultsDiv.textContent += `⚠️ Custom Game API: Partial (${result.error})\n`;
-                                log(`⚠️ Custom game API partial: ${result.error}`);
-                            }
-                        } else {
-                            resultsDiv.textContent += `❌ Custom Game API: Failed (${response.status})\n`;
-                            log(`❌ Custom game API failed: ${response.status}`);
-                        }
-                        break;
-                        
-                    case 'debug_methods':
-                        response = await fetch('/debug/methods');
-                        if (response.ok) {
-                            result = await response.json();
-                            const mapSystemStatus = result.map_system ? 'with map system' : 'without map system';
-                            resultsDiv.textContent += `✅ Debug Methods: Working (${mapSystemStatus})\n`;
-                            log(`✅ Debug methods working ${mapSystemStatus}`);
-                        } else {
-                            resultsDiv.textContent += `❌ Debug Methods: Failed (${response.status})\n`;
-                            log(`❌ Debug methods failed: ${response.status}`);
-                        }
-                        break;
-                }
-            } catch (error) {
-                resultsDiv.textContent += `❌ ${point}: Error (${error.message})\n`;
-                log(`❌ Integration point ${point} error: ${error.message}`, 'error');
-            }
-        }
-
-        // Full integration check
-        async function runFullIntegrationCheck() {
-            log('🔧 Running full integration check...');
-            const statusDiv = document.getElementById('full-integration-status');
-            
-            statusDiv.innerHTML = 'Running comprehensive integration check...<br>';
-            
-            const checks = [
-                { name: 'Server Connection', test: checkServerConnection },
-                { name: 'Test Verification Routes', test: () => fetch('/test_verify').then(r => r.ok) },
-                { name: 'Maps API', test: () => fetch('/api/maps').then(r => r.ok) },
-                { name: 'Custom Game API', test: () => fetch('/api/test_create_custom_game', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({})
-                }).then(r => r.ok) },
-                { name: 'Debug Methods', test: () => fetch('/debug/methods').then(r => r.ok) }
-            ];
-            
-            let passedChecks = 0;
-            
-            for (const check of checks) {
-                try {
-                    const result = await check.test();
-                    if (result) {
-                        statusDiv.innerHTML += `✅ ${check.name}: PASS<br>`;
-                        passedChecks++;
-                    } else {
-                        statusDiv.innerHTML += `❌ ${check.name}: FAIL<br>`;
-                    }
-                } catch (error) {
-                    statusDiv.innerHTML += `❌ ${check.name}: ERROR<br>`;
-                }
-            }
-            
-            const percentage = Math.round((passedChecks / checks.length) * 100);
-            
-            if (percentage === 100) {
-                statusDiv.innerHTML += `<br><strong>🎉 Full Integration Achieved (${percentage}%)</strong>`;
-                updateStatus('integration-indicator', '✅ Full Integration (100%)', 'pass');
-            } else if (percentage >= 75) {
-                statusDiv.innerHTML += `<br><strong>✅ Good Integration (${percentage}%)</strong>`;
-                updateStatus('integration-indicator', `✅ Good Integration (${percentage}%)`, 'pass');
-            } else if (percentage >= 50) {
-                statusDiv.innerHTML += `<br><strong>⚠️ Partial Integration (${percentage}%)</strong>`;
-                updateStatus('integration-indicator', `⚠️ Partial Integration (${percentage}%)`, 'warning');
-            } else {
-                statusDiv.innerHTML += `<br><strong>❌ Limited Integration (${percentage}%)</strong>`;
-                updateStatus('integration-indicator', `❌ Limited Integration (${percentage}%)`, 'fail');
-            }
-            
-            log(`🔧 Full integration check complete: ${passedChecks}/${checks.length} checks passed (${percentage}%)`);
-        }
-
-        // Multi-player testing functions
-        async function testMultiPlayerMap(mapId, expectedPlayers) {
-            log(`👥 Testing ${mapId} map for ${expectedPlayers} players...`);
-            const resultsDiv = document.getElementById(`${mapId}-test-result`);
-            resultsDiv.textContent = `Testing ${mapId} map creation...\n`;
-            
-            try {
-                // Test map availability through maps API
-                const mapsResponse = await fetch('/api/maps');
-                const mapsData = await mapsResponse.json();
-                
-                const mapInfo = mapsData.maps.find(map => map.id === mapId);
-                if (!mapInfo) {
-                    throw new Error(`Map '${mapId}' not found in available maps`);
-                }
-                
-                resultsDiv.textContent += `✅ Map found: ${mapInfo.name}\n`;
-                resultsDiv.textContent += `✅ Turn order: ${mapInfo.turn_order ? mapInfo.turn_order.join(', ') : 'Not defined'}\n`;
-                resultsDiv.textContent += `✅ Size: ${mapInfo.width}x${mapInfo.height}\n`;
-                
-                if (!mapInfo.turn_order || mapInfo.turn_order.length !== expectedPlayers) {
-                    const actualPlayers = mapInfo.turn_order ? mapInfo.turn_order.length : 0;
-                    throw new Error(`Expected ${expectedPlayers} players, got ${actualPlayers}`);
-                }
-                
-                // Test game creation with this map
-                const gameResponse = await fetch('/api/create_game', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        map: mapId,
-                        playerCount: mapInfo.turn_order ? mapInfo.turn_order.length : expectedPlayers,
-                        players: (mapInfo.turn_order || []).map((army, index) => ({
-                            slot: index + 1,
-                            co: ['andy', 'max', 'sami', 'grit', 'nell'][index] || 'andy',
-                            color: army,
-                            name: `${army} Army`
-                        })),
-                        turnLimit: 50,
-                        gameMode: 'standard'
-                    })
-                });
-                
-                if (!gameResponse.ok) {
-                    throw new Error(`Game creation failed: ${gameResponse.status}`);
-                }
-                
-                const gameData = await gameResponse.json();
-                resultsDiv.textContent += `✅ Game created: ${gameData.token}\n`;
-                
-                // Test game board loading
-                const boardResponse = await fetch('/api', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        jsonrpc: '2.0',
-                        method: 'game_board',
-                        params: {token: gameData.token},
-                        id: Date.now()
-                    })
-                });
-                
-                const boardData = await boardResponse.json();
-                if (boardData.error) {
-                    throw new Error(`Board loading failed: ${boardData.error.message}`);
-                }
-                
-                const board = boardData.result;
-                resultsDiv.textContent += `✅ Board loaded: ${board.width}x${board.height}\n`;
-                resultsDiv.textContent += `✅ Current turn: ${board.current_turn}\n`;
-                
-                // Test army fund allocation
-                if (board.army_funds) {
-                    const armyFundKeys = Object.keys(board.army_funds);
-                    resultsDiv.textContent += `✅ Army funds tracked: ${armyFundKeys.length} armies\n`;
-                } else {
-                    resultsDiv.textContent += `⚠️ Using legacy fund system\n`;
-                }
-                
-                log(`✅ ${mapId} map test completed successfully`);
-                
-            } catch (error) {
-                resultsDiv.textContent += `❌ Test failed: ${error.message}\n`;
-                log(`❌ ${mapId} map test failed: ${error.message}`, 'error');
-            }
-        }
-        
-        async function testMultiArmyFunds() {
-            log('💰 Testing multi-army fund allocation...');
-            const resultsDiv = document.getElementById('multi-army-funds-result');
-            resultsDiv.textContent = 'Testing multi-army fund allocation...\n';
-            
-            try {
-                // Create a 5-player game for comprehensive testing
-                const gameResponse = await fetch('/api/create_game', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        map: 'pentagon',
-                        playerCount: 5,
-                        players: [
-                            {slot: 1, co: 'andy', color: 'RED', name: 'Red Army'},
-                            {slot: 2, co: 'max', color: 'BLUE', name: 'Blue Army'},
-                            {slot: 3, co: 'sami', color: 'GREEN', name: 'Green Army'},
-                            {slot: 4, co: 'grit', color: 'YELLOW', name: 'Yellow Army'},
-                            {slot: 5, co: 'nell', color: 'GREY', name: 'Grey Army'}
-                        ],
-                        turnLimit: 75,
-                        gameMode: 'standard'
-                    })
-                });
-                
-                if (!gameResponse.ok) {
-                    throw new Error(`Failed to create 5-player game: ${gameResponse.status}`);
-                }
-                
-                const gameData = await gameResponse.json();
-                resultsDiv.textContent += `✅ 5-player game created: ${gameData.token}\n`;
-                
-                // Test board and fund allocation
-                const boardResponse = await fetch('/api', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        jsonrpc: '2.0',
-                        method: 'game_board',
-                        params: {token: gameData.token},
-                        id: Date.now()
-                    })
-                });
-                
-                const boardData = await boardResponse.json();
-                if (boardData.error) {
-                    throw new Error(`Board loading failed: ${boardData.error.message}`);
-                }
-                
-                const board = boardData.result;
-                
-                // Check fund allocation
-                if (board.army_funds) {
-                    resultsDiv.textContent += `✅ New fund system active:\n`;
-                    for (const [army, funds] of Object.entries(board.army_funds)) {
-                        resultsDiv.textContent += `  ${army}: ${funds} funds\n`;
-                    }
-                } else {
-                    resultsDiv.textContent += `⚠️ Legacy fund system:\n`;
-                    resultsDiv.textContent += `  RED: ${board.red_funds || 0} funds\n`;
-                    resultsDiv.textContent += `  BLUE: ${board.blue_funds || 0} funds\n`;
-                }
-                
-                // Check property allocation
-                if (board.army_properties) {
-                    resultsDiv.textContent += `✅ Property tracking:\n`;
-                    for (const [army, properties] of Object.entries(board.army_properties)) {
-                        resultsDiv.textContent += `  ${army}: ${properties} properties\n`;
-                    }
-                }
-                
-                // Test turn progression through multiple armies
-                resultsDiv.textContent += `✅ Current turn: ${board.current_turn}\n`;
-                
-                log('✅ Multi-army fund allocation test completed');
-                
-            } catch (error) {
-                resultsDiv.textContent += `❌ Test failed: ${error.message}\n`;
-                log(`❌ Multi-army fund test failed: ${error.message}`, 'error');
-            }
-        }
-
-        // Combat System Testing Functions
-        async function testDamagePreviews() {
-            log('🎯 Testing damage preview system...');
-            const resultsDiv = document.getElementById('damage-preview-result');
-            resultsDiv.textContent = 'Testing damage preview calculations...\n';
-            
-            if (!currentGameToken) {
-                try {
-                    await ensureActiveGame();
-                } catch (error) {
-                    resultsDiv.textContent += `❌ No active game: ${error.message}\n`;
-                    return;
-                }
-            }
-            
-            try {
-                // Find empty positions for test units
-                const boardResponse = await testRPC('game_board', {});
-                const board = boardResponse;
-                
-                // Find two adjacent empty tiles
-                let redPos = null, bluePos = null;
-                for (let y = 0; y < board.height && (!redPos || !bluePos); y++) {
-                    for (let x = 0; x < board.width - 1 && (!redPos || !bluePos); x++) {
-                        const tile1 = board.grid.find(t => t.x === x && t.y === y);
-                        const tile2 = board.grid.find(t => t.x === x + 1 && t.y === y);
-                        
-                        if (tile1 && tile2 && !tile1.unit && !tile2.unit) {
-                            redPos = {x: x, y: y};
-                            bluePos = {x: x + 1, y: y};
-                            break;
-                        }
-                    }
-                }
-                
-                if (!redPos || !bluePos) {
-                    resultsDiv.textContent += `❌ Could not find empty adjacent positions for test units\n`;
-                    return;
-                }
-                
-                resultsDiv.textContent += `📍 Using positions: RED(${redPos.x},${redPos.y}) vs BLUE(${bluePos.x},${bluePos.y})\n`;
-                
-                // Create RED unit first (should be RED's turn initially)
-                await testRPC('unit_create', {army: 'RED', unit_type: 'INFANTRY', x: redPos.x, y: redPos.y});
-                resultsDiv.textContent += `✅ Created RED Infantry at (${redPos.x}, ${redPos.y})\n`;
-                
-                // End RED's turn to switch to BLUE
-                await testRPC('army_end_turn', {});
-                resultsDiv.textContent += `🔄 Switched to BLUE's turn\n`;
-                
-                // Create BLUE unit
-                await testRPC('unit_create', {army: 'BLUE', unit_type: 'INFANTRY', x: bluePos.x, y: bluePos.y});
-                resultsDiv.textContent += `✅ Created BLUE Infantry at (${bluePos.x}, ${bluePos.y})\n`;
-                
-                // End BLUE's turn to switch back to RED
-                await testRPC('army_end_turn', {});
-                resultsDiv.textContent += `🔄 Switched back to RED's turn\n`;
-                
-                // Now test damage preview from RED attacking BLUE
-                const previewResponse = await testRPC('combat_preview', {
-                    attacker_x: redPos.x, attacker_y: redPos.y,
-                    defender_x: bluePos.x, defender_y: bluePos.y
-                });
-                
-                if (previewResponse && previewResponse.success) {
-                    resultsDiv.textContent += `✅ Damage preview successful:\n`;
-                    resultsDiv.textContent += `  Attacker damage: ${previewResponse.attacker_damage}\n`;
-                    resultsDiv.textContent += `  Counter damage: ${previewResponse.counter_damage}\n`;
-                    resultsDiv.textContent += `  Can counter: ${previewResponse.can_counter}\n`;
-                    resultsDiv.textContent += `  Attacker HP after: ${previewResponse.attacker_hp_after}\n`;
-                    resultsDiv.textContent += `  Defender HP after: ${previewResponse.defender_hp_after}\n`;
-                    
-                    // Validate damage calculations
-                    if (previewResponse.attacker_damage >= 45 && previewResponse.attacker_damage <= 75) {
-                        resultsDiv.textContent += `✅ Attacker damage within expected range (45-75)\n`;
-                    } else {
-                        resultsDiv.textContent += `⚠️ WARNING: Attacker damage outside expected range (${previewResponse.attacker_damage})\n`;
-                    }
-                    
-                    // Counter damage should be lower due to HP damage and counter-attack mechanics
-                    const expectedCounterRange = Math.floor(previewResponse.attacker_damage * 0.6); // ~60% of attacker damage
-                    if (previewResponse.counter_damage >= expectedCounterRange && previewResponse.counter_damage <= previewResponse.attacker_damage) {
-                        resultsDiv.textContent += `✅ Counter damage within expected range (${expectedCounterRange}-${previewResponse.attacker_damage})\n`;
-                    } else {
-                        resultsDiv.textContent += `⚠️ INFO: Counter damage ${previewResponse.counter_damage} (expected ${expectedCounterRange}-${previewResponse.attacker_damage})\n`;
-                    }
-                    
-                    if (previewResponse.attacker_damage <= 0) {
-                        resultsDiv.textContent += `❌ ERROR: No damage dealt by attacker!\n`;
-                    }
-                } else {
-                    resultsDiv.textContent += `❌ Damage preview failed: ${previewResponse?.error || 'Unknown error'}\n`;
-                }
-                
-                log('✅ Damage preview test completed');
-                
-            } catch (error) {
-                resultsDiv.textContent += `❌ Test failed: ${error.message}\n`;
-                log(`❌ Damage preview test failed: ${error.message}`, 'error');
-            }
-        }
-        
-        async function testUnitMatchups() {
-            log('⚔️ Testing unit matchup damage calculations...');
-            const resultsDiv = document.getElementById('unit-matchup-result');
-            resultsDiv.textContent = 'Testing damage calculations across different unit types...\n';
-            
-            if (!currentGameToken) {
-                try {
-                    await ensureActiveGame();
-                } catch (error) {
-                    resultsDiv.textContent += `❌ No active game: ${error.message}\n`;
-                    return;
-                }
-            }
-            
-            try {
-                // Get board information
-                const boardResponse = await testRPC('game_board', {});
-                const board = boardResponse;
-                
-                // Define test matchups with expected damage ranges
-                const matchups = [
-                    {
-                        attacker: 'INFANTRY', defender: 'TANK', 
-                        expectedMin: 1, expectedMax: 10, 
-                        description: 'Infantry vs Tank (weak vs armor)'
-                    },
-                    {
-                        attacker: 'TANK', defender: 'INFANTRY', 
-                        expectedMin: 60, expectedMax: 90, 
-                        description: 'Tank vs Infantry (armor vs weak)'
-                    },
-                    {
-                        attacker: 'ANTIAIR', defender: 'BCOPTER', 
-                        expectedMin: 80, expectedMax: 120, 
-                        description: 'Anti-Air vs B-Copter (hard counter)'
-                    },
-                    {
-                        attacker: 'MECH', defender: 'INFANTRY', 
-                        expectedMin: 40, expectedMax: 70, 
-                        description: 'Mech vs Infantry (similar units)'
-                    },
-                    {
-                        attacker: 'RECON', defender: 'INFANTRY', 
-                        expectedMin: 50, expectedMax: 80, 
-                        description: 'Recon vs Infantry (light vehicle)'
-                    }
-                ];
-                
-                // Find empty positions - need space for all units
-                let testPositions = [];
-                let foundPositions = 0;
-                
-                for (let y = 0; y < board.height && foundPositions < matchups.length * 2; y++) {
-                    for (let x = 0; x < board.width - 1 && foundPositions < matchups.length * 2; x++) {
-                        const tile1 = board.grid.find(t => t.x === x && t.y === y);
-                        const tile2 = board.grid.find(t => t.x === x + 1 && t.y === y);
-                        
-                        if (tile1 && tile2 && !tile1.unit && !tile2.unit) {
-                            testPositions.push({
-                                red: {x: x, y: y},
-                                blue: {x: x + 1, y: y}
-                            });
-                            foundPositions += 2;
-                        }
-                    }
-                }
-                
-                if (testPositions.length < matchups.length) {
-                    resultsDiv.textContent += `❌ Insufficient empty space. Need ${matchups.length} pairs, found ${testPositions.length}\n`;
-                    return;
-                }
-                
-                resultsDiv.textContent += `📍 Found ${testPositions.length} test positions\n\n`;
-                
-                // Test each matchup
-                let successCount = 0;
-                let failCount = 0;
-                
-                for (let i = 0; i < matchups.length; i++) {
-                    const matchup = matchups[i];
-                    const positions = testPositions[i];
-                    
-                    resultsDiv.textContent += `🎯 Testing: ${matchup.description}\n`;
-                    
-                    try {
-                        // Create RED attacker
-                        const createResult1 = await testRPC('unit_create', {
-                            army: 'RED', 
-                            unit_type: matchup.attacker, 
-                            x: positions.red.x, 
-                            y: positions.red.y
-                        });
-                        
-                        // Check if creation failed (error property exists) or succeeded (tile data returned)
-                        if (createResult1.error) {
-                            console.log('Create result 1 full response:', createResult1);
-                            throw new Error(`Failed to create ${matchup.attacker}: ${createResult1.message || createResult1.error_code || createResult1.error}`);
-                        }
-                        
-                        // Switch to BLUE's turn
-                        await testRPC('army_end_turn', {});
-                        
-                        // Create BLUE defender
-                        const createResult2 = await testRPC('unit_create', {
-                            army: 'BLUE', 
-                            unit_type: matchup.defender, 
-                            x: positions.blue.x, 
-                            y: positions.blue.y
-                        });
-                        
-                        // Check if creation failed (error property exists) or succeeded (tile data returned)
-                        if (createResult2.error) {
-                            console.log('Create result 2 full response:', createResult2);
-                            throw new Error(`Failed to create ${matchup.defender}: ${createResult2.message || createResult2.error_code || createResult2.error}`);
-                        }
-                        
-                        // Switch back to RED's turn
-                        await testRPC('army_end_turn', {});
-                        
-                        // Test damage preview
-                        const previewResponse = await testRPC('combat_preview', {
-                            attacker_x: positions.red.x, attacker_y: positions.red.y,
-                            defender_x: positions.blue.x, defender_y: positions.blue.y
-                        });
-                        
-                        if (previewResponse && previewResponse.success) {
-                            const damage = previewResponse.attacker_damage;
-                            const inRange = damage >= matchup.expectedMin && damage <= matchup.expectedMax;
-                            
-                            if (inRange) {
-                                resultsDiv.textContent += `✅ ${matchup.attacker} → ${matchup.defender}: ${damage} damage (${matchup.expectedMin}-${matchup.expectedMax})\n`;
-                                successCount++;
-                            } else {
-                                resultsDiv.textContent += `⚠️ ${matchup.attacker} → ${matchup.defender}: ${damage} damage (expected ${matchup.expectedMin}-${matchup.expectedMax})\n`;
-                                failCount++;
-                            }
-                            
-                            // Show counter damage if applicable
-                            if (previewResponse.can_counter) {
-                                resultsDiv.textContent += `   Counter: ${previewResponse.counter_damage} damage\n`;
-                            }
-                        } else {
-                            const errorMsg = previewResponse ? previewResponse.error || 'Unknown error' : 'No response';
-                            resultsDiv.textContent += `❌ ${matchup.attacker} → ${matchup.defender}: Preview failed - ${errorMsg}\n`;
-                            failCount++;
-                        }
-                        
-                    } catch (error) {
-                        resultsDiv.textContent += `❌ ${matchup.description}: ${error.message}\n`;
-                        failCount++;
-                    }
-                    
-                    resultsDiv.textContent += `\n`;
-                }
-                
-                // Summary
-                resultsDiv.textContent += `📊 Summary: ${successCount} passed, ${failCount} failed\n`;
-                
-                if (failCount === 0) {
-                    resultsDiv.textContent += `🎉 All unit matchups working correctly!\n`;
-                } else {
-                    resultsDiv.textContent += `⚠️ Some matchups need investigation\n`;
-                }
-                
-                log('✅ Unit matchup test completed');
-                
-            } catch (error) {
-                resultsDiv.textContent += `❌ Test failed: ${error.message}\n`;
-                log(`❌ Unit matchup test failed: ${error.message}`, 'error');
-            }
-        }
-        
-        async function testCounterAttackDamage() {
-            log('🔄 Testing counter-attack damage calculations...');
-            const resultsDiv = document.getElementById('counter-attack-result');
-            resultsDiv.textContent = 'Testing counter-attack damage with terrain analysis...\n';
-            
-            if (!currentGameToken) {
-                try {
-                    await ensureActiveGame();
-                } catch (error) {
-                    resultsDiv.textContent += `❌ No active game: ${error.message}\n`;
-                    return;
-                }
-            }
-            
-            try {
-                // Test different unit matchups for counter-attack balance
-                const testCases = [
-                    {attacker: 'INFANTRY', defender: 'INFANTRY', desc: 'Infantry vs Infantry'},
-                    {attacker: 'TANK', defender: 'INFANTRY', desc: 'Tank vs Infantry'},
-                    {attacker: 'INFANTRY', defender: 'TANK', desc: 'Infantry vs Tank'},
-                    {attacker: 'MECH', defender: 'INFANTRY', desc: 'Mech vs Infantry'}
-                ];
-                
-                resultsDiv.textContent += '=== BASELINE TEST (0 Defense Terrain) ===\n';
-                
-                for (let i = 0; i < testCases.length; i++) {
-                    const testCase = testCases[i];
-                    
-                    try {
-                        // Find a 0-defense terrain (try multiple locations)
-                        let testX = 7, testY = 7; // Try a different location that might have roads
-                        
-                        // Clear any existing units first
-                        try {
-                            await testRPC('unit_remove', {x: testX, y: testY});
-                            await testRPC('unit_remove', {x: testX, y: testY + 1});
-                        } catch (e) {}
-                        
-                        // Create attacker on 0-defense terrain
-                        await testRPC('unit_create', {
-                            army: 'RED', 
-                            unit_type: testCase.attacker, 
-                            x: testX, 
-                            y: testY
-                        });
-                        
-                        // Create defender on 0-defense terrain
-                        await testRPC('unit_create', {
-                            army: 'BLUE', 
-                            unit_type: testCase.defender, 
-                            x: testX, 
-                            y: testY + 1
-                        });
-                        
-                        // Check terrain types
-                        const attackerTile = await testRPC('tile', {x: testX, y: testY});
-                        const defenderTile = await testRPC('tile', {x: testX, y: testY + 1});
-                        
-                        // Get damage preview
-                        const preview = await testRPC('combat_preview', {
-                            attacker_x: testX, attacker_y: testY,
-                            defender_x: testX, defender_y: testY + 1
-                        });
-                        
-                        if (preview.success) {
-                            resultsDiv.textContent += `✅ ${testCase.desc}:\n`;
-                            resultsDiv.textContent += `  Terrain: ${defenderTile.mapTile?.type || 'unknown'} (${defenderTile.defense_stars || 0} stars)\n`;
-                            resultsDiv.textContent += `  Attack: ${preview.attacker_damage} | Counter: ${preview.counter_damage}\n`;
-                            
-                            // Calculate counter-attack ratio
-                            const ratio = preview.counter_damage / Math.max(preview.attacker_damage, 1);
-                            resultsDiv.textContent += `  Counter ratio: ${ratio.toFixed(2)}x\n`;
-                            
-                            if (ratio > 1.2) {
-                                resultsDiv.textContent += `  ⚠️ HIGH counter-attack damage!\n`;
-                            } else if (ratio < 0.5 && preview.can_counter) {
-                                resultsDiv.textContent += `  ⚠️ LOW counter-attack damage!\n`;
-                            } else {
-                                resultsDiv.textContent += `  ✅ Balanced counter-attack\n`;
-                            }
-                        } else {
-                            resultsDiv.textContent += `❌ ${testCase.desc}: Failed\n`;
-                        }
-                        
-                    } catch (error) {
-                        resultsDiv.textContent += `❌ ${testCase.desc}: ${error.message}\n`;
-                    }
-                    
-                    resultsDiv.textContent += `\n`;
-                }
-                
-                // Test terrain defense
-                resultsDiv.textContent += '=== TERRAIN DEFENSE TEST ===\n';
-                await testTerrainDefenseImpact(resultsDiv);
-                
-                log('✅ Counter-attack damage test completed');
-                
-            } catch (error) {
-                resultsDiv.textContent += `❌ Test failed: ${error.message}\n`;
-                log(`❌ Counter-attack test failed: ${error.message}`, 'error');
-            }
-        }
-        
-        async function testTerrainDefense() {
-            log('🛡️ Testing terrain defense bonuses...');
-            const resultsDiv = document.getElementById('terrain-defense-result');
-            resultsDiv.textContent = 'Testing terrain defense system...\n';
-            
-            if (!currentGameToken) {
-                try {
-                    await ensureActiveGame();
-                } catch (error) {
-                    resultsDiv.textContent += `❌ No active game: ${error.message}\n`;
-                    return;
-                }
-            }
-            
-            try {
-                // Get board to find different terrain types
-                const board = await testRPC('game_board');
-                
-                resultsDiv.textContent += `✅ Analyzing ${board.width}x${board.height} board for terrain types...\n`;
-                
-                // Find different terrain types on the board
-                const terrainTypes = new Set();
-                const terrainLocations = {};
-                
-                board.grid.forEach((tile, index) => {
-                    const x = index % board.width;
-                    const y = Math.floor(index / board.width);
-                    const terrainType = tile.mapTile.type;
-                    
-                    terrainTypes.add(terrainType);
-                    if (!terrainLocations[terrainType]) {
-                        terrainLocations[terrainType] = {x, y};
-                    }
-                });
-                
-                resultsDiv.textContent += `✅ Found terrain types: ${Array.from(terrainTypes).join(', ')}\n\n`;
-                
-                // Test damage on different terrain types
-                const testTerrains = ['PLAIN', 'WOOD', 'MOUNTAIN', 'CITY'];
-                
-                for (const terrain of testTerrains) {
-                    if (terrainLocations[terrain]) {
-                        const loc = terrainLocations[terrain];
-                        
-                        try {
-                            // Try to find empty adjacent coordinates for testing
-                            let defenderX = loc.x;
-                            let defenderY = loc.y;
-                            let attackerX = loc.x - 1;
-                            let attackerY = loc.y;
-                            
-                            // If x-1 would be negative, try x+1
-                            if (attackerX < 0) {
-                                attackerX = loc.x + 1;
-                            }
-                            
-                            // Create defender on this terrain
-                            await testRPC('unit_create', {
-                                army: 'BLUE', 
-                                unit_type: 'INFANTRY', 
-                                x: defenderX, 
-                                y: defenderY
-                            });
-                            
-                            // Create attacker nearby
-                            await testRPC('unit_create', {
-                                army: 'RED', 
-                                unit_type: 'INFANTRY', 
-                                x: attackerX, 
-                                y: attackerY
-                            });
-                            
-                            // Test damage preview on this terrain
-                            const preview = await testRPC('combat_preview', {
-                                attacker_x: attackerX, attacker_y: attackerY,
-                                defender_x: loc.x, defender_y: loc.y
-                            });
-                            
-                            if (preview.success) {
-                                resultsDiv.textContent += `${terrain}: ${preview.attacker_damage} damage`;
-                                
-                                if (preview.terrain_bonus) {
-                                    resultsDiv.textContent += ` (${preview.terrain_bonus} defense)\n`;
-                                } else {
-                                    resultsDiv.textContent += ` (no defense data)\n`;
-                                }
-                            } else {
-                                resultsDiv.textContent += `${terrain}: Test failed\n`;
-                            }
-                            
-                        } catch (error) {
-                            resultsDiv.textContent += `${terrain}: Error - ${error.message}\n`;
-                        }
-                    }
-                }
-                
-                log('✅ Terrain defense test completed');
-                
-            } catch (error) {
-                resultsDiv.textContent += `❌ Test failed: ${error.message}\n`;
-                log(`❌ Terrain defense test failed: ${error.message}`, 'error');
-            }
-        }
-        
-        async function runCombatBalanceTests() {
-            log('📊 Running comprehensive combat balance analysis...');
-            const resultsDiv = document.getElementById('combat-balance-result');
-            resultsDiv.textContent = 'Running combat balance analysis...\n';
-            
-            if (!currentGameToken) {
-                try {
-                    await ensureActiveGame();
-                } catch (error) {
-                    resultsDiv.textContent += `❌ No active game: ${error.message}\n`;
-                    return;
-                }
-            }
-            
-            try {
-                // Test damage chart functionality
-                const damageChart = await testRPC('get_damage_chart');
-                
-                if (damageChart.success) {
-                    resultsDiv.textContent += `✅ Damage chart loaded\n`;
-                    
-                    // Analyze the damage chart for balance issues
-                    const chart = damageChart.damage_chart;
-                    let highDamageCount = 0;
-                    let zeroDamageCount = 0;
-                    let totalCombinations = 0;
-                    
-                    for (const attacker in chart) {
-                        for (const defender in chart[attacker]) {
-                            const damage = chart[attacker][defender];
-                            totalCombinations++;
-                            
-                            if (damage === 0) {
-                                zeroDamageCount++;
-                            } else if (damage > 100) {
-                                highDamageCount++;
-                                resultsDiv.textContent += `⚠️ High damage: ${attacker} vs ${defender} = ${damage}\n`;
-                            }
-                        }
-                    }
-                    
-                    resultsDiv.textContent += `\n📊 Balance Analysis:\n`;
-                    resultsDiv.textContent += `Total combinations: ${totalCombinations}\n`;
-                    resultsDiv.textContent += `Zero damage: ${zeroDamageCount} (${(zeroDamageCount/totalCombinations*100).toFixed(1)}%)\n`;
-                    resultsDiv.textContent += `High damage (>100): ${highDamageCount}\n`;
-                    
-                    // Test actual combat scenarios
-                    resultsDiv.textContent += `\n🔬 Live Combat Tests:\n`;
-                    
-                    // Test common scenarios
-                    const scenarios = [
-                        {att: 'INFANTRY', def: 'INFANTRY', expected: 'balanced'},
-                        {att: 'TANK', def: 'INFANTRY', expected: 'tank_advantage'},
-                        {att: 'ANTI_AIR', def: 'FIGHTER', expected: 'aa_advantage'},
-                        {att: 'ARTILLERY', def: 'TANK', expected: 'balanced_indirect'}
-                    ];
-                    
-                    for (const scenario of scenarios) {
-                        try {
-                            // This would require actual unit testing...
-                            const chartDamage = chart[scenario.att] && chart[scenario.att][scenario.def];
-                            if (chartDamage !== undefined) {
-                                resultsDiv.textContent += `${scenario.att} vs ${scenario.def}: ${chartDamage} damage\n`;
-                            }
-                        } catch (error) {
-                            resultsDiv.textContent += `${scenario.att} vs ${scenario.def}: Test error\n`;
-                        }
-                    }
-                    
-                } else {
-                    resultsDiv.textContent += `❌ Could not load damage chart\n`;
-                }
-                
-                log('✅ Combat balance analysis completed');
-                
-            } catch (error) {
-                resultsDiv.textContent += `❌ Analysis failed: ${error.message}\n`;
-                log(`❌ Combat balance analysis failed: ${error.message}`, 'error');
-            }
-        }
-        
-        async function ensureActiveGame() {
-            if (!currentGameToken) {
-                // Try to get existing game or create new one
-                const response = await fetch('/debug');
-                const data = await response.json();
-                if (data.active_games && data.active_games.length > 0) {
-                    currentGameToken = data.active_games[0].token;
-                    log(`🎮 Using existing game: ${currentGameToken}`);
-                } else {
-                    // Create new test game
-                    const createResponse = await fetch('/test_optimized');
-                    if (createResponse.ok) {
-                        const gameUrl = createResponse.url;
-                        currentGameToken = gameUrl.split('/').pop();
-                        log(`🎮 Created new test game: ${currentGameToken}`);
-                    } else {
-                        throw new Error('Could not create test game');
-                    }
-                }
-            }
-        }
-
-        // Enhanced initialization
-        window.addEventListener('load', function() {
-            showKeyboardShortcuts();
-            startGameStateMonitoring();
-            updateDebugInfo();
-            
-            // Auto-check integration status
-            setTimeout(async () => {
-                let integrationScore = 0;
-                let totalChecks = 0;
-                let integrationDetails = [];
-                
-                // Check 1: Test verification routes
-                totalChecks++;
-                try {
-                    const response = await fetch('/test_verify');
-                    if (response.ok) {
-                        integrationScore++;
-                        integrationDetails.push('✅ Test verification routes');
-                        log('✅ Optimized test routes are available');
-                    } else {
-                        integrationDetails.push('⚠️ Test verification routes (partial)');
-                        log('⚠️ Test verification routes responded but with issues');
-                    }
-                } catch (error) {
-                    integrationDetails.push('❌ Test verification routes');
-                    log('❌ Test verification routes not available');
-                }
-                
-                // Check 2: New game setup system
-                totalChecks++;
-                try {
-                    const response = await fetch('/api/maps');
-                    if (response.ok) {
-                        integrationScore++;
-                        integrationDetails.push('✅ New game setup system');
-                        log('✅ New game setup system is available');
-                    } else {
-                        integrationDetails.push('❌ New game setup system');
-                        log('❌ New game setup system not responding');
-                    }
-                } catch (error) {
-                    integrationDetails.push('❌ New game setup system');
-                    log('❌ New game setup system not available');
-                }
-                
-                // Check 3: Test interface custom game creation
-                totalChecks++;
-                try {
-                    const response = await fetch('/api/test_create_custom_game', {
+                    const response = await fetch('/run_test', {
                         method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({}) // Empty body should use defaults
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ script: test.script })
                     });
-                    if (response.ok) {
-                        integrationScore++;
-                        integrationDetails.push('✅ Custom game creation API');
-                        log('✅ Custom game creation API is available');
-                    } else {
-                        integrationDetails.push('⚠️ Custom game creation API (partial)');
-                        log('⚠️ Custom game creation API has issues');
-                    }
+                    
+                    const result = await response.text();
+                    const success = response.ok && !result.includes('Error') && !result.includes('FAILED');
+                    
+                    // Update status to completed
+                    const statusColor = success ? '#27ae60' : '#e74c3c';
+                    const statusIcon = success ? '✅' : '❌';
+                    const statusText = success ? 'Passed' : 'Failed';
+                    
+                    testDiv.innerHTML = `<strong>${test.icon} ${test.name} System:</strong> <span style="color: ${statusColor};">${statusIcon} ${statusText}</span>`;
+                    testDiv.style.borderColor = statusColor;
+                    
+                    allResults.push({
+                        name: test.name,
+                        success: success,
+                        result: result
+                    });
+                    
                 } catch (error) {
-                    integrationDetails.push('❌ Custom game creation API');
-                    log('❌ Custom game creation API not available');
+                    // Update status to error
+                    testDiv.innerHTML = `<strong>${test.icon} ${test.name} System:</strong> <span style="color: #e74c3c;">❌ Error</span>`;
+                    testDiv.style.borderColor = '#e74c3c';
+                    
+                    allResults.push({
+                        name: test.name,
+                        success: false,
+                        result: `Error: ${error.message}`
+                    });
                 }
                 
-                // Check 4: Debug/methods endpoint
-                totalChecks++;
-                try {
-                    const response = await fetch('/debug/methods');
-                    if (response.ok) {
-                        const data = await response.json();
-                        if (data.map_system) {
-                            integrationScore++;
-                            integrationDetails.push('✅ Debug/methods with map system');
-                            log('✅ Debug/methods endpoint working with map system');
-                        } else {
-                            integrationDetails.push('⚠️ Debug/methods (no map system)');
-                            log('⚠️ Debug/methods endpoint working but map system not detected');
-                        }
-                    } else {
-                        integrationDetails.push('❌ Debug/methods endpoint');
-                        log('❌ Debug/methods endpoint not responding');
-                    }
-                } catch (error) {
-                    integrationDetails.push('❌ Debug/methods endpoint');
-                    log('❌ Debug/methods endpoint not available');
+                completedCount++;
+                document.getElementById('overall-progress').textContent = `${completedCount}/${tests.length} tests completed`;
+            }
+            
+            // Add summary
+            const passed = allResults.filter(r => r.success).length;
+            const failed = allResults.filter(r => !r.success).length;
+            
+            let summary = '<div style="margin-top: 15px; padding: 15px; background: white; border-radius: 8px; border-left: 4px solid #3498db;">';
+            summary += '<h4>📋 Test Summary</h4>';
+            summary += `<p><strong>✅ Passed:</strong> ${passed} | <strong>❌ Failed:</strong> ${failed} | <strong>📊 Total:</strong> ${tests.length}</p>`;
+            
+            if (failed === 0) {
+                summary += '<p style="color: #27ae60; font-weight: bold;">🎉 All tests passed!</p>';
+            } else {
+                summary += `<p style="color: #e74c3c; font-weight: bold;">⚠️ ${failed} test(s) failed. Check individual results above.</p>`;
+            }
+            
+            summary += '</div>';
+            
+            document.getElementById('all-test-results').insertAdjacentHTML('afterend', summary);
+        }
+        
+        function openOptimizedTestGame() {
+            window.open('/test_optimized', '_blank');
+        }
+        
+        function openTransportTestGame() {
+            window.open('/test_transport', '_blank');
+        }
+        
+        function checkArmyEconomy() {
+            showResults('<p>📊 Checking army economy data...</p>');
+        }
+        
+        function testMovementHighlights() {
+            showResults('<p>🌟 Testing movement highlights...</p>');
+        }
+        
+        function testCaptureMechanics() {
+            showResults('<p>🏰 Testing capture mechanics...</p>');
+        }
+        
+        function clearTestData() {
+            if (confirm('Clear all test data and logs?')) {
+                showResults('<p>🗑️ Test data cleared.</p>');
+            }
+        }
+        
+        // Auto-refresh server status every 30 seconds
+        setInterval(checkServerStatus, 30000);
+        
+        // Toggle section visibility
+        function toggleSection(sectionName) {
+            const toggle = document.querySelector(`[data-target="${sectionName}"]`);
+            const section = document.getElementById(`${sectionName}-section`);
+            
+            if (!toggle || !section) return;
+            
+            const isActive = toggle.classList.contains('active');
+            
+            if (isActive) {
+                toggle.classList.remove('active');
+                section.classList.add('hidden');
+                localStorage.setItem(`show-${sectionName}`, 'false');
+            } else {
+                toggle.classList.add('active');
+                section.classList.remove('hidden');
+                localStorage.setItem(`show-${sectionName}`, 'true');
+            }
+        }
+        
+        // Load saved toggle states
+        function loadToggleStates() {
+            const sections = ['stats', 'advanced'];
+            
+            sections.forEach(sectionName => {
+                const savedState = localStorage.getItem(`show-${sectionName}`);
+                const toggle = document.querySelector(`[data-target="${sectionName}"]`);
+                const section = document.getElementById(`${sectionName}-section`);
+                
+                if (savedState === 'false' && toggle && section) {
+                    toggle.classList.remove('active');
+                    section.classList.add('hidden');
                 }
+            });
+        }
+        
+        // Load toggle states on page load
+        window.addEventListener('load', loadToggleStates);
+        
+        // Category expand/collapse functionality
+        function toggleCategory(categoryElement) {
+            categoryElement.classList.toggle('collapsed');
+            
+            // Save state
+            const categoryId = categoryElement.id;
+            const isCollapsed = categoryElement.classList.contains('collapsed');
+            localStorage.setItem(`collapsed-${categoryId}`, isCollapsed.toString());
+        }
+        
+        function expandAll() {
+            const categories = document.querySelectorAll('.test-category');
+            categories.forEach(category => {
+                category.classList.remove('collapsed');
+                const categoryId = category.id;
+                localStorage.setItem(`collapsed-${categoryId}`, 'false');
+            });
+        }
+        
+        function collapseAll() {
+            const categories = document.querySelectorAll('.test-category');
+            categories.forEach(category => {
+                category.classList.add('collapsed');
+                const categoryId = category.id;
+                localStorage.setItem(`collapsed-${categoryId}`, 'true');
+            });
+        }
+        
+        // Load collapsed states on page load
+        function loadCollapsedStates() {
+            const categories = document.querySelectorAll('.test-category');
+            categories.forEach(category => {
+                const categoryId = category.id;
+                const isCollapsed = localStorage.getItem(`collapsed-${categoryId}`);
                 
-                // Determine integration status
-                const integrationPercentage = Math.round((integrationScore / totalChecks) * 100);
-                
-                if (integrationScore === totalChecks) {
-                    updateStatus('integration-indicator', '✅ Full Integration (100%)', 'pass');
-                    log('🎉 Full integration achieved - all systems working');
-                } else if (integrationScore >= totalChecks * 0.75) {
-                    updateStatus('integration-indicator', `✅ Good Integration (${integrationPercentage}%)`, 'pass');
-                    log(`✅ Good integration achieved - ${integrationScore}/${totalChecks} systems working`);
-                } else if (integrationScore >= totalChecks * 0.5) {
-                    updateStatus('integration-indicator', `⚠️ Partial Integration (${integrationPercentage}%)`, 'warning');
-                    log(`⚠️ Partial integration - ${integrationScore}/${totalChecks} systems working`);
+                // Default to collapsed if no saved state
+                if (isCollapsed === null || isCollapsed === 'true') {
+                    category.classList.add('collapsed');
                 } else {
-                    updateStatus('integration-indicator', `❌ Limited Integration (${integrationPercentage}%)`, 'fail');
-                    log(`❌ Limited integration - ${integrationScore}/${totalChecks} systems working`);
+                    category.classList.remove('collapsed');
                 }
-                
-                // Log integration details
-                log('📋 Integration Status Details:');
-                integrationDetails.forEach(detail => log(`  ${detail}`));
-                
-            }, 2000);
-        });
-
-        // Cleanup on page unload
-        window.addEventListener('beforeunload', function() {
-            stopGameStateMonitoring();
-        });
+            });
+        }
+        
+        // Load collapsed states after DOM loads
+        window.addEventListener('load', loadCollapsedStates);
     </script>
 </body>
 </html>

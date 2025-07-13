@@ -156,11 +156,11 @@ function uuidv4() {
     );
 }
 
-function rerender() {
+async function rerender() {
     console.time('rerender');
     if (two) {
         two.clear();
-        createScene();
+        await createScene();
         two.update();
     } else {
         console.error('Two.js not initialized - calling update()');
@@ -228,7 +228,7 @@ function jsonrpc(method, params, callback) {
 
 function update() {
     console.log('Update function called');
-    jsonrpc('game_board', {}, function(res) {
+    jsonrpc('game_board', {}, async function(res) {
         console.log('Game board response received:', res);
         // Preserve the current selection before updating board
         var previousSelection = board ? board.selected : null;
@@ -301,18 +301,7 @@ function update() {
                     });
 
                     // ✅ NEW: Add this alt-click handler here
-                    canvas.addEventListener('click', function(event) {
-                        if (event.altKey) {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            
-                            const tile = getTileFromCanvasClick(event);
-                            if (tile) {
-                                handleTransportAltClick(tile, event);
-                            }
-                            return false;
-                        }
-                    });
+                    // Alt-click handling moved to main advanceWarsCanvasClick function to prevent conflicts
                 }
             } catch (error) {
                 console.error('Error initializing Two.js:', error);
@@ -321,7 +310,7 @@ function update() {
         }
         // render
         two.clear();
-        createScene();
+        await createScene();
 
         // Render both movement and attack highlights
         if (window.movementHighlights && window.movementHighlights.length > 0) {
@@ -1300,7 +1289,228 @@ function makeMapTile(tile) {
     }
 }
 
-function makeSprite(tile) {
+/**
+ * Load sprite corrector data from JSON file
+ */
+async function loadSpriteCorrector() {
+    if (window.spriteCorrections) {
+        return; // Already loaded
+    }
+    
+    try {
+        // Use the latest sprite corrections from templates directory
+        const response = await fetch('/templates/sprite_corrections_config.json');
+        const data = await response.json();
+        
+        window.spriteCorrections = data.corrections;
+        window.spriteConfig = data.spriteConfig;
+        
+        console.log('Sprite corrector data loaded successfully');
+        console.log('SpriteConfig:', window.spriteConfig);
+        console.log('Total correction categories:', Object.keys(data.corrections).length);
+        console.log('Sample blue unit coords:', data.corrections.idle?.INFANTRY_BLUE_idle_0);
+    } catch (error) {
+        console.error('Failed to load sprite corrector data:', error);
+        // Set fallback values
+        window.spriteCorrections = {};
+        window.spriteConfig = { width: 16, height: 16 };
+    }
+}
+
+/**
+ * Generate a unique texture for a unit with its HP indicator baked in
+ * This prevents HP display sharing between units of the same type
+ */
+async function generateUnitTexture(tile) {
+    // Ensure sprite corrector data is loaded
+    await loadSpriteCorrector();
+    
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Sprite dimensions: 16x16 for unit sprites, 8x8 for HP indicators
+    const SPRITESIZE = 16;  // Unit sprites are 16x16 (except HQ and MOUNTAIN)
+    const HEALTHSIZE = 8;   // HP indicators are 8x8
+    
+    // Set canvas size to accommodate unit sprite
+    canvas.width = SPRITESIZE;
+    canvas.height = SPRITESIZE;
+    
+    // Load the sprite sheet image
+    const spriteSheetImg = new Image();
+    const unitsSrc = getSelectedUnitTileset();
+    
+    return new Promise((resolve, reject) => {
+        spriteSheetImg.onload = function() {
+            console.log(`Sprite sheet loaded: ${unitsSrc}, dimensions: ${spriteSheetImg.width}x${spriteSheetImg.height}`);
+            // Use sprite corrector data to get accurate coordinates
+            let spriteKey, x, y;
+            
+            // Determine sprite state
+            const state = (!tile.unit.can_move && !tile.unit.can_attack) ? 'unavailable' : 'idle';
+            
+            // Build sprite key using sprite corrector format
+            spriteKey = `${tile.unit.type}_${tile.unit.army}_${state}_0`;
+            
+            // Get coordinates from sprite corrector data
+            if (window.spriteCorrections && window.spriteCorrections[state] && window.spriteCorrections[state][spriteKey]) {
+                const coords = window.spriteCorrections[state][spriteKey];
+                x = coords.x;
+                y = coords.y;
+                console.log(`Using sprite corrector for ${spriteKey}: x=${x}, y=${y}`);
+            } else {
+                // Enhanced fallback: Try to find coordinates based on RED army equivalent
+                const redSpriteKey = spriteKey.replace('_BLUE_', '_RED_').replace('_GREEN_', '_RED_').replace('_YELLOW_', '_RED_').replace('_GREY_', '_RED_');
+                
+                if (window.spriteCorrections && window.spriteCorrections[state] && window.spriteCorrections[state][redSpriteKey]) {
+                    // Use RED army coordinates as base and apply army offset
+                    const redCoords = window.spriteCorrections[state][redSpriteKey];
+                    x = redCoords.x;
+                    y = redCoords.y;
+                    
+                    // Apply army-specific offset based on sprite sheet layout analysis:
+                    // RED: x=3, y=104 | BLUE: x=392, y=104 | GREEN: x=3, y=672 | YELLOW: x=392, y=672 | GREY: x=339, y=1240
+                    switch (tile.unit.army) {
+                        case 'RED': 
+                            // no offset, already using RED coordinates
+                            break;
+                        case 'BLUE': 
+                            x += 389; // BLUE units are 389px to the right of RED
+                            break;
+                        case 'GREEN': 
+                            y += 568; // GREEN units are 568px below RED 
+                            break;
+                        case 'YELLOW': 
+                            x += 389; // 389px right
+                            y += 568; // 568px down
+                            break;
+                        case 'GREY': 
+                            x += 336; // 336px right 
+                            y += 1136; // 1136px down
+                            break;
+                        default: 
+                            x += 336; 
+                            y += 1136; 
+                            break;
+                    }
+                    
+                    console.log(`Using enhanced fallback for ${spriteKey} based on ${redSpriteKey}: x=${x}, y=${y}`);
+                } else {
+                    // Final fallback to original coordinate calculation
+                    console.warn(`Sprite corrector data not found for ${spriteKey}, using basic fallback coordinates`);
+                    var spriteSheetWidth = 781;
+                    var spriteSheetHeight = 1790;
+                    x = spriteSheetWidth/2 - SPRITESIZE/2;
+                    y = spriteSheetHeight/2 - SPRITESIZE/2;
+                    
+                    // Apply basic army offsets as fallback
+                    switch (tile.unit.army) {
+                        case 'RED': x -= 4; y -= 105; break;
+                        case 'BLUE': x -= 25; y -= 105; break;
+                        case 'GREEN': x -= 46; y -= 105; break;
+                        case 'YELLOW': x -= 67; y -= 105; break;
+                        default: x -= 88; y -= 105; break;
+                    }
+                    
+                    // Apply basic unit type offsets as fallback
+                    switch(tile.unit.type) {
+                        case 'MECH': x -= 21; break;
+                        case 'TANK': x -= 105; break;
+                        case 'BATTLESHIP': x -= 357; y -= 42; break;
+                    }
+                    
+                    if (!tile.unit.can_move && !tile.unit.can_attack) {
+                        x -= 336; // unavailable sprite
+                    }
+                }
+            }
+            
+            // Draw the unit sprite onto canvas
+            ctx.drawImage(
+                spriteSheetImg,
+                x, y, SPRITESIZE, SPRITESIZE,  // Source rect
+                0, 0, SPRITESIZE, SPRITESIZE   // Dest rect
+            );
+            
+            // Debug: Log what we're drawing for blue units
+            if (tile.unit.army === 'BLUE') {
+                console.log(`Drawing BLUE unit: ${spriteKey} from (${x}, ${y}) size ${SPRITESIZE}x${SPRITESIZE}`);
+            }
+            
+            // Draw HP indicator if unit is damaged
+            if (tile.unit.status.hp <= 90) {
+                var hpDigit = Math.ceil(tile.unit.status.hp / 10);
+                if (hpDigit > 9) hpDigit = 9;
+                if (hpDigit < 1) hpDigit = 1;
+                
+                // Calculate HP sprite position using sprite corrector data
+                var hpX, hpY;
+                const hpCategory = tile.unit.can_move ? 'hp_indicators' : 'hp_unavailable';
+                const hpKey = `${hpCategory}_${hpDigit - 1}`;
+                
+                if (window.spriteCorrections && window.spriteCorrections[hpCategory] && window.spriteCorrections[hpCategory][hpKey]) {
+                    const hpCoords = window.spriteCorrections[hpCategory][hpKey];
+                    hpX = hpCoords.x;
+                    hpY = hpCoords.y;
+                } else {
+                    // Fallback to hardcoded positions
+                    if (tile.unit.can_move) {
+                        // Active HP indicators
+                        hpX = 556 + (hpDigit - 1) * 9;
+                        hpY = 1233;
+                    } else {
+                        // Inactive HP indicators  
+                        hpX = 428 + (hpDigit - 1) * 9;
+                        hpY = 1233;
+                    }
+                }
+                
+                // Draw HP indicator in bottom-right corner
+                ctx.drawImage(
+                    spriteSheetImg,
+                    hpX, hpY, HEALTHSIZE, HEALTHSIZE,           // Source rect
+                    SPRITESIZE - HEALTHSIZE, SPRITESIZE - HEALTHSIZE, HEALTHSIZE, HEALTHSIZE  // Dest rect (bottom-right)
+                );
+            }
+            
+            // Convert canvas to data URL - this creates a unique texture
+            const dataURL = canvas.toDataURL();
+            resolve(dataURL);
+        };
+        
+        spriteSheetImg.onerror = function(error) {
+            console.error('Failed to load sprite sheet:', unitsSrc, error);
+            reject(error);
+        };
+        
+        spriteSheetImg.src = unitsSrc;
+    });
+}
+
+async function makeSprite(tile) {
+    try {
+        // Generate unique texture for this specific unit with HP baked in
+        const uniqueTextureURL = await generateUnitTexture(tile);
+        const SPRITESIZE = 16;
+        
+        // Create sprite using the unique texture with HP baked in
+        var spriteTexture = new Two.Texture(uniqueTextureURL);
+        var rect = two.makeRectangle(tile.x * TILESIZE + TILESIZE/2, tile.y * TILESIZE + TILESIZE/2, SPRITESIZE, SPRITESIZE);
+        rect.fill = spriteTexture;
+        rect.stroke = 'transparent';
+        
+        // Force re-render to show the new texture
+        two.update();
+        
+        return rect;
+    } catch (error) {
+        console.error('Error generating unit texture:', error);
+        // Fallback to old sprite creation method
+        makeSpriteLegacy(tile);
+    }
+}
+
+function makeSpriteLegacy(tile) {
     var spriteSheetWidth = 781;
     var spriteSheetHeight = 1790;
     const SPRITESIZE = 16;
@@ -1409,7 +1619,8 @@ function makeSprite(tile) {
     if (!tile.unit.can_move && !tile.unit.can_attack)
         x = x - 336; // unavailable sprite
     var unitsSrc = getSelectedUnitTileset();
-    var spriteTexture = new Two.Texture(unitsSrc, () => ontextureLoad(unitsSrc));
+    // Create unique texture per unit to prevent sharing between units
+    var spriteTexture = new Two.Texture(unitsSrc + '?unit=' + tile.x + '_' + tile.y, () => ontextureLoad(unitsSrc));
     spriteTexture.offset = new Two.Vector(x, y);
     var rect = two.makeRectangle(tile.x * TILESIZE + TILESIZE/2, tile.y * TILESIZE + TILESIZE/2, SPRITESIZE, SPRITESIZE);
     rect.fill = spriteTexture;
@@ -1418,28 +1629,40 @@ function makeSprite(tile) {
     var fuel = null;
     var ammo = null;
     if (tile.unit.status.hp <= 90 && tile.unit.can_move ) {
-        const HEALTHSIZE = SPRITESIZE/2;
+        const HEALTHSIZE = SPRITESIZE/2; // Unit sprites are 16x16, HP display area is 16x16
+        var hpDigit = Math.ceil(tile.unit.status.hp / 10); // 1-10 HP -> 1, 11-20 HP -> 2, etc.
+        if (hpDigit > 9) hpDigit = 9; // Cap at 9
+        if (hpDigit < 1) hpDigit = 1; // Minimum 1
+        
+        // HP Available coordinates from sprite corrector: hp_indicators_0 to hp_indicators_8 (digits 1-9)
+        // hp_indicators_0 = digit "1" at x=556, hp_indicators_1 = digit "2" at x=565, etc.
         x = spriteSheetWidth/2 - HEALTHSIZE/2;
         y = spriteSheetHeight/2 - HEALTHSIZE/2;
-        x = x - 557;
-        y = y - 1234;
-        var xMult = 9 - Math.ceil(tile.unit.status.hp / 10);
-        x = x - xMult * HEALTHSIZE;
-        var healthTexture = new Two.Texture(unitsSrc, () => ontextureLoad(unitsSrc));
+        var hpSpriteX = 556 + (hpDigit - 1) * 9;
+        x = x - hpSpriteX;
+        y = y - 1233;
+        // Create unique health texture per unit to prevent sharing (can_move=true)
+        var healthTexture = new Two.Texture(unitsSrc + '?hp_active=' + tile.x + '_' + tile.y + '_' + hpDigit, () => ontextureLoad(unitsSrc));
         healthTexture.offset = new Two.Vector(x, y);
         health = two.makeRectangle(tile.x * TILESIZE + TILESIZE - HEALTHSIZE/2, tile.y * TILESIZE + TILESIZE - HEALTHSIZE/2, HEALTHSIZE, HEALTHSIZE);
         health.fill = healthTexture;
         health.stroke = 'transparent';
     }
     if (tile.unit.status.hp <= 90 && !tile.unit.can_move ) {
-        const HEALTHSIZE = SPRITESIZE/2;
+        const HEALTHSIZE = SPRITESIZE/2; // Unit sprites are 16x16, HP display area is 16x16
+        var hpDigit = Math.ceil(tile.unit.status.hp / 10); // 1-10 HP -> 1, 11-20 HP -> 2, etc.
+        if (hpDigit > 9) hpDigit = 9; // Cap at 9
+        if (hpDigit < 1) hpDigit = 1; // Minimum 1
+        
+        // HP Unavailable coordinates from sprite corrector: hp_unavailable_0 to hp_unavailable_8 (digits 1-9)
+        // hp_unavailable_0 = digit "1" at x=428, hp_unavailable_1 = digit "2" at x=437, etc.
         x = spriteSheetWidth/2 - HEALTHSIZE/2;
         y = spriteSheetHeight/2 - HEALTHSIZE/2;
-        x = x - 428;
-        y = y - 1234;
-        var xMult = 9 - Math.ceil(tile.unit.status.hp / 10);
-        x = x - xMult * HEALTHSIZE;
-        var healthTexture = new Two.Texture(unitsSrc, () => ontextureLoad(unitsSrc));
+        var hpSpriteX = 428 + (hpDigit - 1) * 9;
+        x = x - hpSpriteX;
+        y = y - 1233;
+        // Create unique health texture per unit to prevent sharing (can_move=false)
+        var healthTexture = new Two.Texture(unitsSrc + '?hp_inactive=' + tile.x + '_' + tile.y + '_' + hpDigit, () => ontextureLoad(unitsSrc));
         healthTexture.offset = new Two.Vector(x, y);
         health = two.makeRectangle(tile.x * TILESIZE + TILESIZE - HEALTHSIZE/2, tile.y * TILESIZE + TILESIZE - HEALTHSIZE/2, HEALTHSIZE, HEALTHSIZE);
         health.fill = healthTexture;
@@ -1561,16 +1784,16 @@ function renderTransportHighlights() {
 
 // Custom cargo indicator functions removed - using authentic AW load icon from tileset instead
 
-function createScene() {
+async function createScene() {
     // create game tiles
     for (var i = 0; i < board.height; i++) {
         for (var j = 0; j < board.width; j++) {
             var tile = board.grid[j + i * board.width];
             // create map file
             makeMapTile(tile);
-            // create sprite
+            // create sprite with proper await for canvas texture generation
             if (tile.unit !== null) {
-                makeSprite(tile);
+                await makeSprite(tile);
             }
         }
     }
@@ -2898,6 +3121,16 @@ function advanceWarsCanvasClick(ev) {
     var x = ev.offsetX;
     var y = ev.offsetY;
     var tile = tileAt(x, y);
+    
+    // PRIORITY 0: New alt-click transport system (HIGHEST PRIORITY)
+    if (ev.altKey && typeof handleTransportAltClick === 'function') {
+        console.log('🔄 Processing alt-click through new transport system');
+        const handled = handleTransportAltClick(tile, ev);
+        if (handled) {
+            console.log('✅ Alt-click handled by transport system, stopping propagation');
+            return false; // Stop all further processing
+        }
+    }
     // PRIORITY 1: Frontend transport unload system (HIGHEST PRIORITY)
     if (typeof frontendTransportState !== 'undefined' && 
         frontendTransportState.showingUnloadOptions) {

@@ -251,6 +251,40 @@ class CompleteTransportSystem:
         if unload_tile and unload_tile.unit is not None:
             return False, "Unload position is occupied"
         
+        # CRITICAL FIX: Check transport positioning requirements for unloading
+        transport_tile = self.game_manager.tile_at(transport_x, transport_y)
+        transport_type = transport.type.name if hasattr(transport.type, 'name') else str(transport.type)
+        
+        if transport_type == 'LANDER':
+            # Landers can only unload when on beach or port tiles
+            transport_terrain = transport_tile.mapTile.type.name if hasattr(transport_tile.mapTile.type, 'name') else str(transport_tile.mapTile.type)
+            allowed_lander_terrains = ['BEACH_N', 'BEACH_S', 'BEACH_E', 'BEACH_W', 'PORT']
+            
+            if transport_terrain not in allowed_lander_terrains:
+                return False, f"Lander must be on beach or port to unload (currently on {transport_terrain})"
+        
+        elif transport_type == 'BLACKBOAT':
+            # Black boats (like landers) can only unload when on beach or port tiles
+            transport_terrain = transport_tile.mapTile.type.name if hasattr(transport_tile.mapTile.type, 'name') else str(transport_tile.mapTile.type)
+            allowed_blackboat_terrains = ['BEACH_N', 'BEACH_S', 'BEACH_E', 'BEACH_W', 'PORT']
+            
+            if transport_terrain not in allowed_blackboat_terrains:
+                return False, f"Black Boat must be on beach or port to unload (currently on {transport_terrain})"
+        
+        # Check if cargo unit can traverse destination terrain
+        cargo_unit = transport.status.cargo[cargo_index]
+        if unload_tile:
+            try:
+                from map_system import MOVEMENT_COST, INF
+                unit_class_index = cargo_unit.status.cls.value
+                terrain_type = unload_tile.mapTile.type
+                movement_cost = MOVEMENT_COST[terrain_type][unit_class_index]
+                
+                if movement_cost == INF:
+                    return False, f"{cargo_unit.type.name} cannot traverse {terrain_type.name} terrain"
+            except (KeyError, IndexError, AttributeError) as e:
+                return False, f"Unable to validate terrain compatibility for {cargo_unit.type.name}: {e}"
+        
         return True, "Unit can be unloaded"
     
     def unload_unit_enhanced(self, transport, cargo_index: int, transport_x: int, transport_y: int, 
