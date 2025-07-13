@@ -57,7 +57,7 @@ python3 app.py
 - **APC**: Infantry/Mech transport with auto-resupply capability
 - **T-Copter**: Air transport for Infantry/Mech
 - **Lander**: Naval transport for ground units (2 slots)
-- **Black Boat**: Infantry/Mech transport with repair capability (up to 10 HP max)
+- **Black Boat**: Infantry/Mech transport with repair capability (up to 10 visual HP / 90 actual HP max)
 - **Cruiser**: Helicopter transport with resupply
 - **Carrier**: Fighter/Bomber transport (2 slots)
 
@@ -134,7 +134,7 @@ python3 tests/integration/test_victory_conditions.py
 
 ### Recently Completed
 - [x] APC/Cruiser/Carrier auto-resupply at turn start
-- [x] Black Boat manual repair command (up to 2 HP per action, max 10 HP total)
+- [x] Black Boat manual repair command (up to 2 HP per action, max 10 visual HP / 90 actual HP)
 - [x] Comprehensive repair and refuel testing suite
 - [x] Test interface integration for repair/refuel tests
 
@@ -175,7 +175,7 @@ rpc('cargo_exit_transport', {token, transport_x, transport_y, exit_x, exit_y, ca
 rpc('unit_create', {token, army, unit_type, x, y})
 rpc('get_production_options', {token, x, y})
 
-// Repair (Black Boat - up to 2 HP per action, max 10 HP total)
+// Repair & Resupply (Black Boat - up to 2 HP per action, max 10 visual HP)
 rpc('repair_unit', {token, blackboat_x, blackboat_y, target_x, target_y, hp_to_repair})
 
 // Manual Resupply (Black Boat/APC - FREE)

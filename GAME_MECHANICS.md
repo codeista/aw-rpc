@@ -82,7 +82,7 @@
 4. **Black Boat**
    - Capacity: 2 Infantry/Mech
    - Loading: Beaches and ports only
-   - Special: Can manually repair adjacent units (up to 2 HP per action, max 10 HP total, costs 10% per HP)
+   - Special: Can manually repair adjacent units (up to 2 HP per action, max 10 visual HP / 90 actual HP, costs 10% per HP) AND resupply fuel/ammo
 
 5. **Cruiser**
    - Capacity: 2 helicopters
@@ -118,7 +118,7 @@
 #### Repair System
 - Automatic repair at friendly facilities (20 HP/turn)
 - Costs 10% of unit cost per HP
-- Black Boat manual repair (adjacent units, up to 2 HP per action, max 10 HP total)
+- Black Boat manual repair (adjacent units, up to 2 HP per action, max 10 visual HP)
 
 #### Fog of War (Not Yet Implemented)
 - Units have vision range

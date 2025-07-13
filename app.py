@@ -11,6 +11,7 @@ from functools import wraps
 import time
 import json
 import traceback
+import math
 
 import subprocess
 import threading
@@ -4060,35 +4061,37 @@ def repair_unit_rpc(token: str, blackboat_x: int, blackboat_y: int,
         if distance != 1:
             return {"success": False, "error": "Target must be adjacent to Black Boat"}
         
-        # Check if target needs repair
-        if target.status.hp >= 100:
-            return {"success": False, "error": "Target is already at full health"}
-        
-        # Black Boat can only repair units up to 10 HP maximum
-        if target.status.hp >= 10:
-            return {"success": False, "error": "Black Boat can only repair units up to 10 HP"}
+        # Black Boat can only repair units up to 10 visual HP (91-100 actual HP)
+        # But can still resupply units at full HP
+        can_repair_hp = target.status.hp <= 90
         
         # Validate hp_to_repair (1-2 HP max)
         hp_to_repair = max(1, min(2, hp_to_repair))
         
-        # Calculate actual HP to repair (can't exceed 100 OR 10 HP limit)
-        actual_hp_to_repair = min(hp_to_repair, min(100, 10) - target.status.hp)
+        # Calculate actual HP to repair
+        if can_repair_hp:
+            actual_hp_to_repair = min(hp_to_repair, 100 - target.status.hp)
+        else:
+            actual_hp_to_repair = 0
         
-        # Calculate cost (10% of unit cost per HP)
-        unit_cost = mngr.config.units[target.type.name].cost
-        repair_cost = int(unit_cost * 0.1 * actual_hp_to_repair)
+        # Calculate cost (10% of unit cost per HP repaired)
+        repair_cost = 0
+        if actual_hp_to_repair > 0:
+            unit_cost = mngr.config.units[target.type.name].cost
+            repair_cost = int(unit_cost * 0.1 * actual_hp_to_repair)
+            
+            # Check funds
+            current_funds = mngr._get_army_funds(blackboat.army)
+            if current_funds < repair_cost:
+                return {
+                    "success": False, 
+                    "error": f"Insufficient funds. Need {repair_cost}, have {current_funds}"
+                }
         
-        # Check funds
-        current_funds = mngr._get_army_funds(blackboat.army)
-        if current_funds < repair_cost:
-            return {
-                "success": False, 
-                "error": f"Insufficient funds. Need {repair_cost}, have {current_funds}"
-            }
-        
-        # Perform repair
+        # Perform repair (if applicable)
         old_hp = target.status.hp
-        target.status.hp = min(100, target.status.hp + actual_hp_to_repair)
+        if actual_hp_to_repair > 0:
+            target.status.hp = min(100, target.status.hp + actual_hp_to_repair)
         new_hp = target.status.hp
         
         # ALSO RESUPPLY fuel and ammo (Black Boat repair includes resupply)
@@ -4143,7 +4146,7 @@ def repair_unit_rpc(token: str, blackboat_x: int, blackboat_y: int,
         
         return {
             "success": True,
-            "message": f"Repaired {actual_hp_to_repair} HP + resupplied fuel/ammo for {repair_cost} funds",
+            "message": f"Repaired {actual_hp_to_repair} HP + resupplied fuel/ammo for {repair_cost} funds" if actual_hp_to_repair > 0 else "Resupplied fuel/ammo (FREE)",
             "hp_repaired": actual_hp_to_repair,
             "old_hp": old_hp,
             "new_hp": new_hp,

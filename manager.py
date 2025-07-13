@@ -425,7 +425,7 @@ class GameManager:
         
         # Attacker damages defender
         damage = attacker.attack_damage(defender, defender_tile)
-        defender.status.hp -= damage
+        defender.status.hp = max(0, defender.status.hp - damage)
         attacker.status.ammo -= 1
         
         # Log to app logger instead of print
@@ -443,7 +443,7 @@ class GameManager:
         if defender.status.hp > 0 and defender.is_direct() and attacker.is_direct():
             defender_hp_for_counter = defender.status.hp  # Store defender HP before counter calculation
             counter_damage = defender.attack_damage(attacker, attacker_tile)
-            attacker.status.hp -= counter_damage
+            attacker.status.hp = max(0, attacker.status.hp - counter_damage)
             defender.status.ammo -= 1
             try:
                 logger.info(f"💥 COUNTER: {defender.type.name}({defender_hp_for_counter}HP) → {attacker.type.name}({attacker_initial_hp}HP) = {counter_damage} damage")

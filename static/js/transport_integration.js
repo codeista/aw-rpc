@@ -797,13 +797,13 @@ function handleTransportRightClick(tile, event) {
             targetHP,
             targetStatus: tile.unit.status,
             targetHPLow: targetHP < 100,
-            willShowMenu: isBlackBoat && isAdjacent && sameTeam && targetHP < 100
+            willShowMenu: isBlackBoat && isAdjacent && sameTeam && (targetHP <= 90 || true)  // Show for repair or resupply
         });
         
         // Check if we should show context menu for repair or resupply
-        const canRepair = isBlackBoat && targetHP < 100;
+        const canRepair = isBlackBoat && targetHP <= 90;  // Can only repair up to 10 visual HP (91-100 actual)
         const isAPC = selectedUnit.type === 'APC';
-        const canResupply = (isBlackBoat || isAPC);
+        const canResupply = (isBlackBoat || isAPC);  // Can always resupply regardless of HP
         
         if (isAdjacent && sameTeam && (canRepair || canResupply)) {
             console.log('🔧 Showing repair/resupply context menu', {
