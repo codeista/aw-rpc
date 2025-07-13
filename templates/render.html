@@ -109,6 +109,48 @@
             backdrop-filter: blur(10px);
             box-shadow: 0 4px 16px rgba(0,0,0,0.3);
             min-height: 0; /* Allow flex shrinking */
+            position: relative;
+        }
+        
+        /* Zoom controls for desktop */
+        .zoom-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 5px;
+            z-index: 100;
+        }
+        
+        .zoom-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(52, 152, 219, 0.8);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        
+        .zoom-btn:hover {
+            background: rgba(52, 152, 219, 1);
+            transform: scale(1.1);
+        }
+        
+        .zoom-btn:active {
+            transform: scale(0.95);
+        }
+        
+        @media (max-width: 768px) {
+            .zoom-controls {
+                display: none; /* Hide desktop zoom on mobile */
+            }
         }
 
         .board-container {
@@ -780,6 +822,11 @@
                 </button>
             </div>
             
+            <div class="zoom-controls">
+                <button class="zoom-btn" onclick="zoomIn()" title="Zoom In">+</button>
+                <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out">−</button>
+                <button class="zoom-btn" onclick="zoomReset()" title="Reset Zoom">⟲</button>
+            </div>
             <div class="board-container">
                 <div id="draw" x-token="{{token}}"></div>
             </div>
@@ -1214,6 +1261,14 @@
                 from { transform: translateX(0); opacity: 1; }
                 to { transform: translateX(100%); opacity: 0; }
             }
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            @keyframes fadeOut {
+                from { opacity: 1; }
+                to { opacity: 0; }
+            }
         `;
         document.head.appendChild(style);
         
@@ -1312,23 +1367,23 @@
                 /* Mobile action buttons */
                 .mobile-action-buttons {
                     position: fixed;
-                    bottom: 70px;
-                    right: 10px;
+                    bottom: 65px;
+                    right: 8px;
                     display: flex;
                     flex-direction: column;
-                    gap: 8px;
+                    gap: 6px;
                     z-index: 99;
                 }
                 
                 .mobile-action-btn {
-                    width: 50px;
-                    height: 50px;
+                    width: 40px;
+                    height: 40px;
                     border-radius: 50%;
                     background: linear-gradient(135deg, #3498db, #2980b9);
                     color: white;
                     border: none;
                     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                    font-size: 20px;
+                    font-size: 16px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
@@ -1392,6 +1447,8 @@
                 <button class="mobile-action-btn" onclick="showMobileMenu()" title="Menu">☰</button>
                 <button class="mobile-action-btn" onclick="endTurn()" title="End Turn">⏭</button>
                 <button class="mobile-action-btn" onclick="toggleSidebar()" title="Info">ℹ</button>
+                <button class="mobile-action-btn" onclick="zoomIn()" title="Zoom In">+</button>
+                <button class="mobile-action-btn" onclick="zoomOut()" title="Zoom Out">−</button>
             `;
             document.body.appendChild(mobileButtons);
         }
@@ -1466,6 +1523,110 @@
                 showMobileNotification('Turn ended');
             }
         };
+        
+        // Zoom functionality
+        let currentZoom = 1.0;
+        const zoomStep = 0.1;
+        const minZoom = 0.5;
+        const maxZoom = 2.0;
+        
+        window.zoomIn = function() {
+            if (currentZoom < maxZoom) {
+                currentZoom += zoomStep;
+                applyZoom();
+            }
+        };
+        
+        window.zoomOut = function() {
+            if (currentZoom > minZoom) {
+                currentZoom -= zoomStep;
+                applyZoom();
+            }
+        };
+        
+        window.zoomReset = function() {
+            currentZoom = 1.0;
+            applyZoom();
+        };
+        
+        function applyZoom() {
+            const canvas = document.querySelector('#draw canvas');
+            if (canvas) {
+                canvas.style.transform = `scale(${currentZoom})`;
+                canvas.style.transformOrigin = 'center center';
+                
+                // Show zoom level
+                const zoomPercent = Math.round(currentZoom * 100);
+                if (window.innerWidth <= 768) {
+                    showMobileNotification(`Zoom: ${zoomPercent}%`);
+                } else {
+                    // Desktop notification
+                    const notification = document.createElement('div');
+                    notification.style.cssText = `
+                        position: fixed;
+                        top: 70px;
+                        right: 20px;
+                        background: rgba(52, 152, 219, 0.9);
+                        color: white;
+                        padding: 8px 16px;
+                        border-radius: 20px;
+                        font-size: 14px;
+                        z-index: 1000;
+                        animation: fadeIn 0.3s ease;
+                    `;
+                    notification.textContent = `Zoom: ${zoomPercent}%`;
+                    document.body.appendChild(notification);
+                    
+                    setTimeout(() => {
+                        notification.style.animation = 'fadeOut 0.3s ease';
+                        setTimeout(() => notification.remove(), 300);
+                    }, 1500);
+                }
+                
+                // Store zoom level in localStorage
+                localStorage.setItem('gameZoomLevel', currentZoom);
+            }
+        }
+        
+        // Restore zoom level on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedZoom = localStorage.getItem('gameZoomLevel');
+            if (savedZoom) {
+                currentZoom = parseFloat(savedZoom);
+                setTimeout(applyZoom, 500); // Wait for canvas to be ready
+            }
+        });
+        
+        // Add keyboard shortcuts for zoom
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                if (e.key === '+' || e.key === '=') {
+                    e.preventDefault();
+                    zoomIn();
+                } else if (e.key === '-') {
+                    e.preventDefault();
+                    zoomOut();
+                } else if (e.key === '0') {
+                    e.preventDefault();
+                    zoomReset();
+                }
+            }
+        });
+        
+        // Add mouse wheel zoom support
+        document.addEventListener('wheel', function(e) {
+            if (e.ctrlKey) {
+                e.preventDefault();
+                const canvas = document.querySelector('#draw canvas');
+                if (canvas && canvas.contains(e.target)) {
+                    if (e.deltaY < 0) {
+                        zoomIn();
+                    } else {
+                        zoomOut();
+                    }
+                }
+            }
+        }, { passive: false });
         
         // Add swipe support for sidebar
         if (window.innerWidth <= 768) {
