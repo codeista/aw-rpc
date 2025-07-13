@@ -2687,14 +2687,14 @@ function canUnitTraverseTerrain(unit, terrainType) {
     // Define terrain movement rules
     // This is a simplified version - expand based on your game rules
     
-    var landUnits = ['INFANTRY', 'MECH', 'RECON', 'TANK', 'MD_TANK', 'NEOTANK', 
-                     'APC', 'ARTILLERY', 'ROCKET', 'ANTI_AIR', 'MISSILE'];
-    var seaUnits = ['BATTLESHIP', 'CRUISER', 'LANDER', 'SUB'];
-    var airUnits = ['FIGHTER', 'BOMBER', 'B_COPTER', 'T_COPTER'];
+    var landUnits = ['INFANTRY', 'MECH', 'RECON', 'TANK', 'MEDIUMTANK', 'NEOTANK', 'MEGATANK',
+                     'APC', 'ARTILLERY', 'ROCKET', 'ANTIAIR', 'MISSILE', 'PIPERUNNER'];
+    var seaUnits = ['BATTLESHIP', 'CRUISER', 'LANDER', 'SUB', 'BLACKBOAT', 'CARRIER'];
+    var airUnits = ['FIGHTER', 'BOMBER', 'BCOPTER', 'TCOPTER', 'STEALTH'];
     
-    // Sea units can only move on sea/reef
+    // Sea units can only move on sea/reef/beach/port
     if (seaUnits.includes(unit.type)) {
-        return ['SEA', 'REEF'].includes(terrainType);
+        return ['SEA', 'REEF', 'BEACH_N', 'BEACH_S', 'BEACH_E', 'BEACH_W', 'PORT'].includes(terrainType);
     }
     
     // Air units can move anywhere
