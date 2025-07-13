@@ -24,7 +24,23 @@ class TransportCapability:
     auto_resupply_cargo: bool = False
 
 class CompleteTransportSystem:
-    """Complete transport system with all AW mechanics"""
+    """Complete transport system implementing all Advance Wars transport mechanics.
+    
+    Transport types and their capabilities:
+    - APC: Carries 1 Infantry/Mech, auto-resupplies adjacent units at turn start
+    - T-Copter: Carries 1 Infantry/Mech, air transport
+    - Lander: Carries 2 ground units, loads/unloads at beaches
+    - Black Boat: Carries 2 Infantry/Mech, can repair adjacent units (manual, 2HP max)
+    - Cruiser: Carries 2 helicopters, auto-resupplies cargo at turn start
+    - Carrier: Carries 2 planes, auto-resupplies cargo at turn start
+    
+    Key mechanics:
+    - Units move INTO transports to board (not transport picking them up)
+    - Unloaded units cannot act on the same turn
+    - Transport cannot move after unloading
+    - Some transports have terrain restrictions for loading
+    - Auto-resupply happens at turn start for specific transports
+    """
     
     def __init__(self, game_manager):
         self.game_manager = game_manager

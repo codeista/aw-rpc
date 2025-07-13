@@ -491,6 +491,12 @@ function seaunitCreate(tile) {
 
 function unitSelect(tile) {
     jsonrpc('unit_select', {x: tile.x, y: tile.y});
+    // Update gameState for context menu
+    if (tile.unit) {
+        window.gameState.selectedUnit = tile.unit;
+        window.gameState.selectedUnit.x = tile.x;
+        window.gameState.selectedUnit.y = tile.y;
+    }
 }
 
 function unitCapture(tile) {
@@ -550,6 +556,43 @@ function unitMove(tile) {
             console.error('❌ Move failed:', error);
             // Don't clear highlights if move failed
         });
+}
+
+//
+// Unit context menu handling
+//
+function handleUnitRightClick(tile, event) {
+    console.log('Right-click on tile:', tile);
+    
+    // Check if we have a selected unit and clicked on an adjacent unit
+    if (window.gameState && window.gameState.selectedUnit && tile.unit) {
+        const selectedUnit = window.gameState.selectedUnit;
+        
+        // Check if the selected unit is a Black Boat
+        const isBlackBoat = selectedUnit.type === 'BLACKBOAT' || selectedUnit.type === 'BLACK_BOAT';
+        
+        // Check if clicked unit is adjacent to selected unit
+        const distance = Math.abs(selectedUnit.x - tile.x) + Math.abs(selectedUnit.y - tile.y);
+        const isAdjacent = distance === 1;
+        
+        // Check if both units are on the same team
+        const sameTeam = selectedUnit.army === tile.unit.army;
+        
+        if (isBlackBoat && isAdjacent && sameTeam && tile.unit.hp < 100) {
+            // Show context menu for repair
+            if (typeof showUnitContextMenu === 'function') {
+                showUnitContextMenu(event.pageX, event.pageY, selectedUnit, tile.unit);
+            }
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+// Alias for legacy code
+function handleTransportRightClick(tile, event) {
+    return handleUnitRightClick(tile, event);
 }
 
 //

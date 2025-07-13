@@ -39,7 +39,7 @@ def run_quick_tests():
         'test_06_error_handling_robustness'
     ]
     
-    import integration_testing_suite
+    from system import integration_testing_suite
     
     for test_name in quick_tests:
         try:
@@ -64,7 +64,7 @@ def run_full_tests():
     print("=" * 40)
     
     try:
-        from integration_testing_suite import run_integration_tests
+        from system.integration_testing_suite import run_integration_tests
         return run_integration_tests()
     except Exception as e:
         print(f"❌ Test suite failed: {e}")

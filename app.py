@@ -2112,6 +2112,33 @@ def game_create_rpc(token: str) -> str:
     except Exception as ex:
         return handle_rpc_error('game_create', token, ex)
 
+@jsonrpc.method('game_create_test')
+@log_rpc_performance
+def game_create_test_rpc(token: str, use_optimized: bool = True) -> str:
+    '''Create a test game with optimized map and settings'''
+    try:
+        if use_optimized:
+            # Use the optimized test map with 50k starting funds
+            mngr = get_optimized_test_game(token)
+            game = Game(mngr.board, token)
+            db.session.add(game)
+            db.session.commit()
+            
+            games[token] = mngr
+            
+            if ENHANCED_LOGGING:
+                game_event_logger.log_game_created(token, len(mngr.board.turn_order))
+            
+            app_logger.info(f"Test game created with optimized map: {token}")
+            return 'ok'
+        else:
+            # Use regular test creation
+            game_create(token)
+            return 'ok'
+    except Exception as ex:
+        app_logger.error(f'game_create_test failed for {token}: {str(ex)}')
+        raise ex  # Let Flask-JSONRPC handle the error properly
+
 @jsonrpc.method('game_board')
 @log_rpc_performance
 def game_board_rpc(token: str) -> dict:
@@ -3988,6 +4015,126 @@ def can_unload_unit_rpc(token: str, transport_x: int, transport_y: int,
         
     except Exception as e:
         app_logger.error(f"Can unload unit failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+
+@jsonrpc.method('repair_unit')
+@log_rpc_performance
+def repair_unit_rpc(token: str, blackboat_x: int, blackboat_y: int, 
+                    target_x: int, target_y: int, hp_to_repair: int = 1) -> dict:
+    """
+    Black Boat manual repair command
+    Repairs adjacent unit up to 2 HP (costs 10% of unit cost per HP)
+    """
+    try:
+        mngr = game_load(token)
+        
+        # Validate coordinates
+        coords = [blackboat_x, blackboat_y, target_x, target_y]
+        if not all(0 <= coord < mngr.board.width or 0 <= coord < mngr.board.height for coord in coords):
+            return {"success": False, "error": "Invalid coordinates"}
+        
+        # Get units
+        blackboat = mngr.unit_at(blackboat_x, blackboat_y)
+        target = mngr.unit_at(target_x, target_y)
+        
+        if not blackboat:
+            return {"success": False, "error": "No unit at Black Boat position"}
+        if not target:
+            return {"success": False, "error": "No unit at target position"}
+        
+        # Verify it's a Black Boat (could be BLACK_BOAT or BLACKBOAT)
+        unit_type = blackboat.type.name if hasattr(blackboat.type, 'name') else str(blackboat.type)
+        if unit_type not in ['BLACK_BOAT', 'BLACKBOAT']:
+            return {"success": False, "error": f"Unit at ({blackboat_x}, {blackboat_y}) is not a Black Boat (found: {unit_type})"}
+        
+        # Check turn ownership
+        if blackboat.army != mngr.board.current_turn:
+            return {"success": False, "error": "Not your turn"}
+        
+        # Check target is friendly
+        if target.army != blackboat.army:
+            return {"success": False, "error": "Can only repair friendly units"}
+        
+        # Check adjacency (Manhattan distance = 1)
+        distance = abs(blackboat_x - target_x) + abs(blackboat_y - target_y)
+        if distance != 1:
+            return {"success": False, "error": "Target must be adjacent to Black Boat"}
+        
+        # Check if target needs repair
+        if target.status.hp >= 100:
+            return {"success": False, "error": "Target is already at full health"}
+        
+        # Validate hp_to_repair (1-2 HP max)
+        hp_to_repair = max(1, min(2, hp_to_repair))
+        
+        # Calculate actual HP to repair (can't exceed 100)
+        actual_hp_to_repair = min(hp_to_repair, 100 - target.status.hp)
+        
+        # Calculate cost (10% of unit cost per HP)
+        unit_cost = mngr.config.units[target.type].price
+        repair_cost = int(unit_cost * 0.1 * actual_hp_to_repair)
+        
+        # Check funds
+        current_funds = mngr.board.get_army_funds(blackboat.army)
+        if current_funds < repair_cost:
+            return {
+                "success": False, 
+                "error": f"Insufficient funds. Need {repair_cost}, have {current_funds}"
+            }
+        
+        # Perform repair
+        old_hp = target.status.hp
+        target.status.hp = min(100, target.status.hp + actual_hp_to_repair)
+        new_hp = target.status.hp
+        
+        # Deduct funds
+        mngr.board.set_army_funds(blackboat.army, current_funds - repair_cost)
+        
+        # Save changes
+        game_save(mngr)
+        
+        # Log event
+        if ENHANCED_LOGGING:
+            game_event_logger.log_event(
+                game_id=token,
+                event_type="REPAIR",
+                details={
+                    "blackboat_position": [blackboat_x, blackboat_y],
+                    "target_position": [target_x, target_y],
+                    "target_type": target.type.name if hasattr(target.type, 'name') else str(target.type),
+                    "hp_repaired": actual_hp_to_repair,
+                    "old_hp": old_hp,
+                    "new_hp": new_hp,
+                    "repair_cost": repair_cost
+                }
+            )
+        
+        app_logger.info(f"Unit repaired: {token} - Black Boat at ({blackboat_x},{blackboat_y}) repaired {target.type} at ({target_x},{target_y}) for {actual_hp_to_repair} HP (cost: {repair_cost})")
+        
+        # Notify via websocket
+        update_msg = {
+            "type": "unit_repaired",
+            "blackboat_position": {"x": blackboat_x, "y": blackboat_y},
+            "target_position": {"x": target_x, "y": target_y},
+            "hp_repaired": actual_hp_to_repair,
+            "new_hp": new_hp,
+            "repair_cost": repair_cost,
+            "remaining_funds": mngr.board.get_army_funds(blackboat.army)
+        }
+        ws_update(token, mngr, json.dumps(update_msg))
+        
+        return {
+            "success": True,
+            "message": f"Repaired {actual_hp_to_repair} HP for {repair_cost} funds",
+            "hp_repaired": actual_hp_to_repair,
+            "old_hp": old_hp,
+            "new_hp": new_hp,
+            "repair_cost": repair_cost,
+            "remaining_funds": mngr.board.get_army_funds(blackboat.army)
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Repair unit failed: {token} - {str(e)}")
         return {"success": False, "error": str(e)}
 
 # =============================================================================

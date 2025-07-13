@@ -82,42 +82,47 @@ class MovementTester:
     def _find_movable_units(self, board):
         """Find units that can move for testing"""
         movable_units = []
+        current_turn = board.get("current_turn", "")
         
-        for tile in board.get("grid", []):
-            # Handle string tiles
-            if isinstance(tile, str):
-                try:
-                    tile = json.loads(tile)
-                except json.JSONDecodeError:
-                    continue
-            
-            if tile.get("unit"):
-                unit = tile["unit"]
-                
-                # Handle string units
-                if isinstance(unit, str):
-                    try:
-                        unit = json.loads(unit)
-                    except json.JSONDecodeError:
-                        continue
-                
-                # Check if unit belongs to current turn army
-                army = unit.get("army", {})
-                if isinstance(army, dict):
-                    army_name = army.get("name", "")
-                else:
-                    army_name = str(army)
-                
-                # Only include units from current turn
-                current_turn = board.get("current_turn", "")
-                if army_name == current_turn:
-                    unit_info = {
-                        "x": tile["x"],
-                        "y": tile["y"],
-                        "type": unit.get("type", {}).get("name", "") if isinstance(unit.get("type"), dict) else str(unit.get("type", "")),
-                        "army": army_name
-                    }
-                    movable_units.append(unit_info)
+        # Handle different board structures
+        tiles = board.get("tiles", board.get("grid", []))
+        
+        # If tiles is a 2D array (like in the test map)
+        if tiles and isinstance(tiles[0], list):
+            for y, row in enumerate(tiles):
+                for x, tile in enumerate(row):
+                    if isinstance(tile, dict) and tile.get("unit"):
+                        unit = tile["unit"]
+                        # Check if unit belongs to current turn army
+                        army_name = unit.get("army", "")
+                        if army_name == current_turn:
+                            unit_info = {
+                                "x": x,
+                                "y": y,
+                                "type": unit.get("type", "UNKNOWN"),
+                                "army": army_name
+                            }
+                            movable_units.append(unit_info)
+        else:
+            # Handle flat grid structure
+            for tile in tiles:
+                if isinstance(tile, dict) and tile.get("unit"):
+                    unit = tile["unit"]
+                    # Check if unit belongs to current turn army
+                    army = unit.get("army", {})
+                    if isinstance(army, dict):
+                        army_name = army.get("name", "")
+                    else:
+                        army_name = str(army)
+                    
+                    if army_name == current_turn:
+                        unit_info = {
+                            "x": tile.get("x", 0),
+                            "y": tile.get("y", 0),
+                            "type": unit.get("type", {}).get("name", "") if isinstance(unit.get("type"), dict) else str(unit.get("type", "")),
+                            "army": army_name
+                        }
+                        movable_units.append(unit_info)
         
         return movable_units
     
@@ -142,16 +147,28 @@ class MovementTester:
         
         # Count all units by army
         all_units = {}
-        for tile in board.get("grid", []):
-            if isinstance(tile, dict) and tile.get("unit"):
-                unit = tile["unit"]
-                if isinstance(unit, dict):
-                    army = unit.get("army", {})
-                    if isinstance(army, dict):
-                        army_name = army.get("name", "UNKNOWN")
-                    else:
-                        army_name = str(army)
-                    all_units[army_name] = all_units.get(army_name, 0) + 1
+        tiles = board.get("tiles", board.get("grid", []))
+        
+        if tiles and isinstance(tiles[0], list):
+            # 2D array structure
+            for row in tiles:
+                for tile in row:
+                    if isinstance(tile, dict) and tile.get("unit"):
+                        unit = tile["unit"]
+                        army_name = unit.get("army", "UNKNOWN")
+                        all_units[army_name] = all_units.get(army_name, 0) + 1
+        else:
+            # Flat structure
+            for tile in tiles:
+                if isinstance(tile, dict) and tile.get("unit"):
+                    unit = tile["unit"]
+                    if isinstance(unit, dict):
+                        army = unit.get("army", {})
+                        if isinstance(army, dict):
+                            army_name = army.get("name", "UNKNOWN")
+                        else:
+                            army_name = str(army)
+                        all_units[army_name] = all_units.get(army_name, 0) + 1
         
         print(f"   📊 Units by army: {all_units}")
         

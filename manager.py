@@ -45,7 +45,22 @@ MISSILE_DAMAGE_PATTERN = [
 
 
 class GameManager:
-    """Manages game logic and state for Advance Wars RPC game."""
+    """Manages game logic and state for Advance Wars RPC game.
+    
+    This is the core game engine that handles:
+    - Unit movement, combat, and special actions
+    - Turn management and victory conditions
+    - Transport system integration (load/unload units)
+    - Property capture and income generation
+    - Auto-resupply for APCs, Cruisers, and Carriers
+    
+    Key game rules:
+    - Units cannot move on the turn they are created
+    - Units can only act once per turn (move OR attack, not both)
+    - Infantry/Mech can capture properties over multiple turns
+    - Funds are gained at turn start (1000 per property)
+    - Victory by HQ capture, elimination, or property control
+    """
     
     def __init__(self, config: Config, board: GameBoard):
         self.config = config
@@ -531,7 +546,22 @@ class GameManager:
     # =============================================================================
     
     def unit_can_move_to(self, unit: Unit, x: int, y: int) -> bool:
-        """Enhanced movement validation for UI indicators"""
+        """Check if a unit can move to the target position.
+        
+        Movement rules:
+        - Unit must have can_move=True (not moved this turn)
+        - Target must be within movement range (based on fuel and terrain)
+        - Path must exist through passable terrain
+        - Target tile must not have an enemy unit
+        - Friendly units can be passed through but not stopped on
+        
+        Args:
+            unit: The unit to check movement for
+            x, y: Target coordinates
+            
+        Returns:
+            bool: True if the unit can move to this position
+        """
         
         # Get unit's current position
         tile = self.tile_from_unit(unit)
@@ -737,7 +767,32 @@ class GameManager:
                 tile.can_be_attacked = False
                 
     def unit_move(self, x: int, y: int, x2: int, y2: int) -> Unit:
-        """Enhanced unit movement with proper validation and fuel consumption"""
+        """Move a unit from one position to another.
+        
+        Movement process:
+        1. Validates unit exists and belongs to current player
+        2. Checks if unit has already moved this turn
+        3. Calculates path and fuel cost
+        4. Moves unit and consumes fuel
+        5. Handles special cases (transport boarding, etc.)
+        6. Marks unit as having moved (can_move = False)
+        
+        Special rules:
+        - Units created this turn cannot move (can_move starts False)
+        - Moving into a friendly transport automatically loads the unit
+        - Fuel is consumed based on terrain traversed
+        - Air/sea units crash/sink if they run out of fuel
+        
+        Args:
+            x, y: Starting position
+            x2, y2: Target position
+            
+        Returns:
+            Unit: The moved unit
+            
+        Raises:
+            MovementError: If movement is invalid
+        """
         
         # Basic validation
         self._validate_coordinates(x, y)
@@ -844,7 +899,32 @@ class GameManager:
         return unit
 
     def unit_create(self, army: str, unit_type: str, x: int, y: int) -> Unit:
-        """Create a unit at the given coordinates."""
+        """Create a new unit at the specified coordinates.
+        
+        Creation rules:
+        - Must be current player's turn
+        - Tile must be a production facility (Factory, Airport, Port)
+        - Facility must belong to the creating army
+        - Tile must be empty (no existing unit)
+        - Army must have sufficient funds
+        - Created units start with can_move=False (cannot move this turn)
+        
+        Facility types:
+        - FACTORY: Creates ground units (Infantry, Tanks, etc.)
+        - AIRPORT: Creates air units (Fighters, Bombers, etc.)
+        - PORT: Creates naval units (Battleships, Subs, etc.)
+        
+        Args:
+            army: Army name (RED, BLUE, etc.)
+            unit_type: Unit type name (INFANTRY, TANK, etc.)
+            x, y: Coordinates of production facility
+            
+        Returns:
+            Unit: The newly created unit
+            
+        Raises:
+            ValueError: If creation is invalid
+        """
         army_enum = Army[army.upper()]
         unit_type_enum = UnitType[unit_type.upper()]
         
@@ -1456,6 +1536,10 @@ class GameManager:
                 if self.is_apc(tile.unit):
                     self._apc_auto_resupply_adjacent(tile)
                 
+                # Cruiser/Carrier auto-resupply carried units at turn start
+                if self.is_cruiser_or_carrier(tile.unit):
+                    self._auto_resupply_cargo(tile.unit)
+                
                 # Process unit turn start effects
                 self._process_unit_turn_start(tile.unit, tile)
             elif not tile.unit and tile.mapTile.is_capturable():
@@ -1484,6 +1568,22 @@ class GameManager:
                     adj_tile.unit.army == apc_tile.unit.army and
                     adj_tile.unit != apc_tile.unit):
                     self.resupply_unit(adj_tile.unit)
+    
+    def is_cruiser_or_carrier(self, unit) -> bool:
+        """Check if unit is a Cruiser or Carrier"""
+        if not unit or not hasattr(unit, 'type'):
+            return False
+        unit_type = unit.type.name if hasattr(unit.type, 'name') else str(unit.type)
+        return unit_type in ['CRUISER', 'CARRIER']
+    
+    def _auto_resupply_cargo(self, transport) -> None:
+        """Auto-resupply units in transport's cargo (for Cruiser/Carrier)"""
+        if hasattr(transport.status, 'cargo') and transport.status.cargo:
+            for cargo_unit in transport.status.cargo:
+                if cargo_unit:  # Skip empty slots
+                    self.resupply_unit(cargo_unit)
+                    if hasattr(self, 'app_logger'):
+                        self.app_logger.info(f"{transport.type.name} auto-resupplied {cargo_unit.type.name}")
     
     def _validate_move_destination(self, x: int, y: int, moving_unit):
         """Validate the destination tile for movement"""
