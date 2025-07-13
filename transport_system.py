@@ -34,7 +34,7 @@ class CompleteTransportSystem:
             'APC': TransportCapability(
                 max_capacity=1,
                 compatible_units=['INFANTRY', 'MECH'],
-                loading_terrain=['PLAIN', 'ROAD', 'BRIDGE', 'FOREST', 'MOUNTAIN', 'FACTORY', 'CITY', 'HQ', 'BEACH_N', 'BEACH_S', 'BEACH_E', 'BEACH_W'],
+                loading_terrain=['PLAIN', 'ROAD', 'ROAD_HORT', 'ROAD_VERT', 'BRIDGE', 'FOREST', 'MOUNTAIN', 'FACTORY', 'CITY', 'HQ', 'BEACH_N', 'BEACH_S', 'BEACH_E', 'BEACH_W', 'BASE_TOWER_1', 'BASE_TOWER_2', 'BASE_TOWER_3', 'BASE_TOWER_4'],
                 can_resupply=True,
                 can_repair=False,
                 auto_resupply_cargo=False
@@ -417,7 +417,6 @@ class CompleteTransportSystem:
     def get_loadable_transports_near(self, cargo_x: int, cargo_y: int) -> List[Dict]:
         """Get all friendly transports near a cargo unit that can load it"""
         loadable_transports = []
-        
         # Get the cargo unit
         cargo_tile = self.game_manager.tile_at(cargo_x, cargo_y)
         if not cargo_tile or not cargo_tile.unit:
@@ -431,7 +430,6 @@ class CompleteTransportSystem:
         for dx, dy in directions:
             transport_x = cargo_x + dx
             transport_y = cargo_y + dy
-            
             # Check if position is on board
             if not (0 <= transport_x < self.game_manager.board.width and 
                     0 <= transport_y < self.game_manager.board.height):

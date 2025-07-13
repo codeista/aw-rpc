@@ -1,0 +1,2780 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "generated": "2025-07-12T23:06:24.394Z",
+    "description": "Advance Wars Sprite Corrections"
+  },
+  "spriteConfig": {
+    "width": 8,
+    "height": 8,
+    "spacingX": 1,
+    "spacingY": 0
+  },
+  "corrections": {
+    "idle": {
+      "INFANTRY_RED_idle_0": {
+        "x": 3,
+        "y": 104
+      },
+      "INFANTRY_RED_idle_1": {
+        "x": 20,
+        "y": 104
+      },
+      "INFANTRY_RED_idle_2": {
+        "x": 37,
+        "y": 104
+      },
+      "MECH_RED_idle_0": {
+        "x": 3,
+        "y": 199
+      },
+      "MECH_RED_idle_1": {
+        "x": 20,
+        "y": 199
+      },
+      "MECH_RED_idle_2": {
+        "x": 37,
+        "y": 199
+      },
+      "RECON_RED_idle_2": {
+        "x": 37,
+        "y": 294
+      },
+      "RECON_RED_idle_1": {
+        "x": 20,
+        "y": 294
+      },
+      "RECON_RED_idle_0": {
+        "x": 3,
+        "y": 294
+      },
+      "TANK_RED_idle_0": {
+        "x": 3,
+        "y": 313
+      },
+      "TANK_RED_idle_1": {
+        "x": 20,
+        "y": 313
+      },
+      "TANK_RED_idle_2": {
+        "x": 37,
+        "y": 313
+      },
+      "MEDIUMTANK_RED_idle_2": {
+        "x": 37,
+        "y": 332
+      },
+      "MEDIUMTANK_RED_idle_0": {
+        "x": 3,
+        "y": 332
+      },
+      "MEDIUMTANK_RED_idle_1": {
+        "x": 20,
+        "y": 332
+      },
+      "ANTIAIR_RED_idle_0": {
+        "x": 3,
+        "y": 389
+      },
+      "ANTIAIR_RED_idle_1": {
+        "x": 20,
+        "y": 389
+      },
+      "ANTIAIR_RED_idle_2": {
+        "x": 37,
+        "y": 389
+      },
+      "ARTILLERY_RED_idle_2": {
+        "x": 37,
+        "y": 408
+      },
+      "ARTILLERY_RED_idle_1": {
+        "x": 20,
+        "y": 408
+      },
+      "ARTILLERY_RED_idle_0": {
+        "x": 3,
+        "y": 408
+      },
+      "MISSILE_RED_idle_0": {
+        "x": 3,
+        "y": 446
+      },
+      "MISSILE_RED_idle_1": {
+        "x": 20,
+        "y": 446
+      },
+      "MISSILE_RED_idle_2": {
+        "x": 37,
+        "y": 446
+      },
+      "ROCKET_RED_idle_2": {
+        "x": 37,
+        "y": 427
+      },
+      "ROCKET_RED_idle_1": {
+        "x": 20,
+        "y": 427
+      },
+      "ROCKET_RED_idle_0": {
+        "x": 3,
+        "y": 427
+      },
+      "APC_RED_idle_0": {
+        "x": 3,
+        "y": 370
+      },
+      "APC_RED_idle_1": {
+        "x": 20,
+        "y": 370
+      },
+      "APC_RED_idle_2": {
+        "x": 37,
+        "y": 370
+      },
+      "NEOTANK_RED_idle_0": {
+        "x": 3,
+        "y": 351
+      },
+      "NEOTANK_RED_idle_1": {
+        "x": 20,
+        "y": 351
+      },
+      "NEOTANK_RED_idle_2": {
+        "x": 37,
+        "y": 351
+      },
+      "FIGHTER_RED_idle_0": {
+        "x": 3,
+        "y": 465
+      },
+      "FIGHTER_RED_idle_2": {
+        "x": 37,
+        "y": 465
+      },
+      "FIGHTER_RED_idle_1": {
+        "x": 20,
+        "y": 465
+      },
+      "BCOPTER_RED_idle_0": {
+        "x": 3,
+        "y": 503
+      },
+      "BCOPTER_RED_idle_1": {
+        "x": 20,
+        "y": 503
+      },
+      "BCOPTER_RED_idle_2": {
+        "x": 37,
+        "y": 503
+      },
+      "TCOPTER_RED_idle_2": {
+        "x": 37,
+        "y": 522
+      },
+      "TCOPTER_RED_idle_1": {
+        "x": 20,
+        "y": 522
+      },
+      "TCOPTER_RED_idle_0": {
+        "x": 3,
+        "y": 522
+      },
+      "BATTLESHIP_RED_idle_0": {
+        "x": 3,
+        "y": 541
+      },
+      "BATTLESHIP_RED_idle_1": {
+        "x": 20,
+        "y": 541
+      },
+      "BATTLESHIP_RED_idle_2": {
+        "x": 37,
+        "y": 541
+      },
+      "LANDER_RED_idle_2": {
+        "x": 37,
+        "y": 579
+      },
+      "LANDER_RED_idle_1": {
+        "x": 20,
+        "y": 579
+      },
+      "LANDER_RED_idle_0": {
+        "x": 3,
+        "y": 579
+      },
+      "CRUISER_RED_idle_0": {
+        "x": 3,
+        "y": 560
+      },
+      "CRUISER_RED_idle_1": {
+        "x": 20,
+        "y": 560
+      },
+      "CRUISER_RED_idle_2": {
+        "x": 37,
+        "y": 560
+      },
+      "SUB_RED_idle_2": {
+        "x": 37,
+        "y": 598
+      },
+      "SUB_RED_idle_1": {
+        "x": 20,
+        "y": 598
+      },
+      "SUB_RED_idle_0": {
+        "x": 3,
+        "y": 598
+      },
+      "BOMBER_RED_idle_0": {
+        "x": 3,
+        "y": 484
+      },
+      "BOMBER_RED_idle_1": {
+        "x": 20,
+        "y": 484
+      },
+      "BOMBER_RED_idle_2": {
+        "x": 37,
+        "y": 484
+      },
+      "CARRIER_RED_idle_0": {
+        "x": 3,
+        "y": 617
+      },
+      "CARRIER_RED_idle_1": {
+        "x": 3,
+        "y": 617
+      },
+      "CARRIER_RED_idle_2": {
+        "x": 3,
+        "y": 617
+      },
+      "BLACKBOAT_RED_idle_0": {
+        "x": 20,
+        "y": 618
+      },
+      "BLACKBOAT_RED_idle_1": {
+        "x": 20,
+        "y": 617
+      },
+      "BLACKBOAT_RED_idle_2": {
+        "x": 20,
+        "y": 618
+      },
+      "MEGATANK_RED_idle_0": {
+        "x": 37,
+        "y": 617
+      },
+      "MEGATANK_RED_idle_1": {
+        "x": 37,
+        "y": 617
+      },
+      "MEGATANK_RED_idle_2": {
+        "x": 37,
+        "y": 617
+      },
+      "PIPERUNNER_RED_idle_0": {
+        "x": 3,
+        "y": 643
+      },
+      "PIPERUNNER_RED_idle_1": {
+        "x": 3,
+        "y": 643
+      },
+      "PIPERUNNER_RED_idle_2": {
+        "x": 3,
+        "y": 643
+      },
+      "INFANTRY_BLUE_idle_0": {
+        "x": 392,
+        "y": 104
+      },
+      "INFANTRY_BLUE_idle_1": {
+        "x": 409,
+        "y": 104
+      },
+      "INFANTRY_BLUE_idle_2": {
+        "x": 426,
+        "y": 104
+      },
+      "INFANTRY_GREEN_idle_0": {
+        "x": 3,
+        "y": 672
+      },
+      "INFANTRY_GREEN_idle_1": {
+        "x": 20,
+        "y": 672
+      },
+      "INFANTRY_GREEN_idle_2": {
+        "x": 37,
+        "y": 672
+      },
+      "INFANTRY_YELLOW_idle_0": {
+        "x": 392,
+        "y": 672
+      },
+      "INFANTRY_YELLOW_idle_1": {
+        "x": 409,
+        "y": 672
+      },
+      "INFANTRY_YELLOW_idle_2": {
+        "x": 426,
+        "y": 672
+      },
+      "INFANTRY_GREY_idle_0": {
+        "x": 339,
+        "y": 1240
+      },
+      "INFANTRY_GREY_idle_1": {
+        "x": 356,
+        "y": 1240
+      },
+      "INFANTRY_GREY_idle_2": {
+        "x": 373,
+        "y": 1240
+      },
+      "MECH_GREEN_idle_0": {
+        "x": 3,
+        "y": 767
+      },
+      "MECH_GREEN_idle_1": {
+        "x": 20,
+        "y": 767
+      },
+      "MECH_GREEN_idle_2": {
+        "x": 37,
+        "y": 767
+      },
+      "MECH_YELLOW_idle_0": {
+        "x": 392,
+        "y": 767
+      },
+      "MECH_YELLOW_idle_1": {
+        "x": 409,
+        "y": 767
+      },
+      "MECH_YELLOW_idle_2": {
+        "x": 426,
+        "y": 767
+      },
+      "MECH_GREY_idle_0": {
+        "x": 339,
+        "y": 1335
+      },
+      "MECH_GREY_idle_1": {
+        "x": 356,
+        "y": 1335
+      },
+      "MECH_GREY_idle_2": {
+        "x": 373,
+        "y": 1335
+      },
+      "RECON_GREEN_idle_0": {
+        "x": 3,
+        "y": 862
+      },
+      "RECON_GREEN_idle_1": {
+        "x": 20,
+        "y": 862
+      },
+      "RECON_GREEN_idle_2": {
+        "x": 37,
+        "y": 862
+      },
+      "RECON_YELLOW_idle_0": {
+        "x": 392,
+        "y": 862
+      },
+      "RECON_YELLOW_idle_1": {
+        "x": 409,
+        "y": 862
+      },
+      "RECON_YELLOW_idle_2": {
+        "x": 426,
+        "y": 862
+      },
+      "RECON_GREY_idle_0": {
+        "x": 339,
+        "y": 1430
+      },
+      "RECON_GREY_idle_1": {
+        "x": 356,
+        "y": 1430
+      },
+      "RECON_GREY_idle_2": {
+        "x": 373,
+        "y": 1430
+      },
+      "TANK_GREEN_idle_0": {
+        "x": 3,
+        "y": 881
+      },
+      "TANK_GREEN_idle_1": {
+        "x": 20,
+        "y": 881
+      },
+      "TANK_GREEN_idle_2": {
+        "x": 37,
+        "y": 881
+      },
+      "TANK_YELLOW_idle_0": {
+        "x": 392,
+        "y": 881
+      },
+      "TANK_YELLOW_idle_1": {
+        "x": 409,
+        "y": 881
+      },
+      "TANK_YELLOW_idle_2": {
+        "x": 426,
+        "y": 881
+      },
+      "TANK_GREY_idle_0": {
+        "x": 339,
+        "y": 1449
+      },
+      "TANK_GREY_idle_1": {
+        "x": 356,
+        "y": 1449
+      },
+      "TANK_GREY_idle_2": {
+        "x": 373,
+        "y": 1449
+      },
+      "MEDIUMTANK_GREEN_idle_0": {
+        "x": 3,
+        "y": 900
+      },
+      "MEDIUMTANK_GREEN_idle_1": {
+        "x": 20,
+        "y": 900
+      },
+      "MEDIUMTANK_GREEN_idle_2": {
+        "x": 37,
+        "y": 900
+      },
+      "MEDIUMTANK_YELLOW_idle_0": {
+        "x": 392,
+        "y": 900
+      },
+      "MEDIUMTANK_YELLOW_idle_1": {
+        "x": 409,
+        "y": 900
+      },
+      "MEDIUMTANK_YELLOW_idle_2": {
+        "x": 426,
+        "y": 900
+      },
+      "MEDIUMTANK_GREY_idle_0": {
+        "x": 339,
+        "y": 1468
+      },
+      "MEDIUMTANK_GREY_idle_1": {
+        "x": 356,
+        "y": 1468
+      },
+      "MEDIUMTANK_GREY_idle_2": {
+        "x": 373,
+        "y": 1468
+      },
+      "NEOTANK_GREEN_idle_0": {
+        "x": 3,
+        "y": 919
+      },
+      "NEOTANK_GREEN_idle_1": {
+        "x": 20,
+        "y": 919
+      },
+      "NEOTANK_GREEN_idle_2": {
+        "x": 37,
+        "y": 919
+      },
+      "NEOTANK_YELLOW_idle_0": {
+        "x": 392,
+        "y": 919
+      },
+      "NEOTANK_YELLOW_idle_1": {
+        "x": 409,
+        "y": 919
+      },
+      "NEOTANK_YELLOW_idle_2": {
+        "x": 426,
+        "y": 919
+      },
+      "NEOTANK_GREY_idle_0": {
+        "x": 339,
+        "y": 1487
+      },
+      "NEOTANK_GREY_idle_1": {
+        "x": 356,
+        "y": 1487
+      },
+      "NEOTANK_GREY_idle_2": {
+        "x": 373,
+        "y": 1487
+      },
+      "APC_GREEN_idle_0": {
+        "x": 3,
+        "y": 938
+      },
+      "APC_GREEN_idle_1": {
+        "x": 20,
+        "y": 938
+      },
+      "APC_GREEN_idle_2": {
+        "x": 37,
+        "y": 938
+      },
+      "APC_YELLOW_idle_0": {
+        "x": 392,
+        "y": 938
+      },
+      "APC_YELLOW_idle_1": {
+        "x": 409,
+        "y": 938
+      },
+      "APC_YELLOW_idle_2": {
+        "x": 426,
+        "y": 938
+      },
+      "APC_GREY_idle_0": {
+        "x": 339,
+        "y": 1506
+      },
+      "APC_GREY_idle_1": {
+        "x": 356,
+        "y": 1506
+      },
+      "APC_GREY_idle_2": {
+        "x": 373,
+        "y": 1506
+      },
+      "ANTIAIR_GREEN_idle_0": {
+        "x": 3,
+        "y": 957
+      },
+      "ANTIAIR_GREEN_idle_1": {
+        "x": 20,
+        "y": 957
+      },
+      "ANTIAIR_GREEN_idle_2": {
+        "x": 37,
+        "y": 957
+      },
+      "ANTIAIR_YELLOW_idle_0": {
+        "x": 392,
+        "y": 957
+      },
+      "ANTIAIR_YELLOW_idle_1": {
+        "x": 409,
+        "y": 957
+      },
+      "ANTIAIR_YELLOW_idle_2": {
+        "x": 426,
+        "y": 957
+      },
+      "ANTIAIR_GREY_idle_0": {
+        "x": 339,
+        "y": 1525
+      },
+      "ANTIAIR_GREY_idle_1": {
+        "x": 356,
+        "y": 1525
+      },
+      "ANTIAIR_GREY_idle_2": {
+        "x": 373,
+        "y": 1525
+      },
+      "ARTILLERY_GREEN_idle_0": {
+        "x": 3,
+        "y": 976
+      },
+      "ARTILLERY_GREEN_idle_1": {
+        "x": 20,
+        "y": 976
+      },
+      "ARTILLERY_GREEN_idle_2": {
+        "x": 37,
+        "y": 976
+      },
+      "ARTILLERY_YELLOW_idle_0": {
+        "x": 392,
+        "y": 976
+      },
+      "ARTILLERY_YELLOW_idle_1": {
+        "x": 409,
+        "y": 976
+      },
+      "ARTILLERY_BLUE_idle_0": {
+        "x": 392,
+        "y": 408
+      },
+      "ARTILLERY_BLUE_idle_1": {
+        "x": 409,
+        "y": 408
+      },
+      "ARTILLERY_BLUE_idle_2": {
+        "x": 426,
+        "y": 408
+      },
+      "ARTILLERY_YELLOW_idle_2": {
+        "x": 426,
+        "y": 976
+      },
+      "ARTILLERY_GREY_idle_0": {
+        "x": 339,
+        "y": 1544
+      },
+      "ARTILLERY_GREY_idle_1": {
+        "x": 356,
+        "y": 1544
+      },
+      "ARTILLERY_GREY_idle_2": {
+        "x": 373,
+        "y": 1544
+      },
+      "ROCKET_GREEN_idle_0": {
+        "x": 3,
+        "y": 995
+      },
+      "ROCKET_GREEN_idle_1": {
+        "x": 20,
+        "y": 995
+      },
+      "ROCKET_GREEN_idle_2": {
+        "x": 37,
+        "y": 995
+      },
+      "ROCKET_YELLOW_idle_0": {
+        "x": 392,
+        "y": 995
+      },
+      "ROCKET_YELLOW_idle_1": {
+        "x": 409,
+        "y": 995
+      },
+      "ROCKET_YELLOW_idle_2": {
+        "x": 426,
+        "y": 995
+      },
+      "ROCKET_GREY_idle_0": {
+        "x": 339,
+        "y": 1563
+      },
+      "ROCKET_GREY_idle_1": {
+        "x": 356,
+        "y": 1563
+      },
+      "ROCKET_GREY_idle_2": {
+        "x": 373,
+        "y": 1563
+      },
+      "MISSILE_GREEN_idle_0": {
+        "x": 3,
+        "y": 1014
+      },
+      "MISSILE_GREEN_idle_1": {
+        "x": 20,
+        "y": 1014
+      },
+      "MISSILE_GREEN_idle_2": {
+        "x": 37,
+        "y": 1014
+      },
+      "MISSILE_YELLOW_idle_0": {
+        "x": 392,
+        "y": 1014
+      },
+      "MISSILE_YELLOW_idle_1": {
+        "x": 409,
+        "y": 1014
+      },
+      "MISSILE_YELLOW_idle_2": {
+        "x": 426,
+        "y": 1014
+      },
+      "MISSILE_GREY_idle_0": {
+        "x": 339,
+        "y": 1582
+      },
+      "MISSILE_GREY_idle_1": {
+        "x": 356,
+        "y": 1582
+      },
+      "MISSILE_GREY_idle_2": {
+        "x": 373,
+        "y": 1582
+      },
+      "FIGHTER_GREEN_idle_0": {
+        "x": 3,
+        "y": 1033
+      },
+      "FIGHTER_GREEN_idle_1": {
+        "x": 20,
+        "y": 1033
+      },
+      "FIGHTER_GREEN_idle_2": {
+        "x": 37,
+        "y": 1033
+      },
+      "FIGHTER_YELLOW_idle_0": {
+        "x": 392,
+        "y": 1033
+      },
+      "FIGHTER_YELLOW_idle_1": {
+        "x": 409,
+        "y": 1033
+      },
+      "FIGHTER_BLUE_idle_0": {
+        "x": 392,
+        "y": 465
+      },
+      "FIGHTER_BLUE_idle_1": {
+        "x": 409,
+        "y": 465
+      },
+      "FIGHTER_BLUE_idle_2": {
+        "x": 426,
+        "y": 465
+      },
+      "FIGHTER_YELLOW_idle_2": {
+        "x": 426,
+        "y": 1033
+      },
+      "FIGHTER_GREY_idle_0": {
+        "x": 339,
+        "y": 1601
+      },
+      "FIGHTER_GREY_idle_1": {
+        "x": 356,
+        "y": 1601
+      },
+      "FIGHTER_GREY_idle_2": {
+        "x": 373,
+        "y": 1601
+      },
+      "BOMBER_GREEN_idle_0": {
+        "x": 3,
+        "y": 1052
+      },
+      "BOMBER_GREEN_idle_1": {
+        "x": 20,
+        "y": 1052
+      },
+      "BOMBER_GREEN_idle_2": {
+        "x": 37,
+        "y": 1052
+      },
+      "BOMBER_YELLOW_idle_0": {
+        "x": 392,
+        "y": 1052
+      },
+      "BOMBER_YELLOW_idle_1": {
+        "x": 409,
+        "y": 1052
+      },
+      "BOMBER_YELLOW_idle_2": {
+        "x": 426,
+        "y": 1052
+      },
+      "BOMBER_GREY_idle_0": {
+        "x": 339,
+        "y": 1620
+      },
+      "BOMBER_GREY_idle_1": {
+        "x": 356,
+        "y": 1620
+      },
+      "BOMBER_GREY_idle_2": {
+        "x": 373,
+        "y": 1620
+      },
+      "BCOPTER_GREEN_idle_0": {
+        "x": 3,
+        "y": 1071
+      },
+      "BCOPTER_GREEN_idle_1": {
+        "x": 20,
+        "y": 1071
+      },
+      "BCOPTER_GREEN_idle_2": {
+        "x": 37,
+        "y": 1071
+      },
+      "BCOPTER_YELLOW_idle_0": {
+        "x": 392,
+        "y": 1071
+      },
+      "BCOPTER_YELLOW_idle_1": {
+        "x": 409,
+        "y": 1071
+      },
+      "BCOPTER_YELLOW_idle_2": {
+        "x": 426,
+        "y": 1071
+      },
+      "BCOPTER_GREY_idle_0": {
+        "x": 339,
+        "y": 1639
+      },
+      "BCOPTER_GREY_idle_1": {
+        "x": 356,
+        "y": 1639
+      },
+      "BCOPTER_GREY_idle_2": {
+        "x": 373,
+        "y": 1639
+      },
+      "TCOPTER_GREEN_idle_0": {
+        "x": 3,
+        "y": 1090
+      },
+      "TCOPTER_GREEN_idle_1": {
+        "x": 20,
+        "y": 1090
+      },
+      "TCOPTER_GREEN_idle_2": {
+        "x": 37,
+        "y": 1090
+      },
+      "TCOPTER_YELLOW_idle_0": {
+        "x": 392,
+        "y": 1090
+      },
+      "TCOPTER_YELLOW_idle_1": {
+        "x": 409,
+        "y": 1090
+      },
+      "TCOPTER_YELLOW_idle_2": {
+        "x": 426,
+        "y": 1090
+      },
+      "TCOPTER_GREY_idle_0": {
+        "x": 339,
+        "y": 1658
+      },
+      "TCOPTER_GREY_idle_1": {
+        "x": 356,
+        "y": 1658
+      },
+      "TCOPTER_GREY_idle_2": {
+        "x": 373,
+        "y": 1658
+      },
+      "BATTLESHIP_GREEN_idle_0": {
+        "x": 3,
+        "y": 1109
+      },
+      "BATTLESHIP_GREEN_idle_1": {
+        "x": 20,
+        "y": 1109
+      },
+      "BATTLESHIP_GREEN_idle_2": {
+        "x": 37,
+        "y": 1109
+      },
+      "BATTLESHIP_YELLOW_idle_0": {
+        "x": 392,
+        "y": 1109
+      },
+      "BATTLESHIP_YELLOW_idle_1": {
+        "x": 409,
+        "y": 1109
+      },
+      "BATTLESHIP_YELLOW_idle_2": {
+        "x": 426,
+        "y": 1109
+      },
+      "BATTLESHIP_GREY_idle_0": {
+        "x": 339,
+        "y": 1677
+      },
+      "BATTLESHIP_GREY_idle_1": {
+        "x": 356,
+        "y": 1677
+      },
+      "BATTLESHIP_GREY_idle_2": {
+        "x": 373,
+        "y": 1677
+      },
+      "CRUISER_GREEN_idle_0": {
+        "x": 3,
+        "y": 1128
+      },
+      "CRUISER_GREEN_idle_1": {
+        "x": 20,
+        "y": 1128
+      },
+      "CRUISER_GREEN_idle_2": {
+        "x": 37,
+        "y": 1128
+      },
+      "CRUISER_YELLOW_idle_0": {
+        "x": 392,
+        "y": 1128
+      },
+      "CRUISER_YELLOW_idle_1": {
+        "x": 409,
+        "y": 1128
+      },
+      "CRUISER_YELLOW_idle_2": {
+        "x": 426,
+        "y": 1128
+      },
+      "CRUISER_GREY_idle_0": {
+        "x": 339,
+        "y": 1696
+      },
+      "CRUISER_GREY_idle_1": {
+        "x": 356,
+        "y": 1696
+      },
+      "CRUISER_GREY_idle_2": {
+        "x": 373,
+        "y": 1696
+      },
+      "LANDER_GREEN_idle_0": {
+        "x": 3,
+        "y": 1147
+      },
+      "LANDER_GREEN_idle_1": {
+        "x": 20,
+        "y": 1147
+      },
+      "LANDER_GREEN_idle_2": {
+        "x": 37,
+        "y": 1147
+      },
+      "LANDER_YELLOW_idle_0": {
+        "x": 392,
+        "y": 1147
+      },
+      "LANDER_YELLOW_idle_1": {
+        "x": 409,
+        "y": 1147
+      },
+      "LANDER_YELLOW_idle_2": {
+        "x": 426,
+        "y": 1147
+      },
+      "LANDER_GREY_idle_0": {
+        "x": 339,
+        "y": 1715
+      },
+      "LANDER_GREY_idle_1": {
+        "x": 356,
+        "y": 1715
+      },
+      "LANDER_GREY_idle_2": {
+        "x": 373,
+        "y": 1715
+      },
+      "SUB_GREEN_idle_0": {
+        "x": 3,
+        "y": 1166
+      },
+      "SUB_GREEN_idle_1": {
+        "x": 20,
+        "y": 1166
+      },
+      "SUB_GREEN_idle_2": {
+        "x": 37,
+        "y": 1166
+      },
+      "SUB_YELLOW_idle_0": {
+        "x": 392,
+        "y": 1166
+      },
+      "SUB_YELLOW_idle_1": {
+        "x": 409,
+        "y": 1166
+      },
+      "SUB_YELLOW_idle_2": {
+        "x": 426,
+        "y": 1166
+      },
+      "SUB_GREY_idle_0": {
+        "x": 339,
+        "y": 1734
+      },
+      "SUB_GREY_idle_1": {
+        "x": 356,
+        "y": 1734
+      },
+      "SUB_GREY_idle_2": {
+        "x": 373,
+        "y": 1734
+      },
+      "CARRIER_GREEN_idle_0": {
+        "x": 3,
+        "y": 1185
+      },
+      "CARRIER_GREEN_idle_1": {
+        "x": 3,
+        "y": 1185
+      },
+      "CARRIER_GREEN_idle_2": {
+        "x": 3,
+        "y": 1185
+      },
+      "CARRIER_YELLOW_idle_0": {
+        "x": 392,
+        "y": 1185
+      },
+      "CARRIER_YELLOW_idle_1": {
+        "x": 392,
+        "y": 1185
+      },
+      "CARRIER_YELLOW_idle_2": {
+        "x": 392,
+        "y": 1185
+      },
+      "CARRIER_GREY_idle_0": {
+        "x": 339,
+        "y": 1753
+      },
+      "CARRIER_GREY_idle_1": {
+        "x": 339,
+        "y": 1753
+      },
+      "CARRIER_GREY_idle_2": {
+        "x": 339,
+        "y": 1753
+      },
+      "BLACKBOAT_GREEN_idle_0": {
+        "x": 20,
+        "y": 1186
+      },
+      "BLACKBOAT_GREEN_idle_1": {
+        "x": 20,
+        "y": 1185
+      },
+      "BLACKBOAT_GREEN_idle_2": {
+        "x": 20,
+        "y": 1186
+      },
+      "BLACKBOAT_YELLOW_idle_0": {
+        "x": 409,
+        "y": 1186
+      },
+      "BLACKBOAT_YELLOW_idle_1": {
+        "x": 409,
+        "y": 1185
+      },
+      "BLACKBOAT_YELLOW_idle_2": {
+        "x": 409,
+        "y": 1186
+      },
+      "BLACKBOAT_GREY_idle_0": {
+        "x": 356,
+        "y": 1754
+      },
+      "BLACKBOAT_GREY_idle_1": {
+        "x": 356,
+        "y": 1753
+      },
+      "BLACKBOAT_GREY_idle_2": {
+        "x": 356,
+        "y": 1754
+      },
+      "MEGATANK_GREEN_idle_0": {
+        "x": 37,
+        "y": 1185
+      },
+      "MEGATANK_GREEN_idle_1": {
+        "x": 37,
+        "y": 1185
+      },
+      "MEGATANK_GREEN_idle_2": {
+        "x": 37,
+        "y": 1185
+      },
+      "MEGATANK_YELLOW_idle_0": {
+        "x": 426,
+        "y": 1185
+      },
+      "MEGATANK_YELLOW_idle_1": {
+        "x": 426,
+        "y": 1185
+      },
+      "MEGATANK_YELLOW_idle_2": {
+        "x": 426,
+        "y": 1185
+      },
+      "MEGATANK_GREY_idle_0": {
+        "x": 373,
+        "y": 1753
+      },
+      "MEGATANK_GREY_idle_1": {
+        "x": 373,
+        "y": 1753
+      },
+      "MEGATANK_GREY_idle_2": {
+        "x": 373,
+        "y": 1753
+      },
+      "PIPERUNNER_GREEN_idle_0": {
+        "x": 3,
+        "y": 1211
+      },
+      "PIPERUNNER_GREEN_idle_1": {
+        "x": 3,
+        "y": 1211
+      },
+      "PIPERUNNER_GREEN_idle_2": {
+        "x": 3,
+        "y": 1211
+      },
+      "PIPERUNNER_YELLOW_idle_0": {
+        "x": 392,
+        "y": 1211
+      },
+      "PIPERUNNER_YELLOW_idle_1": {
+        "x": 392,
+        "y": 1211
+      },
+      "PIPERUNNER_YELLOW_idle_2": {
+        "x": 392,
+        "y": 1211
+      },
+      "PIPERUNNER_GREY_idle_0": {
+        "x": 339,
+        "y": 1779
+      },
+      "PIPERUNNER_GREY_idle_1": {
+        "x": 339,
+        "y": 1779
+      },
+      "PIPERUNNER_GREY_idle_2": {
+        "x": 339,
+        "y": 1779
+      },
+      "MECH_BLUE_idle_0": {
+        "x": 392,
+        "y": 199
+      },
+      "MECH_BLUE_idle_1": {
+        "x": 409,
+        "y": 199
+      },
+      "MECH_BLUE_idle_2": {
+        "x": 426,
+        "y": 199
+      },
+      "RECON_BLUE_idle_0": {
+        "x": 392,
+        "y": 294
+      },
+      "RECON_BLUE_idle_1": {
+        "x": 409,
+        "y": 294
+      },
+      "RECON_BLUE_idle_2": {
+        "x": 426,
+        "y": 294
+      },
+      "TANK_BLUE_idle_0": {
+        "x": 392,
+        "y": 313
+      },
+      "TANK_BLUE_idle_1": {
+        "x": 409,
+        "y": 313
+      },
+      "TANK_BLUE_idle_2": {
+        "x": 426,
+        "y": 313
+      },
+      "MEDIUMTANK_BLUE_idle_0": {
+        "x": 392,
+        "y": 332
+      },
+      "MEDIUMTANK_BLUE_idle_1": {
+        "x": 409,
+        "y": 332
+      },
+      "MEDIUMTANK_BLUE_idle_2": {
+        "x": 426,
+        "y": 332
+      },
+      "NEOTANK_BLUE_idle_0": {
+        "x": 392,
+        "y": 351
+      },
+      "NEOTANK_BLUE_idle_1": {
+        "x": 409,
+        "y": 351
+      },
+      "NEOTANK_BLUE_idle_2": {
+        "x": 426,
+        "y": 351
+      },
+      "MEGATANK_BLUE_idle_0": {
+        "x": 426,
+        "y": 617
+      },
+      "MEGATANK_BLUE_idle_1": {
+        "x": 426,
+        "y": 617
+      },
+      "MEGATANK_BLUE_idle_2": {
+        "x": 426,
+        "y": 617
+      },
+      "APC_BLUE_idle_0": {
+        "x": 392,
+        "y": 370
+      },
+      "APC_BLUE_idle_1": {
+        "x": 409,
+        "y": 370
+      },
+      "APC_BLUE_idle_2": {
+        "x": 426,
+        "y": 370
+      },
+      "ANTIAIR_BLUE_idle_0": {
+        "x": 392,
+        "y": 389
+      },
+      "ANTIAIR_BLUE_idle_1": {
+        "x": 409,
+        "y": 389
+      },
+      "ANTIAIR_BLUE_idle_2": {
+        "x": 426,
+        "y": 389
+      },
+      "ROCKET_BLUE_idle_0": {
+        "x": 392,
+        "y": 427
+      },
+      "ROCKET_BLUE_idle_1": {
+        "x": 409,
+        "y": 427
+      },
+      "ROCKET_BLUE_idle_2": {
+        "x": 426,
+        "y": 427
+      },
+      "MISSILE_BLUE_idle_0": {
+        "x": 392,
+        "y": 446
+      },
+      "MISSILE_BLUE_idle_1": {
+        "x": 409,
+        "y": 446
+      },
+      "MISSILE_BLUE_idle_2": {
+        "x": 426,
+        "y": 446
+      },
+      "BOMBER_BLUE_idle_0": {
+        "x": 392,
+        "y": 484
+      },
+      "BOMBER_BLUE_idle_1": {
+        "x": 409,
+        "y": 484
+      },
+      "BOMBER_BLUE_idle_2": {
+        "x": 426,
+        "y": 484
+      },
+      "BCOPTER_BLUE_idle_0": {
+        "x": 392,
+        "y": 503
+      },
+      "BCOPTER_BLUE_idle_1": {
+        "x": 409,
+        "y": 503
+      },
+      "BCOPTER_BLUE_idle_2": {
+        "x": 426,
+        "y": 503
+      },
+      "TCOPTER_BLUE_idle_0": {
+        "x": 392,
+        "y": 522
+      },
+      "TCOPTER_BLUE_idle_1": {
+        "x": 409,
+        "y": 522
+      },
+      "TCOPTER_BLUE_idle_2": {
+        "x": 426,
+        "y": 522
+      },
+      "BATTLESHIP_BLUE_idle_0": {
+        "x": 392,
+        "y": 541
+      },
+      "BATTLESHIP_BLUE_idle_1": {
+        "x": 409,
+        "y": 541
+      },
+      "BATTLESHIP_BLUE_idle_2": {
+        "x": 426,
+        "y": 541
+      },
+      "CRUISER_BLUE_idle_0": {
+        "x": 392,
+        "y": 560
+      },
+      "CRUISER_BLUE_idle_1": {
+        "x": 409,
+        "y": 560
+      },
+      "CRUISER_BLUE_idle_2": {
+        "x": 426,
+        "y": 560
+      },
+      "LANDER_BLUE_idle_0": {
+        "x": 392,
+        "y": 579
+      },
+      "LANDER_BLUE_idle_1": {
+        "x": 409,
+        "y": 579
+      },
+      "LANDER_BLUE_idle_2": {
+        "x": 426,
+        "y": 579
+      },
+      "SUB_BLUE_idle_0": {
+        "x": 392,
+        "y": 598
+      },
+      "SUB_BLUE_idle_1": {
+        "x": 409,
+        "y": 598
+      },
+      "SUB_BLUE_idle_2": {
+        "x": 426,
+        "y": 598
+      },
+      "CARRIER_BLUE_idle_0": {
+        "x": 392,
+        "y": 617
+      },
+      "CARRIER_BLUE_idle_1": {
+        "x": 392,
+        "y": 617
+      },
+      "CARRIER_BLUE_idle_2": {
+        "x": 392,
+        "y": 617
+      },
+      "BLACKBOAT_BLUE_idle_0": {
+        "x": 409,
+        "y": 618
+      },
+      "BLACKBOAT_BLUE_idle_1": {
+        "x": 409,
+        "y": 617
+      },
+      "BLACKBOAT_BLUE_idle_2": {
+        "x": 409,
+        "y": 618
+      },
+      "PIPERUNNER_BLUE_idle_0": {
+        "x": 392,
+        "y": 643
+      },
+      "PIPERUNNER_BLUE_idle_1": {
+        "x": 392,
+        "y": 643
+      },
+      "PIPERUNNER_BLUE_idle_2": {
+        "x": 392,
+        "y": 643
+      },
+      "BLACKBOMB_RED_idle_0": {
+        "x": 54,
+        "y": 1798
+      },
+      "BLACKBOMB_RED_idle_1": {
+        "x": 71,
+        "y": 1798
+      },
+      "BLACKBOMB_RED_idle_2": {
+        "x": 88,
+        "y": 1798
+      },
+      "BLACKBOMB_BLUE_idle_0": {
+        "x": 443,
+        "y": 1798
+      },
+      "BLACKBOMB_BLUE_idle_1": {
+        "x": 460,
+        "y": 1798
+      },
+      "BLACKBOMB_BLUE_idle_2": {
+        "x": 477,
+        "y": 1798
+      },
+      "BLACKBOMB_GREEN_idle_0": {
+        "x": 54,
+        "y": 1798
+      },
+      "BLACKBOMB_GREEN_idle_1": {
+        "x": 71,
+        "y": 1798
+      },
+      "BLACKBOMB_GREEN_idle_2": {
+        "x": 88,
+        "y": 1798
+      },
+      "BLACKBOMB_YELLOW_idle_0": {
+        "x": 54,
+        "y": 1798
+      },
+      "BLACKBOMB_YELLOW_idle_1": {
+        "x": 71,
+        "y": 1798
+      },
+      "BLACKBOMB_YELLOW_idle_2": {
+        "x": 88,
+        "y": 1798
+      },
+      "BLACKBOMB_GREY_idle_0": {
+        "x": 54,
+        "y": 1798
+      },
+      "BLACKBOMB_GREY_idle_1": {
+        "x": 71,
+        "y": 1798
+      },
+      "BLACKBOMB_GREY_idle_2": {
+        "x": 88,
+        "y": 1798
+      },
+      "STEALTH_RED_idle_0": {
+        "x": 54,
+        "y": 1817
+      },
+      "STEALTH_RED_idle_1": {
+        "x": 71,
+        "y": 1817
+      },
+      "STEALTH_RED_idle_2": {
+        "x": 88,
+        "y": 1817
+      },
+      "STEALTH_BLUE_idle_0": {
+        "x": 443,
+        "y": 1817
+      },
+      "STEALTH_BLUE_idle_1": {
+        "x": 460,
+        "y": 1817
+      },
+      "STEALTH_BLUE_idle_2": {
+        "x": 477,
+        "y": 1817
+      },
+      "STEALTH_GREEN_idle_0": {
+        "x": 54,
+        "y": 1817
+      },
+      "STEALTH_GREEN_idle_1": {
+        "x": 71,
+        "y": 1817
+      },
+      "STEALTH_GREEN_idle_2": {
+        "x": 88,
+        "y": 1817
+      },
+      "STEALTH_YELLOW_idle_0": {
+        "x": 54,
+        "y": 1817
+      },
+      "STEALTH_YELLOW_idle_1": {
+        "x": 71,
+        "y": 1817
+      },
+      "STEALTH_YELLOW_idle_2": {
+        "x": 88,
+        "y": 1817
+      },
+      "STEALTH_GREY_idle_0": {
+        "x": 54,
+        "y": 1817
+      },
+      "STEALTH_GREY_idle_1": {
+        "x": 71,
+        "y": 1817
+      },
+      "STEALTH_GREY_idle_2": {
+        "x": 88,
+        "y": 1817
+      }
+    },
+    "movement": {
+      "INFANTRY_RED_movement_4": {
+        "x": 56,
+        "y": 105
+      },
+      "INFANTRY_RED_movement_3": {
+        "x": 94,
+        "y": 20
+      },
+      "INFANTRY_GREEN_movement_4": {
+        "x": 56,
+        "y": 673
+      },
+      "INFANTRY_GREEN_movement_3": {
+        "x": 94,
+        "y": 588
+      },
+      "INFANTRY_YELLOW_movement_4": {
+        "x": 445,
+        "y": 673
+      },
+      "INFANTRY_YELLOW_movement_3": {
+        "x": 483,
+        "y": 588
+      },
+      "INFANTRY_GREY_movement_4": {
+        "x": 392,
+        "y": 1241
+      },
+      "INFANTRY_GREY_movement_3": {
+        "x": 430,
+        "y": 1156
+      }
+    },
+    "unavailable": {
+      "INFANTRY_RED_unavailable_0": {
+        "x": 339,
+        "y": 104
+      },
+      "INFANTRY_RED_unavailable_1": {
+        "x": 356,
+        "y": 104
+      },
+      "INFANTRY_RED_unavailable_2": {
+        "x": 373,
+        "y": 104
+      },
+      "MECH_RED_unavailable_1": {
+        "x": 356,
+        "y": 199
+      },
+      "MECH_RED_unavailable_0": {
+        "x": 339,
+        "y": 199
+      },
+      "MECH_RED_unavailable_2": {
+        "x": 373,
+        "y": 199
+      },
+      "RECON_RED_unavailable_2": {
+        "x": 373,
+        "y": 294
+      },
+      "RECON_RED_unavailable_1": {
+        "x": 356,
+        "y": 294
+      },
+      "RECON_RED_unavailable_0": {
+        "x": 339,
+        "y": 294
+      },
+      "TANK_RED_unavailable_0": {
+        "x": 339,
+        "y": 313
+      },
+      "TANK_RED_unavailable_1": {
+        "x": 356,
+        "y": 313
+      },
+      "TANK_RED_unavailable_2": {
+        "x": 373,
+        "y": 313
+      },
+      "MEDIUMTANK_RED_unavailable_2": {
+        "x": 373,
+        "y": 332
+      },
+      "MEDIUMTANK_RED_unavailable_1": {
+        "x": 356,
+        "y": 332
+      },
+      "MEDIUMTANK_RED_unavailable_0": {
+        "x": 339,
+        "y": 332
+      },
+      "ANTIAIR_RED_unavailable_0": {
+        "x": 339,
+        "y": 389
+      },
+      "ANTIAIR_RED_unavailable_1": {
+        "x": 356,
+        "y": 389
+      },
+      "ANTIAIR_RED_unavailable_2": {
+        "x": 373,
+        "y": 389
+      },
+      "ARTILLERY_RED_unavailable_0": {
+        "x": 339,
+        "y": 408
+      },
+      "ARTILLERY_RED_unavailable_2": {
+        "x": 373,
+        "y": 408
+      },
+      "ARTILLERY_RED_unavailable_1": {
+        "x": 356,
+        "y": 408
+      },
+      "MISSILE_RED_unavailable_2": {
+        "x": 373,
+        "y": 446
+      },
+      "MISSILE_RED_unavailable_1": {
+        "x": 356,
+        "y": 446
+      },
+      "MISSILE_RED_unavailable_0": {
+        "x": 373,
+        "y": 446
+      },
+      "ROCKET_RED_unavailable_0": {
+        "x": 339,
+        "y": 427
+      },
+      "ROCKET_RED_unavailable_1": {
+        "x": 356,
+        "y": 427
+      },
+      "ROCKET_RED_unavailable_2": {
+        "x": 373,
+        "y": 427
+      },
+      "APC_RED_unavailable_2": {
+        "x": 373,
+        "y": 370
+      },
+      "APC_RED_unavailable_1": {
+        "x": 356,
+        "y": 370
+      },
+      "APC_RED_unavailable_0": {
+        "x": 339,
+        "y": 370
+      },
+      "NEOTANK_RED_unavailable_0": {
+        "x": 339,
+        "y": 351
+      },
+      "NEOTANK_RED_unavailable_1": {
+        "x": 356,
+        "y": 351
+      },
+      "NEOTANK_RED_unavailable_2": {
+        "x": 373,
+        "y": 351
+      },
+      "FIGHTER_RED_unavailable_2": {
+        "x": 373,
+        "y": 465
+      },
+      "FIGHTER_RED_unavailable_1": {
+        "x": 356,
+        "y": 465
+      },
+      "FIGHTER_RED_unavailable_0": {
+        "x": 339,
+        "y": 465
+      },
+      "BCOPTER_RED_unavailable_0": {
+        "x": 339,
+        "y": 503
+      },
+      "BCOPTER_RED_unavailable_1": {
+        "x": 356,
+        "y": 503
+      },
+      "BCOPTER_RED_unavailable_2": {
+        "x": 373,
+        "y": 503
+      },
+      "TCOPTER_RED_unavailable_2": {
+        "x": 373,
+        "y": 522
+      },
+      "TCOPTER_RED_unavailable_1": {
+        "x": 356,
+        "y": 522
+      },
+      "TCOPTER_RED_unavailable_0": {
+        "x": 339,
+        "y": 522
+      },
+      "BATTLESHIP_RED_unavailable_0": {
+        "x": 339,
+        "y": 541
+      },
+      "BATTLESHIP_RED_unavailable_1": {
+        "x": 356,
+        "y": 541
+      },
+      "BATTLESHIP_RED_unavailable_2": {
+        "x": 373,
+        "y": 541
+      },
+      "LANDER_RED_unavailable_0": {
+        "x": 339,
+        "y": 579
+      },
+      "LANDER_RED_unavailable_1": {
+        "x": 356,
+        "y": 579
+      },
+      "LANDER_RED_unavailable_2": {
+        "x": 373,
+        "y": 579
+      },
+      "CRUISER_RED_unavailable_2": {
+        "x": 373,
+        "y": 560
+      },
+      "CRUISER_RED_unavailable_1": {
+        "x": 356,
+        "y": 560
+      },
+      "CRUISER_RED_unavailable_0": {
+        "x": 373,
+        "y": 560
+      },
+      "SUB_RED_unavailable_0": {
+        "x": 373,
+        "y": 598
+      },
+      "SUB_RED_unavailable_1": {
+        "x": 356,
+        "y": 598
+      },
+      "BOMBER_RED_unavailable_0": {
+        "x": 339,
+        "y": 484
+      },
+      "BOMBER_RED_unavailable_1": {
+        "x": 356,
+        "y": 484
+      },
+      "BOMBER_RED_unavailable_2": {
+        "x": 373,
+        "y": 484
+      },
+      "CARRIER_RED_unavailable_0": {
+        "x": 339,
+        "y": 617
+      },
+      "CARRIER_RED_unavailable_1": {
+        "x": 339,
+        "y": 618
+      },
+      "CARRIER_RED_unavailable_2": {
+        "x": 339,
+        "y": 617
+      },
+      "BLACKBOAT_RED_unavailable_0": {
+        "x": 356,
+        "y": 617
+      },
+      "BLACKBOAT_RED_unavailable_1": {
+        "x": 356,
+        "y": 618
+      },
+      "BLACKBOAT_RED_unavailable_2": {
+        "x": 356,
+        "y": 617
+      },
+      "MEGATANK_RED_unavailable_0": {
+        "x": 373,
+        "y": 617
+      },
+      "MEGATANK_RED_unavailable_1": {
+        "x": 373,
+        "y": 617
+      },
+      "MEGATANK_RED_unavailable_2": {
+        "x": 373,
+        "y": 617
+      },
+      "PIPERUNNER_RED_unavailable_0": {
+        "x": 337,
+        "y": 643
+      },
+      "PIPERUNNER_RED_unavailable_1": {
+        "x": 337,
+        "y": 643
+      },
+      "PIPERUNNER_RED_unavailable_2": {
+        "x": 337,
+        "y": 643
+      },
+      "INFANTRY_BLUE_unavailable_0": {
+        "x": 728,
+        "y": 104
+      },
+      "INFANTRY_GREEN_unavailable_0": {
+        "x": 339,
+        "y": 672
+      },
+      "INFANTRY_GREEN_unavailable_1": {
+        "x": 356,
+        "y": 672
+      },
+      "INFANTRY_GREEN_unavailable_2": {
+        "x": 373,
+        "y": 672
+      },
+      "INFANTRY_YELLOW_unavailable_0": {
+        "x": 728,
+        "y": 672
+      },
+      "INFANTRY_YELLOW_unavailable_1": {
+        "x": 745,
+        "y": 672
+      },
+      "INFANTRY_YELLOW_unavailable_2": {
+        "x": 762,
+        "y": 672
+      },
+      "INFANTRY_GREY_unavailable_0": {
+        "x": 675,
+        "y": 1240
+      },
+      "INFANTRY_GREY_unavailable_1": {
+        "x": 692,
+        "y": 1240
+      },
+      "INFANTRY_GREY_unavailable_2": {
+        "x": 709,
+        "y": 1240
+      },
+      "MECH_GREEN_unavailable_0": {
+        "x": 339,
+        "y": 767
+      },
+      "MECH_GREEN_unavailable_1": {
+        "x": 356,
+        "y": 767
+      },
+      "MECH_GREEN_unavailable_2": {
+        "x": 373,
+        "y": 767
+      },
+      "MECH_YELLOW_unavailable_0": {
+        "x": 728,
+        "y": 767
+      },
+      "MECH_YELLOW_unavailable_1": {
+        "x": 745,
+        "y": 767
+      },
+      "MECH_YELLOW_unavailable_2": {
+        "x": 762,
+        "y": 767
+      },
+      "MECH_GREY_unavailable_0": {
+        "x": 675,
+        "y": 1335
+      },
+      "MECH_GREY_unavailable_1": {
+        "x": 692,
+        "y": 1335
+      },
+      "MECH_GREY_unavailable_2": {
+        "x": 709,
+        "y": 1335
+      },
+      "RECON_GREEN_unavailable_0": {
+        "x": 339,
+        "y": 862
+      },
+      "RECON_GREEN_unavailable_1": {
+        "x": 356,
+        "y": 862
+      },
+      "RECON_GREEN_unavailable_2": {
+        "x": 373,
+        "y": 862
+      },
+      "RECON_YELLOW_unavailable_0": {
+        "x": 728,
+        "y": 862
+      },
+      "RECON_YELLOW_unavailable_1": {
+        "x": 745,
+        "y": 862
+      },
+      "RECON_YELLOW_unavailable_2": {
+        "x": 762,
+        "y": 862
+      },
+      "RECON_GREY_unavailable_0": {
+        "x": 675,
+        "y": 1430
+      },
+      "RECON_GREY_unavailable_1": {
+        "x": 692,
+        "y": 1430
+      },
+      "RECON_GREY_unavailable_2": {
+        "x": 709,
+        "y": 1430
+      },
+      "TANK_GREEN_unavailable_0": {
+        "x": 339,
+        "y": 881
+      },
+      "TANK_GREEN_unavailable_1": {
+        "x": 356,
+        "y": 881
+      },
+      "TANK_GREEN_unavailable_2": {
+        "x": 373,
+        "y": 881
+      },
+      "TANK_YELLOW_unavailable_0": {
+        "x": 728,
+        "y": 881
+      },
+      "TANK_YELLOW_unavailable_1": {
+        "x": 745,
+        "y": 881
+      },
+      "TANK_YELLOW_unavailable_2": {
+        "x": 762,
+        "y": 881
+      },
+      "TANK_GREY_unavailable_0": {
+        "x": 675,
+        "y": 1449
+      },
+      "TANK_GREY_unavailable_1": {
+        "x": 692,
+        "y": 1449
+      },
+      "TANK_GREY_unavailable_2": {
+        "x": 709,
+        "y": 1449
+      },
+      "MEDIUMTANK_GREEN_unavailable_0": {
+        "x": 339,
+        "y": 900
+      },
+      "MEDIUMTANK_GREEN_unavailable_1": {
+        "x": 356,
+        "y": 900
+      },
+      "MEDIUMTANK_GREEN_unavailable_2": {
+        "x": 373,
+        "y": 900
+      },
+      "MEDIUMTANK_YELLOW_unavailable_0": {
+        "x": 728,
+        "y": 900
+      },
+      "MEDIUMTANK_YELLOW_unavailable_1": {
+        "x": 745,
+        "y": 900
+      },
+      "MEDIUMTANK_YELLOW_unavailable_2": {
+        "x": 762,
+        "y": 900
+      },
+      "MEDIUMTANK_GREY_unavailable_0": {
+        "x": 675,
+        "y": 1468
+      },
+      "MEDIUMTANK_GREY_unavailable_1": {
+        "x": 692,
+        "y": 1468
+      },
+      "MEDIUMTANK_GREY_unavailable_2": {
+        "x": 709,
+        "y": 1468
+      },
+      "NEOTANK_GREEN_unavailable_0": {
+        "x": 339,
+        "y": 919
+      },
+      "NEOTANK_GREEN_unavailable_1": {
+        "x": 356,
+        "y": 919
+      },
+      "NEOTANK_GREEN_unavailable_2": {
+        "x": 373,
+        "y": 919
+      },
+      "NEOTANK_YELLOW_unavailable_0": {
+        "x": 728,
+        "y": 919
+      },
+      "NEOTANK_YELLOW_unavailable_1": {
+        "x": 745,
+        "y": 919
+      },
+      "NEOTANK_YELLOW_unavailable_2": {
+        "x": 762,
+        "y": 919
+      },
+      "NEOTANK_GREY_unavailable_0": {
+        "x": 675,
+        "y": 1487
+      },
+      "NEOTANK_GREY_unavailable_1": {
+        "x": 692,
+        "y": 1487
+      },
+      "NEOTANK_GREY_unavailable_2": {
+        "x": 709,
+        "y": 1487
+      },
+      "APC_GREEN_unavailable_0": {
+        "x": 339,
+        "y": 938
+      },
+      "APC_GREEN_unavailable_1": {
+        "x": 356,
+        "y": 938
+      },
+      "APC_GREEN_unavailable_2": {
+        "x": 373,
+        "y": 938
+      },
+      "APC_YELLOW_unavailable_0": {
+        "x": 728,
+        "y": 938
+      },
+      "APC_YELLOW_unavailable_1": {
+        "x": 745,
+        "y": 938
+      },
+      "APC_YELLOW_unavailable_2": {
+        "x": 762,
+        "y": 938
+      },
+      "APC_GREY_unavailable_0": {
+        "x": 675,
+        "y": 1506
+      },
+      "APC_GREY_unavailable_1": {
+        "x": 692,
+        "y": 1506
+      },
+      "APC_GREY_unavailable_2": {
+        "x": 709,
+        "y": 1506
+      },
+      "ANTIAIR_GREEN_unavailable_0": {
+        "x": 339,
+        "y": 957
+      },
+      "ANTIAIR_GREEN_unavailable_1": {
+        "x": 356,
+        "y": 957
+      },
+      "ANTIAIR_GREEN_unavailable_2": {
+        "x": 373,
+        "y": 957
+      },
+      "ANTIAIR_YELLOW_unavailable_0": {
+        "x": 728,
+        "y": 957
+      },
+      "ANTIAIR_YELLOW_unavailable_1": {
+        "x": 745,
+        "y": 957
+      },
+      "ANTIAIR_YELLOW_unavailable_2": {
+        "x": 762,
+        "y": 957
+      },
+      "ANTIAIR_GREY_unavailable_0": {
+        "x": 675,
+        "y": 1525
+      },
+      "ANTIAIR_GREY_unavailable_1": {
+        "x": 692,
+        "y": 1525
+      },
+      "ANTIAIR_GREY_unavailable_2": {
+        "x": 709,
+        "y": 1525
+      },
+      "ARTILLERY_GREEN_unavailable_0": {
+        "x": 339,
+        "y": 976
+      },
+      "ARTILLERY_GREEN_unavailable_1": {
+        "x": 356,
+        "y": 976
+      },
+      "ARTILLERY_GREEN_unavailable_2": {
+        "x": 373,
+        "y": 976
+      },
+      "ARTILLERY_YELLOW_unavailable_0": {
+        "x": 728,
+        "y": 976
+      },
+      "ARTILLERY_YELLOW_unavailable_1": {
+        "x": 745,
+        "y": 976
+      },
+      "ARTILLERY_YELLOW_unavailable_2": {
+        "x": 762,
+        "y": 976
+      },
+      "ARTILLERY_GREY_unavailable_0": {
+        "x": 675,
+        "y": 1544
+      },
+      "ARTILLERY_GREY_unavailable_1": {
+        "x": 692,
+        "y": 1544
+      },
+      "ARTILLERY_BLUE_unavailable_0": {
+        "x": 728,
+        "y": 408
+      },
+      "ARTILLERY_BLUE_unavailable_1": {
+        "x": 745,
+        "y": 408
+      },
+      "ARTILLERY_BLUE_unavailable_2": {
+        "x": 762,
+        "y": 408
+      },
+      "ARTILLERY_GREY_unavailable_2": {
+        "x": 709,
+        "y": 1544
+      },
+      "ROCKET_GREEN_unavailable_0": {
+        "x": 339,
+        "y": 995
+      },
+      "ROCKET_GREEN_unavailable_1": {
+        "x": 356,
+        "y": 995
+      },
+      "ROCKET_GREEN_unavailable_2": {
+        "x": 373,
+        "y": 995
+      },
+      "ROCKET_YELLOW_unavailable_0": {
+        "x": 728,
+        "y": 995
+      },
+      "ROCKET_YELLOW_unavailable_1": {
+        "x": 745,
+        "y": 995
+      },
+      "ROCKET_YELLOW_unavailable_2": {
+        "x": 762,
+        "y": 995
+      },
+      "ROCKET_GREY_unavailable_0": {
+        "x": 675,
+        "y": 1563
+      },
+      "ROCKET_GREY_unavailable_1": {
+        "x": 692,
+        "y": 1563
+      },
+      "ROCKET_GREY_unavailable_2": {
+        "x": 709,
+        "y": 1563
+      },
+      "MISSILE_GREEN_unavailable_0": {
+        "x": 339,
+        "y": 1014
+      },
+      "MISSILE_GREEN_unavailable_1": {
+        "x": 356,
+        "y": 1014
+      },
+      "MISSILE_GREEN_unavailable_2": {
+        "x": 373,
+        "y": 1014
+      },
+      "MISSILE_YELLOW_unavailable_0": {
+        "x": 728,
+        "y": 1014
+      },
+      "MISSILE_YELLOW_unavailable_1": {
+        "x": 745,
+        "y": 1014
+      },
+      "MISSILE_YELLOW_unavailable_2": {
+        "x": 762,
+        "y": 1014
+      },
+      "MISSILE_GREY_unavailable_0": {
+        "x": 675,
+        "y": 1582
+      },
+      "MISSILE_GREY_unavailable_1": {
+        "x": 692,
+        "y": 1582
+      },
+      "MISSILE_GREY_unavailable_2": {
+        "x": 709,
+        "y": 1582
+      },
+      "FIGHTER_GREEN_unavailable_0": {
+        "x": 339,
+        "y": 1033
+      },
+      "FIGHTER_GREEN_unavailable_1": {
+        "x": 356,
+        "y": 1033
+      },
+      "FIGHTER_GREEN_unavailable_2": {
+        "x": 373,
+        "y": 1033
+      },
+      "FIGHTER_YELLOW_unavailable_0": {
+        "x": 728,
+        "y": 1033
+      },
+      "FIGHTER_YELLOW_unavailable_1": {
+        "x": 745,
+        "y": 1033
+      },
+      "FIGHTER_YELLOW_unavailable_2": {
+        "x": 762,
+        "y": 1033
+      },
+      "FIGHTER_GREY_unavailable_0": {
+        "x": 675,
+        "y": 1601
+      },
+      "FIGHTER_GREY_unavailable_1": {
+        "x": 692,
+        "y": 1601
+      },
+      "FIGHTER_GREY_unavailable_2": {
+        "x": 709,
+        "y": 1601
+      },
+      "BOMBER_GREEN_unavailable_0": {
+        "x": 339,
+        "y": 1052
+      },
+      "BOMBER_GREEN_unavailable_1": {
+        "x": 356,
+        "y": 1052
+      },
+      "BOMBER_GREEN_unavailable_2": {
+        "x": 373,
+        "y": 1052
+      },
+      "BOMBER_YELLOW_unavailable_0": {
+        "x": 728,
+        "y": 1052
+      },
+      "BOMBER_YELLOW_unavailable_1": {
+        "x": 745,
+        "y": 1052
+      },
+      "BOMBER_YELLOW_unavailable_2": {
+        "x": 762,
+        "y": 1052
+      },
+      "BOMBER_GREY_unavailable_0": {
+        "x": 675,
+        "y": 1620
+      },
+      "BOMBER_GREY_unavailable_1": {
+        "x": 692,
+        "y": 1620
+      },
+      "BOMBER_GREY_unavailable_2": {
+        "x": 709,
+        "y": 1620
+      },
+      "BCOPTER_GREEN_unavailable_0": {
+        "x": 339,
+        "y": 1071
+      },
+      "BCOPTER_GREEN_unavailable_1": {
+        "x": 356,
+        "y": 1071
+      },
+      "BCOPTER_GREEN_unavailable_2": {
+        "x": 373,
+        "y": 1071
+      },
+      "BCOPTER_YELLOW_unavailable_0": {
+        "x": 728,
+        "y": 1071
+      },
+      "BCOPTER_YELLOW_unavailable_1": {
+        "x": 745,
+        "y": 1071
+      },
+      "BCOPTER_YELLOW_unavailable_2": {
+        "x": 762,
+        "y": 1071
+      },
+      "BCOPTER_GREY_unavailable_0": {
+        "x": 675,
+        "y": 1639
+      },
+      "BCOPTER_GREY_unavailable_1": {
+        "x": 692,
+        "y": 1639
+      },
+      "BCOPTER_GREY_unavailable_2": {
+        "x": 709,
+        "y": 1639
+      },
+      "TCOPTER_GREEN_unavailable_0": {
+        "x": 339,
+        "y": 1090
+      },
+      "TCOPTER_GREEN_unavailable_1": {
+        "x": 356,
+        "y": 1090
+      },
+      "TCOPTER_GREEN_unavailable_2": {
+        "x": 373,
+        "y": 1090
+      },
+      "TCOPTER_YELLOW_unavailable_0": {
+        "x": 728,
+        "y": 1090
+      },
+      "TCOPTER_YELLOW_unavailable_1": {
+        "x": 745,
+        "y": 1090
+      },
+      "TCOPTER_YELLOW_unavailable_2": {
+        "x": 762,
+        "y": 1090
+      },
+      "TCOPTER_GREY_unavailable_0": {
+        "x": 675,
+        "y": 1658
+      },
+      "TCOPTER_GREY_unavailable_1": {
+        "x": 692,
+        "y": 1658
+      },
+      "TCOPTER_GREY_unavailable_2": {
+        "x": 709,
+        "y": 1658
+      },
+      "BATTLESHIP_GREEN_unavailable_0": {
+        "x": 339,
+        "y": 1109
+      },
+      "BATTLESHIP_GREEN_unavailable_1": {
+        "x": 356,
+        "y": 1109
+      },
+      "BATTLESHIP_GREEN_unavailable_2": {
+        "x": 373,
+        "y": 1109
+      },
+      "BATTLESHIP_YELLOW_unavailable_0": {
+        "x": 728,
+        "y": 1109
+      },
+      "BATTLESHIP_YELLOW_unavailable_1": {
+        "x": 745,
+        "y": 1109
+      },
+      "BATTLESHIP_YELLOW_unavailable_2": {
+        "x": 762,
+        "y": 1109
+      },
+      "BATTLESHIP_GREY_unavailable_0": {
+        "x": 675,
+        "y": 1677
+      },
+      "BATTLESHIP_GREY_unavailable_1": {
+        "x": 692,
+        "y": 1677
+      },
+      "BATTLESHIP_GREY_unavailable_2": {
+        "x": 709,
+        "y": 1677
+      },
+      "CRUISER_GREEN_unavailable_0": {
+        "x": 339,
+        "y": 1128
+      },
+      "CRUISER_GREEN_unavailable_1": {
+        "x": 356,
+        "y": 1128
+      },
+      "CRUISER_GREEN_unavailable_2": {
+        "x": 373,
+        "y": 1128
+      },
+      "CRUISER_YELLOW_unavailable_0": {
+        "x": 728,
+        "y": 1128
+      },
+      "CRUISER_YELLOW_unavailable_1": {
+        "x": 745,
+        "y": 1128
+      },
+      "CRUISER_YELLOW_unavailable_2": {
+        "x": 762,
+        "y": 1128
+      },
+      "CRUISER_GREY_unavailable_0": {
+        "x": 675,
+        "y": 1696
+      },
+      "CRUISER_GREY_unavailable_1": {
+        "x": 692,
+        "y": 1696
+      },
+      "CRUISER_GREY_unavailable_2": {
+        "x": 709,
+        "y": 1696
+      },
+      "LANDER_GREEN_unavailable_0": {
+        "x": 339,
+        "y": 1147
+      },
+      "LANDER_GREEN_unavailable_1": {
+        "x": 356,
+        "y": 1147
+      },
+      "LANDER_GREEN_unavailable_2": {
+        "x": 373,
+        "y": 1147
+      },
+      "LANDER_YELLOW_unavailable_0": {
+        "x": 728,
+        "y": 1147
+      },
+      "LANDER_YELLOW_unavailable_1": {
+        "x": 745,
+        "y": 1147
+      },
+      "LANDER_YELLOW_unavailable_2": {
+        "x": 762,
+        "y": 1147
+      },
+      "LANDER_GREY_unavailable_0": {
+        "x": 675,
+        "y": 1715
+      },
+      "LANDER_GREY_unavailable_1": {
+        "x": 692,
+        "y": 1715
+      },
+      "LANDER_GREY_unavailable_2": {
+        "x": 709,
+        "y": 1715
+      },
+      "SUB_GREEN_unavailable_0": {
+        "x": 339,
+        "y": 1166
+      },
+      "SUB_GREEN_unavailable_1": {
+        "x": 356,
+        "y": 1166
+      },
+      "SUB_GREEN_unavailable_2": {
+        "x": 373,
+        "y": 1166
+      },
+      "SUB_YELLOW_unavailable_0": {
+        "x": 728,
+        "y": 1166
+      },
+      "SUB_YELLOW_unavailable_1": {
+        "x": 745,
+        "y": 1166
+      },
+      "SUB_YELLOW_unavailable_2": {
+        "x": 762,
+        "y": 1166
+      },
+      "SUB_GREY_unavailable_0": {
+        "x": 675,
+        "y": 1734
+      },
+      "SUB_GREY_unavailable_1": {
+        "x": 692,
+        "y": 1734
+      },
+      "SUB_GREY_unavailable_2": {
+        "x": 709,
+        "y": 1734
+      },
+      "CARRIER_GREEN_unavailable_0": {
+        "x": 339,
+        "y": 1185
+      },
+      "CARRIER_GREEN_unavailable_1": {
+        "x": 339,
+        "y": 1186
+      },
+      "CARRIER_GREEN_unavailable_2": {
+        "x": 339,
+        "y": 1185
+      },
+      "CARRIER_YELLOW_unavailable_0": {
+        "x": 728,
+        "y": 1185
+      },
+      "CARRIER_YELLOW_unavailable_1": {
+        "x": 728,
+        "y": 1186
+      },
+      "CARRIER_YELLOW_unavailable_2": {
+        "x": 728,
+        "y": 1185
+      },
+      "CARRIER_GREY_unavailable_0": {
+        "x": 675,
+        "y": 1753
+      },
+      "CARRIER_GREY_unavailable_1": {
+        "x": 675,
+        "y": 1754
+      },
+      "CARRIER_GREY_unavailable_2": {
+        "x": 675,
+        "y": 1753
+      },
+      "BLACKBOAT_GREEN_unavailable_0": {
+        "x": 356,
+        "y": 1185
+      },
+      "BLACKBOAT_GREEN_unavailable_1": {
+        "x": 356,
+        "y": 1186
+      },
+      "BLACKBOAT_GREEN_unavailable_2": {
+        "x": 356,
+        "y": 1185
+      },
+      "BLACKBOAT_YELLOW_unavailable_0": {
+        "x": 745,
+        "y": 1185
+      },
+      "BLACKBOAT_YELLOW_unavailable_1": {
+        "x": 745,
+        "y": 1186
+      },
+      "BLACKBOAT_YELLOW_unavailable_2": {
+        "x": 745,
+        "y": 1185
+      },
+      "BLACKBOAT_GREY_unavailable_0": {
+        "x": 692,
+        "y": 1753
+      },
+      "BLACKBOAT_GREY_unavailable_1": {
+        "x": 692,
+        "y": 1754
+      },
+      "BLACKBOAT_GREY_unavailable_2": {
+        "x": 692,
+        "y": 1753
+      },
+      "MEGATANK_GREEN_unavailable_0": {
+        "x": 373,
+        "y": 1185
+      },
+      "MEGATANK_GREEN_unavailable_1": {
+        "x": 373,
+        "y": 1185
+      },
+      "MEGATANK_GREEN_unavailable_2": {
+        "x": 373,
+        "y": 1185
+      },
+      "MEGATANK_YELLOW_unavailable_0": {
+        "x": 762,
+        "y": 1185
+      },
+      "MEGATANK_YELLOW_unavailable_1": {
+        "x": 762,
+        "y": 1185
+      },
+      "MEGATANK_YELLOW_unavailable_2": {
+        "x": 762,
+        "y": 1185
+      },
+      "MEGATANK_GREY_unavailable_0": {
+        "x": 709,
+        "y": 1753
+      },
+      "MEGATANK_GREY_unavailable_1": {
+        "x": 709,
+        "y": 1753
+      },
+      "MEGATANK_GREY_unavailable_2": {
+        "x": 709,
+        "y": 1753
+      },
+      "PIPERUNNER_GREEN_unavailable_0": {
+        "x": 339,
+        "y": 1211
+      },
+      "PIPERUNNER_GREEN_unavailable_1": {
+        "x": 339,
+        "y": 1211
+      },
+      "PIPERUNNER_GREEN_unavailable_2": {
+        "x": 339,
+        "y": 1211
+      },
+      "PIPERUNNER_YELLOW_unavailable_0": {
+        "x": 728,
+        "y": 1211
+      },
+      "PIPERUNNER_YELLOW_unavailable_1": {
+        "x": 728,
+        "y": 1211
+      },
+      "PIPERUNNER_YELLOW_unavailable_2": {
+        "x": 728,
+        "y": 1211
+      },
+      "PIPERUNNER_GREY_unavailable_0": {
+        "x": 675,
+        "y": 1779
+      },
+      "PIPERUNNER_GREY_unavailable_1": {
+        "x": 675,
+        "y": 1779
+      },
+      "PIPERUNNER_GREY_unavailable_2": {
+        "x": 675,
+        "y": 1779
+      }
+    },
+    "hp_indicators": {
+      "hp_indicators_0": {
+        "x": 556,
+        "y": 1233
+      },
+      "hp_indicators_1": {
+        "x": 565,
+        "y": 1233
+      },
+      "hp_indicators_2": {
+        "x": 574,
+        "y": 1233
+      },
+      "hp_indicators_3": {
+        "x": 583,
+        "y": 1233
+      },
+      "hp_indicators_4": {
+        "x": 592,
+        "y": 1233
+      },
+      "hp_indicators_5": {
+        "x": 601,
+        "y": 1233
+      },
+      "hp_indicators_6": {
+        "x": 610,
+        "y": 1233
+      },
+      "hp_indicators_7": {
+        "x": 619,
+        "y": 1233
+      },
+      "hp_indicators_8": {
+        "x": 628,
+        "y": 1233
+      },
+      "hp_indicators_9": {
+        "x": 637,
+        "y": 1233
+      }
+    },
+    "hp_unavailable": {
+      "hp_unavailable_0": {
+        "x": 428,
+        "y": 1233
+      },
+      "hp_unavailable_1": {
+        "x": 437,
+        "y": 1233
+      },
+      "hp_unavailable_2": {
+        "x": 446,
+        "y": 1233
+      },
+      "hp_unavailable_3": {
+        "x": 455,
+        "y": 1233
+      },
+      "hp_unavailable_4": {
+        "x": 464,
+        "y": 1233
+      },
+      "hp_unavailable_5": {
+        "x": 473,
+        "y": 1233
+      },
+      "hp_unavailable_6": {
+        "x": 482,
+        "y": 1233
+      },
+      "hp_unavailable_7": {
+        "x": 491,
+        "y": 1233
+      },
+      "hp_unavailable_8": {
+        "x": 500,
+        "y": 1233
+      },
+      "hp_unavailable_9": {
+        "x": 509,
+        "y": 1233
+      }
+    },
+    "status_icons": {
+      "status_icons_0": {
+        "x": 520,
+        "y": 1233
+      },
+      "status_icons_1": {
+        "x": 529,
+        "y": 1233
+      },
+      "status_icons_2": {
+        "x": 538,
+        "y": 1233
+      },
+      "status_icons_3": {
+        "x": 547,
+        "y": 1233
+      }
+    },
+    "config": {
+      "width": 16,
+      "height": 16,
+      "spacingX": 0,
+      "spacingY": 0
+    }
+  },
+  "stats": {
+    "totalCorrections": 375
+  }
+}

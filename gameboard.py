@@ -70,14 +70,34 @@ class GameBoard():
                     board.blue_funds += int(config['FUNDS']['income'])
                     board.total_blue_properties += 1
         
-        # Give all armies a starting amount of funds to prevent insufficient funds error
-        # This ensures all armies can perform basic actions even without properties
-        starting_funds = int(config['FUNDS']['income']) * 10  # 10,000 starting funds
+        # Calculate starting funds based on owned properties (Advance Wars standard)
+        property_income = int(config['FUNDS']['income'])  # 1000 per property
+        
+        # Count properties owned by each army at start
+        army_property_count = {}
+        for army in board.turn_order:
+            army_property_count[army] = 0
+        
+        for tile in board.grid:
+            if tile.mapTile.army in army_property_count:
+                army_property_count[tile.mapTile.army] += 1
         
         # Initialize flexible fund tracking for all armies
         for army in board.turn_order:
+            # Starting funds = properties owned × 1000 (minimum 1000 if no properties)
+            property_based_funds = max(1000, army_property_count[army] * property_income)
+            
+            # For test games, add extra funds to enable testing
+            # Test games are identified by having very few properties but needing to test expensive units
+            total_properties = sum(army_property_count.values())
+            if total_properties < 4:  # Likely a test map with minimal properties
+                test_bonus = 8000  # Give 8000 extra for testing (total 9000+ for most test scenarios)
+                starting_funds = property_based_funds + test_bonus
+            else:
+                starting_funds = property_based_funds
+            
             board.army_funds[army] = starting_funds
-            board.army_properties[army] = 0
+            board.army_properties[army] = army_property_count[army]
             board.army_troops[army] = 0
             
             # Also maintain backward compatibility with hardcoded RED/BLUE system

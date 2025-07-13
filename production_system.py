@@ -77,18 +77,18 @@ class ProductionSystem:
         ]
     }
     
-    # Income per property type per turn
+    # Income per property type per turn (Advance Wars standard)
     PROPERTY_INCOME = {
-        MapType.CITY: 1000,
-        MapType.FACTORY: 1000,
-        MapType.AIRPORT: 1000,
-        MapType.PORT: 1000,
-        MapType.COM_TOWER: 1000,
-        MapType.LAB: 1000,
-        MapType.BASE_TOWER_1: 1000,  # HQ
-        MapType.BASE_TOWER_2: 1000,
+        MapType.CITY: 1000,          # Cities provide 1000 funds
+        MapType.BASE_TOWER_1: 1000,  # HQ provides 1000 funds
+        MapType.BASE_TOWER_2: 1000,  # Additional HQ types
         MapType.BASE_TOWER_3: 1000,
         MapType.BASE_TOWER_4: 1000,
+        MapType.FACTORY: 1000,       # Production facilities provide 1000 funds
+        MapType.AIRPORT: 1000,
+        MapType.PORT: 1000,
+        MapType.COM_TOWER: 1000,     # Communication towers provide 1000 funds
+        MapType.LAB: 1000,           # Labs provide 1000 funds
     }
     
     def __init__(self, game_manager):

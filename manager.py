@@ -51,6 +51,7 @@ class GameManager:
         self.config = config
         self.board = board
         self.transport_system = CompleteTransportSystem(self)
+        self.app_logger = None  # Will be set by the calling code
 
     def __repr__(self):
         return f"{self.__class__.__name__}"
@@ -234,11 +235,14 @@ class GameManager:
 
     def _update_army_funds(self, army: Army, amount: int) -> None:
         """Update army funds."""
+        # Update legacy hardcoded system for RED/BLUE
         if army == Army.RED:
             self.board.red_funds += amount
         elif army == Army.BLUE:
             self.board.blue_funds += amount
-        elif hasattr(self.board, 'army_funds') and army in self.board.army_funds:
+        
+        # Also update flexible army_funds system for ALL armies (including RED/BLUE)
+        if hasattr(self.board, 'army_funds') and army in self.board.army_funds:
             self.board.army_funds[army] += amount
 
     def _get_army_funds(self, army: Army) -> int:
@@ -259,19 +263,36 @@ class GameManager:
         self.board.total_red_properties = 0
         self.board.total_blue_properties = 0
         
+        # Reset flexible army statistics
+        for army in self.board.turn_order:
+            self.board.army_troops[army] = 0
+            self.board.army_properties[army] = 0
+        
         # Count in single pass
         income = int(config['FUNDS']['income'])
         for tile in self.board.grid:
             if tile.unit:
-                if tile.unit.army == Army.RED:
+                army = tile.unit.army
+                # Update flexible army troops counter
+                if army in self.board.army_troops:
+                    self.board.army_troops[army] += 1
+                
+                # Maintain backward compatibility
+                if army == Army.RED:
                     self.board.total_red_troops += 1
-                elif tile.unit.army == Army.BLUE:
+                elif army == Army.BLUE:
                     self.board.total_blue_troops += 1
                     
             if tile.mapTile.army:
-                if tile.mapTile.army == Army.RED:
+                army = tile.mapTile.army
+                # Update flexible army properties counter
+                if army in self.board.army_properties:
+                    self.board.army_properties[army] += 1
+                
+                # Maintain backward compatibility  
+                if army == Army.RED:
                     self.board.total_red_properties += income
-                elif tile.mapTile.army == Army.BLUE:
+                elif army == Army.BLUE:
                     self.board.total_blue_properties += income
                     
     def produce_unit_at_facility(self, facility_x: int, facility_y: int, 
@@ -346,25 +367,7 @@ class GameManager:
         
         return daily_income
 
-    # Enhanced turn start method with income processing
-    def _start_next_army_turn(self) -> None:
-        """Process start-of-turn effects for new army with enhanced income"""
-        current_army = self.board.current_turn
-        
-        # Process daily income using production system
-        daily_income = self.process_daily_income(current_army)
-        
-        # Activate units and process turn effects
-        for tile in self.board.grid:
-            if tile.unit and tile.unit.army == current_army:
-                unit = tile.unit
-                self._process_unit_turn_start(unit, tile)
-            elif not tile.unit and tile.mapTile.is_capturable():
-                tile.capture_hp = 20
-        
-        # Log income processing
-        if hasattr(self, 'app_logger'):
-            self.app_logger.info(f"{current_army.name} received {daily_income} income")
+    # Enhanced turn start method with income processing (moved to end of file)
 
     # Enhanced unit creation with initial funds setup
     def setup_initial_economy(self) -> None:
@@ -666,23 +669,7 @@ class GameManager:
             if fuel_results["units_immobilized"] > 0:
                 print(f"Day {self.board.days}: {fuel_results['units_immobilized']} land units immobilized due to fuel depletion")
 
-    def _start_next_army_turn(self) -> None:
-        """Process start-of-turn effects for new army."""
-        current_army = self.board.current_turn
-        income = int(config['FUNDS']['income'])
-        
-        # Add income from properties
-        for tile in self.board.grid:
-            if tile.mapTile.army == current_army:
-                self._update_army_funds(current_army, income)
-        
-        # Activate units and process turn effects
-        for tile in self.board.grid:
-            if tile.unit and tile.unit.army == current_army:
-                unit = tile.unit
-                self._process_unit_turn_start(unit, tile)
-            elif not tile.unit and tile.mapTile.is_capturable():
-                tile.capture_hp = 20
+    # Duplicate method removed - consolidated into final version at end of file
 
     def _process_unit_turn_start(self, unit: Unit, tile: GameTile) -> None:
         """Process start-of-turn effects for a unit."""
@@ -774,6 +761,15 @@ class GameManager:
             )
         
         # Check if unit can move (including fuel restrictions)
+        # Special handling for transports - check if they've already moved this turn
+        if self.is_transport_unit(unit):
+            if hasattr(unit.status, 'has_moved_this_turn') and unit.status.has_moved_this_turn:
+                from error_handling import UnitError
+                raise UnitError(
+                    f"{unit.type.name} has already moved this turn",
+                    unit_id=str(unit.id)
+                )
+        
         if not unit.can_move or unit.status.fuel <= 0:
             from error_handling import UnitError
             if unit.status.fuel <= 0:
@@ -829,6 +825,13 @@ class GameManager:
         # Update unit state
         unit.status.fuel -= fuel_cost
         unit.can_move = False
+        
+        # Special handling for transports
+        if self.is_transport_unit(unit):
+            # Mark transport as having moved this turn
+            unit.status.has_moved_this_turn = True
+            # Important: Transports can still load/unload after moving
+            # So we don't disable all actions, just movement
         
         # Indirect units can't attack after moving
         if unit.is_indirect():
@@ -1431,9 +1434,13 @@ class GameManager:
 
     # Update your existing turn start method
     def _start_next_army_turn(self) -> None:
-        """Start new army turn with transport movement reset"""
+        """Start new army turn with income processing and transport movement reset"""
         current_army = self.board.current_turn
         
+        # Process daily income using production system
+        daily_income = self.process_daily_income(current_army)
+        
+        # Activate units and process turn effects
         for tile in self.board.grid:
             if tile.unit and tile.unit.army == current_army:
                 # Reset all action flags for new turn
@@ -1448,6 +1455,15 @@ class GameManager:
                 # APC auto-resupply adjacent units at turn start
                 if self.is_apc(tile.unit):
                     self._apc_auto_resupply_adjacent(tile)
+                
+                # Process unit turn start effects
+                self._process_unit_turn_start(tile.unit, tile)
+            elif not tile.unit and tile.mapTile.is_capturable():
+                tile.capture_hp = 20
+        
+        # Log income processing
+        if hasattr(self, 'app_logger'):
+            self.app_logger.info(f"{current_army.name} received {daily_income} income")
 
     def is_apc(self, unit) -> bool:
         """Check if unit is an APC"""

@@ -23,3 +23,14 @@ else:
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///aw-rpc.db'
 from database_optimization import init_database_pool, create_indexes
 db = SQLAlchemy(app)
+
+# Set up logging for app_core
+import logging
+app_logger = logging.getLogger(__name__)
+
+# Export ENHANCED_LOGGING flag
+try:
+    from logging_config import setup_application_logging
+    ENHANCED_LOGGING = True
+except ImportError:
+    ENHANCED_LOGGING = False

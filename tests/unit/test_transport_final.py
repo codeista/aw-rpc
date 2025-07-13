@@ -54,8 +54,8 @@ def generate_funds_from_properties(game_id: str, cycles: int = 2) -> bool:
         return False
     
     initial_funds = {
-        "RED": initial_board.get("board", {}).get("red_funds", 0),
-        "BLUE": initial_board.get("board", {}).get("blue_funds", 0)
+        "RED": initial_board.get("red_funds", 0),
+        "BLUE": initial_board.get("blue_funds", 0)
     }
     
     print(f"💰 Initial funds - RED: {initial_funds['RED']}, BLUE: {initial_funds['BLUE']}")
@@ -80,8 +80,8 @@ def generate_funds_from_properties(game_id: str, cycles: int = 2) -> bool:
         board = rpc_call("game_board", {"token": game_id})
         if "error" not in board:
             current_funds = {
-                "RED": board.get("board", {}).get("red_funds", 0),
-                "BLUE": board.get("board", {}).get("blue_funds", 0)
+                "RED": board.get("red_funds", 0),
+                "BLUE": board.get("blue_funds", 0)
             }
             print(f"   After cycle {cycle + 1} - RED: {current_funds['RED']}, BLUE: {current_funds['BLUE']}")
     
@@ -91,8 +91,8 @@ def generate_funds_from_properties(game_id: str, cycles: int = 2) -> bool:
         return False
     
     final_funds = {
-        "RED": final_board.get("board", {}).get("red_funds", 0),
-        "BLUE": final_board.get("board", {}).get("blue_funds", 0)
+        "RED": final_board.get("red_funds", 0),
+        "BLUE": final_board.get("blue_funds", 0)
     }
     
     fund_increase = {
@@ -110,23 +110,25 @@ def create_comprehensive_transport_test(game_id: str) -> int:
     print("🚛 Creating transport test units...")
     
     # Test units in order of priority (cheapest first for maximum testing)
+    # IMPORTANT: Units must be on land terrain for APCs to load them!
+    # The test map has land terrain at y=5 (PLAIN, WOOD, etc)
     test_units = [
-        # Basic transports and cargo
-        {"unit": "INFANTRY", "army": "RED", "x": 1, "y": 1, "cost": 1000},
-        {"unit": "INFANTRY", "army": "RED", "x": 2, "y": 1, "cost": 1000},
-        {"unit": "APC", "army": "RED", "x": 3, "y": 1, "cost": 5000},
+        # Basic transports and cargo on LAND terrain
+        {"unit": "INFANTRY", "army": "RED", "x": 6, "y": 5, "cost": 1000},  # On PLAIN
+        {"unit": "APC", "army": "RED", "x": 5, "y": 5, "cost": 5000},      # On BASE_TOWER_1
+        {"unit": "INFANTRY", "army": "RED", "x": 7, "y": 5, "cost": 1000},  # On WOOD
         
-        {"unit": "INFANTRY", "army": "BLUE", "x": 8, "y": 1, "cost": 1000},
-        {"unit": "MECH", "army": "BLUE", "x": 9, "y": 1, "cost": 3000},
-        {"unit": "APC", "army": "BLUE", "x": 10, "y": 1, "cost": 5000},
+        {"unit": "INFANTRY", "army": "BLUE", "x": 4, "y": 5, "cost": 1000},
+        {"unit": "MECH", "army": "BLUE", "x": 3, "y": 5, "cost": 3000},
+        {"unit": "APC", "army": "BLUE", "x": 2, "y": 5, "cost": 5000},
         
         # Advanced units if funds allow
-        {"unit": "RECON", "army": "RED", "x": 1, "y": 3, "cost": 4000},
-        {"unit": "TANK", "army": "RED", "x": 2, "y": 3, "cost": 7000},
+        {"unit": "RECON", "army": "RED", "x": 6, "y": 4, "cost": 4000},
+        {"unit": "TANK", "army": "RED", "x": 7, "y": 4, "cost": 7000},
         {"unit": "LANDER", "army": "RED", "x": 1, "y": 8, "cost": 12000},
         
-        {"unit": "TCOPTER", "army": "BLUE", "x": 5, "y": 5, "cost": 5000},
-        {"unit": "INFANTRY", "army": "BLUE", "x": 5, "y": 4, "cost": 1000},
+        {"unit": "TCOPTER", "army": "BLUE", "x": 8, "y": 5, "cost": 5000},
+        {"unit": "INFANTRY", "army": "BLUE", "x": 8, "y": 4, "cost": 1000},
     ]
     
     created_units = []
@@ -171,7 +173,7 @@ def run_transport_tests(game_id: str) -> dict:
     
     # Test 1: Transport Detection
     print("\n1️⃣ Testing transport detection...")
-    transport_positions = [(3, 1), (10, 1), (1, 8), (5, 5)]  # Potential transport locations
+    transport_positions = [(5, 5), (2, 5), (3, 1), (10, 1), (1, 8)]  # Potential transport locations - updated for new positions
     
     found_transport = None
     for x, y in transport_positions:
@@ -193,7 +195,7 @@ def run_transport_tests(game_id: str) -> dict:
     
     # Test 2: Find cargo for this transport
     print("\n2️⃣ Testing cargo unit detection...")
-    cargo_positions = [(1, 1), (2, 1), (8, 1), (9, 1), (1, 3), (2, 3)]  # Potential cargo locations
+    cargo_positions = [(6, 5), (7, 5), (4, 5), (3, 5), (8, 4), (1, 1), (2, 1)]  # Potential cargo locations - updated for new positions
     
     found_cargo = None
     for x, y in cargo_positions:
@@ -335,6 +337,12 @@ def main():
         return False
     
     print(f"✅ Created {units_created} units for testing")
+    
+    # End turns to enable unit movement
+    print("\n🔄 Cycling turns to enable unit movement...")
+    rpc_call("army_end_turn", {"token": game_id})  # End RED turn
+    rpc_call("army_end_turn", {"token": game_id})  # End BLUE turn
+    print("✅ Units can now move")
     
     # Run transport tests
     results = run_transport_tests(game_id)

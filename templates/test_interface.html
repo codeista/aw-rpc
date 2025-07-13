@@ -1,614 +1,506 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>AW-RPC Comprehensive Testing Interface</title>
+    <title>AW-RPC Test Suite</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+        
         body { 
             font-family: 'Segoe UI', Arial, sans-serif; 
             padding: 0; 
             margin: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #0f0f23;
+            color: #ccc;
             min-height: 100vh;
         }
         
         .container {
             max-width: 1400px;
             margin: 0 auto;
-            padding: 15px;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 320px 320px 1fr;
+            gap: 20px;
+            height: calc(100vh - 40px);
         }
         
         .header {
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            text-align: center;
+            grid-column: 1 / -1;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 10px 20px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 60px;
         }
         
         .header h1 {
-            margin: 0 0 10px 0;
-            font-size: 2.5em;
+            margin: 0;
+            font-size: 1.4em;
             font-weight: 300;
+            color: #fff;
         }
         
-        .header p {
-            margin: 5px 0;
-            opacity: 0.9;
+        /* Control Panel */
+        .control-panel {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 15px;
+            overflow-y: auto;
         }
         
-        .test-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 15px;
-            margin: 15px 0;
+        .control-panel h2 {
+            margin: 0 0 15px 0;
+            font-size: 1.1em;
+            color: #fff;
+            font-weight: 400;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
         }
         
-        .test-category {
-            background: rgba(255,255,255,0.95);
-            border-radius: 12px;
-            padding: 18px;
-            box-shadow: 0 6px 24px rgba(0,0,0,0.1);
-            transition: transform 0.2s, box-shadow 0.2s;
+        .test-button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 8px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
-        .test-category:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        .test-button:hover {
+            background: rgba(255,255,255,0.15);
+            border-color: rgba(255,255,255,0.3);
+            transform: translateX(2px);
         }
         
-        .category-header {
+        .test-button.running {
+            background: rgba(59, 130, 246, 0.2);
+            border-color: rgba(59, 130, 246, 0.5);
+        }
+        
+        .button-icon {
+            font-size: 16px;
+        }
+        
+        /* Status Panel */
+        .status-panel {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 15px;
+            overflow-y: auto;
+        }
+        
+        .status-panel h2 {
+            margin: 0 0 15px 0;
+            font-size: 1.1em;
+            color: #fff;
+            font-weight: 400;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .status-item {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 15px;
-            padding-bottom: 12px;
-            border-bottom: 2px solid #f0f0f0;
-            cursor: pointer;
+            padding: 8px 12px;
+            margin-bottom: 6px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 5px;
+            font-size: 13px;
         }
         
-        .category-info {
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #666;
+        }
+        
+        .status-indicator.ready {
+            background: #666;
+        }
+        
+        .status-indicator.running {
+            background: #3b82f6;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .status-indicator.passed {
+            background: #10b981;
+        }
+        
+        .status-indicator.failed {
+            background: #ef4444;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        /* Results Panel */
+        .results-panel {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 15px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        
+        .results-panel h2 {
+            margin: 0 0 15px 0;
+            font-size: 1.1em;
+            color: #fff;
+            font-weight: 400;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        
+        .server-status {
             display: flex;
             align-items: center;
-        }
-        
-        .category-summary {
-            font-size: 0.85em;
-            color: #7f8c8d;
-            margin-top: 3px;
-        }
-        
-        .expand-icon {
-            font-size: 1.2em;
-            color: #3498db;
-            transition: transform 0.3s;
-        }
-        
-        .test-category.collapsed .expand-icon {
-            transform: rotate(-90deg);
-        }
-        
-        .test-category.collapsed .test-content {
-            display: none;
-        }
-        
-        .category-icon {
-            font-size: 2em;
-            margin-right: 15px;
-        }
-        
-        .category-title {
-            font-size: 1.3em;
-            font-weight: 600;
-            color: #2c3e50;
-            margin: 0;
-        }
-        
-        .category-details {
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .test-content {
-            margin-top: 15px;
-        }
-        
-        .test-description {
-            color: #7f8c8d;
-            font-size: 0.9em;
-            margin: 0 0 15px 0;
-            line-height: 1.4;
-        }
-        
-        .test-actions {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        
-        .btn {
-            padding: 10px 16px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 500;
-            text-decoration: none;
-            text-align: center;
-            transition: all 0.2s;
-            display: inline-block;
-        }
-        
-        .btn-primary {
-            background: linear-gradient(45deg, #3498db, #2980b9);
-            color: white;
-        }
-        
-        .btn-success {
-            background: linear-gradient(45deg, #27ae60, #229954);
-            color: white;
-        }
-        
-        .btn-warning {
-            background: linear-gradient(45deg, #f39c12, #e67e22);
-            color: white;
-        }
-        
-        .btn-danger {
-            background: linear-gradient(45deg, #e74c3c, #c0392b);
-            color: white;
-        }
-        
-        .btn-info {
-            background: linear-gradient(45deg, #17a2b8, #138496);
-            color: white;
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-        
-        .btn-small {
-            padding: 6px 12px;
-            font-size: 11px;
-        }
-        
-        .compact-controls {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        
-        .compact-btn {
-            padding: 8px 12px;
-            font-size: 12px;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            background: #3498db;
-            color: white;
-            transition: all 0.2s;
-        }
-        
-        .compact-btn:hover {
-            background: #2980b9;
-            transform: translateY(-1px);
-        }
-        
-        .quick-stats {
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-            color: white;
-        }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-        }
-        
-        .stat-item {
-            text-align: center;
-            padding: 15px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 8px;
-        }
-        
-        .stat-number {
-            font-size: 2em;
-            font-weight: bold;
-            display: block;
-        }
-        
-        .stat-label {
-            font-size: 0.9em;
-            opacity: 0.8;
-        }
-        
-        .advanced-section {
-            background: rgba(255,255,255,0.95);
-            border-radius: 15px;
-            padding: 25px;
-            margin-top: 20px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-        }
-        
-        .advanced-header {
-            color: #2c3e50;
-            font-size: 1.3em;
-            font-weight: 600;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #f0f0f0;
-        }
-        
-        .tool-links {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        
-        #status-indicator {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 10px 15px;
-            border-radius: 20px;
-            color: white;
-            font-weight: bold;
-            z-index: 1000;
+            gap: 8px;
+            font-size: 14px;
         }
         
         .status-online {
-            background: #27ae60;
+            color: #10b981;
         }
         
         .status-offline {
-            background: #e74c3c;
+            color: #ef4444;
         }
         
-        .settings-panel {
-            background: rgba(255,255,255,0.95);
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        .divider {
+            width: 100%;
+            height: 1px;
+            background: rgba(255,255,255,0.1);
+            margin: 15px 0;
         }
         
-        .toggle-controls {
+        .action-buttons {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
             margin-top: 15px;
         }
         
-        .toggle-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
-        
-        .toggle-label {
-            font-weight: 500;
-            color: #2c3e50;
-        }
-        
-        .toggle-switch {
-            position: relative;
-            width: 50px;
-            height: 24px;
-            background: #ddd;
-            border-radius: 12px;
+        .action-button {
+            padding: 6px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+            border-radius: 5px;
             cursor: pointer;
-            transition: background 0.3s;
+            font-size: 11px;
+            transition: all 0.2s;
         }
         
-        .toggle-switch.active {
-            background: #27ae60;
+        .action-button:hover {
+            background: rgba(255,255,255,0.15);
         }
         
-        .toggle-switch::after {
-            content: '';
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            width: 20px;
-            height: 20px;
-            background: white;
-            border-radius: 10px;
-            transition: left 0.3s;
+        .result-entry {
+            margin-bottom: 10px;
+            padding: 8px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 4px;
         }
         
-        .toggle-switch.active::after {
-            left: 28px;
+        .result-timestamp {
+            color: #666;
+            font-size: 11px;
         }
         
-        .hidden {
-            display: none !important;
+        .result-content {
+            margin-top: 5px;
+            white-space: pre-wrap;
+            color: #e0e0e0;
+        }
+        
+        .test-summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .summary-card {
+            background: rgba(255,255,255,0.05);
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        
+        .summary-number {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        
+        .summary-label {
+            font-size: 12px;
+            color: #999;
         }
     </style>
 </head>
 <body>
-    <div id="status-indicator" class="status-offline">🔴 Checking...</div>
-    
     <div class="container">
         <div class="header">
-            <h1>🎮 AW-RPC Testing Suite</h1>
-            <p>Comprehensive testing interface for all game mechanics</p>
-            <p>✨ Updated with latest test coverage improvements</p>
-        </div>
-        
-        <div class="settings-panel">
-            <div class="advanced-header">⚙️ Quick Controls</div>
-            <div class="compact-controls">
-                <button class="compact-btn" onclick="expandAll()">📖 Expand All</button>
-                <button class="compact-btn" onclick="collapseAll()">📕 Collapse All</button>
-                <button class="compact-btn" onclick="runAllTests()">🚀 Run All Tests</button>
-                <button class="compact-btn" onclick="checkServerStatus()">🔍 Server Status</button>
-            </div>
-            <div class="toggle-controls">
-                <div class="toggle-item">
-                    <span class="toggle-label">Show Stats</span>
-                    <div class="toggle-switch active" onclick="toggleSection('stats')" data-target="stats"></div>
-                </div>
-                <div class="toggle-item">
-                    <span class="toggle-label">Show Advanced Tools</span>
-                    <div class="toggle-switch active" onclick="toggleSection('advanced')" data-target="advanced"></div>
-                </div>
+            <h1>🎮 AW-RPC Test Suite</h1>
+            <div class="server-status" id="server-status">
+                <span>Server:</span>
+                <span id="status-text" class="status-offline">Checking...</span>
             </div>
         </div>
         
-        <div id="stats-section" class="quick-stats">
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <span class="stat-number">54</span>
-                    <span class="stat-label">RPC Methods</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-number">6</span>
-                    <span class="stat-label">Test Suites</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-number">95%</span>
-                    <span class="stat-label">Coverage</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-number">5</span>
-                    <span class="stat-label">Game Systems</span>
-                </div>
+        <!-- Control Panel -->
+        <div class="control-panel">
+            <h2>Test Controls</h2>
+            
+            <button class="test-button" onclick="runTest('combat', 'test_combat_system.py')">
+                <span class="button-icon">⚔️</span>
+                <span>Combat System</span>
+            </button>
+            
+            <button class="test-button" onclick="runTest('economic', 'test_economic_system.py')">
+                <span class="button-icon">💰</span>
+                <span>Economic System</span>
+            </button>
+            
+            <button class="test-button" onclick="runTest('movement', 'test_movement_system.py')">
+                <span class="button-icon">🚶</span>
+                <span>Movement System</span>
+            </button>
+            
+            <button class="test-button" onclick="runTest('victory', 'test_victory_conditions.py')">
+                <span class="button-icon">🏆</span>
+                <span>Victory Conditions</span>
+            </button>
+            
+            <button class="test-button" onclick="runTest('transport', 'test_transport_final.py')">
+                <span class="button-icon">🚢</span>
+                <span>Transport System</span>
+            </button>
+            
+            <button class="test-button" onclick="runTest('integration', 'updated_test_phase1.py')">
+                <span class="button-icon">🔧</span>
+                <span>Integration Tests</span>
+            </button>
+            
+            <button class="test-button" onclick="runTest('multiplayer', 'test_multiplayer_armies.py')">
+                <span class="button-icon">👥</span>
+                <span>Multiplayer Armies</span>
+            </button>
+            
+            <div class="divider"></div>
+            
+            <button class="test-button" onclick="runAllTests()" style="background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.5);">
+                <span class="button-icon">🚀</span>
+                <span>Run All Tests</span>
+            </button>
+            
+            <div class="divider"></div>
+            
+            <div class="action-buttons">
+                <button class="action-button" onclick="window.open('/test_optimized', '_blank')">
+                    🎯 Test Map
+                </button>
+                <button class="action-button" onclick="window.open('/sprite_test', '_blank')">
+                    🎨 Sprite Test
+                </button>
+                <button class="action-button" onclick="window.open('/test_triangle', '_blank')">
+                    🔺 Triangle (3P)
+                </button>
+                <button class="action-button" onclick="window.open('/test_cross', '_blank')">
+                    ➕ Cross (4P)
+                </button>
+                <button class="action-button" onclick="window.open('/test_pentagon', '_blank')">
+                    ⭐ Pentagon (5P)
+                </button>
+                <button class="action-button" onclick="window.open('/api/browse', '_blank')">
+                    📚 API Docs
+                </button>
+                <button class="action-button" onclick="clearResults()">
+                    🗑️ Clear
+                </button>
+                <button class="action-button" onclick="checkServerStatus()">
+                    🔄 Refresh
+                </button>
             </div>
         </div>
         
-        <div class="test-grid">
-            <!-- Combat System Testing -->
-            <div id="combat-section" class="test-category collapsed" onclick="toggleCategory(this)">
-                <div class="category-header">
-                    <div class="category-info">
-                        <div class="category-icon">⚔️</div>
-                        <div class="category-details">
-                            <div class="category-title">Combat System</div>
-                            <div class="category-summary">Damage calc, terrain, counter-attacks</div>
-                        </div>
-                    </div>
-                    <div class="expand-icon">🔽</div>
+        <!-- Status Panel -->
+        <div class="status-panel">
+            <h2>Test Status</h2>
+            
+            <div class="test-summary">
+                <div class="summary-card">
+                    <div class="summary-number" id="total-tests">0</div>
+                    <div class="summary-label">Total</div>
                 </div>
-                <div class="test-content">
-                    <div class="test-description">
-                        Test damage calculation, terrain modifiers, counter-attacks, and multi-turn unit destruction using actual attack targets.
-                    </div>
-                    <div class="test-actions">
-                        <button class="btn btn-danger" onclick="event.stopPropagation(); runCombatTests()">
-                            🎯 Run Combat Tests
-                        </button>
-                        <button class="btn btn-warning btn-small" onclick="event.stopPropagation(); openOptimizedTestGame()">
-                            🗺️ Open Test Map
-                        </button>
-                    </div>
+                <div class="summary-card">
+                    <div class="summary-number" id="passed-tests" style="color: #10b981;">0</div>
+                    <div class="summary-label">Passed</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-number" id="failed-tests" style="color: #ef4444;">0</div>
+                    <div class="summary-label">Failed</div>
                 </div>
             </div>
             
-            <!-- Economic System Testing -->
-            <div id="economic-section" class="test-category collapsed" onclick="toggleCategory(this)">
-                <div class="category-header">
-                    <div class="category-info">
-                        <div class="category-icon">💰</div>
-                        <div class="category-details">
-                            <div class="category-title">Economic System</div>
-                            <div class="category-summary">Funds, costs, income, production</div>
-                        </div>
-                    </div>
-                    <div class="expand-icon">🔽</div>
+            <div id="status-list">
+                <div class="status-item">
+                    <span>⚔️ Combat System</span>
+                    <span class="status-indicator ready" id="status-combat"></span>
                 </div>
-                <div class="test-content">
-                    <div class="test-description">
-                        Test fund management, unit costs, affordability checks, property income, and production options.
-                    </div>
-                    <div class="test-actions">
-                        <button class="btn btn-success" onclick="event.stopPropagation(); runEconomicTests()">
-                            💸 Run Economic Tests
-                        </button>
-                        <button class="btn btn-info btn-small" onclick="event.stopPropagation(); checkArmyEconomy()">
-                            📊 Check Economy
-                        </button>
-                    </div>
+                <div class="status-item">
+                    <span>💰 Economic System</span>
+                    <span class="status-indicator ready" id="status-economic"></span>
                 </div>
-            </div>
-            
-            <!-- Movement System Testing -->
-            <div id="movement-section" class="test-category collapsed" onclick="toggleCategory(this)">
-                <div class="category-header">
-                    <div class="category-info">
-                        <div class="category-icon">🚶</div>
-                        <div class="category-details">
-                            <div class="category-title">Movement System</div>
-                            <div class="category-summary">Validation, costs, pathfinding</div>
-                        </div>
-                    </div>
-                    <div class="expand-icon">🔽</div>
+                <div class="status-item">
+                    <span>🚶 Movement System</span>
+                    <span class="status-indicator ready" id="status-movement"></span>
                 </div>
-                <div class="test-content">
-                    <div class="test-description">
-                        Test movement validation, valid moves calculation, movement costs, and pathfinding.
-                    </div>
-                    <div class="test-actions">
-                        <button class="btn btn-primary" onclick="event.stopPropagation(); runMovementTests()">
-                            🏃 Run Movement Tests
-                        </button>
-                        <button class="btn btn-info btn-small" onclick="event.stopPropagation(); testMovementHighlights()">
-                            🌟 Test Highlights
-                        </button>
-                    </div>
+                <div class="status-item">
+                    <span>🏆 Victory Conditions</span>
+                    <span class="status-indicator ready" id="status-victory"></span>
                 </div>
-            </div>
-            
-            <!-- Victory Conditions Testing -->
-            <div id="victory-section" class="test-category collapsed" onclick="toggleCategory(this)">
-                <div class="category-header">
-                    <div class="category-info">
-                        <div class="category-icon">🏆</div>
-                        <div class="category-details">
-                            <div class="category-title">Victory Conditions</div>
-                            <div class="category-summary">Capture, ownership, game end</div>
-                        </div>
-                    </div>
-                    <div class="expand-icon">🔽</div>
+                <div class="status-item">
+                    <span>🚢 Transport System</span>
+                    <span class="status-indicator ready" id="status-transport"></span>
                 </div>
-                <div class="test-content">
-                    <div class="test-description">
-                        Test capture mechanics, property ownership, turn progression, game state tracking, and victory detection.
-                    </div>
-                    <div class="test-actions">
-                        <button class="btn btn-warning" onclick="event.stopPropagation(); runVictoryTests()">
-                            🏰 Run Victory Tests
-                        </button>
-                        <button class="btn btn-success btn-small" onclick="event.stopPropagation(); testCaptureMechanics()">
-                            🎯 Test Capture
-                        </button>
-                    </div>
+                <div class="status-item">
+                    <span>🔧 Integration Tests</span>
+                    <span class="status-indicator ready" id="status-integration"></span>
                 </div>
-            </div>
-            
-            <!-- Transport System Testing -->
-            <div id="transport-section" class="test-category collapsed" onclick="toggleCategory(this)">
-                <div class="category-header">
-                    <div class="category-info">
-                        <div class="category-icon">🚢</div>
-                        <div class="category-details">
-                            <div class="category-title">Transport System</div>
-                            <div class="category-summary">Loading, unloading, cargo mgmt</div>
-                        </div>
-                    </div>
-                    <div class="expand-icon">🔽</div>
-                </div>
-                <div class="test-content">
-                    <div class="test-description">
-                        Test transport loading/unloading, terrain validation, cargo management, and position validation.
-                    </div>
-                    <div class="test-actions">
-                        <button class="btn btn-info" onclick="event.stopPropagation(); runTransportTests()">
-                            🚛 Run Transport Tests
-                        </button>
-                        <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); openTransportTestGame()">
-                            🗺️ Transport Test Map
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Integration Testing -->
-            <div id="integration-section" class="test-category collapsed" onclick="toggleCategory(this)">
-                <div class="category-header">
-                    <div class="category-info">
-                        <div class="category-icon">🔧</div>
-                        <div class="category-details">
-                            <div class="category-title">Integration Tests</div>
-                            <div class="category-summary">Multi-system combinations</div>
-                        </div>
-                    </div>
-                    <div class="expand-icon">🔽</div>
-                </div>
-                <div class="test-content">
-                    <div class="test-description">
-                        Run comprehensive integration tests covering multiple game systems and API method combinations.
-                    </div>
-                    <div class="test-actions">
-                        <button class="btn btn-primary" onclick="event.stopPropagation(); runIntegrationTests()">
-                            🧪 Run Integration Tests
-                        </button>
-                        <button class="btn btn-success btn-small" onclick="event.stopPropagation(); runAllTests()">
-                            🚀 Run All Tests
-                        </button>
-                    </div>
+                <div class="status-item">
+                    <span>👥 Multiplayer Armies</span>
+                    <span class="status-indicator ready" id="status-multiplayer"></span>
                 </div>
             </div>
         </div>
         
-        <div id="advanced-section" class="advanced-section">
-            <div class="advanced-header">🛠️ Advanced Testing & Tools</div>
-            <div class="tool-links">
-                <a href="/test_optimized" class="btn btn-success btn-small">🎮 Optimized Test Game</a>
-                <a href="/test_transport" class="btn btn-info btn-small">🚢 Transport Test Game</a>
-                <a href="/logs" class="btn btn-warning btn-small">📋 View Logs</a>
-                <button class="btn btn-primary btn-small" onclick="checkServerStatus()">🔍 Server Status</button>
-                <button class="btn btn-danger btn-small" onclick="clearTestData()">🗑️ Clear Test Data</button>
-            </div>
-        </div>
-        
-        <div class="advanced-section">
-            <div class="advanced-header">📊 Test Results</div>
-            <div id="test-results" style="margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; min-height: 100px;">
-                <p style="color: #7f8c8d; text-align: center; margin: 0;">Test results will appear here...</p>
+        <!-- Results Panel -->
+        <div class="results-panel">
+            <h2>Test Results</h2>
+            <div id="results-content">
+                <div style="color: #666; text-align: center; margin-top: 50px;">
+                    Select a test to run or click "Run All Tests"
+                </div>
             </div>
         </div>
     </div>
     
     <script>
+        let testStats = {
+            total: 0,
+            passed: 0,
+            failed: 0
+        };
+        
         // Check server status on load
         checkServerStatus();
+        setInterval(checkServerStatus, 30000);
         
         function checkServerStatus() {
-            const indicator = document.getElementById('status-indicator');
-            indicator.textContent = '🟡 Checking...';
-            indicator.className = 'status-offline';
-            
-            fetch('/api', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    jsonrpc: '2.0',
-                    method: 'message',
-                    params: { message: 'ping' },
-                    id: 1
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                indicator.textContent = '🟢 Online';
-                indicator.className = 'status-online';
+            fetch('/api/browse')
+            .then(response => {
+                const statusEl = document.getElementById('status-text');
+                if (response.ok) {
+                    statusEl.textContent = 'Online';
+                    statusEl.className = 'status-online';
+                } else {
+                    statusEl.textContent = 'Offline';
+                    statusEl.className = 'status-offline';
+                }
             })
             .catch(error => {
-                indicator.textContent = '🔴 Offline';
-                indicator.className = 'status-offline';
+                const statusEl = document.getElementById('status-text');
+                statusEl.textContent = 'Offline';
+                statusEl.className = 'status-offline';
             });
         }
         
-        function showResults(content) {
-            document.getElementById('test-results').innerHTML = content;
+        function updateTestStats() {
+            document.getElementById('total-tests').textContent = testStats.total;
+            document.getElementById('passed-tests').textContent = testStats.passed;
+            document.getElementById('failed-tests').textContent = testStats.failed;
         }
         
-        function runTestScript(scriptName, testName) {
-            showResults(`<p>🏃 Running ${testName}...</p>`);
+        function setTestStatus(testName, status) {
+            const indicator = document.getElementById(`status-${testName}`);
+            if (indicator) {
+                indicator.className = `status-indicator ${status}`;
+            }
+        }
+        
+        function addResult(content, isError = false) {
+            const resultsDiv = document.getElementById('results-content');
+            const timestamp = new Date().toLocaleTimeString();
             
-            // Simulate test execution (in a real scenario, this would trigger the Python scripts)
+            const entry = document.createElement('div');
+            entry.className = 'result-entry';
+            entry.innerHTML = `
+                <div class="result-timestamp">[${timestamp}]</div>
+                <div class="result-content" style="color: ${isError ? '#ef4444' : 'inherit'}">${content}</div>
+            `;
+            
+            resultsDiv.appendChild(entry);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+        
+        function clearResults() {
+            document.getElementById('results-content').innerHTML = `
+                <div style="color: #666; text-align: center; margin-top: 50px;">
+                    Results cleared. Select a test to run.
+                </div>
+            `;
+            
+            // Reset all status indicators
+            ['combat', 'economic', 'movement', 'victory', 'transport', 'integration', 'multiplayer'].forEach(test => {
+                setTestStatus(test, 'ready');
+            });
+            
+            // Reset stats
+            testStats = { total: 0, passed: 0, failed: 0 };
+            updateTestStats();
+        }
+        
+        function runTest(testName, scriptName) {
+            // Update UI
+            setTestStatus(testName, 'running');
+            addResult(`🏃 Running ${testName} tests...`);
+            
+            // Disable button
+            const buttons = document.querySelectorAll('.test-button');
+            buttons.forEach(btn => {
+                if (btn.textContent.toLowerCase().includes(testName)) {
+                    btn.classList.add('running');
+                    btn.disabled = true;
+                }
+            });
+            
+            // Run test
             fetch('/run_test', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -616,74 +508,69 @@
             })
             .then(response => response.text())
             .then(result => {
-                showResults(`<h4>${testName} Results:</h4><pre style="white-space: pre-wrap; font-size: 12px;">${result}</pre>`);
+                const success = !result.includes('FAILED') && !result.includes('Traceback') && (result.includes('OK') || result.includes('passed') || result.includes('Success'));
+                
+                // Update status
+                setTestStatus(testName, success ? 'passed' : 'failed');
+                
+                // Update stats
+                testStats.total++;
+                if (success) {
+                    testStats.passed++;
+                } else {
+                    testStats.failed++;
+                }
+                updateTestStats();
+                
+                // Add result
+                addResult(`${success ? '✅' : '❌'} ${testName} test completed\n${result}`, !success);
+                
+                // Re-enable button
+                buttons.forEach(btn => {
+                    if (btn.textContent.toLowerCase().includes(testName)) {
+                        btn.classList.remove('running');
+                        btn.disabled = false;
+                    }
+                });
             })
             .catch(error => {
-                showResults(`<p style="color: #e74c3c;">❌ Error running ${testName}: ${error.message}</p>`);
+                setTestStatus(testName, 'failed');
+                testStats.total++;
+                testStats.failed++;
+                updateTestStats();
+                addResult(`❌ Error running ${testName} test: ${error.message}`, true);
+                
+                // Re-enable button
+                const buttons = document.querySelectorAll('.test-button');
+                buttons.forEach(btn => {
+                    if (btn.textContent.toLowerCase().includes(testName)) {
+                        btn.classList.remove('running');
+                        btn.disabled = false;
+                    }
+                });
             });
-        }
-        
-        function runCombatTests() {
-            runTestScript('test_combat_system.py', 'Combat System Tests');
-        }
-        
-        function runEconomicTests() {
-            runTestScript('test_economic_system.py', 'Economic System Tests');
-        }
-        
-        function runMovementTests() {
-            runTestScript('test_movement_system.py', 'Movement System Tests');
-        }
-        
-        function runVictoryTests() {
-            runTestScript('test_victory_conditions.py', 'Victory Condition Tests');
-        }
-        
-        function runTransportTests() {
-            runTestScript('test_transport_final.py', 'Transport System Tests');
-        }
-        
-        function runIntegrationTests() {
-            runTestScript('updated_test_phase1.py', 'Integration Tests');
         }
         
         async function runAllTests() {
-            showResults('<p>🚀 Running all test suites...</p>');
+            clearResults();
+            addResult('🚀 Starting all tests...');
             
             const tests = [
-                { script: 'test_combat_system.py', name: 'Combat', icon: '⚔️' },
-                { script: 'test_economic_system.py', name: 'Economic', icon: '💰' },
-                { script: 'test_movement_system.py', name: 'Movement', icon: '🚶' },
-                { script: 'test_victory_conditions.py', name: 'Victory', icon: '🏆' },
-                { script: 'test_transport_final.py', name: 'Transport', icon: '🚢' }
+                { name: 'combat', script: 'test_combat_system.py' },
+                { name: 'economic', script: 'test_economic_system.py' },
+                { name: 'movement', script: 'test_movement_system.py' },
+                { name: 'victory', script: 'test_victory_conditions.py' },
+                { name: 'transport', script: 'test_transport_final.py' },
+                { name: 'integration', script: 'updated_test_phase1.py' },
+                { name: 'multiplayer', script: 'test_multiplayer_armies.py' }
             ];
             
-            let results = '<h4>📊 Complete Test Suite Results:</h4>';
-            results += '<div id="all-test-results" style="display: grid; gap: 10px;">';
+            // Disable all buttons
+            document.querySelectorAll('.test-button').forEach(btn => btn.disabled = true);
             
-            // Initialize status display
-            tests.forEach((test, index) => {
-                results += `<div id="test-${index}" style="padding: 10px; background: white; border-radius: 5px; border-left: 4px solid #f39c12;">`;
-                results += `<strong>${test.icon} ${test.name} System:</strong> <span style="color: #f39c12;">⏳ Queued...</span>`;
-                results += `</div>`;
-            });
-            
-            results += '</div>';
-            results += '<div style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px;">';
-            results += '<strong>Overall Progress:</strong> <span id="overall-progress">0/${tests.length} tests completed</span>';
-            results += '</div>';
-            showResults(results);
-            
-            let completedCount = 0;
-            let allResults = [];
-            
-            // Run tests sequentially
-            for (let i = 0; i < tests.length; i++) {
-                const test = tests[i];
-                const testDiv = document.getElementById(`test-${i}`);
-                
-                // Update status to running
-                testDiv.innerHTML = `<strong>${test.icon} ${test.name} System:</strong> <span style="color: #3498db;">🏃 Running...</span>`;
+            for (const test of tests) {
+                setTestStatus(test.name, 'running');
+                addResult(`\n🏃 Running ${test.name} tests...`);
                 
                 try {
                     const response = await fetch('/run_test', {
@@ -693,171 +580,45 @@
                     });
                     
                     const result = await response.text();
-                    const success = response.ok && !result.includes('Error') && !result.includes('FAILED');
+                    const success = response.ok && !result.includes('FAILED') && !result.includes('Traceback') && (result.includes('OK') || result.includes('passed') || result.includes('Success'));
                     
-                    // Update status to completed
-                    const statusColor = success ? '#27ae60' : '#e74c3c';
-                    const statusIcon = success ? '✅' : '❌';
-                    const statusText = success ? 'Passed' : 'Failed';
+                    setTestStatus(test.name, success ? 'passed' : 'failed');
                     
-                    testDiv.innerHTML = `<strong>${test.icon} ${test.name} System:</strong> <span style="color: ${statusColor};">${statusIcon} ${statusText}</span>`;
-                    testDiv.style.borderColor = statusColor;
+                    testStats.total++;
+                    if (success) {
+                        testStats.passed++;
+                    } else {
+                        testStats.failed++;
+                    }
+                    updateTestStats();
                     
-                    allResults.push({
-                        name: test.name,
-                        success: success,
-                        result: result
-                    });
+                    addResult(`${success ? '✅' : '❌'} ${test.name} test completed`, !success);
+                    
+                    // Add the actual test output
+                    if (result && result.trim()) {
+                        addResult(result, !success);
+                    }
                     
                 } catch (error) {
-                    // Update status to error
-                    testDiv.innerHTML = `<strong>${test.icon} ${test.name} System:</strong> <span style="color: #e74c3c;">❌ Error</span>`;
-                    testDiv.style.borderColor = '#e74c3c';
-                    
-                    allResults.push({
-                        name: test.name,
-                        success: false,
-                        result: `Error: ${error.message}`
-                    });
+                    setTestStatus(test.name, 'failed');
+                    testStats.total++;
+                    testStats.failed++;
+                    updateTestStats();
+                    addResult(`❌ Error running ${test.name} test: ${error.message}`, true);
                 }
-                
-                completedCount++;
-                document.getElementById('overall-progress').textContent = `${completedCount}/${tests.length} tests completed`;
             }
             
-            // Add summary
-            const passed = allResults.filter(r => r.success).length;
-            const failed = allResults.filter(r => !r.success).length;
+            // Re-enable buttons
+            document.querySelectorAll('.test-button').forEach(btn => btn.disabled = false);
             
-            let summary = '<div style="margin-top: 15px; padding: 15px; background: white; border-radius: 8px; border-left: 4px solid #3498db;">';
-            summary += '<h4>📋 Test Summary</h4>';
-            summary += `<p><strong>✅ Passed:</strong> ${passed} | <strong>❌ Failed:</strong> ${failed} | <strong>📊 Total:</strong> ${tests.length}</p>`;
-            
-            if (failed === 0) {
-                summary += '<p style="color: #27ae60; font-weight: bold;">🎉 All tests passed!</p>';
+            // Summary
+            addResult(`\n📊 Test Summary: ${testStats.passed}/${testStats.total} passed`);
+            if (testStats.failed === 0) {
+                addResult('🎉 All tests passed!');
             } else {
-                summary += `<p style="color: #e74c3c; font-weight: bold;">⚠️ ${failed} test(s) failed. Check individual results above.</p>`;
-            }
-            
-            summary += '</div>';
-            
-            document.getElementById('all-test-results').insertAdjacentHTML('afterend', summary);
-        }
-        
-        function openOptimizedTestGame() {
-            window.open('/test_optimized', '_blank');
-        }
-        
-        function openTransportTestGame() {
-            window.open('/test_transport', '_blank');
-        }
-        
-        function checkArmyEconomy() {
-            showResults('<p>📊 Checking army economy data...</p>');
-        }
-        
-        function testMovementHighlights() {
-            showResults('<p>🌟 Testing movement highlights...</p>');
-        }
-        
-        function testCaptureMechanics() {
-            showResults('<p>🏰 Testing capture mechanics...</p>');
-        }
-        
-        function clearTestData() {
-            if (confirm('Clear all test data and logs?')) {
-                showResults('<p>🗑️ Test data cleared.</p>');
+                addResult(`⚠️ ${testStats.failed} test(s) failed`, true);
             }
         }
-        
-        // Auto-refresh server status every 30 seconds
-        setInterval(checkServerStatus, 30000);
-        
-        // Toggle section visibility
-        function toggleSection(sectionName) {
-            const toggle = document.querySelector(`[data-target="${sectionName}"]`);
-            const section = document.getElementById(`${sectionName}-section`);
-            
-            if (!toggle || !section) return;
-            
-            const isActive = toggle.classList.contains('active');
-            
-            if (isActive) {
-                toggle.classList.remove('active');
-                section.classList.add('hidden');
-                localStorage.setItem(`show-${sectionName}`, 'false');
-            } else {
-                toggle.classList.add('active');
-                section.classList.remove('hidden');
-                localStorage.setItem(`show-${sectionName}`, 'true');
-            }
-        }
-        
-        // Load saved toggle states
-        function loadToggleStates() {
-            const sections = ['stats', 'advanced'];
-            
-            sections.forEach(sectionName => {
-                const savedState = localStorage.getItem(`show-${sectionName}`);
-                const toggle = document.querySelector(`[data-target="${sectionName}"]`);
-                const section = document.getElementById(`${sectionName}-section`);
-                
-                if (savedState === 'false' && toggle && section) {
-                    toggle.classList.remove('active');
-                    section.classList.add('hidden');
-                }
-            });
-        }
-        
-        // Load toggle states on page load
-        window.addEventListener('load', loadToggleStates);
-        
-        // Category expand/collapse functionality
-        function toggleCategory(categoryElement) {
-            categoryElement.classList.toggle('collapsed');
-            
-            // Save state
-            const categoryId = categoryElement.id;
-            const isCollapsed = categoryElement.classList.contains('collapsed');
-            localStorage.setItem(`collapsed-${categoryId}`, isCollapsed.toString());
-        }
-        
-        function expandAll() {
-            const categories = document.querySelectorAll('.test-category');
-            categories.forEach(category => {
-                category.classList.remove('collapsed');
-                const categoryId = category.id;
-                localStorage.setItem(`collapsed-${categoryId}`, 'false');
-            });
-        }
-        
-        function collapseAll() {
-            const categories = document.querySelectorAll('.test-category');
-            categories.forEach(category => {
-                category.classList.add('collapsed');
-                const categoryId = category.id;
-                localStorage.setItem(`collapsed-${categoryId}`, 'true');
-            });
-        }
-        
-        // Load collapsed states on page load
-        function loadCollapsedStates() {
-            const categories = document.querySelectorAll('.test-category');
-            categories.forEach(category => {
-                const categoryId = category.id;
-                const isCollapsed = localStorage.getItem(`collapsed-${categoryId}`);
-                
-                // Default to collapsed if no saved state
-                if (isCollapsed === null || isCollapsed === 'true') {
-                    category.classList.add('collapsed');
-                } else {
-                    category.classList.remove('collapsed');
-                }
-            });
-        }
-        
-        // Load collapsed states after DOM loads
-        window.addEventListener('load', loadCollapsedStates);
     </script>
 </body>
 </html>

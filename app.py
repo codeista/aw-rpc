@@ -35,7 +35,7 @@ from models import Game
 from map_system import map_repository, Map, Army
 from enhanced_combat_system import EnhancedCombatSystem, CombatPreview, EnhancedCombatResult
 from transport_system import CompleteTransportSystem, TransportResult
-from test_map_predeployed import get_predeployed_test_game, get_comprehensive_test_game
+from tests.integration.test_map_predeployed import get_predeployed_test_game, get_comprehensive_test_game
 
 # Import our fixed logging system
 try:
@@ -58,6 +58,9 @@ except ImportError:
         game_logger.addHandler(event_handler)
     
     ENHANCED_LOGGING = False
+
+# Note: Modular routes blueprint moved to direct route definitions in app.py
+# to avoid Flask blueprint registration issues after first request
 
 from error_handling import (
     setup_error_handlers, setup_logging, validate_rpc_params,
@@ -247,6 +250,7 @@ def game_load(token):
                 board = create_board_from_dict(board_dict)
             
             mngr = GameManager(config_game, board)
+            mngr.app_logger = app_logger  # Set logger for income processing
             return mngr
             
         except Exception as e:
@@ -268,6 +272,7 @@ def game_load(token):
     
     board = GameBoard.create(default_map)
     mngr = GameManager(config_game, board)
+    mngr.app_logger = app_logger  # Set logger for income processing
     
     # Log game creation
     if ENHANCED_LOGGING:
@@ -494,6 +499,9 @@ def game_save(mngr, token):
         db.session.add(game)
         db.session.commit()
         
+        # Also save to in-memory games dict for immediate access
+        games[token] = mngr
+        
         duration_ms = (time.time() - start_time) * 1000
         if ENHANCED_LOGGING:
             perf_logger.log_database_operation("game_save", duration_ms, True)
@@ -533,9 +541,13 @@ def game_create(token):
         game_event_logger.log_game_created(token, len(mngr.board.turn_order))
     app_logger.info(f"Game created successfully: {token}")
 
-def game_create_with_setup(token, game_setup):
+@jsonrpc.method('game_create_with_setup')
+@log_rpc_performance
+def game_create_with_setup(token: str, game_setup: dict) -> str:
     '''Creates a new game with custom setup parameters'''
     app_logger.info(f"Creating game with setup: {token}")
+    
+    from map_system import MapTile
     
     # Get the selected map
     map_id = game_setup['map_id']
@@ -556,11 +568,32 @@ def game_create_with_setup(token, game_setup):
         except KeyError:
             raise ValueError(f"Invalid army color: {army_color}")
     
-    # Create a modified map with custom turn order
+    # Create army mapping: original map armies -> selected armies
+    original_armies = selected_map.turn_order
+    army_mapping = {}
+    
+    # Map original armies to selected armies based on position
+    for i, original_army in enumerate(original_armies):
+        if i < len(custom_turn_order):
+            army_mapping[original_army] = custom_turn_order[i]
+            app_logger.info(f"Army mapping: {original_army.name} -> {custom_turn_order[i].name}")
+    
+    # Convert tiles to use the new army assignments
+    converted_tiles = []
+    for tile in selected_map.tiles:
+        new_tile = MapTile(type=tile.type, army=tile.army)
+        
+        # Convert army ownership if this tile has an army
+        if tile.army and tile.army in army_mapping:
+            new_tile.army = army_mapping[tile.army]
+            
+        converted_tiles.append(new_tile)
+    
+    # Create a modified map with custom turn order and converted properties
     custom_map = Map(
         width=selected_map.width,
         height=selected_map.height,
-        tiles=selected_map.tiles.copy(),  # Copy the tile layout
+        tiles=converted_tiles,           # Use converted tiles
         turn_order=custom_turn_order,     # Use custom turn order
         name=selected_map.name,
         description=f"Custom game: {selected_map.description}"
@@ -570,6 +603,7 @@ def game_create_with_setup(token, game_setup):
     config_game = Config()
     board = GameBoard.create(custom_map)
     mngr = GameManager(config_game, board)
+    mngr.app_logger = app_logger  # Set logger for income processing
     
     # Store game setup data in the manager
     mngr._game_setup = game_setup
@@ -586,6 +620,7 @@ def game_create_with_setup(token, game_setup):
         game_event_logger.log_game_created(token, len(mngr.board.turn_order))
     
     app_logger.info(f"Game created with custom setup: {token}, map: {map_id}, turn_order: {[army.name for army in custom_turn_order]}")
+    return "ok"
 
 def handle_rpc_error(func_name, token, ex):
     '''Enhanced error handling for RPC methods'''
@@ -600,34 +635,42 @@ def handle_rpc_error(func_name, token, ex):
 
 def check_victory_conditions(mngr, token):
     """Check if game should end due to victory conditions"""
-    # Count remaining units by army
-    red_units = 0
-    blue_units = 0
+    # Count remaining units by army (dynamic for all armies in turn order)
+    army_units = {}
     
+    # Initialize count for all armies in the game
+    for army in mngr.board.turn_order:
+        army_units[army.name] = 0
+    
+    # Count units for each army
     for tile in mngr.board.grid:
         if tile.unit:
-            if tile.unit.army.name == 'RED':
-                red_units += 1
-            elif tile.unit.army.name == 'BLUE':
-                blue_units += 1
+            army_name = tile.unit.army.name
+            if army_name in army_units:
+                army_units[army_name] += 1
     
-    app_logger.info(f'Victory check: RED={red_units}, BLUE={blue_units}')
+    # Log all army unit counts
+    unit_counts = ", ".join([f"{army}={count}" for army, count in army_units.items()])
+    app_logger.info(f'Victory check: {unit_counts}')
     
-    # Check for elimination victory
-    if red_units == 0:
-        # SET GAME INACTIVE + SAVE WINNER
+    # Check for elimination victory - find armies with 0 units
+    armies_with_units = [army for army, count in army_units.items() if count > 0]
+    
+    # Game ends when only one army has units remaining
+    if len(armies_with_units) == 1:
+        winner = armies_with_units[0]
         mngr.board.game_active = False
-        mngr.board.winner = 'BLUE'
+        mngr.board.winner = winner
         mngr.board.victory_type = 'ELIMINATION'
-        app_logger.info('GAME ENDED: BLUE wins by elimination')
-        return {'victory': True, 'winner': 'BLUE', 'type': 'ELIMINATION'}
-    elif blue_units == 0:
-        # SET GAME INACTIVE + SAVE WINNER  
+        app_logger.info(f'GAME ENDED: {winner} wins by elimination')
+        return {'victory': True, 'winner': winner, 'type': 'ELIMINATION'}
+    elif len(armies_with_units) == 0:
+        # Edge case: all armies eliminated simultaneously (draw)
         mngr.board.game_active = False
-        mngr.board.winner = 'RED'
+        mngr.board.winner = 'DRAW'
         mngr.board.victory_type = 'ELIMINATION'
-        app_logger.info('GAME ENDED: RED wins by elimination')
-        return {'victory': True, 'winner': 'RED', 'type': 'ELIMINATION'}
+        app_logger.info('GAME ENDED: Draw - all armies eliminated')
+        return {'victory': True, 'winner': 'DRAW', 'type': 'ELIMINATION'}
     
     # Check for HQ capture victory (if implemented)
     # ... additional victory conditions
@@ -983,6 +1026,33 @@ def test_interface():
     app_logger.info("Test interface accessed")
     return render_template('test_interface.html')
 
+@app.route('/sprite_test')
+def sprite_test():
+    """Visual test for all army unit sprites"""
+    token = secrets.token_urlsafe(6)
+    
+    try:
+        # Use existing map system like other test routes
+        from map_system import map_repository
+        
+        # Use the dedicated sprite test map
+        selected_map = map_repository.get_map('sprite_test')
+        
+        # Create configuration and manager like test_optimized
+        config_game = Config()
+        mngr = GameManager(config_game, selected_map)
+        mngr.app_logger = app_logger
+        
+        # Store the game
+        games[token] = mngr
+        
+        app_logger.info(f"Created sprite test game: {token}")
+        return redirect(f'/game/{token}')
+        
+    except Exception as e:
+        app_logger.error(f"Error creating sprite test: {e}")
+        return f"Error creating sprite test: {e}", 500
+
 @app.route('/api/test_create_custom_game', methods=['POST'])
 def test_create_custom_game():
     """API endpoint for test interface to create custom games"""
@@ -1301,6 +1371,7 @@ def create_optimized_test_game():
         
         # Create game manager with proper parameters
         game_manager = GameManager(config_game, board)
+        game_manager.app_logger = app_logger  # Set logger for income processing
         print(f"DEBUG: GameManager created: {type(game_manager)}")
         
         # Set game properties
@@ -1449,6 +1520,120 @@ def create_capture_test_game():
     except Exception as e:
         app_logger.error(f"Failed to create capture test game: {e}")
         return f"Error creating capture test game: {e}", 500
+
+@app.route('/test_triangle')
+def create_triangle_map_game():
+    """Create 3-player triangle map game"""
+    token = secrets.token_urlsafe(6)
+    
+    try:
+        from manager import GameManager
+        from config import Config
+        from map_system import map_repository
+        
+        # Load configuration and triangle map
+        config_game = Config()
+        triangle_map = map_repository.get_map('triangle')
+        
+        if not triangle_map:
+            return "Triangle map not found", 500
+        
+        # Create GameBoard from Map
+        from gameboard import GameBoard
+        board = GameBoard.create(triangle_map)
+        
+        print(f"DEBUG Triangle: Map {triangle_map.name}, size {triangle_map.width}x{triangle_map.height}, armies: {[a.name for a in triangle_map.turn_order]}")
+        
+        # Create game manager
+        game_manager = GameManager(config_game, board)
+        game_manager.app_logger = app_logger  # Set logger for income processing
+        board.game_active = True
+        board.current_turn = Army.RED
+        
+        games[token] = game_manager
+        app_logger.info(f"Created triangle map game: {token}")
+        
+        return redirect(f'/game/{token}')
+    
+    except Exception as e:
+        app_logger.error(f"Failed to create triangle map game: {e}")
+        return f"Error creating triangle map game: {e}", 500
+
+@app.route('/test_cross')
+def create_cross_map_game():
+    """Create 4-player cross map game"""
+    token = secrets.token_urlsafe(6)
+    
+    try:
+        from manager import GameManager
+        from config import Config
+        from map_system import map_repository
+        
+        # Load configuration and cross map
+        config_game = Config()
+        cross_map = map_repository.get_map('cross')
+        
+        if not cross_map:
+            return "Cross map not found", 500
+        
+        # Create GameBoard from Map
+        from gameboard import GameBoard
+        board = GameBoard.create(cross_map)
+        
+        print(f"DEBUG Cross: Map {cross_map.name}, size {cross_map.width}x{cross_map.height}, armies: {[a.name for a in cross_map.turn_order]}")
+        
+        # Create game manager
+        game_manager = GameManager(config_game, board)
+        game_manager.app_logger = app_logger  # Set logger for income processing
+        board.game_active = True
+        board.current_turn = Army.RED
+        
+        games[token] = game_manager
+        app_logger.info(f"Created cross map game: {token}")
+        
+        return redirect(f'/game/{token}')
+    
+    except Exception as e:
+        app_logger.error(f"Failed to create cross map game: {e}")
+        return f"Error creating cross map game: {e}", 500
+
+@app.route('/test_pentagon')
+def create_pentagon_map_game():
+    """Create 5-player pentagon map game"""
+    token = secrets.token_urlsafe(6)
+    
+    try:
+        from manager import GameManager
+        from config import Config
+        from map_system import map_repository
+        
+        # Load configuration and pentagon map
+        config_game = Config()
+        pentagon_map = map_repository.get_map('pentagon')
+        
+        if not pentagon_map:
+            return "Pentagon map not found", 500
+        
+        # Create GameBoard from Map
+        from gameboard import GameBoard
+        board = GameBoard.create(pentagon_map)
+        
+        print(f"DEBUG Pentagon: Map {pentagon_map.name}, size {pentagon_map.width}x{pentagon_map.height}, armies: {[a.name for a in pentagon_map.turn_order]}")
+        
+        # Create game manager
+        game_manager = GameManager(config_game, board)
+        game_manager.app_logger = app_logger  # Set logger for income processing
+        board.game_active = True
+        board.current_turn = Army.RED
+        
+        games[token] = game_manager
+        app_logger.info(f"Created pentagon map game: {token}")
+        
+        return redirect(f'/game/{token}')
+    
+    except Exception as e:
+        app_logger.error(f"Failed to create pentagon map game: {e}")
+        return f"Error creating pentagon map game: {e}", 500
 
 @app.route('/test_verify')
 def verify_test_maps():
@@ -4120,17 +4305,33 @@ def run_test():
             'test_movement_system.py',
             'test_victory_conditions.py',
             'test_transport_final.py',
-            'updated_test_phase1.py'
+            'updated_test_phase1.py',
+            'test_multiplayer_armies.py'
         ]
         
         if script_name not in allowed_scripts:
             return f"Script {script_name} not allowed", 403
         
-        # Execute the test script
-        script_path = f"/home/box/Documents/aw-rpc/{script_name}"
+        # Map script names to their new locations in tests/ directory
+        script_locations = {
+            'test_combat_system.py': 'tests/unit/test_combat_system.py',
+            'test_economic_system.py': 'tests/unit/test_economic_system.py',
+            'test_movement_system.py': 'tests/unit/test_movement_system.py',
+            'test_victory_conditions.py': 'tests/integration/test_victory_conditions.py',
+            'test_transport_final.py': 'tests/unit/test_transport_final.py',
+            'updated_test_phase1.py': 'tests/system/updated_test_phase1.py',
+            'test_multiplayer_armies.py': 'tests/integration/test_multiplayer_armies.py'
+        }
+        
+        # Get the correct path for the moved test file
+        relative_script_path = script_locations.get(script_name)
+        if not relative_script_path:
+            return f"Script {script_name} location not mapped", 404
+            
+        script_path = f"/home/box/Documents/aw-rpc/{relative_script_path}"
         
         if not os.path.exists(script_path):
-            return f"Script {script_name} not found", 404
+            return f"Script {script_name} not found at {relative_script_path}", 404
         
         try:
             result = subprocess.run(
@@ -4208,4 +4409,4 @@ if __name__ == '__main__':
     app_logger.info(f"Starting server on {host}:{port} (debug={debug})")
     app_logger.info("=== AW-RPC Application Ready ===")
     
-    socketio.run(app, host=host, port=port, debug=debug)
+    socketio.run(app, host=host, port=port, debug=debug, allow_unsafe_werkzeug=True)

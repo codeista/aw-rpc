@@ -1,5 +1,12 @@
 # test_map_predeployed.py - Updated Test Map with Predeployed Units using new map system
 
+import sys
+import os
+
+# Add the project root directory to Python path to import modules
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.insert(0, project_root)
+
 from map_system import Map, MapType, Army, MapTile, map_repository
 from unit import Unit, UnitType, Army
 from gameboard import GameBoard, GameTile

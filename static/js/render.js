@@ -236,6 +236,14 @@ function update() {
                 // Update board data
         board = res;
         
+        // Update status bar if function exists
+        if (typeof updateGameStatus === 'function') {
+            updateGameStatus(board);
+        }
+        
+        // Store last game data globally for status updates
+        window.lastGameData = board;
+        
         // CRITICAL: Restore selection if it existed
         if (previousSelection) {
             // Find the same tile in the new board data
@@ -248,22 +256,7 @@ function update() {
             }
         }
         
-        // init globals
-        board = res;
-        
-        // Restore selection if it existed
-        if (previousSelection) {
-            // Find the same tile in the new board data
-            var restoredTile = board.grid.find(t => 
-                t.x === previousSelection.x && t.y === previousSelection.y
-            );
-            if (restoredTile) {
-                board.selected = restoredTile;
-            }
-        }
-        
-        // init globals
-        board = res
+        // Continue with initialization
         if (two === null) {
             try {
                 // make an instance of two and place it on the page.
@@ -333,12 +326,23 @@ function update() {
         var infobox = document.getElementById('infobox');
         console.log('Infobox element found:', infobox);
         if (infobox) {
+            // Build army stats dynamically for all active armies
+            let armyStats = '';
+            const armies = ['RED', 'BLUE', 'GREEN', 'YELLOW', 'GREY'];
+            armies.forEach(army => {
+                if (board.army_troops && board.army_troops[army] !== undefined) {
+                    const troops = board.army_troops[army] || 0;
+                    const properties = board.army_properties[army] || 0;
+                    const funds = board.army_funds ? board.army_funds[army] || 0 : 
+                                 (army === 'RED' ? board.red_funds : army === 'BLUE' ? board.blue_funds : 0);
+                    armyStats += `${army} Army: ${troops} troops, ${properties} income, ${funds} funds\n`;
+                }
+            });
+            
             const gameStats = `Game Statistics:
 Day: ${board.days} | Turn: ${board.current_turn} | Active: ${board.game_active}
 
-Blue Army: ${board.army_troops.BLUE || 0} troops, ${board.army_properties.BLUE || 0} income, ${board.blue_funds} funds
-Red Army: ${board.army_troops.RED || 0} troops, ${board.army_properties.RED || 0} income, ${board.red_funds} funds
-
+${armyStats}
 Controls: Click=move/attack, Ctrl+Click=load, Alt+Click=unload, Double-click=capture/wait`;
             
             infobox.innerText = gameStats;
@@ -970,6 +974,15 @@ function makeMapTile(tile) {
                     case 'BLUE':
                         y = y - 847;
                         break;
+                    case 'GREEN':
+                        y = y - 882;
+                        break;
+                    case 'YELLOW':
+                        y = y - 917;
+                        break;
+                    case 'GREY':
+                        y = y - 952;
+                        break;
                     default:
                         y = y - 766;
                         break;
@@ -985,6 +998,15 @@ function makeMapTile(tile) {
                     case 'BLUE':
                         y = y - 851;
                         break;
+                    case 'GREEN':
+                        y = y - 884;
+                        break;
+                    case 'YELLOW':
+                        y = y - 917;
+                        break;
+                    case 'GREY':
+                        y = y - 950;
+                        break;
                     default:
                         y = y - 772;
                         break;
@@ -998,6 +1020,15 @@ function makeMapTile(tile) {
                         break;
                     case 'BLUE':
                         y = y - 851;
+                        break;
+                    case 'GREEN':
+                        y = y - 884;
+                        break;
+                    case 'YELLOW':
+                        y = y - 917;
+                        break;
+                    case 'GREY':
+                        y = y - 950;
                         break;
                     default:
                         y = y - 773;
@@ -1013,6 +1044,18 @@ function makeMapTile(tile) {
                         break;
                     case 'BLUE':
                         y = y - 844;
+                        _2xHeight = true;
+                        break;
+                    case 'GREEN':
+                        y = y - 877;
+                        _2xHeight = true;
+                        break;
+                    case 'YELLOW':
+                        y = y - 910;
+                        _2xHeight = true;
+                        break;
+                    case 'GREY':
+                        y = y - 943;
                         _2xHeight = true;
                         break;
                     default:
@@ -1032,6 +1075,18 @@ function makeMapTile(tile) {
                         y = y - 844;
                         _2xHeight = true;
                         break;
+                    case 'GREEN':
+                        y = y - 877;
+                        _2xHeight = true;
+                        break;
+                    case 'YELLOW':
+                        y = y - 910;
+                        _2xHeight = true;
+                        break;
+                    case 'GREY':
+                        y = y - 943;
+                        _2xHeight = true;
+                        break;
                     default:
                         y = y - 765;
                         _2xHeight = true;
@@ -1049,6 +1104,18 @@ function makeMapTile(tile) {
                         y = y - 845;
                         _2xHeight = true;
                         break;
+                    case 'GREEN':
+                        y = y - 878;
+                        _2xHeight = true;
+                        break;
+                    case 'YELLOW':
+                        y = y - 911;
+                        _2xHeight = true;
+                        break;
+                    case 'GREY':
+                        y = y - 944;
+                        _2xHeight = true;
+                        break;
                     default:
                         y = y - 757;
                         _2xHeight = true;
@@ -1060,14 +1127,27 @@ function makeMapTile(tile) {
                 switch (tile.mapTile.army) {
                     case 'RED':
                         y = y - 812;
-                        break;
                         _2xHeight = true;
+                        break;
                     case 'BLUE':
                         y = y - 845;
                         _2xHeight = true;
                         break;
+                    case 'GREEN':
+                        y = y - 878;
+                        _2xHeight = true;
+                        break;
+                    case 'YELLOW':
+                        y = y - 911;
+                        _2xHeight = true;
+                        break;
+                    case 'GREY':
+                        y = y - 944;
+                        _2xHeight = true;
+                        break;
                     default:
                         y = y - 757;
+                        _2xHeight = true;
                         break;
                 }
                 _2xHeight = true;
@@ -1096,6 +1176,18 @@ function makeMapTile(tile) {
                         break;
                     case 'BLUE':
                         y = y - 845;
+                        _2xHeight = true;
+                        break;
+                    case 'GREEN':
+                        y = y - 878;
+                        _2xHeight = true;
+                        break;
+                    case 'YELLOW':
+                        y = y - 911;
+                        _2xHeight = true;
+                        break;
+                    case 'GREY':
+                        y = y - 944;
                         _2xHeight = true;
                         break;
                     default:
