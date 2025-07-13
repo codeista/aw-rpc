@@ -4023,7 +4023,7 @@ def repair_unit_rpc(token: str, blackboat_x: int, blackboat_y: int,
                     target_x: int, target_y: int, hp_to_repair: int = 1) -> dict:
     """
     Black Boat manual repair command
-    Repairs adjacent unit up to 2 HP (costs 10% of unit cost per HP)
+    Repairs adjacent unit up to 2 HP (max 10 HP total) AND resupplies fuel/ammo (costs 10% of unit cost per HP)
     """
     try:
         mngr = game_load(token)
@@ -4064,18 +4064,22 @@ def repair_unit_rpc(token: str, blackboat_x: int, blackboat_y: int,
         if target.status.hp >= 100:
             return {"success": False, "error": "Target is already at full health"}
         
+        # Black Boat can only repair units up to 10 HP maximum
+        if target.status.hp >= 10:
+            return {"success": False, "error": "Black Boat can only repair units up to 10 HP"}
+        
         # Validate hp_to_repair (1-2 HP max)
         hp_to_repair = max(1, min(2, hp_to_repair))
         
-        # Calculate actual HP to repair (can't exceed 100)
-        actual_hp_to_repair = min(hp_to_repair, 100 - target.status.hp)
+        # Calculate actual HP to repair (can't exceed 100 OR 10 HP limit)
+        actual_hp_to_repair = min(hp_to_repair, min(100, 10) - target.status.hp)
         
         # Calculate cost (10% of unit cost per HP)
-        unit_cost = mngr.config.units[target.type].price
+        unit_cost = mngr.config.units[target.type.name].cost
         repair_cost = int(unit_cost * 0.1 * actual_hp_to_repair)
         
         # Check funds
-        current_funds = mngr.board.get_army_funds(blackboat.army)
+        current_funds = mngr._get_army_funds(blackboat.army)
         if current_funds < repair_cost:
             return {
                 "success": False, 
@@ -4087,54 +4091,219 @@ def repair_unit_rpc(token: str, blackboat_x: int, blackboat_y: int,
         target.status.hp = min(100, target.status.hp + actual_hp_to_repair)
         new_hp = target.status.hp
         
-        # Deduct funds
-        mngr.board.set_army_funds(blackboat.army, current_funds - repair_cost)
+        # ALSO RESUPPLY fuel and ammo (Black Boat repair includes resupply)
+        old_fuel = target.status.fuel
+        old_ammo = getattr(target.status, 'ammo', None)
+        
+        # Get max values for this unit type
+        max_fuel = mngr.config.units[target.type.name].fuel
+        max_ammo = mngr.config.units[target.type.name].ammo if hasattr(mngr.config.units[target.type.name], 'ammo') else None
+        
+        # Resupply to maximum
+        target.status.fuel = max_fuel
+        fuel_resupplied = max_fuel - old_fuel
+        
+        ammo_resupplied = 0
+        new_ammo = old_ammo
+        if max_ammo is not None and hasattr(target.status, 'ammo'):
+            target.status.ammo = max_ammo
+            ammo_resupplied = max_ammo - (old_ammo or 0)
+            new_ammo = max_ammo
+        
+        # Deduct funds (only for repair, resupply is FREE)
+        if blackboat.army == Army.RED:
+            mngr.board.red_funds -= repair_cost
+        elif blackboat.army == Army.BLUE:
+            mngr.board.blue_funds -= repair_cost
+        elif hasattr(mngr.board, 'army_funds') and blackboat.army in mngr.board.army_funds:
+            mngr.board.army_funds[blackboat.army] -= repair_cost
         
         # Save changes
-        game_save(mngr)
+        game_save(mngr, token)
+        
+        # Log event
+        if ENHANCED_LOGGING:
+            game_logger.info(f"REPAIR_AND_RESUPPLY: {token} - Black Boat at ({blackboat_x},{blackboat_y}) repaired {target.type.name} at ({target_x},{target_y}) for {actual_hp_to_repair} HP + resupplied fuel/ammo (cost: {repair_cost})")
+        
+        app_logger.info(f"Unit repaired & resupplied: {token} - Black Boat at ({blackboat_x},{blackboat_y}) repaired {target.type} at ({target_x},{target_y}) for {actual_hp_to_repair} HP + fuel/ammo (cost: {repair_cost})")
+        
+        # Notify via websocket
+        update_msg = {
+            "type": "unit_repaired_and_resupplied",
+            "blackboat_position": {"x": blackboat_x, "y": blackboat_y},
+            "target_position": {"x": target_x, "y": target_y},
+            "hp_repaired": actual_hp_to_repair,
+            "new_hp": new_hp,
+            "fuel_resupplied": fuel_resupplied,
+            "ammo_resupplied": ammo_resupplied,
+            "repair_cost": repair_cost,
+            "remaining_funds": mngr._get_army_funds(blackboat.army)
+        }
+        ws_board_update(token)
+        
+        return {
+            "success": True,
+            "message": f"Repaired {actual_hp_to_repair} HP + resupplied fuel/ammo for {repair_cost} funds",
+            "hp_repaired": actual_hp_to_repair,
+            "old_hp": old_hp,
+            "new_hp": new_hp,
+            "fuel_resupplied": fuel_resupplied,
+            "ammo_resupplied": ammo_resupplied,
+            "new_fuel": target.status.fuel,
+            "new_ammo": new_ammo,
+            "repair_cost": repair_cost,
+            "remaining_funds": mngr._get_army_funds(blackboat.army)
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Repair unit failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+
+@jsonrpc.method('resupply_unit')
+@log_rpc_performance
+def resupply_unit_rpc(token: str, resupply_x: int, resupply_y: int, 
+                      target_x: int, target_y: int, fuel_amount: int = 10, ammo_amount: int = 10) -> dict:
+    """
+    Manual resupply command for Black Boats and APCs
+    Resupplies adjacent unit with fuel and ammo (FREE - no cost)
+    """
+    try:
+        mngr = game_load(token)
+        
+        # Validate coordinates
+        coords = [resupply_x, resupply_y, target_x, target_y]
+        if not all(0 <= coord < mngr.board.width or 0 <= coord < mngr.board.height for coord in coords):
+            return {"success": False, "error": "Invalid coordinates"}
+        
+        # Get units
+        resupply_unit = mngr.unit_at(resupply_x, resupply_y)
+        target = mngr.unit_at(target_x, target_y)
+        
+        if not resupply_unit:
+            return {"success": False, "error": "No unit at resupply position"}
+        if not target:
+            return {"success": False, "error": "No unit at target position"}
+        
+        # Verify it's a resupply unit (Black Boat or APC)
+        unit_type = resupply_unit.type.name if hasattr(resupply_unit.type, 'name') else str(resupply_unit.type)
+        if unit_type not in ['BLACK_BOAT', 'BLACKBOAT', 'APC']:
+            return {"success": False, "error": f"Unit at ({resupply_x}, {resupply_y}) cannot resupply (found: {unit_type}). Only Black Boats and APCs can manually resupply."}
+        
+        # Check turn ownership
+        if resupply_unit.army != mngr.board.current_turn:
+            return {"success": False, "error": "Not your turn"}
+        
+        # Check target is friendly
+        if target.army != resupply_unit.army:
+            return {"success": False, "error": "Can only resupply friendly units"}
+        
+        # Check adjacency (Manhattan distance = 1)
+        distance = abs(resupply_x - target_x) + abs(resupply_y - target_y)
+        if distance != 1:
+            return {"success": False, "error": "Target must be adjacent to resupply unit"}
+        
+        # Get target's max fuel/ammo and current fuel/ammo
+        target_max_fuel = mngr.config.units[target.type].fuel
+        target_max_ammo = mngr.config.units[target.type].ammo if hasattr(mngr.config.units[target.type], 'ammo') else 0
+        
+        current_fuel = target.fuel if hasattr(target, 'fuel') else target.status.fuel
+        current_ammo = target.ammo if hasattr(target, 'ammo') else (target.status.ammo if hasattr(target.status, 'ammo') else 0)
+        
+        # Check if target needs resupply
+        fuel_needed = target_max_fuel - current_fuel
+        ammo_needed = target_max_ammo - current_ammo if target_max_ammo > 0 else 0
+        
+        if fuel_needed <= 0 and ammo_needed <= 0:
+            return {"success": False, "error": "Target is already fully supplied"}
+        
+        # Calculate actual amounts to resupply (can't exceed max)
+        actual_fuel_to_resupply = min(fuel_amount, fuel_needed) if fuel_needed > 0 else 0
+        actual_ammo_to_resupply = min(ammo_amount, ammo_needed) if ammo_needed > 0 else 0
+        
+        # Resupply is free (no cost like APC auto-resupply)
+        
+        # Perform resupply
+        old_fuel = current_fuel
+        old_ammo = current_ammo
+        
+        # Resupply fuel
+        if actual_fuel_to_resupply > 0:
+            if hasattr(target, 'fuel'):
+                target.fuel = min(target_max_fuel, target.fuel + actual_fuel_to_resupply)
+                new_fuel = target.fuel
+            else:
+                target.status.fuel = min(target_max_fuel, target.status.fuel + actual_fuel_to_resupply)
+                new_fuel = target.status.fuel
+        else:
+            new_fuel = current_fuel
+        
+        # Resupply ammo
+        if actual_ammo_to_resupply > 0:
+            if hasattr(target, 'ammo'):
+                target.ammo = min(target_max_ammo, target.ammo + actual_ammo_to_resupply)
+                new_ammo = target.ammo
+            else:
+                if hasattr(target.status, 'ammo'):
+                    target.status.ammo = min(target_max_ammo, target.status.ammo + actual_ammo_to_resupply)
+                    new_ammo = target.status.ammo
+                else:
+                    new_ammo = current_ammo
+        else:
+            new_ammo = current_ammo
+        
+        # Save changes
+        game_save(mngr, token)
         
         # Log event
         if ENHANCED_LOGGING:
             game_event_logger.log_event(
                 game_id=token,
-                event_type="REPAIR",
+                event_type="RESUPPLY",
                 details={
-                    "blackboat_position": [blackboat_x, blackboat_y],
+                    "resupply_position": [resupply_x, resupply_y],
+                    "resupply_type": unit_type,
                     "target_position": [target_x, target_y],
                     "target_type": target.type.name if hasattr(target.type, 'name') else str(target.type),
-                    "hp_repaired": actual_hp_to_repair,
-                    "old_hp": old_hp,
-                    "new_hp": new_hp,
-                    "repair_cost": repair_cost
+                    "fuel_resupplied": actual_fuel_to_resupply,
+                    "ammo_resupplied": actual_ammo_to_resupply,
+                    "old_fuel": old_fuel,
+                    "new_fuel": new_fuel,
+                    "old_ammo": old_ammo,
+                    "new_ammo": new_ammo
                 }
             )
         
-        app_logger.info(f"Unit repaired: {token} - Black Boat at ({blackboat_x},{blackboat_y}) repaired {target.type} at ({target_x},{target_y}) for {actual_hp_to_repair} HP (cost: {repair_cost})")
+        app_logger.info(f"Unit resupplied: {token} - {unit_type} at ({resupply_x},{resupply_y}) resupplied {target.type} at ({target_x},{target_y}) - Fuel: {actual_fuel_to_resupply}, Ammo: {actual_ammo_to_resupply} (FREE)")
         
         # Notify via websocket
         update_msg = {
-            "type": "unit_repaired",
-            "blackboat_position": {"x": blackboat_x, "y": blackboat_y},
+            "type": "unit_resupplied",
+            "resupply_position": {"x": resupply_x, "y": resupply_y},
+            "resupply_type": unit_type,
             "target_position": {"x": target_x, "y": target_y},
-            "hp_repaired": actual_hp_to_repair,
-            "new_hp": new_hp,
-            "repair_cost": repair_cost,
-            "remaining_funds": mngr.board.get_army_funds(blackboat.army)
+            "fuel_resupplied": actual_fuel_to_resupply,
+            "ammo_resupplied": actual_ammo_to_resupply,
+            "new_fuel": new_fuel,
+            "new_ammo": new_ammo
         }
-        ws_update(token, mngr, json.dumps(update_msg))
+        ws_board_update(token)
         
         return {
             "success": True,
-            "message": f"Repaired {actual_hp_to_repair} HP for {repair_cost} funds",
-            "hp_repaired": actual_hp_to_repair,
-            "old_hp": old_hp,
-            "new_hp": new_hp,
-            "repair_cost": repair_cost,
-            "remaining_funds": mngr.board.get_army_funds(blackboat.army)
+            "message": f"Resupplied {actual_fuel_to_resupply} fuel and {actual_ammo_to_resupply} ammo (FREE)",
+            "fuel_resupplied": actual_fuel_to_resupply,
+            "ammo_resupplied": actual_ammo_to_resupply,
+            "old_fuel": old_fuel,
+            "new_fuel": new_fuel,
+            "old_ammo": old_ammo,
+            "new_ammo": new_ammo,
+            "max_fuel": target_max_fuel,
+            "max_ammo": target_max_ammo,
+            "resupply_unit_type": unit_type
         }
         
     except Exception as e:
-        app_logger.error(f"Repair unit failed: {token} - {str(e)}")
+        app_logger.error(f"Resupply unit failed: {token} - {str(e)}")
         return {"success": False, "error": str(e)}
 
 # =============================================================================
@@ -4452,6 +4621,7 @@ def run_test():
             'test_movement_system.py',
             'test_victory_conditions.py',
             'test_transport_final.py',
+            'test_repair_refuel_proper.py',
             'updated_test_phase1.py',
             'test_multiplayer_armies.py'
         ]
@@ -4466,6 +4636,7 @@ def run_test():
             'test_movement_system.py': 'tests/unit/test_movement_system.py',
             'test_victory_conditions.py': 'tests/integration/test_victory_conditions.py',
             'test_transport_final.py': 'tests/unit/test_transport_final.py',
+            'test_repair_refuel_proper.py': 'test_repair_refuel_proper.py',
             'updated_test_phase1.py': 'tests/system/updated_test_phase1.py',
             'test_multiplayer_armies.py': 'tests/integration/test_multiplayer_armies.py'
         }

@@ -82,7 +82,7 @@
 4. **Black Boat**
    - Capacity: 2 Infantry/Mech
    - Loading: Beaches and ports only
-   - Special: Can manually repair adjacent units (2 HP max, costs 10% per HP)
+   - Special: Can manually repair adjacent units (up to 2 HP per action, max 10 HP total, costs 10% per HP)
 
 5. **Cruiser**
    - Capacity: 2 helicopters
@@ -118,7 +118,7 @@
 #### Repair System
 - Automatic repair at friendly facilities (20 HP/turn)
 - Costs 10% of unit cost per HP
-- Black Boat manual repair (adjacent units, 2 HP max)
+- Black Boat manual repair (adjacent units, up to 2 HP per action, max 10 HP total)
 
 #### Fog of War (Not Yet Implemented)
 - Units have vision range
@@ -134,6 +134,16 @@ rpc('game_create', {token: 'mygame'})
 
 // Test game (50000 starting funds)
 rpc('game_create_test', {token: 'testgame'})
+```
+
+### Running Automated Tests
+```bash
+# Test repair and refuel systems
+python3 test_repair_refuel_proper.py
+
+# Run via web interface
+# Visit http://localhost:5000/test_interface
+# Click "🔧 Repair & Refuel" button
 ```
 
 ### Common Test Scenarios
@@ -155,6 +165,12 @@ rpc('game_create_test', {token: 'testgame'})
    - Select Black Boat
    - Right-click damaged unit
    - Choose repair from context menu
+
+4. **APC Auto-Resupply**
+   - Create APC and adjacent units
+   - Move units to consume fuel/ammo
+   - End turn to trigger auto-resupply
+   - Verify fuel/ammo restored to maximum
 
 ## RPC Reference
 

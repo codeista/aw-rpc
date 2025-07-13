@@ -497,6 +497,7 @@ def run_single_test():
             'test_movement_system.py',
             'test_victory_conditions.py',
             'test_transport_final.py',
+            'test_repair_refuel_proper.py',
             'updated_test_phase1.py',
             'test_multiplayer_armies.py'
         ]
@@ -511,6 +512,7 @@ def run_single_test():
             'test_movement_system.py': 'tests/unit/test_movement_system.py',
             'test_victory_conditions.py': 'tests/integration/test_victory_conditions.py',
             'test_transport_final.py': 'tests/unit/test_transport_final.py',
+            'test_repair_refuel_proper.py': 'test_repair_refuel_proper.py',
             'updated_test_phase1.py': 'tests/system/updated_test_phase1.py',
             'test_multiplayer_armies.py': 'tests/integration/test_multiplayer_armies.py'
         }

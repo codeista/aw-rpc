@@ -302,6 +302,11 @@
                 <span>Transport System</span>
             </button>
             
+            <button class="test-button" onclick="runTest('repair_refuel', 'test_repair_refuel_proper.py')">
+                <span class="button-icon">🔧</span>
+                <span>Repair & Refuel</span>
+            </button>
+            
             <button class="test-button" onclick="runTest('integration', 'updated_test_phase1.py')">
                 <span class="button-icon">🔧</span>
                 <span>Integration Tests</span>
@@ -388,6 +393,10 @@
                 <div class="status-item">
                     <span>🚢 Transport System</span>
                     <span class="status-indicator ready" id="status-transport"></span>
+                </div>
+                <div class="status-item">
+                    <span>🔧 Repair & Refuel</span>
+                    <span class="status-indicator ready" id="status-repair_refuel"></span>
                 </div>
                 <div class="status-item">
                     <span>🔧 Integration Tests</span>
@@ -477,7 +486,7 @@
             `;
             
             // Reset all status indicators
-            ['combat', 'economic', 'movement', 'victory', 'transport', 'integration', 'multiplayer'].forEach(test => {
+            ['combat', 'economic', 'movement', 'victory', 'transport', 'repair_refuel', 'integration', 'multiplayer'].forEach(test => {
                 setTestStatus(test, 'ready');
             });
             
@@ -561,6 +570,7 @@
                 { name: 'movement', script: 'test_movement_system.py' },
                 { name: 'victory', script: 'test_victory_conditions.py' },
                 { name: 'transport', script: 'test_transport_final.py' },
+                { name: 'repair_refuel', script: 'test_repair_refuel_proper.py' },
                 { name: 'integration', script: 'updated_test_phase1.py' },
                 { name: 'multiplayer', script: 'test_multiplayer_armies.py' }
             ];

@@ -227,9 +227,9 @@ function jsonrpc(method, params, callback) {
 }
 
 function update() {
-    console.log('Update function called');
+    // console.log('Update function called');
     jsonrpc('game_board', {}, async function(res) {
-        console.log('Game board response received:', res);
+        // console.log('Game board response received:', res);
         // Preserve the current selection before updating board
         var previousSelection = board ? board.selected : null;
 
@@ -283,12 +283,16 @@ function update() {
 
                     // NEW: Prevent right-click context menu
                     canvas.addEventListener('contextmenu', function(event) {
+                        console.log('🖱️ Right-click detected on canvas', event);
                         event.preventDefault();
                         event.stopPropagation();
                         
                         const tile = getTileFromCanvasClick(event);
+                        console.log('🎯 Tile from right-click:', tile);
                         if (tile) {
                             handleTransportRightClick(tile, event);
+                        } else {
+                            console.log('❌ No tile found for right-click');
                         }
                         return false;
                     });
@@ -847,6 +851,11 @@ function handleTransportSelectionLogic(tile) {
     }
     // Get cargo/transport information (ONLY for transport units)
     if (tile.unit && isTransportUnit(tile.unit)) {
+        // IMPORTANT: Set selectedUnit for transport units (needed for Black Boat repair)
+        console.log('🚛 Transport unit clicked, setting selectedUnit:', tile);
+        window.gameState.selectedUnit = tile;
+        board.selected = tile;
+        
         jsonrpc('get_cargo_info', {x: tile.x, y: tile.y}, function(result) {
             if (result && result.success && result.cargo_info) {
                 const cargoInfo = result.cargo_info;
@@ -1477,7 +1486,7 @@ async function generateUnitTexture(tile) {
     
     return new Promise((resolve, reject) => {
         spriteSheetImg.onload = function() {
-            console.log(`Sprite sheet loaded: ${unitsSrc}, dimensions: ${spriteSheetImg.width}x${spriteSheetImg.height}`);
+            // console.log(`Sprite sheet loaded: ${unitsSrc}, dimensions: ${spriteSheetImg.width}x${spriteSheetImg.height}`);
             // Use sprite corrector data to get accurate coordinates
             let spriteKey, x, y;
             
@@ -1492,7 +1501,7 @@ async function generateUnitTexture(tile) {
                 const coords = window.spriteCorrections[state][spriteKey];
                 x = coords.x;
                 y = coords.y;
-                console.log(`Using sprite corrector for ${spriteKey}: x=${x}, y=${y}`);
+                // console.log(`Using sprite corrector for ${spriteKey}: x=${x}, y=${y}`);
             } else {
                 // Enhanced fallback: Try to find coordinates based on RED army equivalent
                 const redSpriteKey = spriteKey.replace('_BLUE_', '_RED_').replace('_GREEN_', '_RED_').replace('_YELLOW_', '_RED_').replace('_GREY_', '_RED_');
@@ -1529,7 +1538,7 @@ async function generateUnitTexture(tile) {
                             break;
                     }
                     
-                    console.log(`Using enhanced fallback for ${spriteKey} based on ${redSpriteKey}: x=${x}, y=${y}`);
+                    // console.log(`Using enhanced fallback for ${spriteKey} based on ${redSpriteKey}: x=${x}, y=${y}`);
                 } else {
                     // Final fallback to original coordinate calculation
                     console.warn(`Sprite corrector data not found for ${spriteKey}, using basic fallback coordinates`);
@@ -1569,7 +1578,7 @@ async function generateUnitTexture(tile) {
             
             // Debug: Log what we're drawing for blue units
             if (tile.unit.army === 'BLUE') {
-                console.log(`Drawing BLUE unit: ${spriteKey} from (${x}, ${y}) size ${SPRITESIZE}x${SPRITESIZE}`);
+                // console.log(`Drawing BLUE unit: ${spriteKey} from (${x}, ${y}) size ${SPRITESIZE}x${SPRITESIZE}`);
             }
             
             // Draw HP indicator if unit is damaged
@@ -2891,6 +2900,7 @@ window.gameState = {
 function advanceWarsUnitSelect(tile) {
     
     try {
+        console.log('🎯 advanceWarsUnitSelect called with tile:', tile);
         // Step 1: Backend unit selection
         jsonrpc('unit_select', {x: tile.x, y: tile.y}).then(result => {
             if (result && !result.error) {
@@ -2899,6 +2909,7 @@ function advanceWarsUnitSelect(tile) {
                 window.gameState.selectedUnit = tile;
                 window.gameState.movementPhase = false;
                 window.gameState.showingAttackTargets = false;
+                console.log('✅ Unit selected, gameState updated:', window.gameState.selectedUnit);
                 // Show movement range
                 if (tile.unit && tile.unit.army === board.current_turn) {
                     clearAllHighlights();
@@ -3960,3 +3971,128 @@ if (document.readyState !== 'loading') {
     setTimeout(applyCompleteClickFix, 200);
 }
 // END OF CLICK SYSTEM FIXES
+
+// ========================================================================
+// CONTEXT MENU SYSTEM FOR UNIT ACTIONS
+// ========================================================================
+
+window.showUnitContextMenu = function(x, y, selectedUnit, targetUnit) {
+    console.log('Showing context menu', {selectedUnit, targetUnit});
+    
+    const contextMenu = document.getElementById('unitContextMenu');
+    if (!contextMenu) {
+        console.error('Context menu element not found');
+        return;
+    }
+    
+    // Position the menu at mouse coordinates
+    contextMenu.style.left = x + 'px';
+    contextMenu.style.top = y + 'px';
+    contextMenu.style.display = 'block';
+    
+    // Store context for when action is clicked
+    window.contextMenuData = {
+        selectedUnit: selectedUnit,
+        targetUnit: targetUnit
+    };
+    
+    // Hide menu when clicking elsewhere
+    setTimeout(() => {
+        document.addEventListener('click', hideContextMenu, { once: true });
+    }, 100);
+};
+
+window.hideContextMenu = function() {
+    const contextMenu = document.getElementById('unitContextMenu');
+    if (contextMenu) {
+        contextMenu.style.display = 'none';
+    }
+    window.contextMenuData = null;
+};
+
+window.contextMenuAction = function(action) {
+    console.log('Context menu action:', action);
+    
+    if (!window.contextMenuData) {
+        console.error('No context menu data available');
+        return;
+    }
+    
+    const { selectedUnit, targetUnit } = window.contextMenuData;
+    
+    if (action === 'repair') {
+        // Perform Black Boat repair
+        console.log('Attempting repair:', selectedUnit, 'repairing', targetUnit);
+        
+        const repairParams = {
+            token: window.currentGameToken || getGameTokenFromUrl(),
+            blackboat_x: selectedUnit.x,
+            blackboat_y: selectedUnit.y,
+            target_x: targetUnit.x,
+            target_y: targetUnit.y,
+            hp_to_repair: 2  // Repair 2 HP (max for Black Boat)
+        };
+        
+        rpc('repair_unit', repairParams, function(result) {
+            if (result.error) {
+                showNotification('Repair failed: ' + result.error, 'error');
+            } else {
+                const message = `Repaired ${result.hp_repaired || 2} HP for ${result.repair_cost || 0} funds`;
+                showNotification(message, 'success');
+                // Refresh the board to show updated HP
+                updateGameBoard();
+            }
+        });
+    }
+    
+    hideContextMenu();
+};
+
+// Utility function to get game token from URL
+function getGameTokenFromUrl() {
+    const path = window.location.pathname;
+    const match = path.match(/\/game\/([^\/]+)/);
+    return match ? match[1] : null;
+}
+
+// Notification system
+window.showNotification = function(message, type = 'info') {
+    // Create notification element if it doesn't exist
+    let notification = document.getElementById('gameNotification');
+    if (!notification) {
+        notification = document.createElement('div');
+        notification.id = 'gameNotification';
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 12px 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            z-index: 10000;
+            font-size: 14px;
+            max-width: 300px;
+            display: none;
+        `;
+        document.body.appendChild(notification);
+    }
+    
+    // Set color based on type
+    const colors = {
+        success: '#27ae60',
+        error: '#e74c3c',
+        warning: '#f39c12',
+        info: '#3498db'
+    };
+    
+    notification.style.background = colors[type] || colors.info;
+    notification.textContent = message;
+    notification.style.display = 'block';
+    
+    // Auto-hide after 3 seconds
+    setTimeout(() => {
+        notification.style.display = 'none';
+    }, 3000);
+};

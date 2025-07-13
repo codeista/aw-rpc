@@ -57,7 +57,7 @@ python3 app.py
 - **APC**: Infantry/Mech transport with auto-resupply capability
 - **T-Copter**: Air transport for Infantry/Mech
 - **Lander**: Naval transport for ground units (2 slots)
-- **Black Boat**: Infantry/Mech transport with repair capability
+- **Black Boat**: Infantry/Mech transport with repair capability (up to 10 HP max)
 - **Cruiser**: Helicopter transport with resupply
 - **Carrier**: Fighter/Bomber transport (2 slots)
 
@@ -79,10 +79,11 @@ All systems fully tested and operational:
 - **Combat System**: 4/4 test categories passing
 - **Movement System**: 6/6 test categories passing
 - **Transport System**: 8/8 test categories passing
+- **Repair & Refuel System**: 4/4 test categories passing
 - **Economic System**: 6/6 test categories passing
 - **Victory Conditions**: 5/5 test categories passing
 
-**Total: 29/29 test categories (100%)**
+**Total: 33/33 test categories (100%)**
 
 ## Running Tests
 
@@ -91,10 +92,14 @@ All systems fully tested and operational:
 python3 tests/unit/test_combat_system.py
 python3 tests/unit/test_movement_system.py
 python3 tests/unit/test_transport_final.py
+python3 test_repair_refuel_proper.py
 python3 tests/unit/test_economic_system.py
 
 # Run integration tests
 python3 tests/integration/test_victory_conditions.py
+
+# Run via web interface
+# Visit http://localhost:5000/test_interface for interactive testing
 ```
 
 ## Architecture
@@ -129,7 +134,9 @@ python3 tests/integration/test_victory_conditions.py
 
 ### Recently Completed
 - [x] APC/Cruiser/Carrier auto-resupply at turn start
-- [x] Black Boat manual repair command (2 HP max)
+- [x] Black Boat manual repair command (up to 2 HP per action, max 10 HP total)
+- [x] Comprehensive repair and refuel testing suite
+- [x] Test interface integration for repair/refuel tests
 
 ### In Progress
 - [ ] COM_TOWER damage bonus (+10% per tower)
@@ -168,8 +175,11 @@ rpc('cargo_exit_transport', {token, transport_x, transport_y, exit_x, exit_y, ca
 rpc('unit_create', {token, army, unit_type, x, y})
 rpc('get_production_options', {token, x, y})
 
-// Repair (Black Boat)
+// Repair (Black Boat - up to 2 HP per action, max 10 HP total)
 rpc('repair_unit', {token, blackboat_x, blackboat_y, target_x, target_y, hp_to_repair})
+
+// Manual Resupply (Black Boat/APC - FREE)
+rpc('resupply_unit', {token, resupply_x, resupply_y, target_x, target_y, fuel_amount, ammo_amount})
 ```
 
 ## Contributing

@@ -752,7 +752,78 @@ function getTileFromCanvasClick(event) {
 
 function handleTransportRightClick(tile, event) {
     
-    // Check if this tile has a transport unit
+    console.log('🔧 Right-click debug:', {
+        hasGameState: !!window.gameState,
+        hasSelectedUnit: !!(window.gameState && window.gameState.selectedUnit),
+        selectedUnit: window.gameState?.selectedUnit,
+        clickedTile: tile,
+        clickedUnit: tile.unit
+    });
+    
+    // FIRST: Check for Black Boat repair scenario
+    if (window.gameState && window.gameState.selectedUnit && tile.unit) {
+        const selectedTile = window.gameState.selectedUnit;
+        const selectedUnit = selectedTile.unit || selectedTile; // Handle both tile and unit objects
+        
+        // Get position - might be on tile or unit
+        const selectedX = selectedTile.x || selectedUnit.x;
+        const selectedY = selectedTile.y || selectedUnit.y;
+        
+        // Check if the selected unit is a Black Boat
+        const isBlackBoat = selectedUnit.type === 'BLACKBOAT' || selectedUnit.type === 'BLACK_BOAT';
+        
+        // Check if clicked unit is adjacent to selected unit
+        const distance = Math.abs(selectedX - tile.x) + Math.abs(selectedY - tile.y);
+        const isAdjacent = distance === 1;
+        
+        // Check if both units are on the same team
+        const sameTeam = selectedUnit.army === tile.unit.army;
+        
+        // Get HP from the correct location (might be in status.hp)
+        const targetHP = tile.unit.hp || tile.unit.status?.hp || 100;
+        const selectedHP = selectedUnit.hp || selectedUnit.status?.hp || 100;
+        
+        console.log('🔧 Repair check:', {
+            selectedTile,
+            selectedUnit,
+            selectedX,
+            selectedY,
+            isBlackBoat,
+            distance,
+            isAdjacent,
+            sameTeam,
+            selectedHP,
+            targetUnit: tile.unit,
+            targetHP,
+            targetStatus: tile.unit.status,
+            targetHPLow: targetHP < 100,
+            willShowMenu: isBlackBoat && isAdjacent && sameTeam && targetHP < 100
+        });
+        
+        // Check if we should show context menu for repair or resupply
+        const canRepair = isBlackBoat && targetHP < 100;
+        const isAPC = selectedUnit.type === 'APC';
+        const canResupply = (isBlackBoat || isAPC);
+        
+        if (isAdjacent && sameTeam && (canRepair || canResupply)) {
+            console.log('🔧 Showing repair/resupply context menu', {
+                canRepair,
+                canResupply,
+                isBlackBoat,
+                isAPC,
+                targetHP
+            });
+            // Show context menu for repair and/or resupply
+            if (typeof showUnitContextMenu === 'function') {
+                showUnitContextMenu(event.pageX, event.pageY, selectedUnit, tile.unit);
+                return true;
+            } else {
+                console.error('showUnitContextMenu function not found');
+            }
+        }
+    }
+    
+    // SECOND: Check if this tile has a transport unit for cargo operations
     if (tile.unit && isTransportUnit(tile.unit) && tile.unit.army === board.current_turn) {
         
         // Show transport exit options
@@ -763,7 +834,7 @@ function handleTransportRightClick(tile, event) {
         
         return true; // We handled it
     } else if (tile.unit) {
-        showTransportMessage('Right-click only works on transport units', 'warning');
+        showTransportMessage('Right-click only works on transport units or for Black Boat repair', 'warning');
     } else {
         showTransportMessage('No unit here to deploy from', 'info');
     }

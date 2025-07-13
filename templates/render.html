@@ -1025,12 +1025,12 @@
     </script>
     
     <!-- Context Menu for Unit Actions -->
-    <div id="unitContextMenu" style="display: none; position: absolute; background: #2c3e50; border: 1px solid #3498db; border-radius: 4px; padding: 0; min-width: 150px; box-shadow: 0 2px 10px rgba(0,0,0,0.5); z-index: 1000;">
+    <div id="unitContextMenu" style="display: none; position: fixed; background: #2c3e50; border: 1px solid #3498db; border-radius: 4px; padding: 0; min-width: 150px; box-shadow: 0 2px 10px rgba(0,0,0,0.5); z-index: 10000;">
         <div class="context-menu-item" onclick="contextMenuAction('repair')" style="padding: 8px 12px; cursor: pointer; color: #ecf0f1; font-size: 12px; border-bottom: 1px solid rgba(255,255,255,0.1);">
-            🔧 Repair Unit (2 HP)
+            🔧 Repair Unit (2 HP, max 10 HP + Fuel/Ammo)
         </div>
         <div class="context-menu-item" onclick="contextMenuAction('resupply')" style="padding: 8px 12px; cursor: pointer; color: #ecf0f1; font-size: 12px;">
-            ⛽ Resupply (Manual)
+            ⛽ Resupply Unit (Fuel+Ammo)
         </div>
     </div>
     
@@ -1062,6 +1062,14 @@
             } else {
                 repairItem.style.display = 'none';
             }
+            
+            // Hide resupply option if not a Black Boat or APC
+            const resupplyItem = menu.querySelector('.context-menu-item:nth-child(2)');
+            if (unit.type === 'BLACKBOAT' || unit.type === 'BLACK_BOAT' || unit.type === 'APC') {
+                resupplyItem.style.display = 'block';
+            } else {
+                resupplyItem.style.display = 'none';
+            }
         }
         
         function hideContextMenu() {
@@ -1072,9 +1080,20 @@
         }
         
         function contextMenuAction(action) {
-            if (!contextMenuUnit || !contextMenuTarget) return;
+            console.log('🔧 Context menu action clicked:', action);
+            console.log('🔧 Context menu unit:', contextMenuUnit);
+            console.log('🔧 Context menu target:', contextMenuTarget);
+            
+            // Hide the context menu immediately
+            hideContextMenu();
+            
+            if (!contextMenuUnit || !contextMenuTarget) {
+                console.error('❌ Missing context menu data');
+                return;
+            }
             
             if (action === 'repair' && (contextMenuUnit.type === 'BLACKBOAT' || contextMenuUnit.type === 'BLACK_BOAT')) {
+                console.log('🔧 Calling repair_unit RPC...');
                 // Call repair RPC
                 rpc('repair_unit', {
                     token: token,
@@ -1084,17 +1103,47 @@
                     target_y: contextMenuTarget.y,
                     hp_to_repair: 2
                 }).then(result => {
+                    console.log('🔧 Repair RPC response:', result);
                     if (result.success) {
-                        showNotification(`Repaired ${result.hp_repaired} HP for ${result.repair_cost} funds`);
+                        console.log('✅ Repair successful:', result);
+                        showNotification(`Repaired ${result.hp_repaired} HP + resupplied fuel/ammo for ${result.repair_cost} funds`);
+                        // Force board update to show changes
+                        if (typeof update === 'function') {
+                            update();
+                        }
                     } else {
+                        console.log('❌ Repair failed:', result.error);
                         showNotification(result.error || 'Repair failed', 'error');
                     }
                 }).catch(err => {
+                    console.log('❌ Repair RPC error:', err);
                     showNotification('Repair failed: ' + err, 'error');
                 });
+            } else if (action === 'resupply' && (contextMenuUnit.type === 'BLACKBOAT' || contextMenuUnit.type === 'BLACK_BOAT' || contextMenuUnit.type === 'APC')) {
+                console.log('⛽ Calling resupply_unit RPC...');
+                // Call resupply RPC
+                rpc('resupply_unit', {
+                    token: token,
+                    resupply_x: contextMenuUnit.x,
+                    resupply_y: contextMenuUnit.y,
+                    target_x: contextMenuTarget.x,
+                    target_y: contextMenuTarget.y,
+                    fuel_amount: 50,  // Resupply full amount
+                    ammo_amount: 10   // Resupply full amount
+                }).then(result => {
+                    if (result.success) {
+                        showNotification(`Resupplied ${result.fuel_resupplied} fuel and ${result.ammo_resupplied} ammo (FREE)`);
+                        // Force board update to show changes
+                        if (typeof update === 'function') {
+                            update();
+                        }
+                    } else {
+                        showNotification(result.error || 'Resupply failed', 'error');
+                    }
+                }).catch(err => {
+                    showNotification('Resupply failed: ' + err, 'error');
+                });
             }
-            
-            hideContextMenu();
         }
         
         // Hide context menu when clicking elsewhere
