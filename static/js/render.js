@@ -159,8 +159,9 @@ function uuidv4() {
 async function rerender() {
     console.time('rerender');
     if (two) {
-        two.clear();
-        await createScene();
+        // Instead of clearing everything, just update what changed
+        // This prevents the black flash
+        await updateScene();
         two.update();
     } else {
         console.error('Two.js not initialized - calling update()');
@@ -172,6 +173,16 @@ async function rerender() {
 //
 // JSON-RPC methods
 //
+
+// Force a full scene refresh (useful after major changes)
+function forceSceneRefresh() {
+    window.sceneInitialized = false;
+    window.sceneElements = {
+        terrain: {},
+        units: {},
+        highlights: {}
+    };
+}
 
 function jsonrpc(method, params, callback) {
     if (!params) params = {};
@@ -299,15 +310,25 @@ function update() {
 
                     // ✅ NEW: Add this alt-click handler here
                     // Alt-click handling moved to main advanceWarsCanvasClick function to prevent conflicts
+                    
+                    // Add touch event support for mobile
+                    addTouchSupport(canvas);
                 }
             } catch (error) {
                 console.error('Error initializing Two.js:', error);
                 return;
             }
         }
-        // render
-        two.clear();
-        await createScene();
+        // render - use differential rendering to prevent flashing
+        if (!window.sceneInitialized) {
+            // First time - create the full scene
+            two.clear();
+            await createScene();
+            window.sceneInitialized = true;
+        } else {
+            // Subsequent updates - only update what changed
+            await updateScene();
+        }
 
         // Render both movement and attack highlights
         if (window.movementHighlights && window.movementHighlights.length > 0) {
@@ -1927,6 +1948,72 @@ function renderTransportHighlights() {
 }
 
 // Custom cargo indicator functions removed - using authentic AW load icon from tileset instead
+
+// Global variables to track scene elements
+window.sceneElements = window.sceneElements || {
+    terrain: {},
+    units: {},
+    highlights: {}
+};
+
+// Update only changed elements instead of recreating everything
+async function updateScene() {
+    if (!board || !board.grid) return;
+    
+    // Track which units we've seen this update
+    const currentUnits = new Set();
+    
+    // Update tiles
+    for (var i = 0; i < board.height; i++) {
+        for (var j = 0; j < board.width; j++) {
+            var tile = board.grid[j + i * board.width];
+            var key = `${j},${i}`;
+            
+            // Update terrain only if changed (rarely happens)
+            if (!window.sceneElements.terrain[key]) {
+                makeMapTile(tile);
+                window.sceneElements.terrain[key] = true;
+            }
+            
+            // Update units
+            if (tile.unit !== null) {
+                currentUnits.add(key);
+                
+                // Check if unit exists and needs update
+                if (!window.sceneElements.units[key] || 
+                    window.sceneElements.units[key].hp !== tile.unit.hp ||
+                    window.sceneElements.units[key].type !== tile.unit.type) {
+                    
+                    // Remove old unit sprite if exists
+                    if (window.sceneElements.units[key] && window.sceneElements.units[key].sprite) {
+                        two.remove(window.sceneElements.units[key].sprite);
+                    }
+                    
+                    // Create new unit sprite
+                    await makeSprite(tile);
+                    window.sceneElements.units[key] = {
+                        type: tile.unit.type,
+                        hp: tile.unit.hp,
+                        sprite: tile.sprite // Assuming makeSprite sets tile.sprite
+                    };
+                }
+            }
+        }
+    }
+    
+    // Remove units that no longer exist
+    for (const key in window.sceneElements.units) {
+        if (!currentUnits.has(key)) {
+            if (window.sceneElements.units[key].sprite) {
+                two.remove(window.sceneElements.units[key].sprite);
+            }
+            delete window.sceneElements.units[key];
+        }
+    }
+    
+    // Update transport indicators
+    renderTransportIndicators();
+}
 
 async function createScene() {
     // create game tiles
@@ -3955,6 +4042,171 @@ function applyCompleteClickFix() {
         
     };
     
+}
+
+// ========================================================================
+// MOBILE TOUCH SUPPORT
+// ========================================================================
+
+function addTouchSupport(canvas) {
+    let touchStartTime = 0;
+    let touchStartPos = { x: 0, y: 0 };
+    let longPressTimer = null;
+    let isDragging = false;
+    
+    // Convert touch coordinates to canvas coordinates
+    function getTouchPos(touch) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+            x: touch.clientX - rect.left,
+            y: touch.clientY - rect.top
+        };
+    }
+    
+    // Handle touch start (similar to mouse down)
+    canvas.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        
+        const touch = e.touches[0];
+        const pos = getTouchPos(touch);
+        touchStartTime = Date.now();
+        touchStartPos = pos;
+        isDragging = false;
+        
+        // Start long press timer for context menu (500ms)
+        longPressTimer = setTimeout(() => {
+            const tile = tileAt(pos.x, pos.y);
+            if (tile) {
+                // Simulate right-click for context menu
+                const mockEvent = {
+                    offsetX: pos.x,
+                    offsetY: pos.y,
+                    preventDefault: () => {},
+                    stopPropagation: () => {}
+                };
+                handleTransportRightClick(tile, mockEvent);
+            }
+        }, 500);
+    }, { passive: false });
+    
+    // Handle touch move (similar to mouse move)
+    canvas.addEventListener('touchmove', function(e) {
+        e.preventDefault();
+        
+        const touch = e.touches[0];
+        const pos = getTouchPos(touch);
+        
+        // Check if user is dragging
+        const distance = Math.sqrt(
+            Math.pow(pos.x - touchStartPos.x, 2) + 
+            Math.pow(pos.y - touchStartPos.y, 2)
+        );
+        
+        if (distance > 10) {
+            isDragging = true;
+            // Cancel long press if dragging
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+        }
+        
+        // Update hover info
+        const mockEvent = {
+            offsetX: pos.x,
+            offsetY: pos.y
+        };
+        canvasMove(mockEvent);
+    }, { passive: false });
+    
+    // Handle touch end (similar to mouse click)
+    canvas.addEventListener('touchend', function(e) {
+        e.preventDefault();
+        
+        // Clear long press timer
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+        }
+        
+        // If not dragging and quick tap, treat as click
+        if (!isDragging) {
+            const touchDuration = Date.now() - touchStartTime;
+            const pos = touchStartPos;
+            
+            if (touchDuration < 200) {
+                // Quick tap - treat as normal click
+                const mockEvent = {
+                    offsetX: pos.x,
+                    offsetY: pos.y,
+                    altKey: false,
+                    ctrlKey: false,
+                    metaKey: false
+                };
+                advanceWarsCanvasClick(mockEvent);
+            } else if (touchDuration < 500) {
+                // Medium tap - could add special handling here
+                const mockEvent = {
+                    offsetX: pos.x,
+                    offsetY: pos.y,
+                    altKey: false,
+                    ctrlKey: false,
+                    metaKey: false
+                };
+                advanceWarsCanvasClick(mockEvent);
+            }
+            // Long press is handled by the timer above
+        }
+    }, { passive: false });
+    
+    // Handle touch cancel
+    canvas.addEventListener('touchcancel', function(e) {
+        e.preventDefault();
+        
+        // Clear any timers
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+        }
+        isDragging = false;
+    }, { passive: false });
+    
+    // Prevent default touch behavior on the canvas
+    canvas.addEventListener('gesturestart', function(e) {
+        e.preventDefault();
+    });
+    
+    console.log('📱 Touch support added to canvas');
+}
+
+// Mobile-friendly notification system
+function showMobileNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = 'mobile-notification';
+    notification.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: ${type === 'error' ? '#e74c3c' : '#27ae60'};
+        color: white;
+        padding: 12px 24px;
+        border-radius: 25px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        z-index: 10000;
+        font-size: 14px;
+        font-weight: 500;
+        animation: slideUp 0.3s ease;
+        min-width: 200px;
+        text-align: center;
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideDown 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 2500);
 }
 
 // ========================================================================

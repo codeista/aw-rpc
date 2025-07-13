@@ -1190,6 +1190,257 @@
             }
         `;
         document.head.appendChild(style);
+        
+        // Add mobile-specific CSS
+        const mobileStyle = document.createElement('style');
+        mobileStyle.textContent = `
+            /* Mobile optimizations */
+            @media (max-width: 768px) {
+                .header {
+                    padding: 6px 10px;
+                    position: fixed;
+                    width: 100%;
+                }
+                
+                .main-container {
+                    padding-top: 60px;
+                    flex-direction: column;
+                    gap: 8px;
+                    padding: 8px;
+                }
+                
+                .game-board-section {
+                    height: 60vh;
+                    min-height: 300px;
+                }
+                
+                .sidebar {
+                    position: fixed;
+                    bottom: 0;
+                    left: 0;
+                    right: 0;
+                    max-width: 100%;
+                    background: rgba(44, 62, 80, 0.95);
+                    border-radius: 20px 20px 0 0;
+                    padding: 10px;
+                    max-height: 40vh;
+                    overflow-y: auto;
+                    transform: translateY(calc(100% - 60px));
+                    transition: transform 0.3s ease;
+                    z-index: 100;
+                }
+                
+                .sidebar.expanded {
+                    transform: translateY(0);
+                }
+                
+                .sidebar::before {
+                    content: '';
+                    position: absolute;
+                    top: 8px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    width: 40px;
+                    height: 4px;
+                    background: rgba(255,255,255,0.3);
+                    border-radius: 2px;
+                }
+                
+                .quick-controls {
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 8px;
+                    padding: 8px;
+                }
+                
+                .quick-btn {
+                    min-height: 40px;
+                    font-size: 12px;
+                    padding: 8px 12px;
+                }
+                
+                .game-status-bar {
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 8px;
+                    margin-bottom: 8px;
+                    padding: 8px;
+                }
+                
+                .status-item {
+                    padding: 6px 8px;
+                }
+                
+                .status-label {
+                    font-size: 10px;
+                }
+                
+                .status-value {
+                    font-size: 14px;
+                }
+                
+                #draw canvas {
+                    max-width: 100%;
+                    max-height: 100%;
+                    touch-action: none;
+                }
+                
+                /* Mobile action buttons */
+                .mobile-action-buttons {
+                    position: fixed;
+                    bottom: 70px;
+                    right: 10px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                    z-index: 99;
+                }
+                
+                .mobile-action-btn {
+                    width: 50px;
+                    height: 50px;
+                    border-radius: 50%;
+                    background: linear-gradient(135deg, #3498db, #2980b9);
+                    color: white;
+                    border: none;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                    font-size: 20px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                }
+                
+                .mobile-action-btn:active {
+                    transform: scale(0.95);
+                }
+                
+                /* Improve chat and json sections on mobile */
+                #chatSection, #jsonSection {
+                    max-height: 200px;
+                }
+                
+                #textareachat, #textareajson {
+                    height: 100px;
+                    font-size: 12px;
+                }
+                
+                #inputchat {
+                    font-size: 14px;
+                }
+            }
+            
+            /* Landscape mode adjustments */
+            @media (max-width: 768px) and (orientation: landscape) {
+                .game-board-section {
+                    height: 80vh;
+                }
+                
+                .sidebar {
+                    max-height: 50vh;
+                    transform: translateY(calc(100% - 40px));
+                }
+            }
+            
+            /* Touch feedback */
+            .tile-highlight {
+                position: absolute;
+                pointer-events: none;
+                border: 3px solid #3498db;
+                border-radius: 4px;
+                animation: pulse 0.5s ease;
+            }
+            
+            @keyframes pulse {
+                0% { transform: scale(1); opacity: 1; }
+                50% { transform: scale(1.1); opacity: 0.8; }
+                100% { transform: scale(1); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(mobileStyle);
+        
+        // Add mobile action buttons
+        if (window.innerWidth <= 768) {
+            const mobileButtons = document.createElement('div');
+            mobileButtons.className = 'mobile-action-buttons';
+            mobileButtons.innerHTML = `
+                <button class="mobile-action-btn" onclick="showMobileMenu()" title="Menu">☰</button>
+                <button class="mobile-action-btn" onclick="endTurn()" title="End Turn">⏭</button>
+                <button class="mobile-action-btn" onclick="toggleSidebar()" title="Info">ℹ</button>
+            `;
+            document.body.appendChild(mobileButtons);
+        }
+        
+        // Mobile menu function
+        window.showMobileMenu = function() {
+            const menu = document.createElement('div');
+            menu.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(44, 62, 80, 0.95);
+                padding: 20px;
+                border-radius: 12px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+                z-index: 10001;
+                min-width: 250px;
+            `;
+            menu.innerHTML = `
+                <h3 style="color: #3498db; margin-bottom: 15px;">Game Menu</h3>
+                <button class="quick-btn btn-primary" onclick="rerender(); closeMobileMenu();" style="width: 100%; margin-bottom: 8px;">Refresh Board</button>
+                <button class="quick-btn btn-success" onclick="showGameStats(); closeMobileMenu();" style="width: 100%; margin-bottom: 8px;">Game Stats</button>
+                <button class="quick-btn btn-warning" onclick="changeTileset(); closeMobileMenu();" style="width: 100%;">Change Tileset</button>
+                <button class="quick-btn" onclick="closeMobileMenu();" style="width: 100%; margin-top: 15px;">Close</button>
+            `;
+            menu.id = 'mobileMenu';
+            document.body.appendChild(menu);
+        };
+        
+        window.closeMobileMenu = function() {
+            const menu = document.getElementById('mobileMenu');
+            if (menu) menu.remove();
+        };
+        
+        window.toggleSidebar = function() {
+            const sidebar = document.querySelector('.sidebar');
+            if (sidebar) {
+                sidebar.classList.toggle('expanded');
+            }
+        };
+        
+        window.endTurn = function() {
+            if (typeof armyEndTurn === 'function') {
+                armyEndTurn();
+                showMobileNotification('Turn ended');
+            }
+        };
+        
+        // Add swipe support for sidebar
+        if (window.innerWidth <= 768) {
+            let touchStartY = 0;
+            const sidebar = document.querySelector('.sidebar');
+            
+            if (sidebar) {
+                sidebar.addEventListener('touchstart', function(e) {
+                    touchStartY = e.touches[0].clientY;
+                });
+                
+                sidebar.addEventListener('touchmove', function(e) {
+                    const touchY = e.touches[0].clientY;
+                    const deltaY = touchY - touchStartY;
+                    
+                    if (Math.abs(deltaY) > 50) {
+                        if (deltaY > 0 && sidebar.classList.contains('expanded')) {
+                            // Swipe down - collapse
+                            sidebar.classList.remove('expanded');
+                        } else if (deltaY < 0 && !sidebar.classList.contains('expanded')) {
+                            // Swipe up - expand
+                            sidebar.classList.add('expanded');
+                        }
+                    }
+                });
+            }
+        }
     </script>
 </body>
 </html>
