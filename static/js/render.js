@@ -198,12 +198,15 @@ function jsonrpc(method, params, callback) {
                     if (this.status === 200) {
                         try {
                             var response = JSON.parse(this.responseText);
+                            console.log('RPC Response:', method, response);
                             if (response.error) {
+                                console.error('RPC Error:', method, response.error);
                                 reject(new Error(response.error.message || 'RPC Error'));
                             } else {
                                 resolve(response.result);
                             }
                         } catch (e) {
+                            console.error('JSON Parse Error:', this.responseText);
                             reject(new Error('Invalid JSON response'));
                         }
                     } else {
@@ -243,9 +246,16 @@ function update() {
         // console.log('Game board response received:', res);
         // Preserve the current selection before updating board
         var previousSelection = board ? board.selected : null;
+        var previousTurn = board ? board.current_turn : null;
 
-                // Update board data
+        // Update board data
         board = res;
+        
+        // If turn changed, clear all highlights
+        if (previousTurn && previousTurn !== board.current_turn) {
+            console.log(`🔄 Turn changed from ${previousTurn} to ${board.current_turn}`);
+            clearAllHighlights();
+        }
         
         // Update status bar if function exists
         if (typeof updateGameStatus === 'function') {
@@ -335,16 +345,30 @@ function update() {
             await updateScene();
         }
 
-        // Render both movement and attack highlights
-        if (window.movementHighlights && window.movementHighlights.length > 0) {
-            renderMovementHighlights();
+        // Only render highlights if we have a selected unit that can act
+        if (board.selected && board.selected.unit) {
+            const unit = board.selected.unit;
+            const canAct = unit.can_move || unit.can_attack;
+            
+            if (canAct) {
+                // Render movement highlights
+                if (window.movementHighlights && window.movementHighlights.length > 0) {
+                    renderMovementHighlights();
+                }
+                // Render attack highlights
+                if (window.gameState && window.gameState.attackHighlights && window.gameState.attackHighlights.length > 0) {
+                    renderAttackHighlights();
+                }
+            } else {
+                // Unit can't act - clear all highlights
+                console.log('🚫 Selected unit cannot act - clearing highlights');
+                clearAllHighlights();
+            }
         }
-        // Render transport highlights
+        
+        // Always render transport highlights if present
         if (window.transportHighlights && window.transportHighlights.length > 0) {
             renderTransportHighlights();
-        }
-        if (window.gameState && window.gameState.attackHighlights && window.gameState.attackHighlights.length > 0) {
-            renderAttackHighlights();
         }
 
         two.update();
@@ -406,11 +430,30 @@ function chat(ev) {
 }
 
 function armyEndTurn() {
-    // Clean up transport state before ending turn
+    console.log('🔄 Ending turn...');
+    
+    // Clear ALL highlights before ending turn
+    clearAllHighlights();
+    
+    // Clean up transport state
     cleanupTransportState();
     
+    // Clear any selected units
+    board.selected = null;
+    if (window.gameState) {
+        window.gameState.selectedUnit = null;
+        window.gameState.movementPhase = false;
+        window.gameState.showingAttackTargets = false;
+    }
+    
     // Call the original RPC method
-    jsonrpc('army_end_turn', {});
+    jsonrpc('army_end_turn', {}).then(result => {
+        console.log('✅ Turn ended');
+        // Force update after turn ends
+        update();
+    }).catch(error => {
+        console.error('❌ Failed to end turn:', error);
+    });
 }
 
 function cleanupTransportState() {
@@ -530,11 +573,37 @@ function unitSelect(tile) {
 }
 
 function unitCapture(tile) {
-    jsonrpc('capture_tile', {x: tile.x, y: tile.y});
+    jsonrpc('capture_tile', {x: tile.x, y: tile.y}).then(result => {
+        // Manually update unit flags after capture
+        if (board && board.grid) {
+            const unitTile = board.grid.find(t => t.x === tile.x && t.y === tile.y);
+            if (unitTile && unitTile.unit) {
+                console.log('📝 Unit captured - marking as unavailable');
+                unitTile.unit.can_move = false;
+                unitTile.unit.can_attack = false;
+                unitTile.unit.can_capture = false;
+            }
+        }
+        // Force update to refresh sprite
+        update();
+    });
 }
 
 function unitWait(tile) {
-    jsonrpc('unit_wait', {x: tile.x, y: tile.y});
+    jsonrpc('unit_wait', {x: tile.x, y: tile.y}).then(result => {
+        // Manually update unit flags after wait
+        if (board && board.grid) {
+            const unitTile = board.grid.find(t => t.x === tile.x && t.y === tile.y);
+            if (unitTile && unitTile.unit) {
+                console.log('📝 Unit waited - marking as unavailable');
+                unitTile.unit.can_move = false;
+                unitTile.unit.can_attack = false;
+                unitTile.unit.can_capture = false;
+            }
+        }
+        // Force update to refresh sprite
+        update();
+    });
 }
 
 function unitAttack(tile) {
@@ -557,8 +626,11 @@ function unitJoin(tile) {
 function unitMove(tile) {
     var source = board.selected;
     var target = tile;
+    console.log(`🚶 Attempting move from (${source.x},${source.y}) to (${target.x},${target.y})`);
+    
     jsonrpc('unit_move', {x: source.x, y: source.y, x2: target.x, y2: target.y})
         .then(result => {
+            console.log('✅ Move successful:', result);
             
             // Clear the selection and highlights after successful move
             board.selected = null;
@@ -581,9 +653,13 @@ function unitMove(tile) {
                 window.two.update();
             }
             
+            // Trigger board update
+            update();
+            
         })
         .catch(error => {
             console.error('❌ Move failed:', error);
+            alert(`Move failed: ${error.message || error}`);
             // Don't clear highlights if move failed
         });
 }
@@ -648,6 +724,8 @@ function canvasMove(ev) {
     var x = ev.offsetX;
     var y = ev.offsetY;
     var tile = tileAt(x, y);
+    
+    // Update cursor
     draw.style.cursor = 'default';
     if (tile && tile.can_be_moved_to)
         draw.style.cursor = 'pointer';
@@ -660,6 +738,27 @@ function canvasMove(ev) {
                  tile.mapTile.type == 'AIRPORT' ||
                  tile.mapTile.type == 'PORT')
                  draw.style.cursor = 'pointer';
+    
+    // Update info panel with tile details on hover
+    if (tile) {
+        var info = `Tile (${tile.x}, ${tile.y})`;
+        info += `\nTerrain: ${tile.mapTile.type}`;
+        
+        if (tile.mapTile.army) {
+            info += ` (${tile.mapTile.army})`;
+        }
+        
+        if (tile.unit) {
+            info += `\n\nUnit: ${tile.unit.army} ${tile.unit.type}`;
+            info += `\nHP: ${Math.ceil(tile.unit.status.hp / 10)}/10`;
+            info += `\nFuel: ${tile.unit.status.fuel}`;
+            if (tile.unit.status.ammo !== undefined) {
+                info += `\nAmmo: ${tile.unit.status.ammo}`;
+            }
+        }
+        
+        document.getElementById('infobox').innerText = info;
+    }
 }
 
 function canvasClick(ev) {
@@ -1521,22 +1620,35 @@ async function generateUnitTexture(tile) {
     
     return new Promise((resolve, reject) => {
         spriteSheetImg.onload = function() {
-            // console.log(`Sprite sheet loaded: ${unitsSrc}, dimensions: ${spriteSheetImg.width}x${spriteSheetImg.height}`);
             // Use sprite corrector data to get accurate coordinates
             let spriteKey, x, y;
             
             // Determine sprite state - show as active/idle if unit can move OR attack
-            const state = (tile.unit.can_move || tile.unit.can_attack || tile.unit.can_capture) ? 'idle' : 'unavailable';
+            // Note: can_capture alone doesn't make a unit available (it needs to be able to move to capture)
+            const canAct = tile.unit.can_move || tile.unit.can_attack;
+            const state = canAct ? 'idle' : 'unavailable';
+            
+            // Debug logging for sprite state
+            if (tile.unit.army === board.current_turn) {
+                console.log(`Unit ${tile.unit.type} at (${tile.x},${tile.y}): can_move=${tile.unit.can_move}, can_attack=${tile.unit.can_attack}, can_capture=${tile.unit.can_capture} -> state=${state}`);
+                
+                // Extra debug for invisible units
+                if (state === 'unavailable' && tile.unit.type === 'INFANTRY') {
+                    console.log(`DEBUG: Unavailable Infantry sprite key: ${spriteKey}`);
+                }
+            }
             
             // Build sprite key using sprite corrector format
             spriteKey = `${tile.unit.type}_${tile.unit.army}_${state}_0`;
+            
+            // Removed debug logging - use debugSpriteCorrections() instead
             
             // Get coordinates from sprite corrector data
             if (window.spriteCorrections && window.spriteCorrections[state] && window.spriteCorrections[state][spriteKey]) {
                 const coords = window.spriteCorrections[state][spriteKey];
                 x = coords.x;
                 y = coords.y;
-                // console.log(`Using sprite corrector for ${spriteKey}: x=${x}, y=${y}`);
+                
             } else {
                 // Enhanced fallback: Try to find coordinates based on RED army equivalent
                 const redSpriteKey = spriteKey.replace('_BLUE_', '_RED_').replace('_GREEN_', '_RED_').replace('_YELLOW_', '_RED_').replace('_GREY_', '_RED_');
@@ -1598,10 +1710,15 @@ async function generateUnitTexture(tile) {
                         case 'BATTLESHIP': x -= 357; y -= 42; break;
                     }
                     
-                    if (!tile.unit.can_move && !tile.unit.can_attack && !tile.unit.can_capture) {
+                    if (!tile.unit.can_move && !tile.unit.can_attack) {
                         x -= 336; // unavailable sprite
                     }
                 }
+            }
+            
+            // Debug for invisible units
+            if (state === 'unavailable' && tile.unit.type === 'INFANTRY') {
+                console.log(`Drawing unavailable Infantry from sprite sheet at (${x}, ${y}), size ${SPRITESIZE}x${SPRITESIZE}`);
             }
             
             // Draw the unit sprite onto canvas
@@ -1611,10 +1728,6 @@ async function generateUnitTexture(tile) {
                 0, 0, SPRITESIZE, SPRITESIZE   // Dest rect
             );
             
-            // Debug: Log what we're drawing for blue units
-            if (tile.unit.army === 'BLUE') {
-                // console.log(`Drawing BLUE unit: ${spriteKey} from (${x}, ${y}) size ${SPRITESIZE}x${SPRITESIZE}`);
-            }
             
             // Draw HP indicator if unit is damaged
             if (tile.unit.status.hp <= 90) {
@@ -1624,7 +1737,7 @@ async function generateUnitTexture(tile) {
                 
                 // Calculate HP sprite position using sprite corrector data
                 var hpX, hpY;
-                const hpCategory = (tile.unit.can_move || tile.unit.can_attack || tile.unit.can_capture) ? 'hp_indicators' : 'hp_unavailable';
+                const hpCategory = (tile.unit.can_move || tile.unit.can_attack) ? 'hp_indicators' : 'hp_unavailable';
                 const hpKey = `${hpCategory}_${hpDigit - 1}`;
                 
                 if (window.spriteCorrections && window.spriteCorrections[hpCategory] && window.spriteCorrections[hpCategory][hpKey]) {
@@ -1798,7 +1911,7 @@ function makeSpriteLegacy(tile) {
             x = x - 67;   // Offset if different sprite position
             break;
     }
-    if (!tile.unit.can_move && !tile.unit.can_attack && !tile.unit.can_capture)
+    if (!tile.unit.can_move && !tile.unit.can_attack)
         x = x - 336; // unavailable sprite
     var unitsSrc = getSelectedUnitTileset();
     // Create unique texture per unit to prevent sharing between units
@@ -1976,6 +2089,9 @@ window.sceneElements = window.sceneElements || {
 // Update only changed elements instead of recreating everything
 async function updateScene() {
     if (!board || !board.grid) return;
+    
+    // Ensure sprite corrections are loaded before rendering
+    await loadSpriteCorrectorData();
     
     // Track which units we've seen this update
     const currentUnits = new Set();
@@ -2244,13 +2360,33 @@ function executeAttack(targetTile) {
         x2: targetTile.x,
         y2: targetTile.y
     }, function(result) {
+        console.log('⚔️ Attack executed:', result);
+        
+        // Clear all state
         clearAllHighlights();
         board.selected = null;
+        if (window.gameState) {
+            window.gameState.selectedUnit = null;
+            window.gameState.movementPhase = false;
+            window.gameState.showingAttackTargets = false;
+        }
+        
+        // Manually update unit flags since server doesn't do it properly
+        if (board && board.grid) {
+            const attackerTile = board.grid.find(t => t.x === attacker.x && t.y === attacker.y);
+            if (attackerTile && attackerTile.unit) {
+                console.log('📝 Manually updating attacker flags to unavailable');
+                attackerTile.unit.can_move = false;
+                attackerTile.unit.can_attack = false;
+                // Note: can_capture is not updated as it doesn't affect sprite state
+            }
+        }
         
         if (result && result.game_over) {
             alert(`Game Over! ${result.winner} wins!`);
         }
         
+        // Force immediate update
         update();
     });
 }
@@ -3077,14 +3213,32 @@ function advanceWarsMove(targetTile) {
                 y: targetTile.y
             };
             
+            // Manually update unit's can_move flag after moving
+            if (board && board.grid) {
+                const movedUnitTile = board.grid.find(t => t.x === targetTile.x && t.y === targetTile.y);
+                if (movedUnitTile && movedUnitTile.unit) {
+                    console.log('📝 Unit moved - updating can_move to false');
+                    movedUnitTile.unit.can_move = false;
+                    // Note: can_attack may still be true after moving
+                }
+            }
+            
             // Enter movement phase
             window.gameState.movementPhase = true;
             // Clear movement highlights
             clearMovementHighlights();
             
             // Show attack targets after movement with longer delay
-            setTimeout(() => {
-                showAttackTargetsAfterMove(targetTile.x, targetTile.y);
+            setTimeout(async () => {
+                // Get the updated tile data after move
+                const updatedTile = board.grid.find(t => t.x === targetTile.x && t.y === targetTile.y);
+                if (updatedTile) {
+                    showAttackTargetsAfterMove(updatedTile.x, updatedTile.y);
+                    // Also show action menu for capture/wait options
+                    await showPostMoveActionMenu(updatedTile);
+                } else {
+                    console.error('Could not find updated tile after move');
+                }
             }, 800); // Increased delay to ensure board update completes
             
         } else {
@@ -3141,12 +3295,30 @@ function advanceWarsAttack(targetTile) {
             x2: targetTile.x, 
             y2: targetTile.y
         }).then(result => {
+            console.log('⚔️ Attack result:', result);
+            
+            // Manually update unit flags since server doesn't do it properly
+            if (board && board.grid) {
+                const attackerTile = board.grid.find(t => t.x === source.x && t.y === source.y);
+                if (attackerTile && attackerTile.unit) {
+                    console.log('📝 Manually updating attacker flags to unavailable');
+                    attackerTile.unit.can_move = false;
+                    attackerTile.unit.can_attack = false;
+                    attackerTile.unit.can_capture = false;
+                }
+            }
+            
             // IMPORTANT: End the unit's turn to clear all highlights
             endUnitTurn();
+            // Force immediate update to refresh unit states
+            setTimeout(() => {
+                update();
+            }, 100);
         }).catch(error => {
             console.error('❌ Attack failed:', error);
             // Also end turn on attack failure
             endUnitTurn();
+            update();
         });
     }
     
@@ -3155,7 +3327,21 @@ function advanceWarsAttack(targetTile) {
 
 function endUnitTurn() {
     
+    // Manually update unit flags before clearing selection
     if (window.gameState && window.gameState.selectedUnit) {
+        const unitX = window.gameState.selectedUnit.x;
+        const unitY = window.gameState.selectedUnit.y;
+        
+        if (board && board.grid) {
+            const unitTile = board.grid.find(t => t.x === unitX && t.y === unitY);
+            if (unitTile && unitTile.unit) {
+                console.log('📝 Ending unit turn - marking as unavailable');
+                unitTile.unit.can_move = false;
+                unitTile.unit.can_attack = false;
+                unitTile.unit.can_capture = false;
+            }
+        }
+        
         window.gameState.selectedUnit = null;
     }
     
@@ -3349,21 +3535,48 @@ function showAttackTargets(unitX, unitY) {
 // =============================================================================
 
 function clearAllHighlights() {
+    console.log('🧹 Clearing all highlights...');
     
-    // Clear movement highlights
-    if (typeof clearMovementHighlights === 'function') {
-        clearMovementHighlights();
+    // Clear movement highlights data and visuals
+    if (window.movementHighlights) {
+        window.movementHighlights = [];
+    }
+    if (window.movementHighlightGroup && window.two) {
+        window.two.remove(window.movementHighlightGroup);
+        window.movementHighlightGroup = null;
+    }
+    
+    // Clear attack highlights data and visuals
+    if (window.gameState && window.gameState.attackHighlights) {
+        window.gameState.attackHighlights = [];
+    }
+    if (window.attackHighlightGroup && window.two) {
+        window.two.remove(window.attackHighlightGroup);
+        window.attackHighlightGroup = null;
     }
     
     // Clear transport highlights
     if (typeof clearTransportHighlights === 'function') {
         clearTransportHighlights();
     }
-    
-    // Clear any other highlights
-    if (typeof clearAttackHighlights === 'function') {
-        clearAttackHighlights();
+    if (typeof clearAllTransportHighlights === 'function') {
+        clearAllTransportHighlights();
     }
+    
+    // Clear board visual state
+    if (board && board.grid) {
+        board.grid.forEach(tile => {
+            tile.can_be_moved_to = false;
+            tile.can_be_attacked = false;
+        });
+    }
+    
+    // Force complete re-render
+    if (window.two) {
+        window.two.update();
+    }
+    
+    console.log('✅ All highlights cleared');
 }
 
 function isMovementHighlighted(x, y) {
@@ -3528,6 +3741,339 @@ function advanceWarsCanvasClick(ev) {
     }
 }
 // =============================================================================
+// ACTION MENU SYSTEM
+// =============================================================================
+
+async function showPostMoveActionMenu(tile) {
+    console.log('📋 Checking post-move actions for unit at', tile.x, tile.y);
+    
+    // Check if unit can capture
+    const canCapture = tile.unit && tile.unit.can_capture && 
+        (tile.unit.type === 'INFANTRY' || tile.unit.type === 'MECH') &&
+        isCapturableProperty(tile.mapTile.type);
+    
+    // Check if there are attack targets
+    const hasAttackTargets = window.gameState && window.gameState.attackHighlights && 
+        window.gameState.attackHighlights.length > 0;
+    
+    // Check if unit can load into transport
+    const canLoadTransport = await checkCanLoadTransport(tile);
+    
+    // Check if unit is a missile that can launch
+    const canLaunchMissile = tile.unit && tile.unit.type === 'MISSILE' && 
+        window.gameState && window.gameState.attackHighlights && 
+        window.gameState.attackHighlights.length > 0;
+    
+    // Check for other special unit abilities
+    const canJoin = tile.unit && checkCanJoinUnit(tile); // Units can join damaged units of same type
+    const canSupply = tile.unit && (tile.unit.type === 'APC' || tile.unit.type === 'BLACKBOAT') && checkHasAdjacentUnitsToSupply(tile);
+    const canRepair = tile.unit && tile.unit.type === 'BLACKBOAT' && checkHasAdjacentUnitsToRepair(tile);
+    
+    // If no actions available, auto-wait
+    if (!hasAttackTargets && !canCapture && !canLoadTransport && !canLaunchMissile && !canJoin && !canSupply && !canRepair) {
+        console.log('🤖 No actions available - auto-waiting unit');
+        unitWait(tile);
+        endUnitTurn();
+        return;
+    }
+    
+    console.log('📋 Showing action menu - actions available');
+    
+    // Create action menu
+    const menu = document.createElement('div');
+    menu.id = 'action-menu';
+    menu.style.cssText = `
+        position: fixed;
+        background: rgba(0, 0, 0, 0.9);
+        border: 2px solid #3498db;
+        border-radius: 5px;
+        padding: 10px;
+        z-index: 10000;
+        color: white;
+        font-family: Arial, sans-serif;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    `;
+    
+    // Position menu near the unit
+    const canvas = document.querySelector('#draw canvas');
+    const rect = canvas.getBoundingClientRect();
+    const menuX = rect.left + (tile.x * TILESIZE * (window.currentZoom || 1)) + 20;
+    const menuY = rect.top + (tile.y * TILESIZE * (window.currentZoom || 1));
+    
+    menu.style.left = `${menuX}px`;
+    menu.style.top = `${menuY}px`;
+    
+    // Add menu items
+    const actions = [];
+    
+    if (hasAttackTargets) {
+        actions.push({
+            text: '⚔️ Attack',
+            action: () => {
+                console.log('Attack selected - waiting for target selection');
+                closeActionMenu();
+                // Attack targets are already highlighted
+            }
+        });
+    }
+    
+    if (canCapture) {
+        actions.push({
+            text: '🏴 Capture',
+            action: () => {
+                console.log('Capturing property');
+                unitCapture(tile);
+                endUnitTurn();
+                closeActionMenu();
+            }
+        });
+    }
+    
+    if (canLoadTransport) {
+        actions.push({
+            text: '🚛 Load',
+            action: () => {
+                console.log('Loading into transport - use Ctrl+Click on transport');
+                closeActionMenu();
+                // TODO: Could show transport selection UI here
+            }
+        });
+    }
+    
+    if (canJoin) {
+        actions.push({
+            text: '🤝 Join',
+            action: () => {
+                console.log('Join units - not implemented yet');
+                // TODO: Implement unit joining
+                closeActionMenu();
+            }
+        });
+    }
+    
+    if (canSupply) {
+        actions.push({
+            text: '⛽ Supply',
+            action: () => {
+                console.log('Supply units - use right-click menu');
+                closeActionMenu();
+            }
+        });
+    }
+    
+    if (canRepair) {
+        actions.push({
+            text: '🔧 Repair',
+            action: () => {
+                console.log('Repair units - use right-click menu');
+                closeActionMenu();
+            }
+        });
+    }
+    
+    actions.push({
+        text: '⏸️ Wait',
+        action: () => {
+            console.log('Unit waiting');
+            unitWait(tile);
+            endUnitTurn();
+            closeActionMenu();
+        }
+    });
+    
+    actions.push({
+        text: '❌ Cancel',
+        action: () => {
+            console.log('Action cancelled');
+            // Move unit back to original position if possible
+            closeActionMenu();
+            clearAllHighlights();
+        }
+    });
+    
+    // Create menu items
+    actions.forEach((action, index) => {
+        const item = document.createElement('div');
+        item.style.cssText = `
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-bottom: 1px solid #2c3e50;
+        `;
+        item.textContent = action.text;
+        
+        item.onmouseover = () => {
+            item.style.background = 'rgba(52, 152, 219, 0.3)';
+        };
+        
+        item.onmouseout = () => {
+            item.style.background = 'transparent';
+        };
+        
+        item.onclick = action.action;
+        
+        menu.appendChild(item);
+    });
+    
+    // Add to document
+    document.body.appendChild(menu);
+    
+    // Add click-outside handler
+    setTimeout(() => {
+        document.addEventListener('click', handleClickOutsideMenu);
+    }, 100);
+}
+
+function closeActionMenu() {
+    const menu = document.getElementById('action-menu');
+    if (menu) {
+        menu.remove();
+        document.removeEventListener('click', handleClickOutsideMenu);
+    }
+}
+
+function handleClickOutsideMenu(event) {
+    const menu = document.getElementById('action-menu');
+    if (menu && !menu.contains(event.target)) {
+        closeActionMenu();
+    }
+}
+
+function isCapturableProperty(tileType) {
+    const capturableTypes = ['CITY', 'BASE_TOWER_1', 'FACTORY', 'PORT', 'AIRPORT'];
+    return capturableTypes.includes(tileType);
+}
+
+async function checkCanLoadTransport(tile) {
+    // Check if there are any adjacent friendly transports that can carry this unit
+    if (!tile || !tile.unit) return false;
+    
+    try {
+        // Use the RPC method to get loadable transports
+        const result = await jsonrpc('transport_get_loadable_transports', {
+            unit_x: tile.x,
+            unit_y: tile.y
+        });
+        
+        // Check if there are any transports available
+        if (result && result.transports && result.transports.length > 0) {
+            console.log(`Found ${result.transports.length} loadable transports for unit at (${tile.x},${tile.y})`);
+            return true;
+        }
+        
+        return false;
+    } catch (error) {
+        console.error('Error checking loadable transports:', error);
+        // Fallback to false if RPC fails
+        return false;
+    }
+}
+
+function checkCanJoinUnit(tile) {
+    // Units can join with damaged units of the same type
+    if (!tile || !tile.unit || tile.unit.status.hp >= 100) return false;
+    
+    // Check adjacent tiles for same unit type
+    const adjacentPositions = [
+        {x: tile.x + 1, y: tile.y},
+        {x: tile.x - 1, y: tile.y},
+        {x: tile.x, y: tile.y + 1},
+        {x: tile.x, y: tile.y - 1}
+    ];
+    
+    for (const pos of adjacentPositions) {
+        const adjacentTile = board.grid.find(t => t.x === pos.x && t.y === pos.y);
+        if (adjacentTile && adjacentTile.unit && 
+            adjacentTile.unit.army === tile.unit.army &&
+            adjacentTile.unit.type === tile.unit.type &&
+            adjacentTile.unit.status.hp < 100) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+function checkHasAdjacentUnitsToSupply(tile) {
+    // Check if APC/Black Boat has adjacent units that need supplies
+    if (!tile || !tile.unit) return false;
+    
+    const adjacentPositions = [
+        {x: tile.x + 1, y: tile.y},
+        {x: tile.x - 1, y: tile.y},
+        {x: tile.x, y: tile.y + 1},
+        {x: tile.x, y: tile.y - 1}
+    ];
+    
+    for (const pos of adjacentPositions) {
+        const adjacentTile = board.grid.find(t => t.x === pos.x && t.y === pos.y);
+        if (adjacentTile && adjacentTile.unit && adjacentTile.unit.army === tile.unit.army) {
+            // Check if unit needs fuel or ammo
+            const unit = adjacentTile.unit;
+            const maxFuel = getMaxFuel(unit.type);
+            const maxAmmo = getMaxAmmo(unit.type);
+            
+            if ((unit.status.fuel < maxFuel) || (unit.status.ammo < maxAmmo)) {
+                return true;
+            }
+        }
+    }
+    
+    return false;
+}
+
+function checkHasAdjacentUnitsToRepair(tile) {
+    // Check if Black Boat has adjacent units that need repair
+    if (!tile || !tile.unit || tile.unit.type !== 'BLACKBOAT') return false;
+    
+    const adjacentPositions = [
+        {x: tile.x + 1, y: tile.y},
+        {x: tile.x - 1, y: tile.y},
+        {x: tile.x, y: tile.y + 1},
+        {x: tile.x, y: tile.y - 1}
+    ];
+    
+    for (const pos of adjacentPositions) {
+        const adjacentTile = board.grid.find(t => t.x === pos.x && t.y === pos.y);
+        if (adjacentTile && adjacentTile.unit && 
+            adjacentTile.unit.army === tile.unit.army &&
+            adjacentTile.unit.status.hp < 100) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+function getMaxFuel(unitType) {
+    // Default max fuel values - could be loaded from config
+    const fuelValues = {
+        'INFANTRY': 99, 'MECH': 70, 'RECON': 80, 'TANK': 70,
+        'MEDIUMTANK': 50, 'NEOTANK': 99, 'MEGATANK': 50,
+        'APC': 70, 'ARTILLERY': 50, 'ROCKET': 50, 'ANTIAIR': 60,
+        'MISSILE': 50, 'FIGHTER': 99, 'BOMBER': 99, 'BCOPTER': 99,
+        'TCOPTER': 99, 'BATTLESHIP': 99, 'CRUISER': 99, 'LANDER': 99,
+        'SUB': 60, 'CARRIER': 99, 'BLACKBOAT': 60, 'BLACKBOMB': 45,
+        'STEALTH': 60, 'PIPERUNNER': 99
+    };
+    return fuelValues[unitType] || 99;
+}
+
+function getMaxAmmo(unitType) {
+    // Default max ammo values - could be loaded from config
+    const ammoValues = {
+        'INFANTRY': 0, 'MECH': 3, 'RECON': 0, 'TANK': 9,
+        'MEDIUMTANK': 8, 'NEOTANK': 9, 'MEGATANK': 3,
+        'APC': 0, 'ARTILLERY': 9, 'ROCKET': 6, 'ANTIAIR': 9,
+        'MISSILE': 6, 'FIGHTER': 9, 'BOMBER': 9, 'BCOPTER': 6,
+        'TCOPTER': 0, 'BATTLESHIP': 9, 'CRUISER': 9, 'LANDER': 0,
+        'SUB': 6, 'CARRIER': 9, 'BLACKBOAT': 0, 'BLACKBOMB': 0,
+        'STEALTH': 6, 'PIPERUNNER': 9
+    };
+    return ammoValues[unitType] || 0;
+}
+
+// =============================================================================
 // DOUBLE CLICK HANDLER
 // =============================================================================
 
@@ -3570,11 +4116,37 @@ window.canvasdblClick = advanceWarsDoubleClick;
 
 // Enhanced unit functions for end-of-turn cleanup
 function unitWait(tile) {
-    jsonrpc('unit_wait', {x: tile.x, y: tile.y});
+    jsonrpc('unit_wait', {x: tile.x, y: tile.y}).then(result => {
+        // Manually update unit flags after wait
+        if (board && board.grid) {
+            const unitTile = board.grid.find(t => t.x === tile.x && t.y === tile.y);
+            if (unitTile && unitTile.unit) {
+                console.log('📝 Unit waited - marking as unavailable');
+                unitTile.unit.can_move = false;
+                unitTile.unit.can_attack = false;
+                unitTile.unit.can_capture = false;
+            }
+        }
+        // Force update to refresh sprite
+        update();
+    });
 }
 
 function unitCapture(tile) {
-    jsonrpc('capture_tile', {x: tile.x, y: tile.y});
+    jsonrpc('capture_tile', {x: tile.x, y: tile.y}).then(result => {
+        // Manually update unit flags after capture
+        if (board && board.grid) {
+            const unitTile = board.grid.find(t => t.x === tile.x && t.y === tile.y);
+            if (unitTile && unitTile.unit) {
+                console.log('📝 Unit captured - marking as unavailable');
+                unitTile.unit.can_move = false;
+                unitTile.unit.can_attack = false;
+                unitTile.unit.can_capture = false;
+            }
+        }
+        // Force update to refresh sprite
+        update();
+    });
 }
 
 // Make functions globally available
@@ -3585,6 +4157,229 @@ window.endUnitTurn = endUnitTurn;
 window.clearAllHighlights = clearAllHighlights;
 window.showMovementRange = showMovementRange;
 window.renderAttackHighlights = renderAttackHighlights;
+// =============================================================================
+// SIMULATION SYSTEM - Debug tool to simulate user interactions
+// =============================================================================
+
+window.simulateGameFlow = async function() {
+    console.log('🎮 STARTING GAME FLOW SIMULATION');
+    console.log('=' + '='.repeat(60));
+    
+    // Find a unit that can move
+    const tiles = board.grid.filter(tile => 
+        tile.unit && 
+        tile.unit.army === board.current_turn &&
+        (tile.unit.can_move || tile.unit.can_attack)
+    );
+    
+    if (tiles.length === 0) {
+        console.log('❌ No units available to simulate');
+        return;
+    }
+    
+    const unitTile = tiles[0];
+    console.log(`\n📍 Found ${unitTile.unit.army} ${unitTile.unit.type} at (${unitTile.x}, ${unitTile.y})`);
+    console.log(`   can_move: ${unitTile.unit.can_move}, can_attack: ${unitTile.unit.can_attack}, can_capture: ${unitTile.unit.can_capture}`);
+    
+    // Step 1: Select unit
+    console.log('\n🖱️ STEP 1: Selecting unit...');
+    await simulateClick(unitTile.x, unitTile.y);
+    await delay(1000);
+    
+    // Step 2: Check for movement highlights
+    console.log('\n🖱️ STEP 2: Checking movement options...');
+    if (window.movementHighlights && window.movementHighlights.length > 0) {
+        console.log(`✅ Movement highlights: ${window.movementHighlights.length} tiles`);
+        
+        // Find a valid move location
+        const moveTarget = window.movementHighlights[0];
+        console.log(`\n🖱️ STEP 3: Moving to (${moveTarget.x}, ${moveTarget.y})...`);
+        await simulateClick(moveTarget.x, moveTarget.y);
+        await delay(1500);
+        
+        // Check unit state after move
+        console.log('\n📊 STEP 4: Checking unit state after move...');
+        const movedTile = board.grid.find(t => t.x === moveTarget.x && t.y === moveTarget.y);
+        if (movedTile && movedTile.unit) {
+            console.log(`   Unit at new position: ${movedTile.unit.type}`);
+            console.log(`   can_move: ${movedTile.unit.can_move}, can_attack: ${movedTile.unit.can_attack}`);
+        }
+        
+        // Step 5: Check for attack options
+        console.log('\n🖱️ STEP 5: Checking attack options...');
+        if (window.gameState && window.gameState.attackHighlights && window.gameState.attackHighlights.length > 0) {
+            console.log(`✅ Attack highlights: ${window.gameState.attackHighlights.length} targets`);
+            
+            const attackTarget = window.gameState.attackHighlights[0];
+            console.log(`\n🖱️ STEP 6: Attacking target at (${attackTarget.x}, ${attackTarget.y})...`);
+            await simulateClick(attackTarget.x, attackTarget.y);
+            await delay(1500);
+        } else {
+            console.log('❌ No attack targets available');
+        }
+    } else {
+        console.log('❌ No movement options available');
+    }
+    
+    // Final state check
+    console.log('\n📊 FINAL STATE CHECK:');
+    console.log(`   Movement highlights: ${window.movementHighlights ? window.movementHighlights.length : 0}`);
+    console.log(`   Attack highlights: ${window.gameState?.attackHighlights ? window.gameState.attackHighlights.length : 0}`);
+    console.log(`   Selected unit: ${board.selected ? 'Yes' : 'No'}`);
+    
+    console.log('\n✅ SIMULATION COMPLETE');
+};
+
+async function simulateClick(x, y) {
+    const canvas = document.querySelector('#draw canvas');
+    if (!canvas) {
+        console.error('Canvas not found');
+        return;
+    }
+    
+    // Calculate pixel coordinates
+    const pixelX = x * TILESIZE + TILESIZE/2;
+    const pixelY = y * TILESIZE + TILESIZE/2;
+    
+    console.log(`   🖱️ Simulating click at tile (${x}, ${y}) = pixel (${pixelX}, ${pixelY})`);
+    
+    // Create synthetic click event
+    const event = new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        view: window,
+        offsetX: pixelX,
+        offsetY: pixelY,
+        clientX: pixelX,
+        clientY: pixelY
+    });
+    
+    // Log what should happen
+    const tile = board.grid.find(t => t.x === x && t.y === y);
+    if (tile) {
+        if (tile.unit) {
+            console.log(`   → Clicking on ${tile.unit.army} ${tile.unit.type}`);
+        } else {
+            console.log(`   → Clicking on empty tile (terrain: ${tile.mapTile.type})`);
+        }
+    }
+    
+    // Dispatch the event
+    canvas.dispatchEvent(event);
+}
+
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Add console command
+console.log('💡 TIP: Run simulateGameFlow() to simulate a move/attack sequence');
+
+// Force complete refresh function
+window.forceRefresh = async function() {
+    console.log('🔄 Forcing complete refresh...');
+    
+    // Clear all visual elements
+    clearAllHighlights();
+    
+    // Clear cached unit sprites
+    if (window.sceneElements && window.sceneElements.units) {
+        Object.keys(window.sceneElements.units).forEach(key => {
+            const unit = window.sceneElements.units[key];
+            if (unit && window.two) {
+                window.two.remove(unit);
+            }
+        });
+        window.sceneElements.units = {};
+    }
+    
+    // Force reload sprite corrections
+    window.spriteCorrections = null;
+    await loadSpriteCorrectorData();
+    
+    // Update the board
+    update();
+    
+    console.log('✅ Refresh complete');
+};
+
+console.log('💡 TIP: Run forceRefresh() for a complete update without F5');
+
+// Test function to verify sprite state updates
+window.testSpriteStates = function() {
+    console.log('🧪 TESTING SPRITE STATE UPDATES');
+    console.log('=' + '='.repeat(60));
+    
+    // Find all units for current turn
+    const currentTurnUnits = board.grid.filter(tile => 
+        tile.unit && tile.unit.army === board.current_turn
+    );
+    
+    console.log(`\n📊 Found ${currentTurnUnits.length} ${board.current_turn} units:`);
+    
+    currentTurnUnits.forEach(tile => {
+        const unit = tile.unit;
+        const canAct = unit.can_move || unit.can_attack;
+        const spriteState = canAct ? 'idle' : 'unavailable';
+        
+        console.log(`   ${unit.type} at (${tile.x},${tile.y}):`);
+        console.log(`      can_move: ${unit.can_move}, can_attack: ${unit.can_attack}, can_capture: ${unit.can_capture}`);
+        console.log(`      sprite state: ${spriteState} (${canAct ? '✅ Available' : '🚫 Unavailable'})`);
+    });
+    
+    console.log('\n💡 After moving/attacking, units should show as unavailable (grayed out)');
+    console.log('💡 Run this function again after actions to verify state changes');
+};
+
+console.log('💡 TIP: Run testSpriteStates() to check unit availability states');
+
+// Quick test for sprite state fix
+window.testNewUnitSprite = function() {
+    console.log('🧪 Testing new unit sprite state');
+    console.log('A newly created unit should show as unavailable (grayed out)');
+    console.log('because can_move=false and can_attack=false on creation turn.');
+    console.log('\nCreate a unit and run testSpriteStates() to verify!');
+};
+
+console.log('💡 TIP: Run testNewUnitSprite() to understand the sprite fix');
+
+// Debug function to check sprite corrections
+window.debugSpriteCorrections = function() {
+    console.log('🔍 Checking sprite corrections...');
+    
+    if (!window.spriteCorrections) {
+        console.error('❌ Sprite corrections not loaded!');
+        return;
+    }
+    
+    console.log('✅ Sprite corrections loaded');
+    console.log('Available states:', Object.keys(window.spriteCorrections));
+    
+    // Check for BLUE infantry
+    const testKeys = [
+        'INFANTRY_BLUE_idle_0',
+        'INFANTRY_BLUE_unavailable_0',
+        'INFANTRY_RED_idle_0'
+    ];
+    
+    testKeys.forEach(key => {
+        const idle = window.spriteCorrections.idle && window.spriteCorrections.idle[key];
+        const unavailable = window.spriteCorrections.unavailable && window.spriteCorrections.unavailable[key];
+        
+        if (idle) {
+            console.log(`✅ Found ${key} in idle: x=${idle.x}, y=${idle.y}`);
+        }
+        if (unavailable) {
+            console.log(`✅ Found ${key} in unavailable: x=${unavailable.x}, y=${unavailable.y}`);
+        }
+        if (!idle && !unavailable) {
+            console.log(`❌ Missing ${key}`);
+        }
+    });
+};
+
+console.log('💡 TIP: Run debugSpriteCorrections() to check sprite data');
+
 // =============================================================================
 // UNIT SPRITE TESTING SYSTEM
 // =============================================================================
@@ -3928,25 +4723,43 @@ function applyCompleteClickFix() {
     
     window.handleTileClickWithTransport = function(tile) {
         
-        // PRIORITY 1: Production buildings (factories, airports, ports)
-        if ((tile.mapTile.type === 'FACTORY' || 
-             tile.mapTile.type === 'AIRPORT' || 
-             tile.mapTile.type === 'PORT') &&
-            tile.mapTile.army === board.current_turn &&
-            !tile.unit) {
-            
-            if (tile.mapTile.type === 'FACTORY') unitCreate(tile);
-            else if (tile.mapTile.type === 'AIRPORT') airunitCreate(tile);
-            else if (tile.mapTile.type === 'PORT') seaunitCreate(tile);
+        // PRIORITY 1: Unit selection (even on production buildings)
+        if (tile.unit && tile.unit.army === board.current_turn) {
+            // Select the unit first, even if it's on a factory/airport/port
+            if (typeof advanceWarsUnitSelect === 'function') {
+                advanceWarsUnitSelect(tile);
+            } else if (board.selected?.x === tile.x && board.selected?.y === tile.y) {
+                // If already selected, deselect
+                board.selected = null;
+                clearAllHighlights();
+            } else {
+                // Fallback selection
+                board.selected = tile;
+            }
             return;
         }
         
         // PRIORITY 2: Movement execution (clicking on highlighted movement tiles)
+        // This should come BEFORE production building checks!
         if (board.selected && !tile.unit && 
             window.movementHighlights && 
             window.movementHighlights.some(h => h.x === tile.x && h.y === tile.y)) {
             
             executeMovement(tile);
+            return;
+        }
+        
+        // PRIORITY 3: Production buildings (factories, airports, ports) - only if no unit selected
+        if ((tile.mapTile.type === 'FACTORY' || 
+             tile.mapTile.type === 'AIRPORT' || 
+             tile.mapTile.type === 'PORT') &&
+            tile.mapTile.army === board.current_turn &&
+            !tile.unit &&
+            !board.selected) {  // Only open production if no unit is selected
+            
+            if (tile.mapTile.type === 'FACTORY') unitCreate(tile);
+            else if (tile.mapTile.type === 'AIRPORT') airunitCreate(tile);
+            else if (tile.mapTile.type === 'PORT') seaunitCreate(tile);
             return;
         }
         

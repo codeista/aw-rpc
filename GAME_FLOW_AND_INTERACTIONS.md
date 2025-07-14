@@ -43,7 +43,7 @@
 - **On empty tile**: Deselect current unit
 - **On friendly unit**: 
   - Select unit
-  - Show movement range (green highlights)
+  - Show movement range (yellow highlights)
   - Show attack range (red highlights)
 - **On highlighted tile**:
   - Move selected unit to tile
@@ -301,9 +301,9 @@ When selecting a unit:
 
 3. **Highlight Rendering**:
    ```javascript
-   // Green movement tiles
+   // Yellow movement tiles
    renderMovementHighlights()
-   - Semi-transparent green overlay
+   - Semi-transparent yellow overlay
    - Shows all reachable tiles
    - Considers terrain movement costs
    
@@ -423,7 +423,7 @@ APC auto-resupply:
 - **Capturing**: Flag indicator visible
 
 #### Tile Overlays
-- **Movement Range**: Green semi-transparent
+- **Movement Range**: Yellow semi-transparent
 - **Attack Range**: Red semi-transparent  
 - **Transport Load**: Green circle outline
 - **Unload Positions**: Green tile highlights

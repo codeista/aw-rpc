@@ -1027,6 +1027,12 @@ def test_interface():
     app_logger.info("Test interface accessed")
     return render_template('test_interface.html')
 
+@app.route('/sprites')
+def sprite_showcase():
+    """Sprite showcase page to view all unit sprites"""
+    app_logger.info("Sprite showcase accessed")
+    return render_template('sprite_showcase.html')
+
 @app.route('/sprite_test')
 def sprite_test():
     """Visual test for all army unit sprites"""
