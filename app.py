@@ -21,7 +21,7 @@ from flask import redirect, render_template, abort, request
 from flask_socketio import Namespace, join_room, leave_room
 import jsons
 
-from optimized_test_map import (
+from tests.debug.optimized_test_map import (
     get_optimized_test_game, 
     create_quick_combat_scenario,
     verify_optimized_map
@@ -1340,7 +1340,7 @@ def create_optimized_test_game():
         # Import everything we need explicitly
         from config import Config
         from manager import GameManager
-        from optimized_test_map import create_optimized_test_map
+        from tests.debug.optimized_test_map import create_optimized_test_map
         
         # Create configuration
         config_game = Config()

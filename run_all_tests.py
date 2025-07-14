@@ -15,19 +15,19 @@ TEST_SUITES = {
     "Unit Tests": [
         "tests/unit/test_combat_system.py",
         "tests/unit/test_movement_system.py",
-        "tests/unit/test_transport_final.py",
+        "tests/unit/test_transport_features.py",
         "tests/unit/test_economic_system.py",
-        "tests/unit/test_repair_resupply_system.py",
+        "tests/unit/test_income_with_cross_map.py",
         "tests/unit/test_production_system.py",
-        "tests/unit/test_ui_mobile_features.py"
+        "tests/unit/test_ui_mobile_features.py",
+        "tests/unit/test_blackboat_repair_complete.py",
+        "tests/unit/test_complete_repair_refuel.py",
+        "tests/unit/test_victory_conditions.py"
     ],
     "Integration Tests": [
-        "tests/integration/test_victory_conditions.py",
         "tests/integration/test_complete_victory_conditions.py",
-        "tests/integration/test_multiplayer_armies.py"
-    ],
-    "Manual Tests": [
-        "./test_repair_refuel_proper.py"
+        "tests/integration/test_multiplayer_armies.py",
+        "tests/integration/test_game_improvements.py"
     ]
 }
 
