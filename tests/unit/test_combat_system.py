@@ -7,6 +7,8 @@ Tests damage calculations, terrain modifiers, counter-attacks, and unit destruct
 import requests
 import json
 import re
+import random
+import string
 import math
 
 def rpc_call(method: str, params: dict = None) -> dict:
@@ -28,36 +30,36 @@ def rpc_call(method: str, params: dict = None) -> dict:
     # Get the actual result
     rpc_result = result.get("result", result)
     
-    # If result is a string, try to parse it as JSON
+    # If result is a string, only try to parse if it looks like JSON
     if isinstance(rpc_result, str):
-        try:
-            rpc_result = json.loads(rpc_result)
-        except json.JSONDecodeError:
-            return {"error": f"Could not parse result: {rpc_result}"}
+        if rpc_result.strip().startswith(('{', '[')):
+            try:
+                rpc_result = json.loads(rpc_result)
+            except json.JSONDecodeError:
+                return {"error": f"Could not parse result: {rpc_result}"}
     
     return rpc_result
 
 def get_test_game():
-    """Create optimized test game for combat testing"""
+    """Create test game with units for combat testing"""
     try:
-        # Try optimized test game first
-        response = requests.get("http://localhost:5000/test_optimized", allow_redirects=False)
-        if response.status_code == 302:
-            location = response.headers.get('Location', '')
-            match = re.search(r'/game/([A-Za-z0-9_]+)', location)
-            if match:
-                game_id = match.group(1)
-                print(f"✅ Created optimized test game: {game_id}")
-                return game_id
+        # Create a test game with high funds
+        game_id = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+        result = rpc_call("game_create_test", {"token": game_id})
         
-        # Check if we got a direct game URL
-        if response.status_code == 200:
-            content = response.text
-            match = re.search(r'/game/([A-Za-z0-9_]+)', content)
-            if match:
-                game_id = match.group(1)
-                print(f"✅ Found optimized test game: {game_id}")
-                return game_id
+        if isinstance(result, dict) and "error" in result:
+            print(f"❌ Failed to create game: {result['error']}")
+            return None
+        elif result != "ok":
+            print(f"❌ Unexpected result: {result}")
+            return None
+        
+        print(f"✅ Created test game: {game_id}")
+        
+        # Add units for combat testing
+        setup_combat_units(game_id)
+        
+        return game_id
         
         print(f"⚠️  Optimized test route returned status: {response.status_code}")
         return None
@@ -765,6 +767,76 @@ def main():
     print(f"\n🎮 Test game URL: http://localhost:5000/game/{game_id}")
     
     return success
+
+def setup_combat_units(game_id):
+    """Set up units for combat testing"""
+    print("🎮 Setting up combat units...")
+    
+    # Create RED units at factories/ports/airports
+    units_to_create = [
+        # Ground units at factories
+        ("RED", "TANK", 0, 3),      # Factory position
+        ("RED", "INFANTRY", 1, 4),  # Factory position
+        ("RED", "ARTILLERY", 0, 4), # Near factory
+        ("RED", "RECON", 1, 3),     # Near factory
+        
+        # Naval units at port
+        ("RED", "BATTLESHIP", 0, 0), # Port position
+        ("RED", "CRUISER", 1, 0),    # Near port
+        
+        # Air units at airport  
+        ("RED", "FIGHTER", 0, 8),    # Airport position
+        ("RED", "BOMBER", 1, 8),     # Near airport
+    ]
+    
+    for army, unit_type, x, y in units_to_create:
+        result = rpc_call("unit_create", {
+            "token": game_id,
+            "army": army,
+            "unit_type": unit_type,
+            "x": x,
+            "y": y
+        })
+        if "error" not in result:
+            print(f"   ✅ Created {army} {unit_type} at ({x},{y})")
+    
+    # End turn to switch to BLUE
+    rpc_call("army_end_turn", {"token": game_id})
+    
+    # Create BLUE units
+    blue_units = [
+        # Ground units
+        ("BLUE", "TANK", 9, 6),      # Factory position
+        ("BLUE", "INFANTRY", 8, 5), # Factory position  
+        ("BLUE", "MECH", 9, 5),     # Near factory
+        ("BLUE", "ARTILLERY", 8, 6), # Near factory
+        
+        # Naval units
+        ("BLUE", "BATTLESHIP", 9, 9), # Port position
+        ("BLUE", "SUB", 8, 9),        # Near port
+        
+        # Air units
+        ("BLUE", "FIGHTER", 9, 1),    # Airport position
+        ("BLUE", "TCOPTER", 8, 1),    # Near airport
+    ]
+    
+    for army, unit_type, x, y in blue_units:
+        result = rpc_call("unit_create", {
+            "token": game_id,
+            "army": army,
+            "unit_type": unit_type,
+            "x": x,
+            "y": y
+        })
+        if "error" not in result:
+            print(f"   ✅ Created {army} {unit_type} at ({x},{y})")
+    
+    # Enable all units by ending turns
+    print("   ⏳ Enabling units for combat...")
+    rpc_call("army_end_turn", {"token": game_id})
+    rpc_call("army_end_turn", {"token": game_id})
+    
+    print("✅ Combat units ready for testing")
 
 if __name__ == "__main__":
     success = main()

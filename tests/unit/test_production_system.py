@@ -115,7 +115,19 @@ def test_factory_production():
                 print(f"   ❌ {unit_type} cost mismatch: expected {expected_cost}, got {actual_cost}")
         
         # Move unit away to free the factory
+        # First end turns to enable movement
         rpc_call("army_end_turn", {"token": game_id})
+        rpc_call("army_end_turn", {"token": game_id})
+        
+        # Now move the unit away
+        ensure_correct_turn(game_id, "RED")
+        rpc_call("unit_move", {
+            "token": game_id,
+            "x": factory_x, "y": factory_y,
+            "x2": factory_x + 1, "y2": factory_y
+        })
+        
+        # End turn after movement
         rpc_call("army_end_turn", {"token": game_id})
     
     print(f"   📊 Factory Production: {passed}/{len(ground_units)} tests passed")
@@ -171,8 +183,20 @@ def test_airport_production():
             else:
                 print(f"   ❌ {unit_type} cost mismatch: expected {expected_cost}, got {actual_cost}")
         
-        # End turns to move unit
+        # Move unit away to free the airport
+        # First end turns to enable movement
         rpc_call("army_end_turn", {"token": game_id})
+        rpc_call("army_end_turn", {"token": game_id})
+        
+        # Now move the unit away
+        ensure_correct_turn(game_id, "RED")
+        rpc_call("unit_move", {
+            "token": game_id,
+            "x": airport_x, "y": airport_y,
+            "x2": airport_x + 1, "y2": airport_y
+        })
+        
+        # End turn after movement
         rpc_call("army_end_turn", {"token": game_id})
     
     print(f"   📊 Airport Production: {passed}/{len(air_units)} tests passed")
@@ -234,8 +258,20 @@ def test_port_production():
             else:
                 print(f"   ❌ {unit_type} cost mismatch: expected {expected_cost}, got {actual_cost}")
         
-        # End turns to move unit
+        # Move unit away to free the airport
+        # First end turns to enable movement
         rpc_call("army_end_turn", {"token": game_id})
+        rpc_call("army_end_turn", {"token": game_id})
+        
+        # Now move the unit away
+        ensure_correct_turn(game_id, "RED")
+        rpc_call("unit_move", {
+            "token": game_id,
+            "x": port_x, "y": port_y,
+            "x2": port_x + 1, "y2": port_y
+        })
+        
+        # End turn after movement
         rpc_call("army_end_turn", {"token": game_id})
     
     print(f"   📊 Port Production: {passed}/{len(naval_units)} tests attempted")

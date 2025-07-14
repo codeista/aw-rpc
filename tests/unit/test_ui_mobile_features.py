@@ -92,7 +92,7 @@ def test_game_creation_and_rendering():
         return False
     
     # Check essential rendering data
-    required_fields = ["width", "height", "tiles", "current_turn", "days"]
+    required_fields = ["width", "height", "grid", "current_turn", "days"]
     missing = [field for field in required_fields if field not in board]
     
     if missing:
@@ -100,7 +100,7 @@ def test_game_creation_and_rendering():
         return False
     
     print(f"   ✅ Board dimensions: {board['width']}x{board['height']}")
-    print(f"   ✅ Tiles loaded: {len(board['tiles'])} tiles")
+    print(f"   ✅ Grid loaded: {len(board['grid'])} tiles")
     print(f"   ✅ Game URL: http://localhost:5000/game/{game_id}")
     
     return True

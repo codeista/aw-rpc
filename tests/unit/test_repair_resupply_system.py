@@ -94,8 +94,8 @@ def get_unit_at(game_id: str, x: int, y: int) -> dict:
         return None
     
     # Find the tile
-    for tile in board.get("tiles", []):
-        if tile.get("x") == x and tile.get("y") == y:
+    for tile in board.get("grid", []):
+        if isinstance(tile, dict) and tile.get("x") == x and tile.get("y") == y:
             return tile.get("unit")
     
     return None
