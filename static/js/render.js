@@ -552,7 +552,10 @@ function unitCreate(tile) {
         modal.style.display = 'none';
         var unitType = select.options[select.selectedIndex].value;;
         var army = tile.mapTile.army;
-        jsonrpc('unit_create', {army: army, unit_type: unitType, x: tile.x, y: tile.y});
+        jsonrpc('unit_create', {army: army, unit_type: unitType, x: tile.x, y: tile.y}, function(result) {
+            // Refresh the game display after creating unit
+            update();
+        });
     };
     modal.style.display = 'block';
 }
@@ -576,7 +579,10 @@ function airunitCreate(tile) {
         modal.style.display = 'none';
         var unitType = select.options[select.selectedIndex].value;;
         var army = tile.mapTile.army;
-        jsonrpc('unit_create', {army: army, unit_type: unitType, x: tile.x, y: tile.y});
+        jsonrpc('unit_create', {army: army, unit_type: unitType, x: tile.x, y: tile.y}, function(result) {
+            // Refresh the game display after creating unit
+            update();
+        });
     };
     modal.style.display = 'block';
 }
@@ -600,7 +606,10 @@ function seaunitCreate(tile) {
         modal.style.display = 'none';
         var unitType = select.options[select.selectedIndex].value;;
         var army = tile.mapTile.army;
-        jsonrpc('unit_create', {army: army, unit_type: unitType, x: tile.x, y: tile.y});
+        jsonrpc('unit_create', {army: army, unit_type: unitType, x: tile.x, y: tile.y}, function(result) {
+            // Refresh the game display after creating unit
+            update();
+        });
     };
     modal.style.display = 'block';
 }
@@ -650,20 +659,32 @@ function unitWait(tile) {
 }
 
 function unitAttack(tile) {
-    jsonrpc('unit_attack', {x: board.selected.x, y: board.selected.y, x2: tile.x, y2: tile.y});
+    jsonrpc('unit_attack', {x: board.selected.x, y: board.selected.y, x2: tile.x, y2: tile.y}, function(result) {
+        // Refresh the game display after attack
+        update();
+    });
 }
 
 function unitLoad(tile) {
-    jsonrpc('unit_load', {x: board.selected.x, y: board.selected.y, x2: tile.x, y2: tile.y});
+    jsonrpc('unit_load', {x: board.selected.x, y: board.selected.y, x2: tile.x, y2: tile.y}, function(result) {
+        // Refresh the game display after load
+        update();
+    });
 }
 
 function unitUnload(tile) {
     idx = 0
-    jsonrpc('unit_unload', {x: board.selected.x, y: board.selected.y, x2: tile.x, y2: tile.y , index: idx});
+    jsonrpc('unit_unload', {x: board.selected.x, y: board.selected.y, x2: tile.x, y2: tile.y , index: idx}, function(result) {
+        // Refresh the game display after unload
+        update();
+    });
 }
 
 function unitJoin(tile) {
-    jsonrpc('unit_join', {x: board.selected.x, y: board.selected.y, x2: tile.x, y2: tile.y});
+    jsonrpc('unit_join', {x: board.selected.x, y: board.selected.y, x2: tile.x, y2: tile.y}, function(result) {
+        // Refresh the game display after join
+        update();
+    });
 }
 
 function unitMove(tile) {
