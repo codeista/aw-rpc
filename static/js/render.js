@@ -156,6 +156,49 @@ function uuidv4() {
     );
 }
 
+// Update game status display elements
+function updateGameStatus(gameData) {
+    if (!gameData) return;
+    
+    // Update current turn
+    const turnElement = document.getElementById('current-turn');
+    if (turnElement && gameData.current_turn) {
+        turnElement.textContent = gameData.current_turn;
+        turnElement.style.color = gameData.current_turn === 'RED' ? '#e74c3c' : 
+                                  gameData.current_turn === 'BLUE' ? '#3498db' : 
+                                  gameData.current_turn === 'GREEN' ? '#27ae60' : 
+                                  gameData.current_turn === 'YELLOW' ? '#f39c12' : '#95a5a6';
+    }
+    
+    // Update day
+    const dayElement = document.getElementById('current-day');
+    if (dayElement && gameData.days !== undefined) {
+        dayElement.textContent = gameData.days;
+    }
+    
+    // Update RED funds
+    const redFundsElement = document.getElementById('red-funds');
+    if (redFundsElement && gameData.red_funds !== undefined) {
+        redFundsElement.textContent = '$' + gameData.red_funds.toLocaleString();
+    }
+    
+    // Update BLUE funds
+    const blueFundsElement = document.getElementById('blue-funds');
+    if (blueFundsElement && gameData.blue_funds !== undefined) {
+        blueFundsElement.textContent = '$' + gameData.blue_funds.toLocaleString();
+    }
+    
+    // Update any army funds if they exist
+    if (gameData.army_funds) {
+        for (const [army, funds] of Object.entries(gameData.army_funds)) {
+            const element = document.getElementById(`${army.toLowerCase()}-funds`);
+            if (element) {
+                element.textContent = '$' + funds.toLocaleString();
+            }
+        }
+    }
+}
+
 async function rerender() {
     console.time('rerender');
     if (two) {
@@ -5059,11 +5102,19 @@ function showMobileNotification(message, type = 'info') {
 // Apply fixes when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
     setTimeout(applyCompleteClickFix, 200);
+    // Update game status if data is available
+    if (window.lastGameData) {
+        updateGameStatus(window.lastGameData);
+    }
 });
 
 // Also apply immediately if DOM is already loaded
 if (document.readyState !== 'loading') {
     setTimeout(applyCompleteClickFix, 200);
+    // Update game status if data is available
+    if (window.lastGameData) {
+        updateGameStatus(window.lastGameData);
+    }
 }
 // END OF CLICK SYSTEM FIXES
 
