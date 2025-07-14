@@ -1033,32 +1033,6 @@ def sprite_showcase():
     app_logger.info("Sprite showcase accessed")
     return render_template('sprite_showcase.html')
 
-@app.route('/sprite_test')
-def sprite_test():
-    """Visual test for all army unit sprites"""
-    token = secrets.token_urlsafe(6)
-    
-    try:
-        # Use existing map system like other test routes
-        from map_system import map_repository
-        
-        # Use the dedicated sprite test map
-        selected_map = map_repository.get_map('sprite_test')
-        
-        # Create configuration and manager like test_optimized
-        config_game = Config()
-        mngr = GameManager(config_game, selected_map)
-        mngr.app_logger = app_logger
-        
-        # Store the game
-        games[token] = mngr
-        
-        app_logger.info(f"Created sprite test game: {token}")
-        return redirect(f'/game/{token}')
-        
-    except Exception as e:
-        app_logger.error(f"Error creating sprite test: {e}")
-        return f"Error creating sprite test: {e}", 500
 
 @app.route('/api/test_create_custom_game', methods=['POST'])
 def test_create_custom_game():
