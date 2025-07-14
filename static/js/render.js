@@ -1525,8 +1525,8 @@ async function generateUnitTexture(tile) {
             // Use sprite corrector data to get accurate coordinates
             let spriteKey, x, y;
             
-            // Determine sprite state
-            const state = (!tile.unit.can_move && !tile.unit.can_attack) ? 'unavailable' : 'idle';
+            // Determine sprite state - show as active/idle if unit can move OR attack
+            const state = (tile.unit.can_move || tile.unit.can_attack || tile.unit.can_capture) ? 'idle' : 'unavailable';
             
             // Build sprite key using sprite corrector format
             spriteKey = `${tile.unit.type}_${tile.unit.army}_${state}_0`;
@@ -1598,7 +1598,7 @@ async function generateUnitTexture(tile) {
                         case 'BATTLESHIP': x -= 357; y -= 42; break;
                     }
                     
-                    if (!tile.unit.can_move && !tile.unit.can_attack) {
+                    if (!tile.unit.can_move && !tile.unit.can_attack && !tile.unit.can_capture) {
                         x -= 336; // unavailable sprite
                     }
                 }
@@ -1624,7 +1624,7 @@ async function generateUnitTexture(tile) {
                 
                 // Calculate HP sprite position using sprite corrector data
                 var hpX, hpY;
-                const hpCategory = tile.unit.can_move ? 'hp_indicators' : 'hp_unavailable';
+                const hpCategory = (tile.unit.can_move || tile.unit.can_attack || tile.unit.can_capture) ? 'hp_indicators' : 'hp_unavailable';
                 const hpKey = `${hpCategory}_${hpDigit - 1}`;
                 
                 if (window.spriteCorrections && window.spriteCorrections[hpCategory] && window.spriteCorrections[hpCategory][hpKey]) {
@@ -1677,6 +1677,9 @@ async function makeSprite(tile) {
         var rect = two.makeRectangle(tile.x * TILESIZE + TILESIZE/2, tile.y * TILESIZE + TILESIZE/2, SPRITESIZE, SPRITESIZE);
         rect.fill = spriteTexture;
         rect.stroke = 'transparent';
+        
+        // Store sprite reference on tile for legacy compatibility
+        tile.sprite = rect;
         
         // Force re-render to show the new texture
         two.update();
@@ -1795,7 +1798,7 @@ function makeSpriteLegacy(tile) {
             x = x - 67;   // Offset if different sprite position
             break;
     }
-    if (!tile.unit.can_move && !tile.unit.can_attack)
+    if (!tile.unit.can_move && !tile.unit.can_attack && !tile.unit.can_capture)
         x = x - 336; // unavailable sprite
     var unitsSrc = getSelectedUnitTileset();
     // Create unique texture per unit to prevent sharing between units
@@ -2004,11 +2007,11 @@ async function updateScene() {
                     }
                     
                     // Create new unit sprite
-                    await makeSprite(tile);
+                    const sprite = await makeSprite(tile);
                     window.sceneElements.units[key] = {
                         type: tile.unit.type,
                         hp: tile.unit.hp,
-                        sprite: tile.sprite // Assuming makeSprite sets tile.sprite
+                        sprite: sprite
                     };
                 }
             }
@@ -2030,15 +2033,28 @@ async function updateScene() {
 }
 
 async function createScene() {
+    // Clear tracking objects
+    window.sceneElements.terrain = {};
+    window.sceneElements.units = {};
+    
     // create game tiles
     for (var i = 0; i < board.height; i++) {
         for (var j = 0; j < board.width; j++) {
             var tile = board.grid[j + i * board.width];
-            // create map file
+            var key = `${j},${i}`;
+            
+            // create map tile
             makeMapTile(tile);
+            window.sceneElements.terrain[key] = true;
+            
             // create sprite with proper await for canvas texture generation
             if (tile.unit !== null) {
-                await makeSprite(tile);
+                const sprite = await makeSprite(tile);
+                window.sceneElements.units[key] = {
+                    type: tile.unit.type,
+                    hp: tile.unit.hp,
+                    sprite: sprite
+                };
             }
         }
     }

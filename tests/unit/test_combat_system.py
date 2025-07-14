@@ -61,11 +61,8 @@ def get_test_game():
         
         return game_id
         
-        print(f"⚠️  Optimized test route returned status: {response.status_code}")
-        return None
-        
     except Exception as e:
-        print(f"❌ Error creating optimized game: {e}")
+        print(f"❌ Error creating game: {e}")
         return None
 
 class CombatTester:
@@ -719,11 +716,18 @@ class CombatTester:
         
         for test_name, test_func in tests:
             try:
-                if test_func():
-                    passed += 1
-                    print(f"✅ {test_name} PASSED")
+                # Reset game state before each test to ensure fresh units
+                print(f"\n🔄 Creating fresh game state for {test_name}...")
+                new_game_id = get_test_game()
+                if new_game_id:
+                    self.game_id = new_game_id
+                    if test_func():
+                        passed += 1
+                        print(f"✅ {test_name} PASSED")
+                    else:
+                        print(f"❌ {test_name} FAILED")
                 else:
-                    print(f"❌ {test_name} FAILED")
+                    print(f"❌ {test_name} SKIPPED - Could not create game")
             except Exception as e:
                 print(f"❌ {test_name} ERROR: {str(e)}")
         
@@ -758,8 +762,6 @@ def main():
         print("❌ Could not create test game")
         return False
     
-    print(f"✅ Created test game: {game_id}")
-    
     # Run combat tests
     tester = CombatTester(game_id)
     success = tester.run_all_tests()
@@ -774,19 +776,23 @@ def setup_combat_units(game_id):
     
     # Create RED units at factories/ports/airports
     units_to_create = [
-        # Ground units at factories
+        # Ground units - create more units for multiple test scenarios
         ("RED", "TANK", 0, 3),      # Factory position
         ("RED", "INFANTRY", 1, 4),  # Factory position
         ("RED", "ARTILLERY", 0, 4), # Near factory
         ("RED", "RECON", 1, 3),     # Near factory
+        ("RED", "MECH", 2, 3),      # Additional unit
+        ("RED", "TANK", 2, 4),      # Additional tank
         
         # Naval units at port
         ("RED", "BATTLESHIP", 0, 0), # Port position
         ("RED", "CRUISER", 1, 0),    # Near port
+        ("RED", "SUB", 2, 0),       # Additional naval
         
         # Air units at airport  
         ("RED", "FIGHTER", 0, 8),    # Airport position
         ("RED", "BOMBER", 1, 8),     # Near airport
+        ("RED", "BCOPTER", 2, 8),   # Additional air
     ]
     
     for army, unit_type, x, y in units_to_create:
@@ -803,21 +809,25 @@ def setup_combat_units(game_id):
     # End turn to switch to BLUE
     rpc_call("army_end_turn", {"token": game_id})
     
-    # Create BLUE units
+    # Create BLUE units - more units for multiple test scenarios
     blue_units = [
         # Ground units
         ("BLUE", "TANK", 9, 6),      # Factory position
         ("BLUE", "INFANTRY", 8, 5), # Factory position  
         ("BLUE", "MECH", 9, 5),     # Near factory
         ("BLUE", "ARTILLERY", 8, 6), # Near factory
+        ("BLUE", "TANK", 7, 5),     # Additional tank
+        ("BLUE", "INFANTRY", 7, 6), # Additional infantry
         
         # Naval units
         ("BLUE", "BATTLESHIP", 9, 9), # Port position
         ("BLUE", "SUB", 8, 9),        # Near port
+        ("BLUE", "LANDER", 7, 9),     # Additional naval
         
         # Air units
         ("BLUE", "FIGHTER", 9, 1),    # Airport position
         ("BLUE", "TCOPTER", 8, 1),    # Near airport
+        ("BLUE", "BOMBER", 7, 1),     # Additional air
     ]
     
     for army, unit_type, x, y in blue_units:
@@ -837,6 +847,47 @@ def setup_combat_units(game_id):
     rpc_call("army_end_turn", {"token": game_id})
     
     print("✅ Combat units ready for testing")
+    
+    # Move some units into combat range
+    print("   ⏳ Moving units into combat positions...")
+    
+    # Move RED units closer to center
+    moves = [
+        # Move some RED ground units east
+        {"token": game_id, "x": 0, "y": 3, "x2": 3, "y2": 3},  # Tank
+        {"token": game_id, "x": 1, "y": 4, "x2": 4, "y2": 4},  # Infantry
+        {"token": game_id, "x": 0, "y": 4, "x2": 3, "y2": 4},  # Artillery
+        {"token": game_id, "x": 1, "y": 3, "x2": 4, "y2": 3},  # Recon
+        # Move some naval units
+        {"token": game_id, "x": 0, "y": 0, "x2": 2, "y2": 1},  # Battleship
+        {"token": game_id, "x": 1, "y": 0, "x2": 3, "y2": 0},  # Cruiser
+    ]
+    
+    for move in moves:
+        rpc_call("unit_move", move)
+    
+    # End turn to switch to BLUE
+    rpc_call("army_end_turn", {"token": game_id})
+    
+    # Move BLUE units closer to center
+    blue_moves = [
+        # Move some BLUE ground units west
+        {"token": game_id, "x": 9, "y": 6, "x2": 6, "y2": 6},  # Tank
+        {"token": game_id, "x": 8, "y": 5, "x2": 5, "y2": 5},  # Infantry
+        {"token": game_id, "x": 8, "y": 6, "x2": 5, "y2": 6},  # Artillery
+        {"token": game_id, "x": 9, "y": 5, "x2": 6, "y2": 5},  # Mech
+        # Move some naval units
+        {"token": game_id, "x": 9, "y": 9, "x2": 7, "y2": 8},  # Battleship
+        {"token": game_id, "x": 7, "y": 9, "x2": 5, "y2": 9},  # Lander  
+    ]
+    
+    for move in blue_moves:
+        rpc_call("unit_move", move)
+    
+    # End turn to enable all units again
+    rpc_call("army_end_turn", {"token": game_id})
+    
+    print("   ✅ Units positioned for combat testing")
 
 if __name__ == "__main__":
     success = main()

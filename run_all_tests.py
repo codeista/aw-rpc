@@ -27,7 +27,7 @@ TEST_SUITES = {
         "tests/integration/test_multiplayer_armies.py"
     ],
     "Manual Tests": [
-        "test_repair_refuel_proper.py"
+        "./test_repair_refuel_proper.py"
     ]
 }
 
