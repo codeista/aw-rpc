@@ -22,6 +22,7 @@
    - Load/unload transports
    - Create new units
    - Repair/resupply (Black Boat)
+   - **Auto-Wait**: Units automatically wait if no actions available after moving
 
 3. **Turn End**
    - Click "End Turn" button
@@ -42,7 +43,7 @@
 #### Left Click
 - **On empty tile**: Deselect current unit
 - **On friendly unit**: 
-  - Select unit
+  - Select unit (priority: unit > production building)
   - Show movement range (yellow highlights)
   - Show attack range (red highlights)
 - **On highlighted tile**:
@@ -79,6 +80,7 @@
 - **+/=**: Zoom in
 - **-**: Zoom out
 - **0**: Reset zoom to 100%
+- **Note**: Zoom level persists across sessions (saved to localStorage)
 
 #### Actions
 - **Space**: End turn
@@ -256,6 +258,7 @@ Returns: {success: true}
    ```
    unit_select → get_valid_moves → unit_move → get_attack_targets → damage_preview → unit_attack
    ```
+4. **Auto-Wait**: If no attack targets, capture options, or transports available after moving, unit automatically waits
 
 ### Creating Units
 1. **Mouse**: Double-click factory → Select unit type → Click "Create"
@@ -343,9 +346,10 @@ When attacking:
    - Destroyed units removed
    
 3. **After Combat**:
-   - All highlights cleared
+   - All highlights cleared via clearAllHighlights()
    - Unit marked as unavailable (grayed out)
    - Auto-deselect attacker
+   - Client-side flags updated: can_move = false, can_attack = false
 
 ### Transport Highlighting
 When selecting cargo unit near transports:
@@ -417,10 +421,11 @@ APC auto-resupply:
 ### Special Visual States
 
 #### Unit States
-- **Available** (can act): Full color sprite
-- **Unavailable** (acted): Grayed out sprite
+- **Available** (can act): Full color sprite - determined by (can_move || can_attack)
+- **Unavailable** (acted): Grayed out sprite - when both can_move and can_attack are false
 - **Loaded** (in transport): Hidden from map
 - **Capturing**: Flag indicator visible
+- **Note**: can_capture flag does not affect sprite state
 
 #### Tile Overlays
 - **Movement Range**: Yellow semi-transparent
@@ -447,6 +452,10 @@ When zooming:
    - Zoom level saved to localStorage
    - Restored on page refresh
    - Mobile pinch gesture support
+   
+3. **Sprite Loading**:
+   - Sprite corrections loaded before rendering to prevent black sprites
+   - Handles timing issues with async sprite data loading
 
 ---
 
@@ -463,6 +472,7 @@ Appears after moving to a tile:
 │ ❌ Cancel       │ → Returns unit to original position
 └─────────────────┘
 ```
+**Note**: If no actions are available except Wait, the unit automatically waits without showing menu
 
 ### Transport Context Menu (Right-Click)
 For Black Boat:
@@ -631,3 +641,46 @@ For Black Boat repairs:
 - **Modal Positioning**: Fixed center positioning
 - **Button Size**: 40x40px minimum touch target
 - **Viewport**: Responsive scaling with device-width
+
+---
+
+## Development Tools
+
+### Sprite Showcase
+- **Route**: `/sprites`
+- **Purpose**: View all unit sprites for all armies in different states
+- **Features**:
+  - Shows available, unavailable, and damaged states
+  - All 25 unit types for all 5 armies
+  - Interactive tileset switching
+  - Uses actual game sprite correction data
+
+### Debug Functions (Console)
+Available in browser console for testing:
+
+1. **simulateGameFlow()**
+   - Simulates complete game flow programmatically
+   - Tests unit selection, movement, and combat
+   - Useful for automated testing
+
+2. **testSpriteStates()**
+   - Logs current sprite state for all units
+   - Shows can_move, can_attack, can_capture flags
+   - Helps debug sprite display issues
+
+### Client-Side Workarounds
+Due to server-side state management limitations, the following client-side updates are implemented:
+
+1. **After Movement**:
+   - If auto-wait triggered: can_move = false, can_attack = false
+   
+2. **After Attack**:
+   - Attacker: can_move = false, can_attack = false
+   
+3. **After Capture**:
+   - Unit: can_move = false, can_attack = false, can_capture = false
+   
+4. **After Wait**:
+   - Unit: can_move = false, can_attack = false
+
+These ensure sprite states update immediately without waiting for server sync.
