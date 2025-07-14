@@ -1344,16 +1344,16 @@ def create_optimized_test_game():
         
         # Create configuration
         config_game = Config()
-        print(f"DEBUG: Config created: {type(config_game)}")
+        app_logger.debug(f"Config created: {type(config_game)}")
         
         # Create the optimized board
         board = create_optimized_test_map()
-        print(f"DEBUG: Board created: {type(board)}")
+        app_logger.debug(f"Board created: {type(board)}")
         
         # Create game manager with proper parameters
         game_manager = GameManager(config_game, board)
         game_manager.app_logger = app_logger  # Set logger for income processing
-        print(f"DEBUG: GameManager created: {type(game_manager)}")
+        app_logger.debug(f"GameManager created: {type(game_manager)}")
         
         # Set game properties
         game_manager.board.game_active = True
@@ -1364,13 +1364,13 @@ def create_optimized_test_game():
         
         app_logger.info(f"Created optimized test game: {token}")
         
-        # Show what's available for testing
-        print("🎮 OPTIMIZED TEST GAME CREATED!")
-        print("   ⚔️ Combat: Units positioned for immediate attacks")
-        print("   🚢 Transport: Loaded transports ready to unload")
-        print("   🏰 Capture: Infantry next to neutral cities")
-        print("   💰 Economy: 50,000 funds each army")
-        print("   🎯 All unit types: Naval, air, land units deployed")
+        # Log what's available for testing
+        app_logger.info("🎮 OPTIMIZED TEST GAME CREATED!")
+        app_logger.info("   ⚔️ Combat: Units positioned for immediate attacks")
+        app_logger.info("   🚢 Transport: Loaded transports ready to unload")
+        app_logger.info("   🏰 Capture: Infantry next to neutral cities")
+        app_logger.info("   💰 Economy: 50,000 funds each army")
+        app_logger.info("   🎯 All unit types: Naval, air, land units deployed")
         
         return redirect(f'/game/{token}')
     
@@ -1397,37 +1397,6 @@ def create_optimized_test_game():
         <p><a href="/">Back to Home</a></p>
         """, 500
 
-@app.route('/test_combat')  
-def create_combat_focused_game():
-    """Create a smaller map focused on combat testing"""
-    token = secrets.token_urlsafe(6)
-    
-    try:
-        from manager import GameManager
-        from config import Config
-        
-        # Load configuration
-        config_game = Config()
-        
-        # Create game manager with combat scenario board and config
-        combat_board = create_quick_combat_scenario()
-        game_manager = GameManager(config_game, combat_board)
-        game_manager.board.game_active = True
-        game_manager.board.current_turn = Army.RED
-        
-        games[token] = game_manager
-        app_logger.info(f"Created combat test game: {token}")
-        
-        print("⚔️ COMBAT TEST GAME CREATED!")
-        print("   🎯 4 combat pairs ready for immediate testing")
-        print("   📏 Units positioned at optimal attack ranges")
-        print("   🏰 Cities ready for capture testing")
-        
-        return redirect(f'/game/{token}')
-    
-    except Exception as e:
-        app_logger.error(f"Failed to create combat test game: {e}")
-        return f"Error creating combat test game: {e}", 500
 
 @app.route('/test_transport')
 def create_transport_test_game():
@@ -1523,7 +1492,7 @@ def create_triangle_map_game():
         from gameboard import GameBoard
         board = GameBoard.create(triangle_map)
         
-        print(f"DEBUG Triangle: Map {triangle_map.name}, size {triangle_map.width}x{triangle_map.height}, armies: {[a.name for a in triangle_map.turn_order]}")
+        app_logger.debug(f"Triangle: Map {triangle_map.name}, size {triangle_map.width}x{triangle_map.height}, armies: {[a.name for a in triangle_map.turn_order]}")
         
         # Create game manager
         game_manager = GameManager(config_game, board)
@@ -1561,7 +1530,7 @@ def create_cross_map_game():
         from gameboard import GameBoard
         board = GameBoard.create(cross_map)
         
-        print(f"DEBUG Cross: Map {cross_map.name}, size {cross_map.width}x{cross_map.height}, armies: {[a.name for a in cross_map.turn_order]}")
+        app_logger.debug(f"Cross: Map {cross_map.name}, size {cross_map.width}x{cross_map.height}, armies: {[a.name for a in cross_map.turn_order]}")
         
         # Create game manager
         game_manager = GameManager(config_game, board)
@@ -1599,7 +1568,7 @@ def create_pentagon_map_game():
         from gameboard import GameBoard
         board = GameBoard.create(pentagon_map)
         
-        print(f"DEBUG Pentagon: Map {pentagon_map.name}, size {pentagon_map.width}x{pentagon_map.height}, armies: {[a.name for a in pentagon_map.turn_order]}")
+        app_logger.debug(f"Pentagon: Map {pentagon_map.name}, size {pentagon_map.width}x{pentagon_map.height}, armies: {[a.name for a in pentagon_map.turn_order]}")
         
         # Create game manager
         game_manager = GameManager(config_game, board)
