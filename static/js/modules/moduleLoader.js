@@ -21,7 +21,7 @@ class ModuleLoader {
             'uiSystems',
             // Phase 3 modules 
             'inputHandler',
-            // 'gameActions',
+            'gameActions',
             // Phase 4 modules
             // 'renderEngine',
             // 'movementSystem',
@@ -96,6 +96,7 @@ class ModuleLoader {
             const gameState = this.modules.get('gameState');
             const uiSystems = this.modules.get('uiSystems');
             const inputHandler = this.modules.get('inputHandler');
+            const gameActions = this.modules.get('gameActions');
             
             // Initialize game state
             core.initializeGameState();
@@ -120,6 +121,11 @@ class ModuleLoader {
             // Initialize input handler module
             if (inputHandler && inputHandler.initializeInputHandlerModule) {
                 inputHandler.initializeInputHandlerModule();
+            }
+            
+            // Initialize game actions module
+            if (gameActions && gameActions.initializeGameActionsModule) {
+                gameActions.initializeGameActionsModule();
             }
             
             // Initialize global references for compatibility
