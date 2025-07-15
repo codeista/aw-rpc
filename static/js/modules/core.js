@@ -3,6 +3,11 @@
  * Extracted from render.js as part of modularization effort
  */
 
+// Ensure logger exists
+if (typeof window.logger === 'undefined') {
+    window.logger = console; // Fallback to console if logger.js isn't loaded
+}
+
 // ===== CONSTANTS =====
 export const TILESIZE = 16;
 export const TRANSPORT_HIGHLIGHT_OPACITY = 0.3;

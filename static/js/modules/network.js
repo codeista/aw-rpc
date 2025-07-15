@@ -5,6 +5,11 @@
 
 import { uuidv4, getGameToken } from './core.js';
 
+// Ensure logger exists
+if (typeof window.logger === 'undefined') {
+    window.logger = console; // Fallback to console if logger.js isn't loaded
+}
+
 // ===== NETWORK STATE =====
 let socketInstance = null;
 let rpcRequestQueue = [];

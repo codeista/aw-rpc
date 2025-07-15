@@ -852,41 +852,38 @@
     <script src="/static/js/operation-queue.js"></script>
     <script src="/static/js/cargo-selection.js"></script>
     
-    <!-- MODULAR RENDER SYSTEM -->
+    <!-- TRANSITIONAL: Load legacy render.js first during Phase 1 -->
+    <script src="/static/js/render_legacy.js"></script>
+    
+    <!-- MODULAR RENDER SYSTEM (Phase 1 - Foundation) -->
     <script type="module">
         // Import and initialize the modular render system
+        // Note: During transition, modules enhance rather than replace legacy code
         import moduleLoader from '/static/js/modules/moduleLoader.js';
         
         // Start loading modules when DOM is ready
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
-                moduleLoader.loadAllModules().catch(error => {
-                    console.error('Failed to load modular system:', error);
+                console.log('🚀 Loading modular enhancements...');
+                moduleLoader.loadAllModules().then(() => {
+                    console.log('✅ Modular system loaded successfully');
+                }).catch(error => {
+                    console.error('⚠️ Modular system had issues:', error);
+                    console.log('✅ But legacy system is still running');
                 });
             });
         } else {
-            moduleLoader.loadAllModules().catch(error => {
-                console.error('Failed to load modular system:', error);
+            console.log('🚀 Loading modular enhancements...');
+            moduleLoader.loadAllModules().then(() => {
+                console.log('✅ Modular system loaded successfully');
+            }).catch(error => {
+                console.error('⚠️ Modular system had issues:', error);
+                console.log('✅ But legacy system is still running');
             });
         }
         
         // Make moduleLoader available globally for debugging
         window.moduleLoader = moduleLoader;
-    </script>
-    
-    <!-- FALLBACK: Legacy render.js (will be loaded only if modular system fails) -->
-    <script>
-        // Fallback mechanism - load legacy render.js if modules fail after 5 seconds
-        setTimeout(() => {
-            if (!window.moduleLoader || !window.moduleLoader.isModuleLoaded('core')) {
-                console.warn('⚠️ Modular system timeout - loading legacy render.js');
-                const legacyScript = document.createElement('script');
-                legacyScript.src = '/static/js/render_legacy.js';
-                legacyScript.onload = () => console.log('✅ Legacy render.js loaded');
-                legacyScript.onerror = () => console.error('❌ Legacy render.js failed to load');
-                document.head.appendChild(legacyScript);
-            }
-        }, 5000);
     </script>
     
     <script src="/static/js/transport_integration.js"></script>

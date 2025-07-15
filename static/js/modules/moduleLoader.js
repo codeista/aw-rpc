@@ -3,6 +3,11 @@
  * Replaces the monolithic render.js with a modular architecture
  */
 
+// Ensure logger exists
+if (typeof window.logger === 'undefined') {
+    window.logger = console; // Fallback to console if logger.js isn't loaded
+}
+
 class ModuleLoader {
     constructor() {
         this.modules = new Map();
@@ -103,9 +108,8 @@ class ModuleLoader {
             this.setupGlobalCompatibility();
             
             // Start the main update cycle (temporarily using original function)
-            if (window.update && typeof window.update === 'function') {
-                window.update();
-            }
+            // Note: This will be available once render_legacy.js loads
+            logger.info('⏳ Waiting for main update cycle to be available...');
             
             // Initialize controls (temporarily using original functions)
             this.initializeControls();
@@ -154,48 +158,8 @@ class ModuleLoader {
      * Initialize controls (temporary - will be moved to inputHandler module)
      */
     initializeControls() {
-        // Button handlers
-        const buttonrerender = document.getElementsByClassName('buttonrerender')[0];
-        if (buttonrerender && window.debounce && window.rerender) {
-            buttonrerender.onclick = window.debounce(window.rerender, 300);
-        }
-
-        const inputshowmap = document.getElementById('inputshowmap');
-        if (inputshowmap && window.rerender) {
-            inputshowmap.onchange = window.rerender;
-        }
-
-        const buttonendturn = document.getElementsByClassName('buttonendturn')[0];
-        if (buttonendturn && window.debounce && window.armyEndTurn) {
-            buttonendturn.onclick = window.debounce(window.armyEndTurn, 500);
-        }
-
-        const buttonendgame = document.getElementsByClassName('buttonendgame')[0];
-        if (buttonendgame && window.endGame) {
-            buttonendgame.onclick = window.endGame;
-        }
-
-        const buttonchat = document.getElementById('buttonchat');
-        if (buttonchat && window.chat) {
-            buttonchat.onclick = window.chat;
-        }
-
-        const inputchat = document.getElementById('inputchat');
-        if (inputchat && window.chat) {
-            inputchat.onkeypress = window.chat;
-        }
-
-        const inputshowchat = document.getElementById('inputshowchat');
-        if (inputshowchat && window.showChat) {
-            inputshowchat.onchange = window.showChat;
-        }
-
-        const inputshowjson = document.getElementById('inputshowjson');
-        if (inputshowjson && window.showJson) {
-            inputshowjson.onchange = window.showJson;
-        }
-
-        logger.debug('🎛️ Controls initialized');
+        // Note: Control initialization will happen once render_legacy.js loads
+        logger.debug('🎛️ Control initialization deferred until legacy functions available');
     }
 
     /**

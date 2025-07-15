@@ -6,6 +6,11 @@
 import { jsonrpc } from './network.js';
 import { getGameState } from './core.js';
 
+// Ensure logger exists
+if (typeof window.logger === 'undefined') {
+    window.logger = console; // Fallback to console if logger.js isn't loaded
+}
+
 // ===== SPRITE TESTING UTILITIES =====
 
 /**
