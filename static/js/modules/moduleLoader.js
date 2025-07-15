@@ -16,9 +16,9 @@ class ModuleLoader {
             'core',
             'network', 
             'testing',
-            // Phase 2 modules (to be added later)
-            // 'gameState',
-            // 'uiSystems',
+            // Phase 2 modules
+            'gameState',
+            'uiSystems',
             // Phase 3 modules 
             // 'inputHandler',
             // 'gameActions',
@@ -90,9 +90,11 @@ class ModuleLoader {
         logger.info('🎮 Initializing application...');
         
         try {
-            // Get core module
+            // Get modules
             const core = this.modules.get('core');
             const network = this.modules.get('network');
+            const gameState = this.modules.get('gameState');
+            const uiSystems = this.modules.get('uiSystems');
             
             // Initialize game state
             core.initializeGameState();
@@ -102,6 +104,16 @@ class ModuleLoader {
             if (token) {
                 network.initializeSocket(token);
                 logger.info(`🔗 Socket initialized for game: ${token}`);
+            }
+            
+            // Initialize game state module (sets up global functions)
+            if (gameState && gameState.initializeGameStateModule) {
+                gameState.initializeGameStateModule();
+            }
+            
+            // Initialize UI systems module
+            if (uiSystems && uiSystems.initializeUISystemsModule) {
+                uiSystems.initializeUISystemsModule();
             }
             
             // Initialize global references for compatibility
