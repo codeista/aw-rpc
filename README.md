@@ -20,21 +20,38 @@ python3 app.py
 ```
 
 ### Access Points
-- **Play Game**: http://localhost:5000/test
+- **Play Game**: http://localhost:5000/test_game (NEW: Unified test system)
 - **API Browser**: http://localhost:5000/api/browse
 - **Test Interface**: http://localhost:5000/test_interface
 - **Create Custom Game**: http://localhost:5000/{game_id}
 
 ## Game Controls
 
-### Basic Controls
+### Mouse Controls
 - **Click**: Select unit / Move to empty tile / Attack enemy unit
 - **Double-click**: Capture property / End unit's turn
-- **ESC**: Cancel current action
+- **Right-click**: Context menu (repair/resupply)
+- **Ctrl+Click**: Load unit into transport
+- **Alt+Click**: Unload unit from transport
+
+### Keyboard Shortcuts (NEW!)
+- **Space/E**: End turn
+- **ESC**: Cancel action / Deselect
+- **Enter**: Confirm / Wait unit
+- **W**: Wait selected unit
+- **A**: Attack mode
+- **M**: Move mode
+- **C**: Capture property
+- **L**: Load unit into transport
+- **U**: Unload unit from transport
+- **Tab**: Cycle through units
+- **H**: Show help overlay
+- **+/-/0**: Zoom controls
+- **R**: Refresh board
 
 ### Transport Controls
-- **Loading**: Move cargo unit onto transport tile (automatic)
-- **Unloading**: Select transport → Click adjacent tile → Select cargo to unload
+- **Loading**: Move cargo unit onto transport tile (automatic) or press L
+- **Unloading**: Select transport → Click adjacent tile → Select cargo or press U
 - **Note**: Unloaded units cannot act the same turn (authentic AW rule)
 
 ## Game Features

@@ -289,131 +289,8 @@ function handleAltClick(tile, ev) {
 }
 
 // ===== KEYBOARD HANDLERS =====
-
-/**
- * Handle keyboard input
- * @param {KeyboardEvent} event - Keyboard event
- */
-export function handleKeyDown(event) {
-    const key = event.key.toLowerCase();
-    
-    switch (key) {
-        case 't':
-            // Show transport status
-            if (window.getTransportStatus) {
-                window.getTransportStatus();
-            }
-            break;
-            
-        case 'c':
-            // Clear transport highlights
-            if (window.clearTransportHighlights) {
-                window.clearTransportHighlights();
-            }
-            break;
-            
-        case 'escape':
-            // Cancel current action
-            handleEscape();
-            break;
-            
-        case 'enter':
-            // Confirm current action
-            handleEnter();
-            break;
-            
-        case 'w':
-            // Unit wait
-            handleWaitKey();
-            break;
-            
-        case 'a':
-            // Attack mode
-            handleAttackKey();
-            break;
-            
-        case 'm':
-            // Move mode
-            handleMoveKey();
-            break;
-    }
-}
-
-/**
- * Handle Escape key
- */
-function handleEscape() {
-    // Hide context menu
-    hideUnitContextMenu();
-    
-    // Clear selection
-    const board = getBoard();
-    if (board?.selected) {
-        setSelectedTile(null);
-        
-        // Clear highlights
-        if (window.clearAllHighlights) {
-            window.clearAllHighlights();
-        }
-    }
-}
-
-/**
- * Handle Enter key
- */
-function handleEnter() {
-    const board = getBoard();
-    const selected = board?.selected;
-    
-    if (selected?.unit && selected.unit.army === board.current_turn) {
-        // If unit is selected, wait
-        if (window.unitWait) {
-            window.unitWait(selected);
-        }
-    }
-}
-
-/**
- * Handle Wait key
- */
-function handleWaitKey() {
-    const board = getBoard();
-    const selected = board?.selected;
-    
-    if (selected?.unit && selected.unit.army === board.current_turn) {
-        if (window.unitWait) {
-            window.unitWait(selected);
-        }
-    }
-}
-
-/**
- * Handle Attack key
- */
-function handleAttackKey() {
-    const board = getBoard();
-    const selected = board?.selected;
-    
-    if (selected?.unit && selected.unit.can_attack) {
-        if (window.showAttackTargets) {
-            window.showAttackTargets(selected.x, selected.y);
-        }
-    }
-}
-
-/**
- * Handle Move key
- */
-function handleMoveKey() {
-    const board = getBoard();
-    const selected = board?.selected;
-    
-    if (selected?.unit && selected.unit.can_move) {
-        if (window.showMovementRange) {
-            window.showMovementRange(selected.x, selected.y);
-        }
-    }
-}
+// Note: Primary keyboard handling moved to keyboard-shortcuts.js
+// This is kept minimal to avoid conflicts
 
 // ===== TOUCH HANDLERS =====
 
@@ -552,8 +429,7 @@ export function initializeInputHandlers() {
     canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
     canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
     
-    // Keyboard handler
-    document.addEventListener('keydown', handleKeyDown);
+    // Keyboard handler - removed to avoid conflicts with keyboard-shortcuts.js
     
     // Control button handlers
     initializeControlButtons();

@@ -851,6 +851,7 @@
     <script src="/static/js/validators.js"></script>
     <script src="/static/js/operation-queue.js"></script>
     <script src="/static/js/cargo-selection.js"></script>
+    <script src="/static/js/keyboard-shortcuts.js"></script>
     
     <!-- TRANSITIONAL: Load legacy render.js first during Phase 1 -->
     <script src="/static/js/render_legacy.js"></script>
@@ -1019,6 +1020,11 @@
             currentZoom = 1;
             updateZoomDisplay();
         }
+        
+        // Make zoom functions globally accessible for keyboard shortcuts
+        window.zoomIn = zoomIn;
+        window.zoomOut = zoomOut;
+        window.zoomReset = zoomReset;
 
         // Load saved zoom level
         document.addEventListener('DOMContentLoaded', function() {
@@ -1029,21 +1035,7 @@
             }
         });
 
-        // Keyboard shortcuts for zoom
-        document.addEventListener('keydown', function(e) {
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-            
-            if (e.key === '+' || e.key === '=') {
-                e.preventDefault();
-                zoomIn();
-            } else if (e.key === '-' || e.key === '_') {
-                e.preventDefault();
-                zoomOut();
-            } else if (e.key === '0') {
-                e.preventDefault();
-                zoomReset();
-            }
-        });
+        // Zoom keyboard shortcuts handled by keyboard-shortcuts.js
     </script>
 </body>
 </html>
