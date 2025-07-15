@@ -4,8 +4,9 @@ Unified test game creation route - consolidates all test game creation into one 
 
 from flask import Blueprint, request, redirect, url_for, jsonify
 import time
-from app_core import games
 from manager import GameManager
+from gameboard import GameBoard
+from config import Config
 from map_system import map_repository
 import logging
 
@@ -140,8 +141,17 @@ def unified_test_game():
     
     # Create game
     try:
-        game = GameManager(token)
-        game.setup(game_map)
+        # Create config and board first
+        config_game = Config()
+        config_game.current_turn = 'RED'
+        config_game.current_day = 1
+        config_game.max_days = 30
+        
+        board = GameBoard.create(game_map)
+        game = GameManager(config_game, board)
+        
+        # Import games dict from main app (avoid circular import)
+        from app import games
         games[token] = game
         
         # Add units if configured or forced

@@ -37,6 +37,12 @@ from map_system import map_repository, Map, Army
 from enhanced_combat_system import EnhancedCombatSystem, CombatPreview, EnhancedCombatResult
 from transport_system import CompleteTransportSystem, TransportResult
 from tests.integration.test_map_predeployed import get_predeployed_test_game, get_comprehensive_test_game
+from routes.unified_test_route import unified_test_bp
+from routes.unified_test_api import unified_test_api_bp
+
+# Register blueprints
+app.register_blueprint(unified_test_bp)
+app.register_blueprint(unified_test_api_bp)
 
 # Import our fixed logging system
 try:
