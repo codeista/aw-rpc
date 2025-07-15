@@ -161,16 +161,15 @@
             background: #000;
             border-radius: 6px;
             border: 2px solid #34495e;
-            overflow: hidden;
+            overflow: auto; /* Changed from hidden to auto for scrolling */
             margin-bottom: 12px;
             box-shadow: 0 2px 6px rgba(0,0,0,0.5);
             flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 500px;
-            height: calc(100vh - 200px);
-            max-height: 800px;
+            padding: 20px;
+            /* Removed fixed heights - let canvas determine size */
         }
 
         #draw {
@@ -191,13 +190,8 @@
             image-rendering: pixelated;
             image-rendering: -moz-crisp-edges;
             image-rendering: crisp-edges;
-            max-width: 100%;
-            max-height: 100%;
-            width: auto;
-            height: auto;
-            object-fit: contain;
-            min-width: 400px;
-            min-height: 300px;
+            /* Fixed size - no scaling */
+            /* Canvas will be sized by JavaScript based on map dimensions */
         }
 
         .info-panel {
@@ -729,14 +723,7 @@
         <div class="game-board-wrapper">
             <!-- Game Board Section -->
             <section class="game-board-section">
-                <!-- Zoom Controls -->
-                <div class="zoom-controls">
-                    <button class="zoom-btn" onclick="zoomIn()" title="Zoom In">+</button>
-                    <span id="zoomLevel" style="background: rgba(0,0,0,0.7); color: white; padding: 6px 10px; border-radius: 4px; font-size: 13px; font-weight: bold;">100%</span>
-                    <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out">−</button>
-                    <button class="zoom-btn" onclick="zoomReset()" title="Reset Zoom">⟲</button>
-                    <button class="zoom-btn" onclick="zoomFit()" title="Fit to Screen" style="font-size: 11px; padding: 8px;">⛶</button>
-                </div>
+                <!-- Zoom Controls Removed - Fixed size for now -->
 
                 <!-- Board Container -->
                 <div class="board-container" id="board-container">
@@ -866,16 +853,35 @@
     <!-- TRANSITIONAL: Load legacy render.js first during Phase 1 -->
     <script src="/static/js/render_legacy.js"></script>
     
-    <!-- Unified Coordinate System (load early) -->
-    <script src="/static/js/coordinate-system.js"></script>
+    <!-- Simple Click Handler - DISABLED, using centralized handler instead -->
+    <!-- <script src="/static/js/simple-click-handler.js"></script> -->
     
-    <!-- Centralized Click Handler (load after render_legacy.js) -->
+    <!-- Automated Click Test -->
+    <script src="/static/js/click-test.js"></script>
+    
+    <!-- Movement Test -->
+    <script src="/static/js/test-movement.js"></script>
+    
+    <!-- Debug MECH -->
+    <script src="/static/js/debug-mech.js"></script>
+    
+    <!-- Render Test -->
+    <script src="/static/js/render-test.js"></script>
+    
+    <!-- Debug Rendering -->
+    <script src="/static/js/debug-rendering.js"></script>
+    <script src="/static/js/debug-unit-0-4.js"></script>
+    <script src="/static/js/clear-stale-highlights.js"></script>
+    <script src="/static/js/debug-tileat.js"></script>
+    
+    <!-- Centralized Click Handler - RESTORED for better architecture -->
     <script src="/static/js/click-handler.js"></script>
     
-    <!-- Canvas Scaler - Visual scaling solution -->
-    <script src="/static/js/canvas-scaler.js"></script>
+    <!-- Unit Creation Test -->
+    <script src="/static/js/test-unit-creation.js"></script>
     
-    <!-- MODULAR RENDER SYSTEM (Phase 1 - Foundation) -->
+    <!-- MODULAR RENDER SYSTEM - TEMPORARILY DISABLED TO FIX DUPLICATE MAP ISSUE -->
+    <!-- 
     <script type="module">
         // Import and initialize the modular render system
         // Note: During transition, modules enhance rather than replace legacy code
@@ -905,6 +911,7 @@
         // Make moduleLoader available globally for debugging
         window.moduleLoader = moduleLoader;
     </script>
+    -->
     
     <script src="/static/js/transport_integration.js"></script>
     <script src="/static/js/animation-integration.js"></script>
@@ -952,7 +959,9 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Hide only JSON section by default, keep chat visible
             const jsonSection = document.getElementById('jsonSection');
+            const chatSection = document.getElementById('chatSection');
             if (jsonSection) jsonSection.style.display = 'none';
+            if (chatSection) chatSection.style.display = 'block'; // Ensure chat is visible
             
             // The original render.js handles chat functionality, so we don't override it
             
@@ -1005,61 +1014,23 @@
         const maxZoom = 4;
 
         function updateZoomDisplay() {
-            const zoomLevel = document.getElementById('zoomLevel');
-            if (zoomLevel) {
-                zoomLevel.textContent = Math.round(currentZoom * 100) + '%';
-            }
-            
-            // Apply zoom to the canvas
+            // Disabled - using fixed size
+            // Remove any existing transforms
             const boardContainer = document.getElementById('board-container');
             if (boardContainer && boardContainer.querySelector('canvas')) {
                 const canvas = boardContainer.querySelector('canvas');
-                canvas.style.transform = `scale(${currentZoom})`;
-                canvas.style.transformOrigin = 'center center';
-            }
-            
-            // Save zoom level to localStorage
-            localStorage.setItem('gameZoomLevel', currentZoom);
-        }
-
-        function zoomIn() {
-            if (currentZoom < maxZoom) {
-                currentZoom = Math.min(currentZoom + zoomStep, maxZoom);
-                updateZoomDisplay();
+                canvas.style.transform = 'none';
+                canvas.style.transformOrigin = 'top left';
             }
         }
 
-        function zoomOut() {
-            if (currentZoom > minZoom) {
-                currentZoom = Math.max(currentZoom - zoomStep, minZoom);
-                updateZoomDisplay();
-            }
-        }
-
-        function zoomReset() {
-            currentZoom = 1;
-            updateZoomDisplay();
-        }
+        // Zoom functions removed - using fixed size
+        function zoomIn() {} // No-op
+        function zoomOut() {} // No-op  
+        function zoomReset() {} // No-op
+        function zoomFit() {} // No-op
         
-        function zoomFit() {
-            const boardContainer = document.getElementById('board-container');
-            const canvas = boardContainer?.querySelector('canvas');
-            if (canvas && boardContainer) {
-                const containerWidth = boardContainer.clientWidth;
-                const containerHeight = boardContainer.clientHeight;
-                const canvasWidth = canvas.width;
-                const canvasHeight = canvas.height;
-                
-                // Calculate zoom to fit
-                const zoomX = containerWidth / canvasWidth;
-                const zoomY = containerHeight / canvasHeight;
-                currentZoom = Math.min(zoomX, zoomY) * 0.9; // 90% to leave some margin
-                currentZoom = Math.max(currentZoom, minZoom);
-                updateZoomDisplay();
-            }
-        }
-        
-        // Make zoom functions globally accessible for keyboard shortcuts
+        // Keep global references for compatibility
         window.zoomIn = zoomIn;
         window.zoomOut = zoomOut;
         window.zoomReset = zoomReset;

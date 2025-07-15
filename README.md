@@ -21,7 +21,8 @@ python3 app.py
 
 ### Access Points
 - **Play Game**: http://localhost:5000/test_game (NEW: Unified test system)
-- **API Browser**: http://localhost:5000/api/browse
+- **API Documentation**: http://localhost:5000/api/docs (NEW: Categorized API reference)
+- **API Browser**: http://localhost:5000/api/browse (Interactive RPC testing)
 - **Test Interface**: http://localhost:5000/test_interface
 - **Create Custom Game**: http://localhost:5000/{game_id}
 
@@ -120,8 +121,19 @@ All systems fully tested and operational:
 
 ## Running Tests
 
+### Automated Regression Tests (Recommended)
 ```bash
-# Run all unit tests
+# Quick regression test runner (comprehensive mechanics validation)
+python3 run_regression_tests.py
+
+# Or use the full test runner with options
+python3 tests/run_tests.py
+# Choose option 3: Automated Regression Tests
+```
+
+### Manual Unit Tests
+```bash
+# Run individual unit tests
 python3 tests/unit/test_combat_system.py
 python3 tests/unit/test_movement_system.py
 python3 tests/unit/test_transport_final.py
@@ -134,6 +146,13 @@ python3 tests/integration/test_victory_conditions.py
 # Run via web interface
 # Visit http://localhost:5000/test_interface for interactive testing
 ```
+
+### Regression Test Suite Features
+- **🤖 Fully Automated**: No manual intervention required
+- **⚡ Fast Execution**: Complete validation in ~3 minutes
+- **🎯 Comprehensive Coverage**: All core game mechanics tested
+- **📊 Detailed Reporting**: Success/failure rates with specific error details
+- **🔄 CI/CD Ready**: Returns proper exit codes for automated systems
 
 ## Architecture
 
@@ -184,6 +203,23 @@ python3 tests/integration/test_victory_conditions.py
 
 ## API Documentation
 
+### 🔗 **Enhanced API Browser** (NEW!)
+- **Categorized Methods**: http://localhost:5000/api/docs - Beautiful categorized API reference
+- **Interactive Testing**: http://localhost:5000/api/browse - Live RPC method testing
+- **60+ Methods** organized into 9 logical categories
+- **Complete Documentation** with examples and parameter descriptions
+
+### API Categories
+- **🎮 Game Management** - Core game lifecycle operations
+- **🪖 Unit Operations** - Unit creation, movement, and actions  
+- **⚔️ Combat System** - Attack mechanics and damage calculations
+- **🚢 Transport System** - Cargo loading and transport operations
+- **🗺️ Map & Tile Information** - Terrain and tile data access
+- **🏰 Special Actions** - Property capture and special abilities
+- **🏭 Production & Economic** - Unit production and financial operations
+- **📋 Information & Reference** - Configuration and reference data
+- **💬 Communication** - Chat and messaging features
+
 ### Key RPC Methods
 ```javascript
 // Game Management
@@ -198,11 +234,11 @@ rpc('get_valid_moves', {token, x, y})
 
 // Combat
 rpc('unit_attack', {token, x, y, x2, y2})
-rpc('get_damage_preview', {token, x, y, x2, y2})
+rpc('combat_preview', {token, attacker_x, attacker_y, defender_x, defender_y})
 
 // Transport
-rpc('cargo_board_transport', {token, cargo_x, cargo_y, transport_x, transport_y})
-rpc('cargo_exit_transport', {token, transport_x, transport_y, exit_x, exit_y, cargo_index})
+rpc('load_unit', {token, transport_x, transport_y, cargo_x, cargo_y})
+rpc('unload_unit', {token, transport_x, transport_y, unload_x, unload_y, cargo_index})
 
 // Production
 rpc('unit_create', {token, army, unit_type, x, y})

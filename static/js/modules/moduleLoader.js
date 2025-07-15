@@ -230,32 +230,8 @@ class ModuleLoader {
     handleLoadError(error) {
         logger.error('🚨 Critical loading error - falling back to legacy render.js');
         
-        // Show user-friendly error message
-        const errorDiv = document.createElement('div');
-        errorDiv.style.cssText = `
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #e74c3c;
-            color: white;
-            padding: 15px 25px;
-            border-radius: 5px;
-            z-index: 10000;
-            font-family: Arial, sans-serif;
-        `;
-        errorDiv.innerHTML = `
-            ⚠️ Modular loading failed. Using legacy mode.<br>
-            <small>Check console for details.</small>
-        `;
-        document.body.appendChild(errorDiv);
-        
-        // Remove error message after 5 seconds
-        setTimeout(() => {
-            if (errorDiv.parentNode) {
-                errorDiv.parentNode.removeChild(errorDiv);
-            }
-        }, 5000);
+        // Just log to console instead of showing popup
+        console.log('⚠️ Modular loading failed. Using legacy mode.');
         
         // Try to load legacy render.js if modular loading fails
         this.loadLegacyFallback();

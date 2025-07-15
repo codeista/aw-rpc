@@ -3,8 +3,10 @@
 //
 
 // constants
-const TILESIZE = 16;
-window.TILESIZE = TILESIZE; // Expose globally
+if (!window.window.TILESIZE) {
+    window.window.TILESIZE = 16;
+}
+// Use window.window.TILESIZE directly to avoid conflicts with other files
 
 // Tileset management functions
 function getSelectedTerrainTileset() {
@@ -39,9 +41,9 @@ function getSelectedUnitTileset() {
     }
 }
 
-// Transport visual constants
-const TRANSPORT_HIGHLIGHT_OPACITY = 0.3;
-const TRANSPORT_BORDER_WIDTH = 2;
+// Transport visual constants - use window to avoid conflicts
+window.window.TRANSPORT_HIGHLIGHT_OPACITY = window.window.TRANSPORT_HIGHLIGHT_OPACITY || 0.3;
+window.window.TRANSPORT_BORDER_WIDTH = window.window.TRANSPORT_BORDER_WIDTH || 2;
 
 // globals
 var token = document.getElementById('draw').getAttribute('x-token');
@@ -61,6 +63,14 @@ if (!window.gameState) {
 
 // Transport rendering globals
 var transportHighlightGroup = null;
+
+// Clear any stale highlights on page load
+window.movementHighlights = [];
+window.movementHighlightGroup = null;
+window.attackHighlightGroup = null;
+if (window.gameState) {
+    window.gameState.attackHighlights = [];
+}
 
 // update board data
 update();
@@ -285,7 +295,7 @@ function jsonrpc(method, params, callback) {
     xhr.send(JSON.stringify(data));
 }
 
-function update() {
+async function update() {
     // Use operation queue to prevent concurrent updates
     window.operationQueue.add(
         () => jsonrpc('game_board', {}),
@@ -320,6 +330,20 @@ function update() {
         board = res;
         window.board = res; // Also expose globally
         
+        // Restore the previous selection if it still exists
+        if (previousSelection && board.grid) {
+            const selectedTile = board.grid.find(t => 
+                t.x === previousSelection.x && t.y === previousSelection.y
+            );
+            if (selectedTile && selectedTile.unit && selectedTile.unit.army === board.current_turn) {
+                board.selected = selectedTile;
+                logger.debug('Restored selection:', selectedTile.x, selectedTile.y);
+            } else {
+                board.selected = null;
+                logger.debug('Selection cleared - unit no longer valid');
+            }
+        }
+        
         // Log board update for debugging
         logger.info('📋 Board updated:', {
             turn: res.current_turn,
@@ -331,8 +355,9 @@ function update() {
         // Ensure rendering happens after board update
         if (two && two.scene) {
             logger.debug('Triggering render after board update');
-            clearScene();
-            draw();
+            // Use the proper update function instead of non-existent clearScene/draw
+            await updateScene();
+            two.update();
         }
         
         // Restore movement highlights after update
@@ -401,11 +426,11 @@ function update() {
                     return;
                 }
                 // Add extra height to accommodate double-height sprites at the top
-                var extraHeight = TILESIZE; // One extra tile height for overlapping sprites
+                var extraHeight = window.TILESIZE; // One extra tile height for overlapping sprites
                 var params = { 
                     type: Two.Types.canvas, 
-                    width: board.width * TILESIZE, 
-                    height: board.height * TILESIZE + extraHeight 
+                    width: board.width * window.TILESIZE, 
+                    height: board.height * window.TILESIZE + extraHeight 
                 };
                 two = new Two(params).appendTo(elem);
                 
@@ -422,8 +447,15 @@ function update() {
                 var canvas = draw.children[0];
                 if (canvas) {
                     canvas.onmousemove = canvasMove;
-                    // Add throttled click handler to prevent rapid clicks
-                    canvas.onclick = window.throttle(advanceWarsCanvasClick, 200);
+                    canvas.onmouseleave = function() {
+                        var infobox = document.getElementById('infobox');
+                        if (infobox) {
+                            infobox.dataset.hoverActive = 'false';
+                            infobox.innerHTML = '<small style="color: #bdc3c7;">Hover over the map to see tile information</small>';
+                        }
+                    };
+                    // Remove throttle - centralized handler will manage this
+                    canvas.onclick = advanceWarsCanvasClick;
                     canvas.ondblclick = advanceWarsDoubleClick;
 
                     // NEW: Prevent right-click context menu
@@ -486,7 +518,7 @@ function update() {
         }
         
         // Always render transport highlights if present
-        if (window.transportHighlights && window.transportHighlights.length > 0) {
+        if (window.transportHighlights && window.window.transportState.length > 0) {
             renderTransportHighlights();
         }
 
@@ -495,10 +527,9 @@ function update() {
         logger.debug('Updating game info...');
         var gamebox = document.getElementById('gamebox');
         logger.debug('Gamebox element found:', gamebox);
-        // Main info panel gets the detailed game stats
-        var infobox = document.getElementById('infobox');
-        logger.debug('Infobox element found:', infobox);
-        if (infobox) {
+        
+        // Update game statistics in the gamebox (not infobox)
+        if (gamebox) {
             // Build army stats dynamically for all active armies
             let armyStats = '';
             const armies = ['RED', 'BLUE', 'GREEN', 'YELLOW', 'GREY'];
@@ -518,22 +549,25 @@ Day: ${board.days} | Turn: ${board.current_turn} | Active: ${board.game_active}
 ${armyStats}
 Controls: Click=move/attack, Ctrl+Click=load, Alt+Click=unload, Double-click=capture/wait`;
             
-            infobox.innerText = gameStats;
-            logger.info('Infobox updated with:', gameStats);
-        } else {
-            logger.error('Infobox element not found!');
-        }
-
-        // Small control panel box gets brief status
-        if (gamebox) {
-            gamebox.innerText = `Day ${board.days} | ${board.current_turn}'s Turn | Active: ${board.game_active}`;
-            logger.info('Game info updated successfully');
+            gamebox.innerText = gameStats;
+            logger.info('Gamebox updated with:', gameStats);
         } else {
             logger.error('Gamebox element not found!');
         }
-        // update code
+        
+        // Keep infobox for tile information (updated on hover)
+        var infobox = document.getElementById('infobox');
+        if (infobox && !infobox.dataset.hoverActive) {
+            infobox.innerHTML = '<small style="color: #bdc3c7;">Hover over the map to see tile information</small>';
+        }
+
+        // Gamebox already updated above with full statistics
+        
+        // update code (JSON display)
         var code = document.getElementById('code');
-        code.value = JSON.stringify(board, null, 2);
+        if (code) {
+            code.value = JSON.stringify(board, null, 2);
+        }
     });
 }
 
@@ -595,12 +629,10 @@ function cleanupTransportState() {
     }
     
     // Reset transport state
-    if (typeof transportHighlights !== 'undefined') {
-        transportHighlights = {
-            loadableUnits: [],
-            unloadPositions: [],
-            selectedTransport: null
-        };
+    if (window.transportState) {
+        window.transportState.loadableUnits = [];
+        window.transportState.unloadPositions = [];
+        window.transportState.selectedTransport = null;
     }
     
     // Clear visual highlights
@@ -1003,16 +1035,16 @@ function handleTransportRightClick(tile, event) {
 //
 
 function tileAt(px, py) {
-    // Use the unified coordinate system if available
-    if (window.coordinateSystem) {
-        return window.coordinateSystem.offsetToTile(px, py);
-    }
+    // Account for scene translation offset (dynamic, not fixed)
+    var sceneOffsetY = window.two?.scene?.translation?.y || window.TILESIZE;
+    var adjustedY = py - sceneOffsetY;
+    var tileX = Math.floor(px / window.TILESIZE);
+    var tileY = Math.floor(adjustedY / window.TILESIZE);
     
-    // Fallback to legacy calculation (shouldn't happen)
-    console.warn('Coordinate system not available, using legacy tileAt');
-    var adjustedY = py - TILESIZE;
-    var tileX = Math.floor(px / TILESIZE);
-    var tileY = Math.floor(adjustedY / TILESIZE);
+    // Debug logging for coordinate issues
+    if (window.logger && window.logger.debug) {
+        window.logger.debug(`tileAt(${px}, ${py}) -> scene offset: ${sceneOffsetY}, adjusted: (${px}, ${adjustedY}) -> tile: (${tileX}, ${tileY})`);
+    }
     
     // Bounds checking
     if (tileY < 0 || tileY >= board.height || tileX < 0 || tileX >= board.width) {
@@ -1043,7 +1075,11 @@ function canvasMove(ev) {
                  draw.style.cursor = 'pointer';
     
     // Update info panel with tile details on hover
-    if (tile) {
+    var infobox = document.getElementById('infobox');
+    if (tile && infobox) {
+        // Mark that we're hovering
+        infobox.dataset.hoverActive = 'true';
+        
         var info = `Tile (${tile.x}, ${tile.y})`;
         info += `\nTerrain: ${tile.mapTile.type}`;
         
@@ -1060,7 +1096,7 @@ function canvasMove(ev) {
             }
         }
         
-        document.getElementById('infobox').innerText = info;
+        infobox.innerText = info;
     }
 }
 
@@ -1370,7 +1406,7 @@ function renderBaseTile(tile) {
     var baseTexture = new Two.Texture(baseTilesetSrc, () => ontextureLoad(baseTilesetSrc));
     baseTexture.offset = new Two.Vector(x, y);
     
-    var baseRect = two.makeRectangle(tile.x * TILESIZE + TILESIZE/2, tile.y * TILESIZE + TILESIZE/2, SPRITESIZE, SPRITESIZE);
+    var baseRect = two.makeRectangle(tile.x * window.TILESIZE + window.TILESIZE/2, tile.y * window.TILESIZE + window.TILESIZE/2, SPRITESIZE, SPRITESIZE);
     baseRect.fill = baseTexture;
     baseRect.stroke = 'transparent';
 }
@@ -1847,15 +1883,15 @@ function makeMapTile(tile) {
         var rect = null;
         if (_2xHeight) {
             // Double-height tiles (like missile silos) should overlap the top border
-            rect = two.makeRectangle(tile.x * TILESIZE + TILESIZE/2, tile.y * TILESIZE, SPRITESIZE, SPRITESIZE * 2);
+            rect = two.makeRectangle(tile.x * window.TILESIZE + window.TILESIZE/2, tile.y * window.TILESIZE, SPRITESIZE, SPRITESIZE * 2);
         } else {
-            rect = two.makeRectangle(tile.x * TILESIZE + TILESIZE/2, tile.y * TILESIZE + TILESIZE/2, SPRITESIZE, SPRITESIZE);
+            rect = two.makeRectangle(tile.x * window.TILESIZE + window.TILESIZE/2, tile.y * window.TILESIZE + window.TILESIZE/2, SPRITESIZE, SPRITESIZE);
         }
         rect.fill = spriteTexture;
         rect.stroke = 'transparent';
     }
     // tile overlay
-    rect = two.makeRectangle(tile.x * TILESIZE + TILESIZE/2, tile.y * TILESIZE + TILESIZE/2, TILESIZE, TILESIZE);
+    rect = two.makeRectangle(tile.x * window.TILESIZE + window.TILESIZE/2, tile.y * window.TILESIZE + window.TILESIZE/2, window.TILESIZE, window.TILESIZE);
     rect.stroke = 'black';
     rect.fill = 'transparent';
     rect.opacity = 0.50;
@@ -2090,9 +2126,12 @@ async function makeSprite(tile) {
         
         // Create sprite using the unique texture with HP baked in
         var spriteTexture = new Two.Texture(uniqueTextureURL);
-        var rect = two.makeRectangle(tile.x * TILESIZE + TILESIZE/2, tile.y * TILESIZE + TILESIZE/2, SPRITESIZE, SPRITESIZE);
+        var rect = two.makeRectangle(tile.x * window.TILESIZE + window.TILESIZE/2, tile.y * window.TILESIZE + window.TILESIZE/2, SPRITESIZE, SPRITESIZE);
         rect.fill = spriteTexture;
         rect.stroke = 'transparent';
+        
+        // CRITICAL: Add the sprite to the scene!
+        two.add(rect);
         
         // Store sprite reference on tile for legacy compatibility
         tile.sprite = rect;
@@ -2104,7 +2143,7 @@ async function makeSprite(tile) {
     } catch (error) {
         logger.error('Error generating unit texture:', error);
         // Fallback to old sprite creation method
-        makeSpriteLegacy(tile);
+        return makeSpriteLegacy(tile);
     }
 }
 
@@ -2220,12 +2259,14 @@ function makeSpriteLegacy(tile) {
     // Create unique texture per unit to prevent sharing between units
     var spriteTexture = new Two.Texture(unitsSrc + '?unit=' + tile.x + '_' + tile.y, () => ontextureLoad(unitsSrc));
     spriteTexture.offset = new Two.Vector(x, y);
-    var rect = two.makeRectangle(tile.x * TILESIZE + TILESIZE/2, tile.y * TILESIZE + TILESIZE/2, SPRITESIZE, SPRITESIZE);
+    var rect = two.makeRectangle(tile.x * window.TILESIZE + window.TILESIZE/2, tile.y * window.TILESIZE + window.TILESIZE/2, SPRITESIZE, SPRITESIZE);
     rect.fill = spriteTexture;
     rect.stroke = 'transparent';
     var health = null;
     var fuel = null;
     var ammo = null;
+    var flag = null;
+    var load = null;
     if (tile.unit.status.hp <= 90 && tile.unit.can_move ) {
         const HEALTHSIZE = SPRITESIZE/2; // Unit sprites are 16x16, HP display area is 16x16
         var hpDigit = Math.ceil(tile.unit.status.hp / 10); // 1-10 HP -> 1, 11-20 HP -> 2, etc.
@@ -2242,7 +2283,7 @@ function makeSpriteLegacy(tile) {
         // Create unique health texture per unit to prevent sharing (can_move=true)
         var healthTexture = new Two.Texture(unitsSrc + '?hp_active=' + tile.x + '_' + tile.y + '_' + hpDigit, () => ontextureLoad(unitsSrc));
         healthTexture.offset = new Two.Vector(x, y);
-        health = two.makeRectangle(tile.x * TILESIZE + TILESIZE - HEALTHSIZE/2, tile.y * TILESIZE + TILESIZE - HEALTHSIZE/2, HEALTHSIZE, HEALTHSIZE);
+        health = two.makeRectangle(tile.x * window.TILESIZE + window.TILESIZE - HEALTHSIZE/2, tile.y * window.TILESIZE + window.TILESIZE - HEALTHSIZE/2, HEALTHSIZE, HEALTHSIZE);
         health.fill = healthTexture;
         health.stroke = 'transparent';
     }
@@ -2262,7 +2303,7 @@ function makeSpriteLegacy(tile) {
         // Create unique health texture per unit to prevent sharing (can_move=false)
         var healthTexture = new Two.Texture(unitsSrc + '?hp_inactive=' + tile.x + '_' + tile.y + '_' + hpDigit, () => ontextureLoad(unitsSrc));
         healthTexture.offset = new Two.Vector(x, y);
-        health = two.makeRectangle(tile.x * TILESIZE + TILESIZE - HEALTHSIZE/2, tile.y * TILESIZE + TILESIZE - HEALTHSIZE/2, HEALTHSIZE, HEALTHSIZE);
+        health = two.makeRectangle(tile.x * window.TILESIZE + window.TILESIZE - HEALTHSIZE/2, tile.y * window.TILESIZE + window.TILESIZE - HEALTHSIZE/2, HEALTHSIZE, HEALTHSIZE);
         health.fill = healthTexture;
         health.stroke = 'transparent';
     }
@@ -2274,7 +2315,7 @@ function makeSpriteLegacy(tile) {
         y = y - 1241;
         var fuelTexture = new Two.Texture(unitsSrc, () => ontextureLoad(unitsSrc));
         fuelTexture.offset = new Two.Vector(x, y);
-        fuel = two.makeRectangle(tile.x * TILESIZE + TILESIZE - FUELSIZE/2 - 8, tile.y * TILESIZE + TILESIZE - FUELSIZE/2 - 8, FUELSIZE, FUELSIZE);
+        fuel = two.makeRectangle(tile.x * window.TILESIZE + window.TILESIZE - FUELSIZE/2 - 8, tile.y * window.TILESIZE + window.TILESIZE - FUELSIZE/2 - 8, FUELSIZE, FUELSIZE);
         fuel.fill = fuelTexture;
         fuel.stroke = 'transparent';
     }
@@ -2286,7 +2327,7 @@ function makeSpriteLegacy(tile) {
         y = y - 1251;
         var ammoTexture = new Two.Texture(unitsSrc, () => ontextureLoad(unitsSrc));
         ammoTexture.offset = new Two.Vector(x, y);
-        ammo = two.makeRectangle(tile.x * TILESIZE + TILESIZE - AMMOSIZE/2, tile.y * TILESIZE + TILESIZE - AMMOSIZE/2 - 8, AMMOSIZE -2, AMMOSIZE -2);
+        ammo = two.makeRectangle(tile.x * window.TILESIZE + window.TILESIZE - AMMOSIZE/2, tile.y * window.TILESIZE + window.TILESIZE - AMMOSIZE/2 - 8, AMMOSIZE -2, AMMOSIZE -2);
         ammo.fill = ammoTexture;
         ammo.stroke = 'transparent';
     }
@@ -2298,7 +2339,7 @@ function makeSpriteLegacy(tile) {
         y = y - 1233;
         var flagTexture = new Two.Texture(unitsSrc, () => ontextureLoad(unitsSrc));
         flagTexture.offset = new Two.Vector(x, y);
-        flag = two.makeRectangle(tile.x * TILESIZE + TILESIZE - FLAGSIZE/2 - 8, tile.y * TILESIZE + TILESIZE - FLAGSIZE/2, FLAGSIZE, FLAGSIZE);
+        flag = two.makeRectangle(tile.x * window.TILESIZE + window.TILESIZE - FLAGSIZE/2 - 8, tile.y * window.TILESIZE + window.TILESIZE - FLAGSIZE/2, FLAGSIZE, FLAGSIZE);
         flag.fill = flagTexture;
         flag.stroke = 'transparent';
     }
@@ -2315,11 +2356,25 @@ function makeSpriteLegacy(tile) {
             y = y - 1233;
             var loadTexture = new Two.Texture(unitsSrc, () => ontextureLoad(unitsSrc));
             loadTexture.offset = new Two.Vector(x, y);
-            load = two.makeRectangle(tile.x * TILESIZE + TILESIZE - LOADSIZE/2 - 8, tile.y * TILESIZE + TILESIZE - LOADSIZE/2, LOADSIZE, LOADSIZE);
+            load = two.makeRectangle(tile.x * window.TILESIZE + window.TILESIZE - LOADSIZE/2 - 8, tile.y * window.TILESIZE + window.TILESIZE - LOADSIZE/2, LOADSIZE, LOADSIZE);
             load.fill = loadTexture;
             load.stroke = 'transparent';
         }
     }
+    
+    // CRITICAL: Add all sprites to the scene!
+    two.add(rect);
+    if (health) two.add(health);
+    if (fuel) two.add(fuel);
+    if (ammo) two.add(ammo);
+    if (flag) two.add(flag);
+    if (load) two.add(load);
+    
+    // Store sprite reference on tile for legacy compatibility
+    tile.sprite = rect;
+    
+    // Force re-render
+    two.update();
     
     return rect;
 }
@@ -2340,7 +2395,7 @@ function renderTransportHighlights() {
         transportHighlightGroup = null;
     }
     
-    if (!window.transportHighlights || window.transportHighlights.length === 0) {
+    if (!window.transportHighlights || window.window.transportState.length === 0) {
         return; // No highlights to show
     }
     
@@ -2348,8 +2403,8 @@ function renderTransportHighlights() {
     transportHighlightGroup = two.makeGroup();
     
     window.transportHighlights.forEach(highlight => {
-        const x = (highlight.x * TILESIZE) + (TILESIZE / 2);
-        const y = (highlight.y * TILESIZE) + (TILESIZE / 2);
+        const x = (highlight.x * window.TILESIZE) + (window.TILESIZE / 2);
+        const y = (highlight.y * window.TILESIZE) + (window.TILESIZE / 2);
         
         let color, strokeColor;
         switch(highlight.type) {
@@ -2367,10 +2422,10 @@ function renderTransportHighlights() {
         }
         
         // Create highlight rectangle
-        const highlightRect = two.makeRectangle(x, y, TILESIZE - 4, TILESIZE - 4);
+        const highlightRect = two.makeRectangle(x, y, window.TILESIZE - 4, window.TILESIZE - 4);
         highlightRect.fill = color;
         highlightRect.stroke = strokeColor;
-        highlightRect.linewidth = TRANSPORT_BORDER_WIDTH;
+        highlightRect.linewidth = window.TRANSPORT_BORDER_WIDTH;
         
         // Add to highlight group
         transportHighlightGroup.add(highlightRect);
@@ -2394,7 +2449,7 @@ async function updateScene() {
     if (!board || !board.grid) return;
     
     // Ensure sprite corrections are loaded before rendering
-    await loadSpriteCorrectorData();
+    await loadSpriteCorrector();
     
     // Track which units we've seen this update
     const currentUnits = new Set();
@@ -2758,12 +2813,14 @@ function unitSelectWithRange(tile) {
 // TRANSPORT SYSTEM FRONTEND INTEGRATION - Add to your render.js
 // =============================================================================
 
-// Global variables for transport state
-let transportHighlights = {
-    loadableUnits: [],
-    unloadPositions: [],
-    selectedTransport: null
-};
+// Initialize unified transport state
+if (!window.transportState) {
+    window.transportState = {
+        loadableUnits: [],
+        unloadPositions: [],
+        selectedTransport: null
+    };
+}
 
 // =============================================================================
 // TRANSPORT HIGHLIGHT MANAGEMENT
@@ -2776,11 +2833,9 @@ function clearTransportHighlights() {
         tile.classList.remove('loadable-unit', 'unload-position');
     });
     
-    transportHighlights = {
-        loadableUnits: [],
-        unloadPositions: [],
-        selectedTransport: null
-    };
+    window.transportState.loadableUnits = [];
+    window.transportState.unloadPositions = [];
+    window.transportState.selectedTransport = null;
 }
 
 function showLoadableUnitsHighlight(transportX, transportY) {
@@ -2789,8 +2844,8 @@ function showLoadableUnitsHighlight(transportX, transportY) {
     // Fix: Use jsonrpc instead of rpcCall and correct parameter format
     jsonrpc('get_loadable_units', {x: transportX, y: transportY}, function(result) {
         if (result.success && result.loadable_units) {
-            transportHighlights.loadableUnits = result.loadable_units;
-            transportHighlights.selectedTransport = {x: transportX, y: transportY};
+            window.transportState.loadableUnits = result.loadable_units;
+            window.transportState.selectedTransport = {x: transportX, y: transportY};
             
             // Note: Since you're using Two.js canvas, highlighting will be different
             // For now, just store the highlights and show feedback
@@ -2807,8 +2862,8 @@ function showUnloadPositionsHighlight(transportX, transportY) {
     // Fix: Use jsonrpc instead of rpcCall and correct parameter format
     jsonrpc('get_unload_positions', {x: transportX, y: transportY}, function(result) {
         if (result.success && result.valid_positions) {
-            transportHighlights.unloadPositions = result.valid_positions;
-            transportHighlights.selectedTransport = {x: transportX, y: transportY};
+            window.transportState.unloadPositions = result.valid_positions;
+            window.transportState.selectedTransport = {x: transportX, y: transportY};
             
             showTransportFeedback(`${result.valid_positions.length} positions available. Alt+Click to unload.`);
         } else {
@@ -2937,14 +2992,14 @@ function handleTransportOperations(tile, event) {
 }
 function handleLoadingClick(tile) {
     // Check if this tile has a loadable unit highlighted
-    const isLoadable = transportHighlights.loadableUnits.some(unit => 
+    const isLoadable = window.transportState.loadableUnits.some(unit => 
         unit.x === tile.x && unit.y === tile.y
     );
     
-    if (isLoadable && transportHighlights.selectedTransport) {
+    if (isLoadable && window.transportState.selectedTransport) {
         attemptLoadUnit(
-            transportHighlights.selectedTransport.x,
-            transportHighlights.selectedTransport.y,
+            window.transportState.selectedTransport.x,
+            window.transportState.selectedTransport.y,
             tile.x,
             tile.y
         );
@@ -2956,12 +3011,12 @@ function handleLoadingClick(tile) {
 
 function handleUnloadingClick(tile) {
     // Check if this tile is a valid unload position
-    const isUnloadable = transportHighlights.unloadPositions.some(pos => 
+    const isUnloadable = window.transportState.unloadPositions.some(pos => 
         pos.x === tile.x && pos.y === tile.y
     );
     
-    if (isUnloadable && transportHighlights.selectedTransport) {
-        const transport = transportHighlights.selectedTransport;
+    if (isUnloadable && window.transportState.selectedTransport) {
+        const transport = window.transportState.selectedTransport;
         
         // Get cargo info first
         jsonrpc('get_cargo_info', {x: transport.x, y: transport.y}, function(cargoResult) {
@@ -3352,10 +3407,10 @@ function renderMovementHighlights() {
     window.movementHighlights.forEach(highlight => {
         try {
             var rect = window.two.makeRectangle(
-                highlight.x * TILESIZE + TILESIZE/2, 
-                highlight.y * TILESIZE + TILESIZE/2, 
-                TILESIZE - 2, 
-                TILESIZE - 2
+                highlight.x * window.TILESIZE + window.TILESIZE/2, 
+                highlight.y * window.TILESIZE + window.TILESIZE/2, 
+                window.TILESIZE - 2, 
+                window.TILESIZE - 2
             );
             
             // Subtle yellow highlighting
@@ -3477,6 +3532,7 @@ window.addMovementHighlightsToScene = addMovementHighlightsToScene;
 window.updateMovementHighlights = updateMovementHighlights;
 window.tileAt = tileAt;
 window.update = update;
+window.unitMove = unitMove;
 // =============================================================================
 // ADVANCE WARS MOVEMENT SYSTEM - Complete Implementation
 // Replace your existing movement and selection functions with these
@@ -3782,10 +3838,10 @@ function renderAttackHighlights() {
     window.gameState.attackHighlights.forEach(highlight => {
         try {
             var rect = window.two.makeRectangle(
-                highlight.x * TILESIZE + TILESIZE/2, 
-                highlight.y * TILESIZE + TILESIZE/2, 
-                TILESIZE - 2, 
-                TILESIZE - 2
+                highlight.x * window.TILESIZE + window.TILESIZE/2, 
+                highlight.y * window.TILESIZE + window.TILESIZE/2, 
+                window.TILESIZE - 2, 
+                window.TILESIZE - 2
             );
             
             // Red highlighting for attack targets
@@ -4123,7 +4179,9 @@ function advanceWarsCanvasClick(ev) {
         return; // STOP - always stop after alt-click
     }
     
-    // PRIORITY 4: Transport integration system (CONTROLLED)
+    // PRIORITY 4: Transport integration system - DISABLED
+    // Centralized click handler manages transport features
+    /*
     if (typeof handleTileClickWithTransport === 'function') {
         
         const transportHandled = handleTileClickWithTransport(tile, ev);
@@ -4131,6 +4189,7 @@ function advanceWarsCanvasClick(ev) {
             return; // STOP - transport integration handled it
         }
     }
+    */
     
     // PRIORITY 5: New transport system
     if (typeof window.transportSystem !== 'undefined' && 
@@ -4222,8 +4281,8 @@ async function showPostMoveActionMenu(tile) {
     // Position menu near the unit
     const canvas = document.querySelector('#draw canvas');
     const rect = canvas.getBoundingClientRect();
-    const menuX = rect.left + (tile.x * TILESIZE * (window.currentZoom || 1)) + 20;
-    const menuY = rect.top + (tile.y * TILESIZE * (window.currentZoom || 1));
+    const menuX = rect.left + (tile.x * window.TILESIZE * (window.currentZoom || 1)) + 20;
+    const menuY = rect.top + (tile.y * window.TILESIZE * (window.currentZoom || 1));
     
     menu.style.left = `${menuX}px`;
     menu.style.top = `${menuY}px`;
@@ -4663,8 +4722,8 @@ async function simulateClick(x, y) {
     }
     
     // Calculate pixel coordinates
-    const pixelX = x * TILESIZE + TILESIZE/2;
-    const pixelY = y * TILESIZE + TILESIZE/2;
+    const pixelX = x * window.TILESIZE + window.TILESIZE/2;
+    const pixelY = y * window.TILESIZE + window.TILESIZE/2;
     
     logger.debug(`   🖱️ Simulating click at tile (${x}, ${y}) = pixel (${pixelX}, ${pixelY})`);
     
@@ -4720,7 +4779,7 @@ window.forceRefresh = async function() {
     
     // Force reload sprite corrections
     window.spriteCorrections = null;
-    await loadSpriteCorrectorData();
+    await loadSpriteCorrector();
     
     // Update the board
     update();
@@ -4810,7 +4869,8 @@ logger.debug('💡 TIP: Run debugSpriteCorrections() to check sprite data');
 // =============================================================================
 
 // Complete list of units from your config.ini
-const ALL_UNIT_TYPES = [
+// Use window.window.ALL_UNIT_TYPES to avoid conflicts
+window.window.ALL_UNIT_TYPES = window.window.ALL_UNIT_TYPES || [
     'INFANTRY', 'MECH', 'RECON', 'TANK', 'MEDIUMTANK', 'ANTIAIR', 
     'ARTILLERY', 'BCOPTER', 'BATTLESHIP', 'BLACKBOAT', 'BLACKBOMB',
     'BOMBER', 'CARRIER', 'CRUISER', 'FIGHTER', 'LANDER', 'MEGATANK',
@@ -4819,7 +4879,7 @@ const ALL_UNIT_TYPES = [
 ];
 
 // Unit categories for organized testing
-const UNIT_CATEGORIES = {
+window.window.UNIT_CATEGORIES = window.window.UNIT_CATEGORIES || {
     LAND: ['INFANTRY', 'MECH', 'RECON', 'TANK', 'MEDIUMTANK', 'ANTIAIR', 
            'ARTILLERY', 'MISSILE', 'NEOTANK', 'ROCKET', 'APC', 'MEGATANK', 'PIPERUNNER'],
     AIR: ['BCOPTER', 'BOMBER', 'FIGHTER', 'TCOPTER', 'BLACKBOMB', 'STEALTH'],
@@ -4838,7 +4898,7 @@ function testAllUnitSprites() {
         errors: []
     };
     
-    ALL_UNIT_TYPES.forEach(unitType => {
+    window.ALL_UNIT_TYPES.forEach(unitType => {
         try {
             const spriteInfo = getUnitSpriteInfo(unitType);
             if (spriteInfo.exists) {
@@ -4934,19 +4994,19 @@ function createTestUnit(unitType, army = 'RED') {
     // Find appropriate production facility
     let targetTile = null;
     
-    if (UNIT_CATEGORIES.LAND.includes(unitType)) {
+    if (window.UNIT_CATEGORIES.LAND.includes(unitType)) {
         targetTile = board.grid.find(tile => 
             tile.mapTile.type === 'FACTORY' && 
             tile.mapTile.army === army &&
             tile.unit === null
         );
-    } else if (UNIT_CATEGORIES.AIR.includes(unitType)) {
+    } else if (window.UNIT_CATEGORIES.AIR.includes(unitType)) {
         targetTile = board.grid.find(tile => 
             tile.mapTile.type === 'AIRPORT' && 
             tile.mapTile.army === army &&
             tile.unit === null
         );
-    } else if (UNIT_CATEGORIES.SEA.includes(unitType)) {
+    } else if (window.UNIT_CATEGORIES.SEA.includes(unitType)) {
         targetTile = board.grid.find(tile => 
             tile.mapTile.type === 'PORT' && 
             tile.mapTile.army === army &&
@@ -4980,7 +5040,7 @@ function createTestUnit(unitType, army = 'RED') {
 
 function testLandUnits() {
     
-    UNIT_CATEGORIES.LAND.forEach((unit, index) => {
+    window.UNIT_CATEGORIES.LAND.forEach((unit, index) => {
         setTimeout(() => {
             createTestUnit(unit);
         }, index * 1000); // 1 second delay between creations
@@ -4989,7 +5049,7 @@ function testLandUnits() {
 
 function testAirUnits() {
     
-    UNIT_CATEGORIES.AIR.forEach((unit, index) => {
+    window.UNIT_CATEGORIES.AIR.forEach((unit, index) => {
         setTimeout(() => {
             createTestUnit(unit);
         }, index * 1000);
@@ -4998,7 +5058,7 @@ function testAirUnits() {
 
 function testSeaUnits() {
     
-    UNIT_CATEGORIES.SEA.forEach((unit, index) => {
+    window.UNIT_CATEGORIES.SEA.forEach((unit, index) => {
         setTimeout(() => {
             createTestUnit(unit);
         }, index * 1000);
@@ -5008,7 +5068,7 @@ function testSeaUnits() {
 function testAllUnits() {
     
     let delay = 0;
-    ALL_UNIT_TYPES.forEach(unit => {
+    window.ALL_UNIT_TYPES.forEach(unit => {
         setTimeout(() => {
             createTestUnit(unit);
         }, delay * 1000);
@@ -5242,7 +5302,11 @@ function applyCompleteClickFix() {
                 // Force visual update
                 if (window.two?.update) window.two.update();
                 
+                // Update the board to show new positions
+                update();
+                
             } else {
+                logger.error('Movement failed:', result?.error);
             }
         }).catch(error => {
             logger.error('❌ Movement error:', error);

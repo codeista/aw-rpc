@@ -54,14 +54,14 @@ PLAIN,PLAIN,PLAIN,PLAIN,MOUNTAIN,MOUNTAIN,PLAIN,PLAIN,PLAIN,PLAIN,PLAIN,PLAIN'''
         {'army': Army.BLUE, 'type': UnitType.MECH, 'x': 6, 'y': 6, 'hp': 85},  # Adjacent infantry vs mech
         
         # === NAVAL COMBAT WITH TRANSPORTS ===
-        # RED naval force with loaded transport
+        # RED naval force with loaded transport (same army cargo)
         {'army': Army.RED, 'type': UnitType.BATTLESHIP, 'x': 2, 'y': 1, 'hp': 100},
-        {'army': Army.RED, 'type': UnitType.LANDER, 'x': 3, 'y': 1, 'hp': 100, 'cargo': [UnitType.TANK, UnitType.INFANTRY]},
+        {'army': Army.RED, 'type': UnitType.LANDER, 'x': 3, 'y': 1, 'hp': 100, 'cargo': [UnitType.INFANTRY, UnitType.MECH]},
         {'army': Army.RED, 'type': UnitType.CRUISER, 'x': 4, 'y': 1, 'hp': 100},
         
-        # BLUE naval force with loaded transport  
+        # BLUE naval force with loaded transport (same army cargo)
         {'army': Army.BLUE, 'type': UnitType.BATTLESHIP, 'x': 8, 'y': 1, 'hp': 100},
-        {'army': Army.BLUE, 'type': UnitType.LANDER, 'x': 7, 'y': 1, 'hp': 100, 'cargo': [UnitType.MECH, UnitType.RECON]},
+        {'army': Army.BLUE, 'type': UnitType.LANDER, 'x': 7, 'y': 1, 'hp': 100, 'cargo': [UnitType.INFANTRY, UnitType.RECON]},
         {'army': Army.BLUE, 'type': UnitType.SUB, 'x': 9, 'y': 1, 'hp': 100},
         
         # === AIR UNITS FOR COMPREHENSIVE TESTING ===
@@ -80,9 +80,9 @@ PLAIN,PLAIN,PLAIN,PLAIN,MOUNTAIN,MOUNTAIN,PLAIN,PLAIN,PLAIN,PLAIN,PLAIN,PLAIN'''
         {'army': Army.BLUE, 'type': UnitType.MECH, 'x': 10, 'y': 6, 'hp': 100},     # Next to city at (10,6)
         
         # === LOADED GROUND TRANSPORTS ===
-        # APC units loaded with cargo for transport testing
-        {'army': Army.RED, 'type': UnitType.APC, 'x': 1, 'y': 4, 'hp': 100, 'cargo': [UnitType.INFANTRY, UnitType.MECH]},
-        {'army': Army.BLUE, 'type': UnitType.APC, 'x': 9, 'y': 4, 'hp': 100, 'cargo': [UnitType.INFANTRY]},
+        # APC units loaded with cargo for transport testing (same army as transport)
+        {'army': Army.RED, 'type': UnitType.APC, 'x': 1, 'y': 4, 'hp': 100, 'cargo': [UnitType.INFANTRY]},
+        {'army': Army.BLUE, 'type': UnitType.APC, 'x': 9, 'y': 4, 'hp': 100, 'cargo': [UnitType.MECH]},
         
         # === SUPPORT AND UTILITY UNITS ===
         {'army': Army.RED, 'type': UnitType.RECON, 'x': 1, 'y': 5, 'hp': 100},

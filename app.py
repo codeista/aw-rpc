@@ -31,7 +31,12 @@ import secrets
 from manager import GameManager
 from gameboard import GameBoard
 from config import Config
-from app_core import app, jsonrpc, db, socketio
+from app_core import (
+    app, jsonrpc, db, socketio,
+    game_management_api, unit_operations_api, combat_system_api,
+    transport_system_api, map_tile_api, special_actions_api,
+    production_economic_api, information_api, communication_api
+)
 from models import Game
 from map_system import map_repository, Map, Army
 from enhanced_combat_system import EnhancedCombatSystem, CombatPreview, EnhancedCombatResult
@@ -39,6 +44,7 @@ from transport_system import CompleteTransportSystem, TransportResult
 from tests.integration.test_map_predeployed import get_predeployed_test_game, get_comprehensive_test_game
 from routes.unified_test_route import unified_test_bp
 from routes.unified_test_api import unified_test_api_bp
+import api_docs_route  # Import the custom API documentation
 
 # Import our fixed logging system
 try:
@@ -62,22 +68,9 @@ except ImportError:
     
     ENHANCED_LOGGING = False
 
-# Register blueprints - check if not already registered to avoid issues
-try:
-    # Check if blueprints are already registered by looking at registered blueprints
-    blueprint_names = [bp.name for bp in app.blueprints.values()]
-    
-    if unified_test_bp.name not in blueprint_names:
-        app.register_blueprint(unified_test_bp)
-        app_logger.info(f"Registered blueprint: {unified_test_bp.name}")
-    
-    if unified_test_api_bp.name not in blueprint_names:
-        app.register_blueprint(unified_test_api_bp)
-        app_logger.info(f"Registered blueprint: {unified_test_api_bp.name}")
-        
-except Exception as e:
-    app_logger.warning(f"Blueprint registration issue (non-critical): {e}")
-    # This is expected if app is reloading, blueprints might already be registered
+# Blueprint registration disabled - routes implemented directly in app.py
+# This avoids Flask's "can't register after first request" error in debug mode
+# The test_game route is now implemented directly in this file
 
 from error_handling import (
     setup_error_handlers, setup_logging, validate_rpc_params,
@@ -558,10 +551,28 @@ def game_create(token):
         game_event_logger.log_game_created(token, len(mngr.board.turn_order))
     app_logger.info(f"Game created successfully: {token}")
 
-@jsonrpc.method('game_create_with_setup')
+# =============================================================================
+# 🎮 GAME MANAGEMENT RPC METHODS
+# =============================================================================
+
+@game_management_api.method('game_create_with_setup')
 @log_rpc_performance
 def game_create_with_setup(token: str, game_setup: dict) -> str:
-    '''Creates a new game with custom setup parameters'''
+    """Create a new game with custom setup parameters
+    
+    Args:
+        token: Unique game identifier
+        game_setup: Custom game configuration (funds, map, etc.)
+        
+    Returns:
+        str: Success status message
+        
+    Example:
+        rpc('game_create_with_setup', {
+            token: 'customgame',
+            game_setup: {funds: 25000, map: 'custom'}
+        })
+    """
     app_logger.info(f"Creating game with setup: {token}")
     
     from map_system import MapTile
@@ -1042,6 +1053,40 @@ def test_interface():
     """Complete testing interface with all testing tools"""
     app_logger.info("Test interface accessed")
     return render_template('test_interface.html')
+
+@app.route('/test_game')
+def test_game():
+    """Direct implementation of unified test game creation (replaces blueprint route)"""
+    # Get query parameters
+    test_type = request.args.get('type', 'basic')
+    custom_map = request.args.get('map')
+    force_units = request.args.get('units', '').lower() == 'true'
+    
+    # Generate token
+    token = secrets.token_urlsafe(8)
+    
+    try:
+        # Create game based on type
+        if test_type == 'comprehensive' or (test_type == 'basic' and force_units):
+            mngr = get_comprehensive_test_game(token)
+        elif test_type == 'movement':
+            # Use optimized test for movement
+            from tests.debug.optimized_test_map import get_optimized_test_game
+            mngr = get_optimized_test_game(token)
+        else:
+            # Basic test game
+            mngr = get_predeployed_test_game(token)
+        
+        if mngr:
+            games[token] = mngr
+            app_logger.info(f"Created test game '{token}' with type '{test_type}'")
+            return redirect(f'/game/{token}')
+        else:
+            return "Failed to create test game", 500
+            
+    except Exception as e:
+        app_logger.error(f"Test game creation failed: {e}")
+        return f"Error creating test game: {str(e)}", 500
 
 @app.route('/sprites')
 def sprite_showcase():
@@ -2039,21 +2084,49 @@ class SocketIoNamespace(Namespace):
 
 socketio.on_namespace(SocketIoNamespace('/'))
 
-#
-# JSONRPC Methods (Enhanced with logging)
-#
+# =============================================================================
+# 📋 INFORMATION & REFERENCE RPC METHODS  
+# =============================================================================
 
-@jsonrpc.method('troop_info')
+@information_api.method('troop_info')
 @log_rpc_performance
 def troop_info(token: str = None) -> dict:
-    '''Returns the unit config info'''
+    """Get unit configuration and reference data
+    
+    Returns comprehensive unit information including costs, movement ranges,
+    attack ranges, HP, fuel capacity, and other unit statistics.
+    
+    Args:
+        token: Optional game identifier (not required for reference data)
+        
+    Returns:
+        dict: Complete unit configuration data for all unit types
+        
+    Example:
+        rpc('troop_info', {})
+    """
     app_logger.info('troop_info requested')
     return jsons.dump(config_game.units)
 
-@jsonrpc.method('message')
+# =============================================================================
+# 💬 COMMUNICATION RPC METHODS
+# =============================================================================
+
+@communication_api.method('message')
 @log_rpc_performance
 def message(token: str, msg: str) -> str:
-    '''rpc chat'''
+    """Send a chat message in the game
+    
+    Args:
+        token: Game identifier
+        msg: Message text to send
+        
+    Returns:
+        str: Success confirmation
+        
+    Example:
+        rpc('message', {token: 'mygame', msg: 'Good game!'})
+    """
     app_logger.info(f'Chat message from {token}: {msg[:50]}...')
     ws_msg(token, msg)
     return 'ok'
@@ -2161,10 +2234,29 @@ def army_end_turn_rpc(token: str) -> dict:
         app_logger.error(f'army_end_turn error: {ex}')
         return handle_rpc_error('army_end_turn', token, ex)
 
-@jsonrpc.method('tile')
+# =============================================================================
+# 🗺️ MAP & TILE INFORMATION RPC METHODS
+# =============================================================================
+
+@map_tile_api.method('tile')
 @log_rpc_performance
 def tile_rpc(token: str, x: int, y: int) -> dict:
-    '''rpc return tile at coordinates'''
+    """Get detailed information about a specific tile
+    
+    Returns complete tile data including terrain type, ownership,
+    any unit present, and capture status.
+    
+    Args:
+        token: Game identifier
+        x: X coordinate of tile
+        y: Y coordinate of tile
+        
+    Returns:
+        dict: Complete tile information including mapTile and unit data
+        
+    Example:
+        rpc('tile', {token: 'mygame', x: 5, y: 3})
+    """
     app_logger.debug(f'Tile requested: {token} at ({x},{y})')
     try:
         mngr = game_load(token)
@@ -2204,10 +2296,29 @@ def tile_rpc(token: str, x: int, y: int) -> dict:
         app_logger.error(f'tile_rpc failed for {token} at ({x},{y}): {str(ex)}')
         return handle_rpc_error('tile', token, ex)
 
-@jsonrpc.method('capture_tile')
+# =============================================================================
+# 🏰 SPECIAL ACTIONS RPC METHODS
+# =============================================================================
+
+@special_actions_api.method('capture_tile')
 @log_rpc_performance
 def capture_tile_rpc(token: str, x: int, y: int) -> dict:
-    '''rpc capture tile'''
+    """Capture a property with an infantry or mech unit
+    
+    Attempts to capture a property at the specified coordinates.
+    Capture progress depends on unit HP (HP/10 capture points per turn).
+    
+    Args:
+        token: Game identifier
+        x: X coordinate of property to capture
+        y: Y coordinate of property to capture
+        
+    Returns:
+        dict: Capture result including progress and completion status
+        
+    Example:
+        rpc('capture_tile', {token: 'mygame', x: 5, y: 3})
+    """
     try:
         mngr = game_load(token)
         
@@ -2239,10 +2350,37 @@ def capture_tile_rpc(token: str, x: int, y: int) -> dict:
         app_logger.error(f'capture_tile failed for {token} at ({x},{y}): {str(ex)}')
         return handle_rpc_error('capture_tile', token, ex)
 
-@jsonrpc.method('unit_create')
+# =============================================================================
+# 🪖 UNIT OPERATIONS RPC METHODS
+# =============================================================================
+
+@unit_operations_api.method('unit_create')
 @log_rpc_performance
 def unit_create_rpc(token: str, army: str, unit_type: str, x: int, y: int) -> dict:
-    """Create a unit with enhanced error handling and validation"""
+    """Create a new unit at a production facility
+    
+    Creates a unit at the specified coordinates if there is a valid production
+    facility and sufficient funds. New units cannot move on their creation turn.
+    
+    Args:
+        token: Game identifier
+        army: Army color ('RED' or 'BLUE')
+        unit_type: Type of unit to create (e.g., 'INFANTRY', 'TANK', 'BATTLESHIP')
+        x: X coordinate of production facility
+        y: Y coordinate of production facility
+        
+    Returns:
+        dict: Created unit information and tile state
+        
+    Example:
+        rpc('unit_create', {
+            token: 'mygame', 
+            army: 'RED', 
+            unit_type: 'INFANTRY', 
+            x: 2, 
+            y: 3
+        })
+    """
     
     try:
         # CHECK GAME ACTIVE FIRST
@@ -2475,10 +2613,31 @@ def unit_select_rpc(token: str, x: int, y: int) -> dict:
             "details": {"position": {"x": x, "y": y}}
         }
 
-@jsonrpc.method('unit_attack')
+# =============================================================================
+# ⚔️ COMBAT SYSTEM RPC METHODS
+# =============================================================================
+
+@combat_system_api.method('unit_attack')
 @log_rpc_performance
 def unit_attack_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
-    """Attack with enhanced validation and error handling + victory detection"""
+    """Execute an attack from one unit to another
+    
+    Performs combat between attacking unit at (x,y) and defending unit at (x2,y2).
+    Includes damage calculation, counter-attacks, and automatic victory detection.
+    
+    Args:
+        token: Game identifier
+        x: X coordinate of attacking unit
+        y: Y coordinate of attacking unit
+        x2: X coordinate of target unit
+        y2: Y coordinate of target unit
+        
+    Returns:
+        dict: Combat result including damage dealt, victory status
+        
+    Example:
+        rpc('unit_attack', {token: 'mygame', x: 5, y: 3, x2: 6, y2: 3})
+    """
     try:
         from error_handling import ValidationError
         
@@ -2781,10 +2940,30 @@ def validate_movement_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
         'blocked_by': result.blocked_by
     }
 
-@jsonrpc.method('produce_unit')
+# =============================================================================
+# 🏭 PRODUCTION & ECONOMIC SYSTEM RPC METHODS
+# =============================================================================
+
+@production_economic_api.method('produce_unit')
 @log_rpc_performance
 def produce_unit_rpc(token: str, x: int, y: int, unit_type: str) -> dict:
-    """Produce a unit at a facility"""
+    """Produce a unit at a production facility
+    
+    Creates a new unit at the specified facility coordinates if there is
+    sufficient funds and the facility can produce the requested unit type.
+    
+    Args:
+        token: Game identifier
+        x: X coordinate of production facility
+        y: Y coordinate of production facility
+        unit_type: Type of unit to produce
+        
+    Returns:
+        dict: Production result and new unit information
+        
+    Example:
+        rpc('produce_unit', {token: 'mygame', x: 2, y: 3, unit_type: 'TANK'})
+    """
     try:
         mngr = game_load(token)
         
@@ -3009,10 +3188,10 @@ def get_unit_costs_rpc(token: str) -> dict:
             "error": str(e)
         } 
 # =============================================================================
-# TRANSPORT SYSTEM RPC METHODS -
+# 🚢 TRANSPORT SYSTEM RPC METHODS
 # =============================================================================
 
-@jsonrpc.method('cargo_board_transport')
+@transport_system_api.method('cargo_board_transport')
 @log_rpc_performance
 def cargo_board_transport_rpc(token: str, cargo_x: int, cargo_y: int, 
                              transport_x: int, transport_y: int) -> dict:
@@ -3554,42 +3733,6 @@ def get_valid_unload_positions_rpc(token: str, x: int, y: int) -> dict:
         app_logger.error(f"Get valid unload positions failed: {token} - {str(e)}")
         return {"success": False, "error": str(e)}
 
-@jsonrpc.method('unit_move_enhanced')
-@log_rpc_performance
-def unit_move_enhanced_rpc(token: str, from_x: int, from_y: int, to_x: int, to_y: int) -> dict:
-    """Enhanced unit movement with transport limitations"""
-    try:
-        mngr = game_load(token)
-        
-        if not mngr.board.game_active:
-            return {"success": False, "error": "Game has ended"}
-        
-        # Execute enhanced movement
-        result = mngr.unit_move_enhanced(from_x, from_y, to_x, to_y)
-        
-        if result:
-            # Log the action
-            app_logger.info(f"Enhanced move: {token} - {result.type.name} from ({from_x},{from_y}) to ({to_x},{to_y})")
-            
-            # Save game state
-            game_save(mngr, token)
-            ws_board_update(token)
-            
-            return {
-                "success": True,
-                "message": f"{result.type.name} moved successfully",
-                "unit_info": {
-                    "type": result.type.name if hasattr(result.type, 'name') else str(result.type),
-                    "can_move": result.can_move,
-                    "has_moved_this_turn": getattr(result.status, 'has_moved_this_turn', False)
-                }
-            }
-        else:
-            return {"success": False, "error": "Movement failed"}
-        
-    except Exception as e:
-        app_logger.error(f"Enhanced move failed: {token} - {str(e)}")
-        return {"success": False, "error": str(e)}
 
 # =============================================================================
 # TRANSPORT UTILITY METHODS
@@ -4522,40 +4665,39 @@ def get_movement_highlights(x: int, y: int, token: str) -> dict:
                 "error": "No unit at position"
             }
         
-        # Get valid moves
+        # Get valid moves using the proper method
         valid_moves = []
         
-        # Check every position on the board
-        for target_x in range(mngr.board.width):
-            for target_y in range(mngr.board.height):
-                # Skip the unit's current position
-                if target_x == x and target_y == y:
-                    continue
-                
-                try:
-                    # Check if unit can move to this position
-                    # Use whatever validation method exists in your manager
-                    if hasattr(mngr, 'unit_can_move_to'):
-                        can_move = mngr.unit_can_move_to(unit, target_x, target_y)
-                    elif hasattr(mngr, 'can_unit_move_to'):
-                        can_move = mngr.can_unit_move_to(unit, target_x, target_y)
-                    else:
-                        # Fallback - check if tile is empty and accessible
-                        target_tile = mngr.tile_at(target_x, target_y)
-                        can_move = (target_tile is not None and 
-                                   mngr.unit_at(target_x, target_y) is None)
+        # Use the manager's get_unit_valid_moves method which uses EnhancedMovementValidator
+        if hasattr(mngr, 'get_unit_valid_moves'):
+            valid_positions = mngr.get_unit_valid_moves(unit)
+            valid_moves = [{"x": pos[0], "y": pos[1]} for pos in valid_positions]
+        else:
+            # Fallback to checking every position
+            for target_x in range(mngr.board.width):
+                for target_y in range(mngr.board.height):
+                    # Skip the unit's current position
+                    if target_x == x and target_y == y:
+                        continue
                     
-                    if can_move:
-                        valid_moves.append({
-                            "x": target_x,
-                            "y": target_y,
-                            "cost": 1  # Default cost for now
-                        })
+                    try:
+                        # Check if unit can move to this position
+                        if hasattr(mngr, 'unit_can_move_to'):
+                            can_move = mngr.unit_can_move_to(unit, target_x, target_y)
+                        else:
+                            # This should not happen anymore
+                            can_move = False
                         
-                except Exception as move_error:
-                    # Skip this position if validation fails
-                    app_logger.debug(f"Movement validation failed for ({target_x}, {target_y}): {move_error}")
-                    continue
+                        if can_move:
+                            valid_moves.append({
+                                "x": target_x,
+                                "y": target_y
+                            })
+                            
+                    except Exception as move_error:
+                        # Skip this position if validation fails
+                        app_logger.debug(f"Movement validation failed for ({target_x}, {target_y}): {move_error}")
+                        continue
         
         app_logger.debug(f"Found {len(valid_moves)} valid moves for unit at ({x}, {y})")
         

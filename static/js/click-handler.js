@@ -196,6 +196,20 @@ registerClickHandler('selection', {
     name: 'unit-selection',
     priority: 0,
     condition: (tile, event) => {
+        const logger = window.logger || console;
+        
+        // Debug unit selection condition
+        if (tile.unit) {
+            logger.info('Unit selection check:', {
+                unitArmy: tile.unit.army,
+                currentTurn: board.current_turn,
+                armyMatch: tile.unit.army === board.current_turn,
+                onMovementHighlight: window.movementHighlights?.some(h => h.x === tile.x && h.y === tile.y),
+                canMove: tile.unit.can_move,
+                tileType: tile.mapTile?.type
+            });
+        }
+        
         return tile.unit && 
                tile.unit.army === board.current_turn &&
                !window.movementHighlights?.some(h => h.x === tile.x && h.y === tile.y);
@@ -203,24 +217,76 @@ registerClickHandler('selection', {
     handle: (tile, event) => {
         const logger = window.logger || console;
         
-        // If clicking on already selected unit, deselect
+        // If clicking on already selected unit with movement highlights shown, don't deselect
         if (board.selected?.x === tile.x && board.selected?.y === tile.y) {
+            if (window.movementHighlights && window.movementHighlights.length > 0) {
+                logger.info('Keeping unit selected - movement highlights active');
+                return true; // Keep selection
+            }
+            
             logger.info('Deselecting unit');
             board.selected = null;
             clearAllHighlights();
+            if (typeof clearMovementHighlights === 'function') {
+                clearMovementHighlights();
+            }
+            if (typeof clearMovementHighlightsData === 'function') {
+                clearMovementHighlightsData();
+            }
         } else {
+            // Clear previous selection first
+            if (board.selected) {
+                clearAllHighlights();
+                if (typeof clearMovementHighlights === 'function') {
+                    clearMovementHighlights();
+                }
+                if (typeof clearMovementHighlightsData === 'function') {
+                    clearMovementHighlightsData();
+                }
+            }
+            
             // Select new unit
             logger.info(`Selecting unit at (${tile.x}, ${tile.y})`);
             board.selected = tile;
             
-            // Show movement range
-            if (typeof showMovementRange === 'function') {
-                showMovementRange(tile.x, tile.y);
+            // Store in gameState too for compatibility
+            if (window.gameState) {
+                window.gameState.selectedUnit = tile;
+                window.gameState.selectedX = tile.x;
+                window.gameState.selectedY = tile.y;
+            }
+            
+            // Show movement range only if unit can move
+            if (tile.unit.can_move) {
+                if (typeof highlightMovementRange === 'function') {
+                    highlightMovementRange(tile.x, tile.y);
+                } else if (typeof showMovementRange === 'function') {
+                    showMovementRange(tile.x, tile.y);
+                } else if (typeof unitSelectWithMovementHighlighting === 'function') {
+                    unitSelectWithMovementHighlighting(tile);
+                }
+            } else {
+                logger.info('Unit cannot move this turn');
             }
             
             // Show attack targets if applicable
             if (tile.unit.can_attack && typeof showAttackTargets === 'function') {
                 setTimeout(() => showAttackTargets(tile.x, tile.y), 100);
+            }
+            
+            // Handle transport features AFTER selection
+            if (typeof isTransportUnit === 'function' && isTransportUnit(tile.unit)) {
+                // It's a transport - prepare exit options (but don't show yet)
+                if (typeof window.transportState !== 'undefined') {
+                    window.transportState.selectedTransport = tile;
+                }
+            }
+            
+            if (typeof canUnitBoardTransports === 'function' && canUnitBoardTransports(tile.unit)) {
+                // Unit can board transports - show nearby transports
+                if (typeof showLoadableTransports === 'function') {
+                    showLoadableTransports(tile.x, tile.y);
+                }
             }
         }
         
@@ -233,18 +299,39 @@ registerClickHandler('movement', {
     name: 'movement-execution',
     priority: 0,
     condition: (tile, event) => {
-        return board.selected && 
-               !tile.unit && 
-               window.movementHighlights?.some(h => h.x === tile.x && h.y === tile.y);
+        const logger = window.logger || console;
+        const hasSelected = !!board.selected;
+        const hasNoUnit = !tile.unit;
+        const isHighlighted = window.movementHighlights?.some(h => h.x === tile.x && h.y === tile.y);
+        const canMoveToTile = !!tile.can_be_moved_to;
+        
+        logger.debug('Movement handler check:', {
+            tile: {x: tile.x, y: tile.y},
+            hasSelected,
+            hasNoUnit,
+            isHighlighted,
+            canMoveToTile,
+            movementHighlights: window.movementHighlights?.length || 0
+        });
+        
+        return hasSelected && hasNoUnit && (isHighlighted || canMoveToTile);
     },
     handle: (tile, event) => {
         const logger = window.logger || console;
         logger.info(`Moving unit to (${tile.x}, ${tile.y})`);
         
-        if (typeof executeMovement === 'function') {
-            executeMovement(tile);
+        // Use the proper unitMove function from gameActions module
+        if (typeof window.unitMove === 'function') {
+            logger.info('Using window.unitMove');
+            window.unitMove(tile);
+        } else if (typeof unitMove === 'function') {
+            logger.info('Using global unitMove');
+            unitMove(tile);
+        } else if (typeof window.executeMovement === 'function') {
+            logger.info('Using window.executeMovement');
+            window.executeMovement(tile);
         } else {
-            logger.error('executeMovement function not found');
+            logger.error('No movement function found');
             return false;
         }
         
@@ -335,45 +422,91 @@ function initializeClickHandler() {
     logger.info('Initializing centralized click handler system');
     
     // Replace the main canvas click handler
-    const canvas = document.getElementById('draw');
-    if (canvas) {
-        // Remove old handlers
-        canvas.onclick = null;
-        canvas.removeEventListener('click', canvasClick);
-        
-        // Add new centralized handler
-        canvas.addEventListener('click', (event) => {
-            // Get the actual canvas element (Two.js creates a canvas inside the div)
-            const actualCanvas = canvas.querySelector('canvas');
-            if (!actualCanvas) return;
+    const drawDiv = document.getElementById('draw');
+    if (drawDiv) {
+        // Find the actual canvas element (Two.js creates it inside the div)
+        const actualCanvas = drawDiv.querySelector('canvas');
+        if (actualCanvas) {
+            // Remove ALL old handlers
+            actualCanvas.onclick = null;
+            actualCanvas.onmousedown = null;
+            actualCanvas.onmouseup = null;
             
-            const rect = actualCanvas.getBoundingClientRect();
-            const x = event.clientX;
-            const y = event.clientY;
-            
-            // Convert page coordinates to tile
-            let tile;
-            if (window.canvasScaler) {
-                const tileCoords = window.canvasScaler.pageToTile(x, y);
-                if (tileCoords.x >= 0 && tileCoords.x < window.board.width && 
-                    tileCoords.y >= 0 && tileCoords.y < window.board.height) {
-                    tile = window.board.grid[tileCoords.x + tileCoords.y * window.board.width];
+            // Add our centralized handler
+            actualCanvas.onclick = function centralizedClickHandler(event) {
+                // Debug: confirm handler is called (remove this later)
+                // console.error('🚨 CENTRALIZED HANDLER CALLED!');
+                
+                const x = event.offsetX;
+                const y = event.offsetY;
+                const tile = window.tileAt(x, y);
+                
+                // Debug logging (reduce noise once working)
+                // console.error(`🖱️ CENTRALIZED HANDLER: Click at pixel (${x}, ${y})`);
+                
+                // Use the tile directly without coordinate offset workarounds
+                
+                if (tile) {
+                    console.error('🖱️ CENTRALIZED HANDLER: Calling processClick');
+                    processClick(tile, event);
+                    console.error('🖱️ CENTRALIZED HANDLER: processClick returned');
                 } else {
-                    tile = null;
+                    console.error('🖱️ CENTRALIZED HANDLER: No tile found!');
                 }
-            } else {
-                // Fallback to offset coordinates
-                tile = window.tileAt(event.offsetX, event.offsetY);
-            }
+            };
             
-            if (tile) {
-                processClick(tile, event);
-            }
-        });
-        
-        logger.info('Canvas click handler replaced with centralized system');
+            // Also override the global functions
+            window.canvasClick = actualCanvas.onclick;
+            window.advanceWarsCanvasClick = actualCanvas.onclick;
+            
+            logger.info('✅ Canvas click handler replaced with centralized system');
+        } else {
+            logger.warn('Canvas element not found yet, will retry...');
+            setTimeout(initializeClickHandler, 500);
+        }
     }
 }
+
+// Clear highlights when clicking empty tiles
+registerClickHandler('fallback', {
+    name: 'clear-on-empty',
+    priority: 0,
+    condition: (tile, event) => {
+        // Clear if clicking on empty tile that's not a movement highlight
+        const hasUnit = !!tile.unit;
+        const hasMovementHighlight = window.movementHighlights?.some(h => h.x === tile.x && h.y === tile.y);
+        const canBeAttacked = !!tile.can_be_attacked;
+        
+        const logger = window.logger || console;
+        logger.info(`Fallback handler check: hasUnit=${hasUnit}, hasMovementHighlight=${hasMovementHighlight}, canBeAttacked=${canBeAttacked}`);
+        logger.info('Tile unit:', tile.unit);
+        
+        return !hasUnit && !hasMovementHighlight && !canBeAttacked;
+    },
+    handle: (tile, event) => {
+        const logger = window.logger || console;
+        logger.info('Clearing selection - clicked empty tile');
+        
+        // Clear selection
+        board.selected = null;
+        
+        // Clear all highlights
+        clearAllHighlights();
+        if (typeof clearMovementHighlights === 'function') {
+            clearMovementHighlights();
+        }
+        if (typeof clearMovementHighlightsData === 'function') {
+            clearMovementHighlightsData();
+        }
+        
+        // Force visual update
+        if (window.two) {
+            window.two.update();
+        }
+        
+        return true;
+    }
+});
 
 // Fallback Debug Handler
 registerClickHandler('fallback', {
@@ -418,8 +551,19 @@ window.advanceWarsCanvasClick = window.canvasClick;
 // Auto-initialize when DOM is ready
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-        setTimeout(initializeClickHandler, 500);
+        // Wait longer to ensure render_legacy.js has finished
+        setTimeout(initializeClickHandler, 2000);
     });
 } else {
-    setTimeout(initializeClickHandler, 500);
+    // Wait longer to ensure render_legacy.js has finished
+    setTimeout(initializeClickHandler, 2000);
 }
+
+// Also add a watcher to ensure our handler stays in place
+setInterval(() => {
+    const canvas = document.querySelector('#draw canvas');
+    if (canvas && canvas.onclick && canvas.onclick.name !== 'centralizedClickHandler') {
+        console.log('Re-initializing centralized click handler...');
+        initializeClickHandler();
+    }
+}, 3000);

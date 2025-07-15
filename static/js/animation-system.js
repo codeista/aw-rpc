@@ -587,5 +587,5 @@ class AnimationSystem {
 // Create and export global animation system
 window.animationSystem = new AnimationSystem();
 
-// Export for module usage
-export default window.animationSystem;
+// Export for module usage - commented out since this is loaded as script, not module
+// export default window.animationSystem;

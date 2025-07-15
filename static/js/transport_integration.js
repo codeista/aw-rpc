@@ -194,6 +194,9 @@ function selectUnitWithTransportOptions(tile) {
     // Select the unit normally first
     unitSelect(tile);
     
+    // IMPORTANT: Preserve board.selected after unitSelect
+    board.selected = tile;
+    
     // If it's a cargo unit, show nearby transports
     if (canUnitBoardTransports(tile.unit)) {
         showLoadableTransports(tile.x, tile.y);
@@ -1020,7 +1023,10 @@ function registerTransportHandlers() {
         }
     });
     
-    // Transport selection with cargo handler
+    // DISABLED: Transport selection with cargo handler
+    // This was interfering with regular unit selection
+    // Transport features are now handled AFTER selection in the main handler
+    /*
     window.clickHandler.register('selection', {
         name: 'transport-with-cargo',
         priority: 1,
@@ -1035,6 +1041,7 @@ function registerTransportHandlers() {
             return true;
         }
     });
+    */
     
     console.log('✅ Transport handlers registered with centralized click system');
 }

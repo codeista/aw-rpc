@@ -70,6 +70,33 @@ def run_full_tests():
         print(f"❌ Test suite failed: {e}")
         return False
 
+def run_regression_tests():
+    """Run automated regression test suite"""
+    print("🤖 Running Automated Regression Tests...")
+    print("=" * 40)
+    
+    try:
+        import subprocess
+        result = subprocess.run([
+            sys.executable, 
+            'tests/regression/test_complete_game_mechanics.py'
+        ], capture_output=True, text=True, timeout=300)
+        
+        # Print the output
+        if result.stdout:
+            print(result.stdout)
+        if result.stderr:
+            print(result.stderr)
+        
+        return result.returncode == 0
+        
+    except subprocess.TimeoutExpired:
+        print("❌ Regression tests timed out (5 minutes)")
+        return False
+    except Exception as e:
+        print(f"❌ Regression test execution failed: {e}")
+        return False
+
 def main():
     print("🧪 AW-RPC Test Runner")
     print("=" * 40)
@@ -93,11 +120,12 @@ def main():
     print("\n📋 Test Options:")
     print("1. Quick Tests (3 core tests, ~30 seconds)")
     print("2. Full Integration Tests (8 comprehensive tests, ~2 minutes)")
-    print("3. Exit")
+    print("3. Automated Regression Tests (All mechanics validation, ~3 minutes)")
+    print("4. Exit")
     
     while True:
         try:
-            choice = input("\nChoose option (1-3): ").strip()
+            choice = input("\nChoose option (1-4): ").strip()
             
             if choice == "1":
                 success = run_quick_tests()
@@ -106,10 +134,13 @@ def main():
                 success = run_full_tests()
                 break
             elif choice == "3":
+                success = run_regression_tests()
+                break
+            elif choice == "4":
                 print("👋 Goodbye!")
                 return True
             else:
-                print("Please enter 1, 2, or 3")
+                print("Please enter 1, 2, 3, or 4")
                 continue
                 
         except KeyboardInterrupt:
