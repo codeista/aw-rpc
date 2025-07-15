@@ -129,14 +129,14 @@ def get_loadable_transports_rpc(token: str, cargo_x: int, cargo_y: int) -> Dict[
     mngr = game_load(token)
     
     try:
-        print(f"DEBUG: Starting get_loadable_transports for cargo at ({cargo_x},{cargo_y})")
+        app_logger.debug(f"Starting get_loadable_transports for cargo at ({cargo_x},{cargo_y})")
         
         if hasattr(mngr, 'transport_system'):
-            print(f"DEBUG: Manager has transport_system")
+            app_logger.debug(f"Manager has transport_system")
             # First try the transport system method
             try:
                 transports = mngr.transport_system.get_loadable_transports_near(cargo_x, cargo_y)
-                print(f"DEBUG: Found {len(transports)} transports")
+                app_logger.debug(f"Found {len(transports)} transports")
                 
                 # Get cargo unit type for context
                 cargo_tile = mngr.tile_at(cargo_x, cargo_y)
@@ -153,11 +153,11 @@ def get_loadable_transports_rpc(token: str, cargo_x: int, cargo_y: int) -> Dict[
                 }
             except Exception as e:
                 import traceback
-                print(f"DEBUG: Transport system method failed: {e}")
-                print(f"DEBUG: Full traceback: {traceback.format_exc()}")
+                app_logger.debug(f"Transport system method failed: {e}")
+                app_logger.debug(f"Full traceback: {traceback.format_exc()}")
                 # Fall through to fallback implementation
         else:
-            print(f"DEBUG: Manager missing transport_system")
+            app_logger.debug(f"Manager missing transport_system")
             # Fallback implementation - find adjacent transports
             loadable_transports = []
             

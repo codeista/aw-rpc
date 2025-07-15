@@ -10,6 +10,9 @@ import re
 import random
 import string
 import math
+import logging
+
+logger = logging.getLogger(__name__)
 
 def rpc_call(method: str, params: dict = None) -> dict:
     """Make RPC call to the server"""
@@ -101,7 +104,7 @@ class CombatTester:
         
         # Get board to find combat pairs
         board = rpc_call("game_board", {"token": self.game_id})
-        print(f"DEBUG: Board type: {type(board)}, content: {str(board)[:200]}...")
+        logger.debug(f"Board type: {type(board)}, content: {str(board)[:200]}...")
         
         if isinstance(board, str):
             print(f"❌ Board returned as string, not dict: {board[:100]}...")
@@ -114,12 +117,12 @@ class CombatTester:
         # Find suitable combat pairs
         try:
             combat_pairs = self._find_combat_pairs(board)
-            print(f"DEBUG: Found {len(combat_pairs)} combat pairs")
+            logger.debug(f"Found {len(combat_pairs)} combat pairs")
         except Exception as e:
-            print(f"DEBUG: Error finding combat pairs: {e}")
-            print(f"DEBUG: Board keys: {list(board.keys())}")
+            logger.debug(f"Error finding combat pairs: {e}")
+            logger.debug(f"Board keys: {list(board.keys())}")
             if 'grid' in board:
-                print(f"DEBUG: Grid type: {type(board['grid'])}, length: {len(board['grid']) if isinstance(board['grid'], list) else 'not list'}")
+                logger.debug(f"Grid type: {type(board['grid'])}, length: {len(board['grid']) if isinstance(board['grid'], list) else 'not list'}")
             return False
         
         for i, (attacker, defender, combat_type) in enumerate(combat_pairs[:3]):  # Test first 3 pairs
@@ -135,7 +138,7 @@ class CombatTester:
                 "y2": defender['y']
             })
             
-            print(f"DEBUG: Damage preview result: {preview_result}")
+            logger.debug(f"Damage preview result: {preview_result}")
             
             if "error" not in preview_result and preview_result.get("success", False):
                 # Handle new preview format with nested preview data
@@ -153,7 +156,7 @@ class CombatTester:
                     "y2": defender['y']
                 })
                 
-                print(f"DEBUG: Attack result: {attack_result}")
+                logger.debug(f"Attack result: {attack_result}")
                 
                 # Handle different attack result formats
                 attack_succeeded = False
@@ -493,12 +496,12 @@ class CombatTester:
         red_units = []
         blue_units = []
         
-        print(f"DEBUG: Examining {len(board.get('grid', []))} tiles")
+        logger.debug(f"Examining {len(board.get('grid', []))} tiles")
         
         for i, tile in enumerate(board.get("grid", [])):
             # Debug first few tiles
             if i < 3:
-                print(f"DEBUG: Tile {i} type: {type(tile)}, content: {str(tile)[:100] if isinstance(tile, str) else 'dict'}")
+                logger.debug(f"Tile {i} type: {type(tile)}, content: {str(tile)[:100] if isinstance(tile, str) else 'dict'}")
             
             # Handle string tiles (need to parse JSON)
             if isinstance(tile, str):

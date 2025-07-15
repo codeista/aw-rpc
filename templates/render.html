@@ -851,7 +851,44 @@
     <script src="/static/js/validators.js"></script>
     <script src="/static/js/operation-queue.js"></script>
     <script src="/static/js/cargo-selection.js"></script>
-    <script src="/static/js/render.js"></script>
+    
+    <!-- MODULAR RENDER SYSTEM -->
+    <script type="module">
+        // Import and initialize the modular render system
+        import moduleLoader from '/static/js/modules/moduleLoader.js';
+        
+        // Start loading modules when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                moduleLoader.loadAllModules().catch(error => {
+                    console.error('Failed to load modular system:', error);
+                });
+            });
+        } else {
+            moduleLoader.loadAllModules().catch(error => {
+                console.error('Failed to load modular system:', error);
+            });
+        }
+        
+        // Make moduleLoader available globally for debugging
+        window.moduleLoader = moduleLoader;
+    </script>
+    
+    <!-- FALLBACK: Legacy render.js (will be loaded only if modular system fails) -->
+    <script>
+        // Fallback mechanism - load legacy render.js if modules fail after 5 seconds
+        setTimeout(() => {
+            if (!window.moduleLoader || !window.moduleLoader.isModuleLoaded('core')) {
+                console.warn('⚠️ Modular system timeout - loading legacy render.js');
+                const legacyScript = document.createElement('script');
+                legacyScript.src = '/static/js/render_legacy.js';
+                legacyScript.onload = () => console.log('✅ Legacy render.js loaded');
+                legacyScript.onerror = () => console.error('❌ Legacy render.js failed to load');
+                document.head.appendChild(legacyScript);
+            }
+        }, 5000);
+    </script>
+    
     <script src="/static/js/transport_integration.js"></script>
     <script src="/static/js/test_helpers.js"></script>
 

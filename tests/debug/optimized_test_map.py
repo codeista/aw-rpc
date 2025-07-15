@@ -1,3 +1,6 @@
+import logging
+
+logger = logging.getLogger(__name__)
 # optimized_test_map.py - CLEAN FIXED VERSION
 # Replace your entire optimized_test_map.py file with this content
 
@@ -219,22 +222,22 @@ def get_optimized_test_game(token: str):
     from manager import GameManager
     from config import Config
     
-    print(f"DEBUG: Creating optimized test game for token: {token}")
+    logger.debug(f"Creating optimized test game for token: {token}")
     
     # Load configuration first
-    print("DEBUG: Loading configuration...")
+    logger.debug("Loading configuration...")
     config_game = Config()
-    print(f"DEBUG: Config loaded: {type(config_game)}")
+    logger.debug(f"Config loaded: {type(config_game)}")
     
     # Create optimized board
-    print("DEBUG: Creating optimized board...")
+    logger.debug("Creating optimized board...")
     board = create_optimized_test_map()
-    print(f"DEBUG: Board created: {type(board)}")
+    logger.debug(f"Board created: {type(board)}")
     
     # Create game manager with BOTH required parameters
-    print("DEBUG: Creating GameManager with config and board...")
+    logger.debug("Creating GameManager with config and board...")
     game_manager = GameManager(config_game, board)
-    print(f"DEBUG: GameManager created successfully: {type(game_manager)}")
+    logger.debug(f"GameManager created successfully: {type(game_manager)}")
     
     # Set game as active and ready
     game_manager.board.game_active = True
