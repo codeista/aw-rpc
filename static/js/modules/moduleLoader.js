@@ -26,7 +26,7 @@ class ModuleLoader {
             'renderEngine',
             'movementSystem',
             'combatSystem',
-            // 'transportSystem',
+            'transportSystem',
             // Phase 5 modules
             // 'mobileSupport'
         ];
@@ -100,6 +100,7 @@ class ModuleLoader {
             const renderEngine = this.modules.get('renderEngine');
             const movementSystem = this.modules.get('movementSystem');
             const combatSystem = this.modules.get('combatSystem');
+            const transportSystem = this.modules.get('transportSystem');
             
             // Initialize game state
             core.initializeGameState();
@@ -144,6 +145,11 @@ class ModuleLoader {
             // Initialize combat system module
             if (combatSystem && combatSystem.initializeCombatSystemModule) {
                 combatSystem.initializeCombatSystemModule();
+            }
+            
+            // Initialize transport system module
+            if (transportSystem && transportSystem.initializeTransportSystemModule) {
+                transportSystem.initializeTransportSystemModule();
             }
             
             // Initialize global references for compatibility
