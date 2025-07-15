@@ -274,11 +274,15 @@ config_game = Config()
 from routes.game_routes import game_bp
 from routes.admin_routes import admin_bp  
 from routes.test_routes import test_bp
+from routes.unified_test_route import unified_test_bp
+from routes.unified_test_api import unified_test_api_bp
 
 # Register blueprints
 app.register_blueprint(game_bp)
 app.register_blueprint(admin_bp)
 app.register_blueprint(test_bp)
+app.register_blueprint(unified_test_bp)
+app.register_blueprint(unified_test_api_bp)
 
 # Import all RPC methods (this registers them with jsonrpc)
 from routes.rpc_methods import *

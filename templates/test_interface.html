@@ -326,20 +326,47 @@
             
             <div class="divider"></div>
             
+            <div class="test-type-selector" style="margin: 10px 0;">
+                <label style="display: block; margin-bottom: 5px; color: #9CA3AF;">Quick Test Game:</label>
+                <select id="testTypeSelect" style="width: 100%; padding: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; color: white;">
+                    <option value="basic">Basic Test</option>
+                    <option value="comprehensive">Comprehensive (with units)</option>
+                    <option value="movement">Movement Test</option>
+                    <option value="combat">Combat Test</option>
+                    <option value="transport">Transport Test</option>
+                    <option value="capture">Capture Test</option>
+                    <option value="triangle">3-Player Triangle</option>
+                    <option value="cross">4-Player Cross</option>
+                    <option value="pentagon">5-Player Pentagon</option>
+                    <option value="scorpion">Scorpion Operation</option>
+                    <option value="green_yellow">Green vs Yellow</option>
+                    <option value="islands">Island Battle</option>
+                    <option value="mountains">Mountain War</option>
+                    <option value="hq_rush">HQ Rush</option>
+                    <option value="multi_army">Multi-Army (4P)</option>
+                    <option value="elimination">Elimination</option>
+                </select>
+                <button class="action-button" onclick="launchTestGame()" style="margin-top: 10px; width: 100%;">
+                    🚀 Launch Test Game
+                </button>
+            </div>
+            
+            <div class="divider"></div>
+            
             <div class="action-buttons">
-                <button class="action-button" onclick="window.open('/test_optimized', '_blank')">
+                <button class="action-button" onclick="window.open('/test_game?type=optimized', '_blank')">
                     🎯 Test Map
                 </button>
                 <button class="action-button" onclick="window.open('/sprite_test', '_blank')">
                     🎨 Sprite Test
                 </button>
-                <button class="action-button" onclick="window.open('/test_triangle', '_blank')">
+                <button class="action-button" onclick="window.open('/test_game?type=triangle', '_blank')">
                     🔺 Triangle (3P)
                 </button>
-                <button class="action-button" onclick="window.open('/test_cross', '_blank')">
+                <button class="action-button" onclick="window.open('/test_game?type=cross', '_blank')">
                     ➕ Cross (4P)
                 </button>
-                <button class="action-button" onclick="window.open('/test_pentagon', '_blank')">
+                <button class="action-button" onclick="window.open('/test_game?type=pentagon', '_blank')">
                     ⭐ Pentagon (5P)
                 </button>
                 <button class="action-button" onclick="window.open('/api/browse', '_blank')">
@@ -495,6 +522,11 @@
             updateTestStats();
         }
         
+        function launchTestGame() {
+            const testType = document.getElementById('testTypeSelect').value;
+            window.open(`/test_game?type=${testType}`, '_blank');
+        }
+        
         function runTest(testName, scriptName) {
             // Update UI
             setTestStatus(testName, 'running');
@@ -509,38 +541,61 @@
                 }
             });
             
-            // Run test
-            fetch('/run_test', {
+            // Run test using new unified API
+            fetch('/api/tests', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ script: scriptName })
+                body: JSON.stringify({ 
+                    action: 'run',
+                    tests: [scriptName]
+                })
             })
-            .then(response => response.text())
-            .then(result => {
-                const success = !result.includes('FAILED') && !result.includes('Traceback') && (result.includes('OK') || result.includes('passed') || result.includes('Success'));
-                
-                // Update status
-                setTestStatus(testName, success ? 'passed' : 'failed');
-                
-                // Update stats
-                testStats.total++;
-                if (success) {
-                    testStats.passed++;
-                } else {
-                    testStats.failed++;
-                }
-                updateTestStats();
-                
-                // Add result
-                addResult(`${success ? '✅' : '❌'} ${testName} test completed\n${result}`, !success);
-                
-                // Re-enable button
-                buttons.forEach(btn => {
-                    if (btn.textContent.toLowerCase().includes(testName)) {
-                        btn.classList.remove('running');
-                        btn.disabled = false;
-                    }
-                });
+            .then(response => response.json())
+            .then(data => {
+                // Poll for results
+                const pollInterval = setInterval(() => {
+                    fetch('/api/tests', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'status' })
+                    })
+                    .then(r => r.json())
+                    .then(status => {
+                        if (!status.running) {
+                            clearInterval(pollInterval);
+                            
+                            // Find our test result
+                            const result = status.results.find(r => r.test === scriptName);
+                            if (result) {
+                                const success = result.status === 'passed';
+                                
+                                // Update status
+                                setTestStatus(testName, success ? 'passed' : 'failed');
+                                
+                                // Update stats
+                                testStats.total++;
+                                if (success) {
+                                    testStats.passed++;
+                                } else {
+                                    testStats.failed++;
+                                }
+                                updateTestStats();
+                                
+                                // Add result
+                                const resultText = `Duration: ${result.duration.toFixed(2)}s\n${result.output || 'No output'}`;
+                                addResult(`${success ? '✅' : '❌'} ${testName} test completed\n${resultText}`, !success);
+                            }
+                            
+                            // Re-enable button
+                            buttons.forEach(btn => {
+                                if (btn.textContent.toLowerCase().includes(testName)) {
+                                    btn.classList.remove('running');
+                                    btn.disabled = false;
+                                }
+                            });
+                        }
+                    });
+                }, 1000); // Poll every second
             })
             .catch(error => {
                 setTestStatus(testName, 'failed');
@@ -578,55 +633,71 @@
             // Disable all buttons
             document.querySelectorAll('.test-button').forEach(btn => btn.disabled = true);
             
-            for (const test of tests) {
-                setTestStatus(test.name, 'running');
-                addResult(`\n🏃 Running ${test.name} tests...`);
+            // Set all tests to running
+            tests.forEach(test => setTestStatus(test.name, 'running'));
+            
+            // Run all tests using new API
+            try {
+                const response = await fetch('/api/tests', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'run' })
+                });
                 
-                try {
-                    const response = await fetch('/run_test', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ script: test.script })
-                    });
-                    
-                    const result = await response.text();
-                    const success = response.ok && !result.includes('FAILED') && !result.includes('Traceback') && (result.includes('OK') || result.includes('passed') || result.includes('Success'));
-                    
-                    setTestStatus(test.name, success ? 'passed' : 'failed');
-                    
-                    testStats.total++;
-                    if (success) {
-                        testStats.passed++;
-                    } else {
-                        testStats.failed++;
-                    }
-                    updateTestStats();
-                    
-                    addResult(`${success ? '✅' : '❌'} ${test.name} test completed`, !success);
-                    
-                    // Add the actual test output
-                    if (result && result.trim()) {
-                        addResult(result, !success);
-                    }
-                    
-                } catch (error) {
-                    setTestStatus(test.name, 'failed');
-                    testStats.total++;
-                    testStats.failed++;
-                    updateTestStats();
-                    addResult(`❌ Error running ${test.name} test: ${error.message}`, true);
+                if (response.ok) {
+                    // Poll for completion
+                    const pollInterval = setInterval(async () => {
+                        const statusResponse = await fetch('/api/tests', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ action: 'status' })
+                        });
+                        
+                        const status = await statusResponse.json();
+                        
+                        if (status.current_test) {
+                            addResult(`Running: ${status.current_test}`);
+                        }
+                        
+                        if (!status.running) {
+                            clearInterval(pollInterval);
+                            
+                            // Process results
+                            status.results.forEach(result => {
+                                const testInfo = tests.find(t => t.script === result.test);
+                                if (testInfo) {
+                                    const success = result.status === 'passed';
+                                    setTestStatus(testInfo.name, success ? 'passed' : 'failed');
+                                    
+                                    testStats.total++;
+                                    if (success) {
+                                        testStats.passed++;
+                                    } else {
+                                        testStats.failed++;
+                                    }
+                                    
+                                    addResult(`${success ? '✅' : '❌'} ${testInfo.name}: ${result.status} (${result.duration.toFixed(2)}s)`);
+                                }
+                            });
+                            
+                            updateTestStats();
+                            
+                            // Re-enable buttons
+                            document.querySelectorAll('.test-button').forEach(btn => btn.disabled = false);
+                            
+                            // Summary
+                            addResult(`\n📊 Test Summary: ${testStats.passed}/${testStats.total} passed`);
+                            if (testStats.failed === 0) {
+                                addResult('🎉 All tests passed!');
+                            } else {
+                                addResult(`⚠️ ${testStats.failed} test(s) failed`, true);
+                            }
+                        }
+                    }, 2000); // Poll every 2 seconds
                 }
-            }
-            
-            // Re-enable buttons
-            document.querySelectorAll('.test-button').forEach(btn => btn.disabled = false);
-            
-            // Summary
-            addResult(`\n📊 Test Summary: ${testStats.passed}/${testStats.total} passed`);
-            if (testStats.failed === 0) {
-                addResult('🎉 All tests passed!');
-            } else {
-                addResult(`⚠️ ${testStats.failed} test(s) failed`, true);
+            } catch (error) {
+                addResult(`❌ Error starting tests: ${error.message}`, true);
+                document.querySelectorAll('.test-button').forEach(btn => btn.disabled = false);
             }
         }
     </script>

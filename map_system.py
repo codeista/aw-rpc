@@ -601,35 +601,6 @@ CITY,PLAIN,MOUNTAIN,PLAIN,CITY
 PLAIN,WOOD,PLAIN,WOOD,PLAIN
 FACTORY:GREEN,PLAIN,CITY,PLAIN,FACTORY:YELLOW''', "Elimination Test - Small")
 
-        # 7. Sprite Test Map - Visual test for all army unit sprites
-        # Create a comprehensive sprite test map programmatically
-        self._maps['sprite_test'] = self._create_sprite_test_map()
-
-    def _create_sprite_test_map(self) -> Map:
-        """Create a comprehensive sprite test map with terrain for all armies."""
-        
-        armies = ['RED', 'BLUE', 'GREEN', 'YELLOW', 'GREY']
-        
-        # Create 21x9 map (enough space for sprite testing)
-        map_data = armies[0]
-        for army in armies[1:]:
-            map_data += f",{army}"
-        map_data += "\n"
-        
-        # Create terrain (mix of PLAIN and SEA for naval units)
-        for row in range(9):
-            terrain_row = []
-            for col in range(21):
-                if row == 2:  # Row 2 is SEA for naval units  
-                    terrain_row.append("SEA")
-                else:
-                    terrain_row.append("PLAIN")
-            map_data += ",".join(terrain_row) + "\n"
-        
-        # Parse the basic map (units will be added by game system later)
-        sprite_map = Map.parse(map_data.strip(), "Sprite Test - All Army Units")
-        
-        return sprite_map
 
     def get_map(self, map_id: str) -> Optional[Map]:
         """Get map by ID."""

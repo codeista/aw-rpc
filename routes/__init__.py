@@ -15,5 +15,7 @@ This package contains organized route modules:
 from .game_routes import game_bp
 from .admin_routes import admin_bp
 from .test_routes import test_bp
+from .unified_test_route import unified_test_bp
+from .unified_test_api import unified_test_api_bp
 
-__all__ = ['game_bp', 'admin_bp', 'test_bp']
+__all__ = ['game_bp', 'admin_bp', 'test_bp', 'unified_test_bp', 'unified_test_api_bp']
