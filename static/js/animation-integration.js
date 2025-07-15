@@ -45,16 +45,27 @@ function initializeAnimationIntegration() {
                 const toY = (tile.y + 1) * TILESIZE + TILESIZE / 2;
                 
                 // Start movement animation
-                window.animationSystem.animateMovement(
-                    unitSprite,
-                    fromX, fromY,
-                    toX, toY,
-                    () => {
-                        // Execute actual movement after animation
-                        originalFunctions.executeMovement.call(this, tile);
+                try {
+                    window.animationSystem.animateMovement(
+                        unitSprite,
+                        fromX, fromY,
+                        toX, toY,
+                        () => {
+                            // Execute actual movement after animation
+                            originalFunctions.executeMovement.call(this, tile);
+                            setInputEnabled(true);
+                        }
+                    );
+                    
+                    // Failsafe: Re-enable input after 3 seconds regardless
+                    setTimeout(() => {
                         setInputEnabled(true);
-                    }
-                );
+                    }, 3000);
+                } catch (error) {
+                    console.error('Movement animation error:', error);
+                    setInputEnabled(true);
+                    originalFunctions.executeMovement.call(this, tile);
+                }
             } else {
                 // No animation, execute immediately
                 originalFunctions.executeMovement.call(this, tile);
@@ -100,36 +111,47 @@ function initializeAnimationIntegration() {
                     const attackType = distance > 1 ? 'indirect' : 'direct';
                     
                     // Start attack animation
-                    window.animationSystem.animateAttack(
-                        fromX, fromY,
-                        toX, toY,
-                        attackType,
-                        () => {
-                            // Show damage numbers
-                            if (res.damage_to_target > 0) {
-                                window.animationSystem.showDamageNumber(
-                                    toX, toY - 20,
-                                    Math.round(res.damage_to_target),
-                                    '#ff0000'
-                                );
-                            }
-                            
-                            // Show counter damage if applicable
-                            if (res.damage_to_attacker > 0) {
-                                setTimeout(() => {
+                    try {
+                        window.animationSystem.animateAttack(
+                            fromX, fromY,
+                            toX, toY,
+                            attackType,
+                            () => {
+                                // Show damage numbers
+                                if (res.damage_to_target > 0) {
                                     window.animationSystem.showDamageNumber(
-                                        fromX, fromY - 20,
-                                        Math.round(res.damage_to_attacker),
-                                        '#ff8800'
+                                        toX, toY - 20,
+                                        Math.round(res.damage_to_target),
+                                        '#ff0000'
                                     );
-                                }, 300);
+                                }
+                                
+                                // Show counter damage if applicable
+                                if (res.damage_to_attacker > 0) {
+                                    setTimeout(() => {
+                                        window.animationSystem.showDamageNumber(
+                                            fromX, fromY - 20,
+                                            Math.round(res.damage_to_attacker),
+                                            '#ff8800'
+                                        );
+                                    }, 300);
+                                }
+                                
+                                // Execute actual attack after animation
+                                originalFunctions.unitAttack.call(this, targetTile);
+                                setInputEnabled(true);
                             }
-                            
-                            // Execute actual attack after animation
-                            originalFunctions.unitAttack.call(this, targetTile);
+                        );
+                        
+                        // Failsafe: Re-enable input after 5 seconds regardless
+                        setTimeout(() => {
                             setInputEnabled(true);
-                        }
-                    );
+                        }, 5000);
+                    } catch (error) {
+                        console.error('Attack animation error:', error);
+                        setInputEnabled(true);
+                        originalFunctions.unitAttack.call(this, targetTile);
+                    }
                 });
             } else {
                 // No animation, execute immediately
@@ -240,9 +262,15 @@ function initializeAnimationIntegration() {
         const canvas = document.getElementById('draw');
         if (canvas) {
             canvas.style.pointerEvents = enabled ? 'auto' : 'none';
+            // Debug log to help troubleshoot
+            if (!enabled) {
+                console.log('🔒 Input disabled for animation');
+            } else {
+                console.log('🔓 Input re-enabled after animation');
+            }
         }
         
-        // Also disable keyboard shortcuts
+        // Also disable keyboard shortcuts during animations
         if (window.keyboardShortcuts) {
             window.keyboardShortcuts.setEnabled(enabled);
         }
@@ -307,7 +335,47 @@ function initializeAnimationIntegration() {
         createAnimationToggle();
     }
     
-    logger.info('Animation integration initialized');
+    // Add emergency input re-enable function for debugging
+    window.forceEnableInput = () => {
+        setInputEnabled(true);
+        console.log('🚨 Input force-enabled');
+    };
+    
+    // Check input state function
+    window.checkInputState = () => {
+        const canvas = document.getElementById('draw');
+        const pointerEvents = canvas ? canvas.style.pointerEvents : 'unknown';
+        const animationsActive = window.animationSystem ? window.animationSystem.animations.size : 0;
+        console.log(`🔍 Input state: pointerEvents=${pointerEvents}, activeAnimations=${animationsActive}`);
+        return { pointerEvents, animationsActive };
+    };
+    
+    // Ensure input is enabled on initialization
+    setTimeout(() => {
+        setInputEnabled(true);
+        logger.info('Animation integration initialized - input enabled');
+    }, 200);
+    
+    // Extra safety: Force enable input after 1 second
+    setTimeout(() => {
+        const canvas = document.getElementById('draw');
+        if (canvas) {
+            canvas.style.pointerEvents = 'auto';
+            console.log('🔓 Force-enabled canvas input on startup');
+        }
+    }, 1000);
+    
+    // Safety mechanism: Force input re-enable every 10 seconds if disabled
+    setInterval(() => {
+        const canvas = document.getElementById('draw');
+        if (canvas && canvas.style.pointerEvents === 'none') {
+            const activeAnimations = window.animationSystem ? window.animationSystem.animations.size : 0;
+            if (activeAnimations === 0) {
+                console.warn('⚠️ Input was disabled with no active animations - force enabling');
+                setInputEnabled(true);
+            }
+        }
+    }, 10000);
 }
 
 // Initialize when both animation system and game are ready

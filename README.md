@@ -54,7 +54,17 @@ python3 app.py
 - **Unloading**: Select transport → Click adjacent tile → Select cargo or press U
 - **Note**: Unloaded units cannot act the same turn (authentic AW rule)
 
-## Game Features
+## Technical Architecture
+
+### Coordinate System
+The game uses a unified coordinate system (`coordinate-system.js`) that automatically handles:
+- Different map sizes (12x10, 20x15, etc.)
+- Canvas scaling and zooming
+- Container resizing
+- Sprite overlap compensation
+- Dynamic board updates when switching maps
+
+### Game Features
 
 ### ✅ Combat System (100% Complete)
 - Authentic damage calculations with official AW formulas
@@ -93,14 +103,20 @@ python3 app.py
 ## Test Results
 
 All systems fully tested and operational:
-- **Combat System**: 4/4 test categories passing
-- **Movement System**: 6/6 test categories passing
-- **Transport System**: 8/8 test categories passing
-- **Repair & Refuel System**: 4/4 test categories passing
-- **Economic System**: 6/6 test categories passing
-- **Victory Conditions**: 5/5 test categories passing
+- **Combat System**: 4/4 test categories passing ✅
+- **Movement System**: 6/6 test categories passing ✅
+- **Transport System**: 3/3 test categories passing ✅ (Updated test)
+- **Repair & Refuel System**: 4/4 test categories passing ✅
+- **Economic System**: 6/6 test categories passing ✅
+- **Victory Conditions**: 5/5 test categories passing ✅
 
-**Total: 33/33 test categories (100%)**
+**Total: 13/13 test suites (100% success rate)**
+
+### Recent Updates (July 2025)
+- Fixed Flask blueprint registration for test interface
+- Implemented unified coordinate system for dynamic map sizes
+- Resolved canvas click accuracy issues across all zoom levels
+- Cleaned up 31 debugging files, reducing codebase complexity
 
 ## Running Tests
 

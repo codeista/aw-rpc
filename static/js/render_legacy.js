@@ -4,6 +4,7 @@
 
 // constants
 const TILESIZE = 16;
+window.TILESIZE = TILESIZE; // Expose globally
 
 // Tileset management functions
 function getSelectedTerrainTileset() {
@@ -317,6 +318,22 @@ function update() {
         
         // Update board data
         board = res;
+        window.board = res; // Also expose globally
+        
+        // Log board update for debugging
+        logger.info('📋 Board updated:', {
+            turn: res.current_turn,
+            day: res.days,
+            gridSize: res.grid?.length,
+            units: res.grid?.filter(t => t.unit).length || 0
+        });
+        
+        // Ensure rendering happens after board update
+        if (two && two.scene) {
+            logger.debug('Triggering render after board update');
+            clearScene();
+            draw();
+        }
         
         // Restore movement highlights after update
         if (savedMovementTiles.length > 0 && board.grid) {
@@ -385,7 +402,11 @@ function update() {
                 }
                 // Add extra height to accommodate double-height sprites at the top
                 var extraHeight = TILESIZE; // One extra tile height for overlapping sprites
-                var params = { type: Two.Types.canvas, width: board.width * TILESIZE, height: board.height * TILESIZE + extraHeight };
+                var params = { 
+                    type: Two.Types.canvas, 
+                    width: board.width * TILESIZE, 
+                    height: board.height * TILESIZE + extraHeight 
+                };
                 two = new Two(params).appendTo(elem);
                 
                 // Offset all rendering down by extraHeight to create top margin
@@ -630,7 +651,11 @@ function unitCreate(tile) {
             }
         ).then(result => {
             if (!result.skipped) {
+                // Close the modal
+                modal.style.display = 'none';
+                
                 // Refresh the game display after creating unit
+                logger.info('🔄 Updating board after unit creation');
                 update();
             }
         });
@@ -654,12 +679,26 @@ function airunitCreate(tile) {
 
     var btn = document.getElementById('buttoncreate');
     btn.onclick = function() {
-        modal.style.display = 'none';
         var unitType = select.options[select.selectedIndex].value;;
         var army = tile.mapTile.army;
-        jsonrpc('unit_create', {army: army, unit_type: unitType, x: tile.x, y: tile.y}, function(result) {
-            // Refresh the game display after creating unit
-            update();
+        
+        // Use operation queue to prevent double-creation
+        window.operationQueue.add(
+            () => jsonrpc('unit_create', {army: army, unit_type: unitType, x: tile.x, y: tile.y}),
+            {
+                id: `create-${tile.x}-${tile.y}-${unitType}`,
+                description: `Creating ${unitType}`,
+                priority: 7
+            }
+        ).then(result => {
+            if (!result.skipped) {
+                // Close the modal
+                modal.style.display = 'none';
+                
+                // Refresh the game display after creating unit
+                logger.info('🔄 Updating board after air unit creation');
+                update();
+            }
         });
     };
     modal.style.display = 'block';
@@ -681,12 +720,26 @@ function seaunitCreate(tile) {
 
     var btn = document.getElementById('buttoncreate');
     btn.onclick = function() {
-        modal.style.display = 'none';
         var unitType = select.options[select.selectedIndex].value;;
         var army = tile.mapTile.army;
-        jsonrpc('unit_create', {army: army, unit_type: unitType, x: tile.x, y: tile.y}, function(result) {
-            // Refresh the game display after creating unit
-            update();
+        
+        // Use operation queue to prevent double-creation
+        window.operationQueue.add(
+            () => jsonrpc('unit_create', {army: army, unit_type: unitType, x: tile.x, y: tile.y}),
+            {
+                id: `create-${tile.x}-${tile.y}-${unitType}`,
+                description: `Creating ${unitType}`,
+                priority: 7
+            }
+        ).then(result => {
+            if (!result.skipped) {
+                // Close the modal
+                modal.style.display = 'none';
+                
+                // Refresh the game display after creating unit
+                logger.info('🔄 Updating board after sea unit creation');
+                update();
+            }
         });
     };
     modal.style.display = 'block';
@@ -950,7 +1003,13 @@ function handleTransportRightClick(tile, event) {
 //
 
 function tileAt(px, py) {
-    // Account for the extra height offset at the top
+    // Use the unified coordinate system if available
+    if (window.coordinateSystem) {
+        return window.coordinateSystem.offsetToTile(px, py);
+    }
+    
+    // Fallback to legacy calculation (shouldn't happen)
+    console.warn('Coordinate system not available, using legacy tileAt');
     var adjustedY = py - TILESIZE;
     var tileX = Math.floor(px / TILESIZE);
     var tileY = Math.floor(adjustedY / TILESIZE);
@@ -3416,6 +3475,8 @@ window.clearMovementHighlights = clearMovementHighlights;
 window.unitSelectWithMovementHighlighting = unitSelectWithMovementHighlighting;
 window.addMovementHighlightsToScene = addMovementHighlightsToScene;
 window.updateMovementHighlights = updateMovementHighlights;
+window.tileAt = tileAt;
+window.update = update;
 // =============================================================================
 // ADVANCE WARS MOVEMENT SYSTEM - Complete Implementation
 // Replace your existing movement and selection functions with these
@@ -5100,7 +5161,7 @@ function applyCompleteClickFix() {
                 // Fallback selection
                 board.selected = tile;
             }
-            return;
+            return true; // Return true to indicate we handled it
         }
         
         // PRIORITY 2: Movement execution (clicking on highlighted movement tiles)
@@ -5110,7 +5171,7 @@ function applyCompleteClickFix() {
             window.movementHighlights.some(h => h.x === tile.x && h.y === tile.y)) {
             
             executeMovement(tile);
-            return;
+            return true; // Return true to indicate we handled it
         }
         
         // PRIORITY 3: Production buildings (factories, airports, ports) - only if no unit selected
@@ -5124,7 +5185,7 @@ function applyCompleteClickFix() {
             if (tile.mapTile.type === 'FACTORY') unitCreate(tile);
             else if (tile.mapTile.type === 'AIRPORT') airunitCreate(tile);
             else if (tile.mapTile.type === 'PORT') seaunitCreate(tile);
-            return;
+            return true; // Return true to indicate we handled it
         }
         
         // PRIORITY 3: Attack execution (clicking on highlighted attack targets)
@@ -5134,13 +5195,16 @@ function applyCompleteClickFix() {
             window.gameState.attackHighlights.some(h => h.x === tile.x && h.y === tile.y)) {
             
             executeAttack(tile);
-            return;
+            return true; // Return true to indicate we handled it
         }
         
         // PRIORITY 4: Fall back to original transport logic
         if (originalTransportHandler) {
-            originalTransportHandler(tile);
+            return originalTransportHandler(tile);
         }
+        
+        // Return false to indicate this handler didn't handle the click
+        return false;
     };
     
     // ========================================================================

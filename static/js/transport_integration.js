@@ -73,12 +73,6 @@ function handleTileClickWithTransport(tile, event) {
         return false; // Let alt-click system handle
     }
     
-    // Only clear highlights if we're not currently showing exit options
-    if (!transportState.showingExitOptions) {
-        clearAllTransportHighlights();
-    }
-    // If showing exit options, don't clear anything - preserve the blue highlights
-    
     // Handle transport integration logic only if no other system is active
     if (board.selected) {
         const selectedTile = board.selected;
@@ -980,5 +974,75 @@ window.handleRightClick = handleRightClick;
 window.handleExitPositionClick = handleExitPositionClick;
 window.getTileFromCanvasClick = getTileFromCanvasClick;
 window.handleTransportRightClick = handleTransportRightClick;
-window.handleTransportAltClick = handleTransportAltClick; 
+window.handleTransportAltClick = handleTransportAltClick;
+
+// =============================================================================
+// INTEGRATION WITH NEW CLICK HANDLER SYSTEM
+// =============================================================================
+
+// Register transport handlers with the new centralized system
+function registerTransportHandlers() {
+    if (!window.clickHandler) {
+        console.warn('Click handler system not available yet, retrying...');
+        setTimeout(registerTransportHandlers, 500);
+        return;
+    }
+    
+    // Transport exit position click handler
+    window.clickHandler.register('contextual', {
+        name: 'transport-exit-position',
+        priority: 1,
+        condition: (tile, event) => {
+            return transportState.showingExitOptions &&
+                   transportState.exitPositions.some(pos => pos.x === tile.x && pos.y === tile.y);
+        },
+        handle: (tile, event) => {
+            handleExitPositionClick(tile);
+            return true;
+        }
+    });
+    
+    // Transport boarding handler
+    window.clickHandler.register('contextual', {
+        name: 'transport-boarding',
+        priority: 2,
+        condition: (tile, event) => {
+            return board.selected?.unit &&
+                   canUnitBoardTransports(board.selected.unit) &&
+                   tile.unit &&
+                   isTransportUnit(tile.unit) &&
+                   tile.unit.army === board.selected.unit.army &&
+                   tile.x !== board.selected.x && tile.y !== board.selected.y;
+        },
+        handle: (tile, event) => {
+            attemptToBoardTransport(board.selected.x, board.selected.y, tile.x, tile.y);
+            return true;
+        }
+    });
+    
+    // Transport selection with cargo handler
+    window.clickHandler.register('selection', {
+        name: 'transport-with-cargo',
+        priority: 1,
+        condition: (tile, event) => {
+            return tile.unit &&
+                   tile.unit.army === board.current_turn &&
+                   isTransportUnit(tile.unit) &&
+                   tile.unit.cargo?.length > 0;
+        },
+        handle: (tile, event) => {
+            selectUnitWithTransportOptions(tile);
+            return true;
+        }
+    });
+    
+    console.log('✅ Transport handlers registered with centralized click system');
+}
+
+// Start registration process
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', registerTransportHandlers);
+} else {
+    registerTransportHandlers();
+} 
 

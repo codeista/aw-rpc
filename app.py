@@ -40,10 +40,6 @@ from tests.integration.test_map_predeployed import get_predeployed_test_game, ge
 from routes.unified_test_route import unified_test_bp
 from routes.unified_test_api import unified_test_api_bp
 
-# Register blueprints
-app.register_blueprint(unified_test_bp)
-app.register_blueprint(unified_test_api_bp)
-
 # Import our fixed logging system
 try:
     from logging_config import setup_application_logging, GameEventLogger, PerformanceLogger
@@ -66,8 +62,22 @@ except ImportError:
     
     ENHANCED_LOGGING = False
 
-# Note: Modular routes blueprint moved to direct route definitions in app.py
-# to avoid Flask blueprint registration issues after first request
+# Register blueprints - check if not already registered to avoid issues
+try:
+    # Check if blueprints are already registered by looking at registered blueprints
+    blueprint_names = [bp.name for bp in app.blueprints.values()]
+    
+    if unified_test_bp.name not in blueprint_names:
+        app.register_blueprint(unified_test_bp)
+        app_logger.info(f"Registered blueprint: {unified_test_bp.name}")
+    
+    if unified_test_api_bp.name not in blueprint_names:
+        app.register_blueprint(unified_test_api_bp)
+        app_logger.info(f"Registered blueprint: {unified_test_api_bp.name}")
+        
+except Exception as e:
+    app_logger.warning(f"Blueprint registration issue (non-critical): {e}")
+    # This is expected if app is reloading, blueprints might already be registered
 
 from error_handling import (
     setup_error_handlers, setup_logging, validate_rpc_params,

@@ -168,7 +168,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 400px;
+            min-height: 500px;
+            height: calc(100vh - 200px);
+            max-height: 800px;
         }
 
         #draw {
@@ -178,7 +180,8 @@
             align-items: center;
             width: 100%;
             height: 100%;
-            padding: 2px;
+            padding: 0;
+            position: relative;
         }
         
         #draw canvas {
@@ -193,16 +196,21 @@
             width: auto;
             height: auto;
             object-fit: contain;
+            min-width: 400px;
+            min-height: 300px;
         }
 
         .info-panel {
-            background: rgba(44, 62, 80, 0.3);
-            border-radius: 6px;
-            padding: 10px;
-            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(44, 62, 80, 0.8);
+            border-radius: 8px;
+            padding: 12px;
+            border: 1px solid rgba(52, 152, 219, 0.3);
             flex-shrink: 0;
-            max-height: 120px;
+            min-height: 80px;
+            max-height: 150px;
             overflow-y: auto;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
 
         .info-panel h3 {
@@ -727,6 +735,7 @@
                     <span id="zoomLevel" style="background: rgba(0,0,0,0.7); color: white; padding: 6px 10px; border-radius: 4px; font-size: 13px; font-weight: bold;">100%</span>
                     <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out">−</button>
                     <button class="zoom-btn" onclick="zoomReset()" title="Reset Zoom">⟲</button>
+                    <button class="zoom-btn" onclick="zoomFit()" title="Fit to Screen" style="font-size: 11px; padding: 8px;">⛶</button>
                 </div>
 
                 <!-- Board Container -->
@@ -734,17 +743,17 @@
                     <div id="draw" x-token="{{token}}"></div>
                 </div>
 
-                <!-- Info Panel -->
-                <div class="info-panel">
+            </section>
+
+            <!-- Right Side Controls -->
+            <div class="right-controls">
+                <!-- Tile Info Panel (Moved to top of right controls) -->
+                <div class="info-panel" style="order: -1;">
                     <h3>📍 Tile Information</h3>
                     <div id="infobox">
                         <small style="color: #bdc3c7;">Hover over the map to see tile information</small>
                     </div>
                 </div>
-            </section>
-
-            <!-- Right Side Controls -->
-            <div class="right-controls">
                 <!-- Game Status Bar -->
                 <div class="game-status-bar">
                     <div class="status-item">
@@ -856,6 +865,15 @@
     
     <!-- TRANSITIONAL: Load legacy render.js first during Phase 1 -->
     <script src="/static/js/render_legacy.js"></script>
+    
+    <!-- Unified Coordinate System (load early) -->
+    <script src="/static/js/coordinate-system.js"></script>
+    
+    <!-- Centralized Click Handler (load after render_legacy.js) -->
+    <script src="/static/js/click-handler.js"></script>
+    
+    <!-- Canvas Scaler - Visual scaling solution -->
+    <script src="/static/js/canvas-scaler.js"></script>
     
     <!-- MODULAR RENDER SYSTEM (Phase 1 - Foundation) -->
     <script type="module">
@@ -981,10 +999,10 @@
         }
 
         // Zoom functionality
-        let currentZoom = 1;
-        const zoomStep = 0.1;
-        const minZoom = 0.5;
-        const maxZoom = 3;
+        let currentZoom = 1.5; // Start with 150% zoom for better visibility
+        const zoomStep = 0.2;
+        const minZoom = 0.8;
+        const maxZoom = 4;
 
         function updateZoomDisplay() {
             const zoomLevel = document.getElementById('zoomLevel');
@@ -1023,18 +1041,62 @@
             updateZoomDisplay();
         }
         
+        function zoomFit() {
+            const boardContainer = document.getElementById('board-container');
+            const canvas = boardContainer?.querySelector('canvas');
+            if (canvas && boardContainer) {
+                const containerWidth = boardContainer.clientWidth;
+                const containerHeight = boardContainer.clientHeight;
+                const canvasWidth = canvas.width;
+                const canvasHeight = canvas.height;
+                
+                // Calculate zoom to fit
+                const zoomX = containerWidth / canvasWidth;
+                const zoomY = containerHeight / canvasHeight;
+                currentZoom = Math.min(zoomX, zoomY) * 0.9; // 90% to leave some margin
+                currentZoom = Math.max(currentZoom, minZoom);
+                updateZoomDisplay();
+            }
+        }
+        
         // Make zoom functions globally accessible for keyboard shortcuts
         window.zoomIn = zoomIn;
         window.zoomOut = zoomOut;
         window.zoomReset = zoomReset;
+        window.zoomFit = zoomFit;
 
         // Load saved zoom level
         document.addEventListener('DOMContentLoaded', function() {
             const savedZoom = localStorage.getItem('gameZoomLevel');
             if (savedZoom) {
                 currentZoom = parseFloat(savedZoom);
-                updateZoomDisplay();
+            } else {
+                // Set initial zoom to 100% to see whole screen
+                currentZoom = 1.0;
             }
+            updateZoomDisplay();
+            
+            // Auto-fit the board to screen
+            setTimeout(() => {
+                const boardContainer = document.getElementById('board-container');
+                const canvas = boardContainer?.querySelector('canvas');
+                if (canvas && boardContainer) {
+                    const containerWidth = boardContainer.clientWidth;
+                    const containerHeight = boardContainer.clientHeight;
+                    const canvasWidth = canvas.width;
+                    const canvasHeight = canvas.height;
+                    
+                    // Calculate zoom to fit
+                    const zoomX = containerWidth / canvasWidth;
+                    const zoomY = containerHeight / canvasHeight;
+                    const optimalZoom = Math.min(zoomX, zoomY) * 0.9; // 90% to leave some margin
+                    
+                    if (optimalZoom < currentZoom) {
+                        currentZoom = Math.max(optimalZoom, minZoom);
+                        updateZoomDisplay();
+                    }
+                }
+            }, 500);
         });
 
         // Zoom keyboard shortcuts handled by keyboard-shortcuts.js

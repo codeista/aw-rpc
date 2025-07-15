@@ -51,26 +51,32 @@ def test_apc_auto_resupply(game_id: str) -> bool:
     
     # Find empty positions on the map
     board = rpc_call("game_board", {"token": game_id})
-    tiles = board.get("tiles", [])
+    grid = board.get("grid", [])
+    width = board.get("width", 0)
+    height = board.get("height", 0)
     
     # Find two adjacent empty positions
     apc_pos = None
     inf_pos = None
     
-    for y in range(5, 8):  # Middle of map
-        for x in range(5, 8):
-            if tiles and len(tiles) > y and len(tiles[y]) > x:
-                if not tiles[y][x].get("unit"):
-                    # Check for adjacent empty position
-                    for dx, dy in [(1,0), (0,1), (-1,0), (0,-1)]:
-                        nx, ny = x + dx, y + dy
-                        if 0 <= nx < len(tiles[0]) and 0 <= ny < len(tiles):
-                            if not tiles[ny][nx].get("unit"):
-                                apc_pos = (x, y)
-                                inf_pos = (nx, ny)
-                                break
-                    if apc_pos:
-                        break
+    # Convert grid to 2D array for easier access
+    tiles = [[None for _ in range(width)] for _ in range(height)]
+    for tile in grid:
+        tiles[tile["y"]][tile["x"]] = tile
+    
+    for y in range(5, min(8, height)):  # Middle of map
+        for x in range(5, min(8, width)):
+            if tiles[y][x] and not tiles[y][x].get("unit"):
+                # Check for adjacent empty position
+                for dx, dy in [(1,0), (0,1), (-1,0), (0,-1)]:
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < width and 0 <= ny < height:
+                        if tiles[ny][nx] and not tiles[ny][nx].get("unit"):
+                            apc_pos = (x, y)
+                            inf_pos = (nx, ny)
+                            break
+                if apc_pos:
+                    break
         if apc_pos:
             break
     
@@ -143,17 +149,16 @@ def test_apc_auto_resupply(game_id: str) -> bool:
     board_after = rpc_call("game_board", {"token": game_id})
     infantry_after = None
     
-    # Search through tiles array again
-    tiles = board_after.get("tiles", [])
-    for y, row in enumerate(tiles):
-        for x, tile in enumerate(row):
-            if tile.get("unit") and tile["unit"]["type"] == "INFANTRY" and tile["unit"]["army"] == "RED":
-                # Check if adjacent to APC (at 5,5)
-                if abs(x - 5) + abs(y - 5) == 1:
-                    infantry_after = tile["unit"]
-                    infantry_after["x"] = x
-                    infantry_after["y"] = y
-                    break
+    # Search through grid
+    grid_after = board_after.get("grid", [])
+    for tile in grid_after:
+        if tile.get("unit") and tile["unit"]["type"] == "INFANTRY" and tile["unit"]["army"] == "RED":
+            # Check if adjacent to APC
+            if abs(tile["x"] - apc_pos[0]) + abs(tile["y"] - apc_pos[1]) == 1:
+                infantry_after = tile["unit"]
+                infantry_after["x"] = tile["x"]
+                infantry_after["y"] = tile["y"]
+                break
     
     if infantry_after:
         fuel_after = infantry_after.get("fuel", 99)
@@ -184,32 +189,27 @@ def test_cruiser_carrier_resupply(game_id: str) -> bool:
     
     # Find empty sea positions
     board = rpc_call("game_board", {"token": game_id})
-    tiles = board.get("tiles", [])
+    grid = board.get("grid", [])
     
     carrier_pos = None
     fighter_pos = None
     
-    # Look for empty sea tiles in the upper part of the map
-    for y in range(0, 3):
-        for x in range(5, 10):
-            if tiles and len(tiles) > y and len(tiles[y]) > x:
-                tile = tiles[y][x]
-                terrain = tile.get("mapTile", {}).get("terrain", "")
-                if terrain == "SEA" and not tile.get("unit"):
-                    # Check for adjacent empty sea tile
-                    for dx, dy in [(1,0), (0,1), (-1,0), (0,-1)]:
-                        nx, ny = x + dx, y + dy
-                        if 0 <= nx < len(tiles[0]) and 0 <= ny < len(tiles):
-                            adj_tile = tiles[ny][nx]
-                            adj_terrain = adj_tile.get("mapTile", {}).get("terrain", "")
-                            if adj_terrain == "SEA" and not adj_tile.get("unit"):
-                                carrier_pos = (x, y)
-                                fighter_pos = (nx, ny)
-                                break
-                    if carrier_pos:
-                        break
-        if carrier_pos:
-            break
+    # Look for empty sea tiles
+    for tile in grid:
+        if tile["y"] < 3:  # Upper part of map
+            terrain = tile.get("mapTile", {}).get("type", "")
+            if terrain == "SEA" and not tile.get("unit"):
+                x, y = tile["x"], tile["y"]
+                # Check for adjacent empty sea tile
+                for adj_tile in grid:
+                    if abs(adj_tile["x"] - x) + abs(adj_tile["y"] - y) == 1:
+                        adj_terrain = adj_tile.get("mapTile", {}).get("type", "")
+                        if adj_terrain == "SEA" and not adj_tile.get("unit"):
+                            carrier_pos = (x, y)
+                            fighter_pos = (adj_tile["x"], adj_tile["y"])
+                            break
+                if carrier_pos:
+                    break
     
     if not carrier_pos:
         print("   ⚠️ Could not find empty sea positions for testing")
@@ -264,26 +264,31 @@ def test_blackboat_repair(game_id: str) -> bool:
     
     # Find a port on the map
     board = rpc_call("game_board", {"token": game_id})
+    grid = board.get("grid", [])
     port_pos = None
     
     # The test map has ports at (0,0) and (11,0)
     port_positions = [(0, 0), (11, 0)]
     for x, y in port_positions:
-        # Check if position has a unit that can be moved
-        tiles = board.get("tiles", [])
-        if tiles and len(tiles) > y and len(tiles[y]) > x:
-            tile = tiles[y][x]
-            if tile.get("unit"):
+        # Find the tile at this position
+        port_tile = None
+        for tile in grid:
+            if tile["x"] == x and tile["y"] == y:
+                port_tile = tile
+                break
+        
+        if port_tile:
+            if port_tile.get("unit"):
                 # Move the unit off the port
-                unit = tile["unit"]
+                unit = port_tile["unit"]
                 current_turn = board.get("current_turn", "")
                 if unit.get("army") == current_turn and unit.get("can_move", False):
                     print(f"   Moving {unit.get('type')} off port at ({x},{y})...")
-                    # Try to move to adjacent sea tile
-                    for dx, dy in [(1,0), (0,1), (-1,0), (0,-1)]:
-                        nx, ny = x + dx, y + dy
-                        if 0 <= nx < len(tiles[0]) and 0 <= ny < len(tiles):
-                            if not tiles[ny][nx].get("unit"):
+                    # Try to move to adjacent tile
+                    for adj_tile in grid:
+                        if abs(adj_tile["x"] - x) + abs(adj_tile["y"] - y) == 1:
+                            if not adj_tile.get("unit"):
+                                nx, ny = adj_tile["x"], adj_tile["y"]
                                 move_result = rpc_call("unit_move", {"token": game_id, "x": x, "y": y, "x2": nx, "y2": ny})
                                 if "error" not in move_result:
                                     print(f"   ✓ Moved unit to ({nx},{ny})")
