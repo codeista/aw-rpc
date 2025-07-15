@@ -20,7 +20,7 @@ class ModuleLoader {
             'gameState',
             'uiSystems',
             // Phase 3 modules 
-            // 'inputHandler',
+            'inputHandler',
             // 'gameActions',
             // Phase 4 modules
             // 'renderEngine',
@@ -95,6 +95,7 @@ class ModuleLoader {
             const network = this.modules.get('network');
             const gameState = this.modules.get('gameState');
             const uiSystems = this.modules.get('uiSystems');
+            const inputHandler = this.modules.get('inputHandler');
             
             // Initialize game state
             core.initializeGameState();
@@ -116,6 +117,11 @@ class ModuleLoader {
                 uiSystems.initializeUISystemsModule();
             }
             
+            // Initialize input handler module
+            if (inputHandler && inputHandler.initializeInputHandlerModule) {
+                inputHandler.initializeInputHandlerModule();
+            }
+            
             // Initialize global references for compatibility
             this.setupGlobalCompatibility();
             
@@ -125,6 +131,14 @@ class ModuleLoader {
             
             // Initialize controls (temporarily using original functions)
             this.initializeControls();
+            
+            // Initialize input handlers after a delay to ensure legacy code is loaded
+            setTimeout(() => {
+                if (inputHandler && inputHandler.initializeInputHandlers) {
+                    inputHandler.initializeInputHandlers();
+                    logger.info('🎮 Input handlers initialized');
+                }
+            }, 500);
             
             logger.info('✅ Application initialized successfully');
             
