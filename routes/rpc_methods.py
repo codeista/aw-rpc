@@ -162,8 +162,8 @@ def game_board_rpc(token: str) -> Dict[str, Any]:
         tile_data = {
             'x': x,
             'y': y,
-            'type': tile.type.name if hasattr(tile.type, 'name') else str(tile.type),
-            'army': tile.army.name if tile.army else None,
+            'type': tile.mapTile.type.name if (tile.mapTile and hasattr(tile.mapTile.type, 'name')) else 'PLAIN',
+            'army': tile.mapTile.army.name if (tile.mapTile and tile.mapTile.army) else None,
             'unit': None
         }
         

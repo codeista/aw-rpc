@@ -22,7 +22,7 @@
    - Load/unload transports
    - Create new units
    - Repair/resupply (Black Boat)
-   - **Auto-Wait**: Units automatically wait if no actions available after moving
+   - **Auto-Wait**: Units automatically wait if no actions available after moving (introduced in v2.1)
 
 3. **Turn End**
    - Click "End Turn" button
@@ -43,9 +43,12 @@
 #### Left Click
 - **On empty tile**: Deselect current unit
 - **On friendly unit**: 
-  - Select unit (priority: unit > production building)
+  - Select unit with smart priority:
+    - If tile has both unit and building: unit takes priority
+    - Exception: Empty production buildings can be selected for unit creation
   - Show movement range (yellow highlights)
   - Show attack range (red highlights)
+  - Update unit info panel
 - **On highlighted tile**:
   - Move selected unit to tile
   - Opens action menu if enemies in range
@@ -420,12 +423,31 @@ APC auto-resupply:
 
 ### Special Visual States
 
-#### Unit States
-- **Available** (can act): Full color sprite - determined by (can_move || can_attack)
-- **Unavailable** (acted): Grayed out sprite - when both can_move and can_attack are false
+#### Unit States (Sprite State Logic)
+- **Available** (can act): Full color sprite
+  - Condition: (can_move === true || can_attack === true)
+  - Visual: Normal colored sprite for army
+  - Indicates: Unit can still perform actions this turn
+  
+- **Unavailable** (acted): Grayed out sprite
+  - Condition: (can_move === false && can_attack === false)
+  - Visual: Desaturated/grayed version of sprite
+  - Indicates: Unit has completed all actions this turn
+  
 - **Loaded** (in transport): Hidden from map
+  - Not rendered on game board
+  - Exists in transport's cargo array
+  - Shows in transport info panel
+  
 - **Capturing**: Flag indicator visible
-- **Note**: can_capture flag does not affect sprite state
+  - Shows capture progress (HP countdown)
+  - Unit sprite state still follows can_move/can_attack logic
+  - Note: can_capture flag does NOT affect sprite appearance
+  
+- **Special Case - BLUE Units Fix**:
+  - Previously showed as grayed out due to sprite mapping issue
+  - Fixed by ensuring proper sprite state lookup in render pipeline
+  - Now correctly shows available/unavailable states
 
 #### Tile Overlays
 - **Movement Range**: Yellow semi-transparent
@@ -677,36 +699,61 @@ Available in browser console for testing:
    - Format: "[x,y] TYPE(army) HP: can_move/can_attack/can_capture"
 
 3. **clearAllHighlights()**
-   - Manually clears all movement and attack highlights
-   - Useful when highlights get stuck after errors
-   - Called automatically after combat and major actions
+   - Manually clears all movement and attack highlights from the canvas
+   - Removes both movement (yellow) and attack (red) highlight overlays
+   - Useful when highlights get stuck after errors or interrupted actions
+   - Called automatically after:
+     - Combat completion
+     - Unit deselection
+     - Turn ending
+     - Action cancellation
+   - Can be invoked manually via console: `clearAllHighlights()`
+   - Ensures clean visual state between actions
 
-### Client-Side Workarounds
-Due to server-side state management limitations, the following client-side updates are implemented:
+### Client-Side Flag Updates
+Due to server-side state management limitations, the following client-side updates are implemented to ensure immediate visual feedback:
 
 1. **After Movement**:
    - If auto-wait triggered: can_move = false, can_attack = false
+   - Sprite immediately grayed out without server round-trip
    
 2. **After Attack**:
    - Attacker: can_move = false, can_attack = false
+   - Prevents double-attack exploits
+   - Visual feedback shows unit has acted
    
 3. **After Capture**:
    - Unit: can_move = false, can_attack = false, can_capture = false
+   - Shows capture action completed
    
 4. **After Wait**:
    - Unit: can_move = false, can_attack = false
+   - Standard wait behavior
 
-These ensure sprite states update immediately without waiting for server sync.
+These updates ensure sprite states reflect unit availability immediately without waiting for server synchronization, providing responsive gameplay.
 
 ### Async Action Menu Handling
-The `showPostMoveActionMenu()` function handles async action selection after unit movement:
+The `showPostMoveActionMenu()` function handles asynchronous action selection after unit movement:
 
 1. **Menu Display Logic**:
    ```javascript
-   async function showPostMoveActionMenu(actions) {
-     // Filter available actions based on unit state
-     // Show modal with action buttons
-     // Return selected action as Promise
+   async function showPostMoveActionMenu(actions, unit) {
+     // Filter available actions based on unit state and position
+     if (actions.length === 1 && actions[0] === 'wait') {
+       // Auto-wait: Skip menu display
+       return 'wait';
+     }
+     
+     // Create modal with action buttons
+     const modal = createActionModal(actions);
+     
+     // Return Promise that resolves with selected action
+     return new Promise(resolve => {
+       modal.onAction = (action) => {
+         modal.close();
+         resolve(action);
+       };
+     });
    }
    ```
 
@@ -714,9 +761,34 @@ The `showPostMoveActionMenu()` function handles async action selection after uni
    - If only "Wait" action available, auto-executes without showing menu
    - Prevents unnecessary modal popups for routine moves
    - Improves game flow and user experience
+   - Reduces click fatigue in long games
 
-3. **Action Priority**:
-   - Attack actions shown first (red button)
-   - Capture actions for properties (flag button)
-   - Transport load/unload options
-   - Wait action always available (gray button)
+3. **Action Priority and Display Order**:
+   - ⚔️ Attack actions shown first (red button) - highest priority
+   - 🏴 Capture actions for properties (flag button) - second priority
+   - 🚛 Transport load/unload options (green button)
+   - ⏸️ Wait action always available (gray button) - lowest priority
+   - ❌ Cancel returns unit to original position
+
+4. **Promise-Based Flow**:
+   ```javascript
+   // Usage example
+   const action = await showPostMoveActionMenu(availableActions, selectedUnit);
+   switch(action) {
+     case 'attack': 
+       await handleAttack();
+       break;
+     case 'capture':
+       await handleCapture();
+       break;
+     case 'wait':
+       await handleWait();
+       break;
+   }
+   ```
+
+5. **Error Handling**:
+   - Modal automatically closes on escape key
+   - Cancel action restores unit to pre-move position
+   - Network errors show retry option
+   - Timeout after 30 seconds with auto-cancel
