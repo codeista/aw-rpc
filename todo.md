@@ -1,48 +1,58 @@
-# Update GAME_FLOW_AND_INTERACTIONS.md Documentation
+# Current Project Todo & Roadmap
 
-## TODO List
+## 🎯 Immediate Priorities
 
+### UI Testing System (In Progress)
+- [x] Fixed unit selection and movement execution 
+- [x] Resolved stale element reference errors
+- [x] Fixed coordinate calculation for click events
+- [ ] Improve visual highlight detection accuracy
+- [ ] Complete test coverage for all game mechanics
+- [ ] Add integration tests for complex scenarios
+
+### Testing & Validation
+- [ ] Validate modular app structure (TESTING_PLAN.md)
+- [ ] Run comprehensive test suite on new architecture
+- [ ] Verify all RPC endpoints work correctly
+- [ ] Performance testing after modularization
+
+## 📚 Documentation Updates
+
+### GAME_FLOW_AND_INTERACTIONS.md Updates
 - [ ] Add Auto-Wait Feature documentation
-  - Document automatic unit wait behavior when no actions available after moving
-  - Add to "User Interactions by Type" section
-
-- [ ] Update Client-Side Flag Updates section
-  - Document can_move, can_attack, can_capture flag updates after actions
-  - Add to "Unit States" visual states section
-
+- [ ] Update Client-Side Flag Updates section  
 - [ ] Document clearAllHighlights Function
-  - Add comprehensive highlight clearing behavior
-  - Update "Visual Effects and Highlights" section
-
 - [ ] Update Sprite States Logic
-  - Document that sprite states only check can_move || can_attack (not can_capture)
-  - Update "Unit States" in special visual states
-
 - [ ] Add Debug Functions Documentation
-  - Document simulateGameFlow and testSpriteStates functions
-  - Create new "Debug Tools" section
-
 - [ ] Document Async Handling Updates
-  - Update showPostMoveActionMenu async behavior
-  - Add to "Interaction Flow Examples" section
-
-- [ ] Add Sprite Showcase Route
-  - Document /sprites route for sprite showcase page
-  - Add to "Game Start" or create new "Development Tools" section
-
+- [ ] Add Sprite Showcase Route documentation
 - [ ] Update Unit Selection Priority
-  - Document fixed unit selection priority on production buildings
-  - Add to "Mouse Controls" left click behavior
-
 - [ ] Document BLUE Unit Sprite Fix
-  - Document fix for BLUE unit black sprite timing issue
-  - Add to "Special Visual States" section
-
 - [ ] Update Zoom Controls Documentation
-  - Document localStorage persistence for zoom
-  - Update existing "Zoom" keyboard controls section
+
+## 🚀 Future Features
+
+### Game Enhancements
+- [ ] AI opponent implementation
+- [ ] Multiplayer improvements
+- [ ] Advanced combat animations
+- [ ] Map editor functionality
+
+### Technical Improvements
+- [ ] Performance optimizations
+- [ ] Code refactoring and cleanup
+- [ ] Better error handling
+- [ ] Mobile responsiveness improvements
+
+## ✅ Recently Completed
+- ✅ Transport System (APC auto-resupply, Black Boat repair)
+- ✅ Auto-Wait Feature implementation
+- ✅ Animation System with gameplay testing
+- ✅ Modular Architecture (render.js → 18 focused modules)
+- ✅ UI Testing Infrastructure (unit selection, movement, stale element handling)
 
 ## Review Summary
-- The GAME_FLOW_AND_INTERACTIONS.md file needs updates in multiple sections
-- Most changes are enhancements to existing features
-- Need to add new sections for debug tools and development routes
+- Core game functionality is complete and tested
+- UI testing system is now reliable for automated testing
+- Documentation needs updates to reflect recent changes
+- Ready for validation and further feature development
