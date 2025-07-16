@@ -10,7 +10,7 @@ A fully functional Advance Wars implementation with authentic combat mechanics, 
 python3 -m venv flask-env
 
 # Activate environment
-. flask-env/bin/activate
+source flask-env/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
@@ -18,6 +18,8 @@ pip install -r requirements.txt
 # Run the game
 python3 app.py
 ```
+
+**Note:** Always use `flask-env` virtual environment for running the game and tests.
 
 ### Access Points
 - **Play Game**: http://localhost:5000/test_game (NEW: Unified test system)
