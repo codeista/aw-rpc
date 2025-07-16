@@ -4744,9 +4744,9 @@ def run_test():
             'test_combat_system.py': 'tests/unit/test_combat_system.py',
             'test_economic_system.py': 'tests/unit/test_economic_system.py',
             'test_movement_system.py': 'tests/unit/test_movement_system.py',
-            'test_victory_conditions.py': 'tests/integration/test_victory_conditions.py',
-            'test_transport_final.py': 'tests/unit/test_transport_final.py',
-            'test_repair_refuel_proper.py': 'test_repair_refuel_proper.py',
+            'test_victory_conditions.py': 'tests/unit/test_victory_conditions.py',
+            'test_transport_final.py': 'tests/unit/test_transport_features.py',
+            'test_repair_refuel_proper.py': 'tests/unit/test_complete_repair_refuel.py',
             'updated_test_phase1.py': 'tests/system/updated_test_phase1.py',
             'test_multiplayer_armies.py': 'tests/integration/test_multiplayer_armies.py'
         }

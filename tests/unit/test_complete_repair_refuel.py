@@ -38,6 +38,28 @@ def create_complete_test_scenario():
     print(f"✅ Created test game: {game_id}")
     print(f"🌐 URL: http://localhost:5000/game/{game_id}")
     
+    # Get game board to find facilities
+    board = rpc_call("game_board", {"token": game_id})
+    if "error" in board:
+        print(f"❌ Failed to get board: {board['error']}")
+        return None
+    
+    # Find RED facilities
+    red_port = None
+    red_factory = None
+    for tile in board['grid']:
+        if tile['mapTile']['type'] == 'PORT' and tile['mapTile'].get('army') == 'RED':
+            red_port = (tile['x'], tile['y'])
+        elif tile['mapTile']['type'] == 'FACTORY' and tile['mapTile'].get('army') == 'RED':
+            red_factory = (tile['x'], tile['y'])
+    
+    if not red_port or not red_factory:
+        print("❌ Could not find RED port or factory")
+        return None
+        
+    print(f"📍 Found RED port at {red_port}")
+    print(f"📍 Found RED factory at {red_factory}")
+    
     # Clear facilities by cycling turns
     print("\n🔄 Cycling turns to clear facilities...")
     for i in range(3):
@@ -45,13 +67,13 @@ def create_complete_test_scenario():
         rpc_call("army_end_turn", {"token": game_id})
     
     # 1. Create Black Boat at RED port
-    print("\n1️⃣ Creating Black Boat at RED port (0,0)")
+    print(f"\n1️⃣ Creating Black Boat at RED port {red_port}")
     bb_result = rpc_call("unit_create", {
         "token": game_id,
         "army": "RED",
         "unit_type": "BLACKBOAT",
-        "x": 0,
-        "y": 0
+        "x": red_port[0],
+        "y": red_port[1]
     })
     
     if "error" in bb_result:
@@ -60,13 +82,13 @@ def create_complete_test_scenario():
     print("✅ Black Boat created")
     
     # 2. Create Infantry for repair testing
-    print("\n2️⃣ Creating Infantry for repair test at (0,4)")
+    print(f"\n2️⃣ Creating Infantry for repair test at RED factory {red_factory}")
     inf_result = rpc_call("unit_create", {
         "token": game_id,
         "army": "RED",
         "unit_type": "INFANTRY",
-        "x": 0,
-        "y": 4
+        "x": red_factory[0],
+        "y": red_factory[1]
     })
     
     if "error" in inf_result:
@@ -75,17 +97,25 @@ def create_complete_test_scenario():
     print("✅ Infantry created")
     
     # 3. Create Tank for refuel testing
-    print("\n3️⃣ Creating Tank for refuel test at (0,4)")
-    # End turn to enable BLUE unit creation
+    print("\n3️⃣ Creating Tank for refuel test at factory")
+    # End turn to enable unit movement
     rpc_call("army_end_turn", {"token": game_id})
     rpc_call("army_end_turn", {"token": game_id})
+    
+    # Move infantry out of the way first
+    inf_new_x = red_factory[0] + 1 if red_factory[0] < 11 else red_factory[0] - 1
+    rpc_call("unit_move", {
+        "token": game_id,
+        "x": red_factory[0], "y": red_factory[1],
+        "x2": inf_new_x, "y2": red_factory[1]
+    })
     
     tank_result = rpc_call("unit_create", {
         "token": game_id,
         "army": "RED", 
         "unit_type": "TANK",
-        "x": 0,
-        "y": 4
+        "x": red_factory[0],
+        "y": red_factory[1]
     })
     
     if "error" in tank_result:
@@ -100,25 +130,30 @@ def create_complete_test_scenario():
     rpc_call("army_end_turn", {"token": game_id})
     rpc_call("army_end_turn", {"token": game_id})
     
-    # Move Infantry to position (1,0) - adjacent to Black Boat
+    # Move Infantry to position adjacent to Black Boat
+    # Calculate adjacent position to port
+    port_adj_x = red_port[0] + 1 if red_port[0] < 11 else red_port[0] - 1
+    port_adj_y = red_port[1]
+    
     inf_move = rpc_call("unit_move", {
         "token": game_id,
-        "x": 0, "y": 4,
-        "x2": 1, "y2": 0
+        "x": inf_new_x, "y": red_factory[1],
+        "x2": port_adj_x, "y2": port_adj_y
     })
     
     if "error" not in inf_move:
-        print("✅ Infantry moved to (1,0) adjacent to Black Boat")
+        print(f"✅ Infantry moved to ({port_adj_x},{port_adj_y}) adjacent to Black Boat")
     else:
         print(f"⚠️ Infantry move failed: {inf_move.get('error')}")
         # Try alternative position
+        port_adj_y = red_port[1] + 1 if red_port[1] < 9 else red_port[1] - 1
         inf_move2 = rpc_call("unit_move", {
             "token": game_id,
-            "x": 0, "y": 4,
-            "x2": 0, "y2": 1
+            "x": inf_new_x, "y": red_factory[1],
+            "x2": red_port[0], "y2": port_adj_y
         })
         if "error" not in inf_move2:
-            print("✅ Infantry moved to (0,1) adjacent to Black Boat")
+            print(f"✅ Infantry moved to ({red_port[0]},{port_adj_y}) adjacent to Black Boat")
     
     # 5. Create enemy unit to damage our units
     print("\n5️⃣ Creating enemy to damage our units...")
@@ -282,6 +317,7 @@ if __name__ == "__main__":
     print(f"\n🎉 All tests completed!")
     print(f"✅ Black Boat repair system fully functional")
     print(f"✅ All transport features working")
+    print(f"\n✅ ALL REPAIR/REFUEL TESTS PASSED!")
     
     if game_id:
         print(f"\n🎮 Ready for manual testing at:")

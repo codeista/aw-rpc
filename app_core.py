@@ -15,16 +15,17 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Create main JSONRPC instance with enhanced web browsable API
 jsonrpc = JSONRPC(app, '/api', enable_web_browsable_api=True)
 
-# Create categorized namespaces for better API organization
-game_management_api = jsonrpc.namespace('game_management', description='🎮 Game Management - Core game lifecycle operations')
-unit_operations_api = jsonrpc.namespace('unit_operations', description='🪖 Unit Operations - Unit creation, movement, and actions')
-combat_system_api = jsonrpc.namespace('combat_system', description='⚔️ Combat System - Attack mechanics and damage calculations')
-transport_system_api = jsonrpc.namespace('transport_system', description='🚢 Transport System - Cargo loading and transport operations')
-map_tile_api = jsonrpc.namespace('map_tile', description='🗺️ Map & Tile Information - Terrain and tile data access')
-special_actions_api = jsonrpc.namespace('special_actions', description='🏰 Special Actions - Property capture and special abilities')
-production_economic_api = jsonrpc.namespace('production_economic', description='🏭 Production & Economic - Unit production and financial operations')
-information_api = jsonrpc.namespace('information', description='📋 Information & Reference - Configuration and reference data')
-communication_api = jsonrpc.namespace('communication', description='💬 Communication - Chat and messaging features')
+# For compatibility with current Flask-JSONRPC version, use single instance
+# The categorization is handled by our custom documentation route
+game_management_api = jsonrpc
+unit_operations_api = jsonrpc
+combat_system_api = jsonrpc
+transport_system_api = jsonrpc
+map_tile_api = jsonrpc
+special_actions_api = jsonrpc
+production_economic_api = jsonrpc
+information_api = jsonrpc
+communication_api = jsonrpc
 
 socketio = SocketIO(app)
 
