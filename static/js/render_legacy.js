@@ -3600,11 +3600,14 @@ function advanceWarsUnitSelect(tile) {
 // =============================================================================
 
 function advanceWarsMove(targetTile) {
-    if (!window.gameState.selectedUnit) {
+    // Use board.selected as fallback since gameState.selectedUnit may not be set due to timing issues
+    const selectedUnit = window.gameState?.selectedUnit || board.selected;
+    if (!selectedUnit) {
+        logger.warn('No unit selected for movement');
         return false;
     }
     
-    var source = window.gameState.selectedUnit;
+    var source = selectedUnit;
     
     jsonrpc('unit_move', {
         x: source.x, 
@@ -4205,8 +4208,10 @@ function advanceWarsCanvasClick(ev) {
     }
     
     // PRIORITY 6: Normal movement system
-    if (window.gameState && window.gameState.selectedUnit && tile.can_be_moved_to) {
-        advanceWarsMove(window.gameState.selectedUnit, tile);
+    // Use board.selected as fallback since gameState.selectedUnit may not be set due to timing issues
+    const selectedUnit = window.gameState?.selectedUnit || board.selected;
+    if (selectedUnit && tile.can_be_moved_to) {
+        advanceWarsMove(tile);  // Fix: pass only target tile, not selectedUnit
         return;
     }
     

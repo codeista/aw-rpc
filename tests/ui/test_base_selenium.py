@@ -137,17 +137,41 @@ class BaseSeleniumTest:
     
     def click_tile(self, x: int, y: int):
         """Click on a specific tile coordinate"""
-        canvas = self.get_canvas()
-        
-        # Calculate canvas pixel coordinates
-        # Note: The game adds TILESIZE offset in the tileAt function
+        # Calculate pixel coordinates that will map to the desired tile
+        # tileAt formula: tileX = Math.floor(px / TILESIZE), tileY = Math.floor((py - sceneOffset) / TILESIZE)
+        # We want the center of the tile for reliable clicking
         canvas_x = x * self.TILE_SIZE + (self.TILE_SIZE // 2)
-        canvas_y = y * self.TILE_SIZE + (self.TILE_SIZE // 2) + self.TILE_SIZE
+        canvas_y = y * self.TILE_SIZE + (self.TILE_SIZE // 2) + self.TILE_SIZE  # +TILE_SIZE for scene offset
         
-        # Perform the click
-        ActionChains(self.driver).move_to_element_with_offset(
-            canvas, canvas_x, canvas_y
-        ).click().perform()
+        # Use JavaScript to trigger click event directly to avoid ActionChains coordinate issues
+        result = self.driver.execute_script("""
+            const canvas = document.querySelector('#draw canvas');
+            if (!canvas) return {error: 'Canvas not found'};
+            
+            // Create and dispatch click event
+            const event = new MouseEvent('click', {
+                clientX: arguments[0] + canvas.getBoundingClientRect().left,
+                clientY: arguments[1] + canvas.getBoundingClientRect().top,
+                offsetX: arguments[0],
+                offsetY: arguments[1],
+                bubbles: true,
+                cancelable: true
+            });
+            
+            // Verify coordinates before click
+            const tile = window.tileAt(arguments[0], arguments[1]);
+            console.log(`Clicking pixel (${arguments[0]}, ${arguments[1]}) -> tile (${tile?.x}, ${tile?.y})`);
+            
+            canvas.dispatchEvent(event);
+            
+            return {
+                pixelCoords: [arguments[0], arguments[1]],
+                tileCoords: tile ? [tile.x, tile.y] : null,
+                success: true
+            };
+        """, canvas_x, canvas_y)
+        
+        print(f"Click tile ({x}, {y}) -> pixel ({canvas_x}, {canvas_y}) -> result: {result}")
         
         # Small delay for action to register
         time.sleep(0.1)
