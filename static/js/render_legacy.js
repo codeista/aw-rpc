@@ -265,6 +265,8 @@ function jsonrpc(method, params, callback) {
                             reject(new Error('Invalid JSON response'));
                         }
                     } else {
+                        logger.error('RPC HTTP Error:', method, this.status, this.statusText);
+                        logger.error('Response body:', this.responseText);
                         reject(new Error(`HTTP ${this.status}: ${this.statusText}`));
                     }
                 }
@@ -3157,9 +3159,10 @@ window.movementHighlightGroup = null;
 // =============================================================================
 
 function highlightMovementRange(unitX, unitY) {
+    logger.info(`[render_legacy] highlightMovementRange called for (${unitX}, ${unitY})`);
     
     // Get movement range data from backend
-    jsonrpc('get_unit_valid_moves', {x: unitX, y: unitY})
+    jsonrpc('get_movement_highlights', {x: unitX, y: unitY})
         .then(result => {
             if (result && result.success && result.moves) {
                 clearMovementHighlights();
@@ -3174,7 +3177,7 @@ function highlightMovementRange(unitX, unitY) {
             }
         })
         .catch(error => {
-            logger.error('Movement range request failed:', error);
+            logger.error('[render_legacy] Movement range request failed:', error);
             // Fallback: calculate movement range locally
             calculateMovementRangeLocally(unitX, unitY);
         });

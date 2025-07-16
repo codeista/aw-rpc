@@ -254,6 +254,9 @@ function jsonrpc(method, params, callback) {
                             reject(new Error('Invalid JSON response'));
                         }
                     } else {
+                        logger.error('RPC HTTP Error:', method, this.status, this.statusText);
+                        logger.error('Response body:', this.responseText);
+                        logger.error('Request params:', params);
                         reject(new Error(`HTTP ${this.status}: ${this.statusText}`));
                     }
                 }
@@ -3043,13 +3046,16 @@ window.movementHighlightGroup = null;
 // =============================================================================
 
 function highlightMovementRange(unitX, unitY) {
+    logger.info(`highlightMovementRange called for unit at (${unitX}, ${unitY})`);
     
     // Get movement range data from backend
-    jsonrpc('get_unit_valid_moves', {x: unitX, y: unitY})
+    jsonrpc('get_movement_highlights', {x: unitX, y: unitY})
         .then(result => {
+            logger.info('Movement highlights response:', result);
             if (result && result.success && result.moves) {
                 clearMovementHighlights();
                 
+                logger.info(`Highlighting ${result.moves.length} movement tiles`);
                 result.moves.forEach(move => {
                     highlightMovementTile(move.x, move.y, 'movement-range');
                 });
@@ -3061,8 +3067,40 @@ function highlightMovementRange(unitX, unitY) {
         })
         .catch(error => {
             logger.error('Movement range request failed:', error);
-            // Fallback: calculate movement range locally
-            calculateMovementRangeLocally(unitX, unitY);
+            logger.error('Error details:', error.message, error.stack);
+            
+            // Try a direct call as fallback
+            logger.info('Attempting fallback RPC call...');
+            
+            // Use fetch API as a backup
+            fetch('/api', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    jsonrpc: '2.0',
+                    method: 'get_movement_highlights',
+                    params: {token: token, x: unitX, y: unitY},
+                    id: Date.now()
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.result && data.result.success) {
+                    logger.info('Fallback RPC succeeded!');
+                    clearMovementHighlights();
+                    data.result.moves.forEach(move => {
+                        highlightMovementTile(move.x, move.y, 'movement-range');
+                    });
+                } else {
+                    logger.error('Fallback RPC also failed:', data);
+                    // Last resort: calculate locally
+                    calculateMovementRangeLocally(unitX, unitY);
+                }
+            })
+            .catch(err => {
+                logger.error('Fallback fetch failed:', err);
+                calculateMovementRangeLocally(unitX, unitY);
+            });
         });
 }
 
