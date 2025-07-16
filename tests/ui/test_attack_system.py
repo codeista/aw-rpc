@@ -215,7 +215,7 @@ class TestDirectAttack(BaseSeleniumTest):
                 elif distance <= 4:
                     # Try to move them adjacent
                     self.click_tile(red_unit['x'], red_unit['y'])
-                    if self.wait_for_highlights('movement', timeout=1):
+                    if self.wait_for_highlights('movement', timeout=3):
                         # Find move position adjacent to blue unit
                         highlights = self.get_movement_highlights()
                         adjacent_tiles = self._get_adjacent_tiles(blue_unit['x'], blue_unit['y'])

@@ -21,10 +21,11 @@ class ColorDetector:
     # Define highlight colors (BGR format for OpenCV)
     COLORS = {
         'movement': {
-            'rgb': (255, 248, 220),  # Light yellow/gold
-            'bgr': (220, 248, 255),
-            'range_lower': np.array([200, 228, 235]),
-            'range_upper': np.array([240, 255, 255])
+            'rgb': (214, 239, 99),  # Actual sampled highlight color
+            'bgr': (99, 239, 214),
+            # Range based on actual sampled colors: (206-214, 239, 99)
+            'range_lower': np.array([90, 230, 200]),   # BGR format
+            'range_upper': np.array([110, 250, 220])
         },
         'attack': {
             'rgb': (255, 0, 0),  # Red
@@ -84,37 +85,65 @@ class ColorDetector:
         rectangles = []
         for contour in contours:
             x, y, w, h = cv2.boundingRect(contour)
-            # Filter out very small regions (noise)
-            if w > 5 and h > 5:
+            # Filter out very small regions (noise) but be more permissive for subtle highlights
+            area = w * h
+            # Accept rectangles that are at least 10x10 pixels (small tile) or have decent area
+            if (w >= 8 and h >= 8) or area >= 100:
                 rectangles.append((x, y, w, h))
         
         return rectangles
     
     @classmethod
-    def count_highlight_tiles(cls, image: Image.Image, highlight_type: str, tile_size: int = 16) -> int:
+    def count_highlight_tiles(cls, image: Image.Image, highlight_type: str, tile_size: int = 16, canvas_offset: tuple = None) -> int:
         """Count the number of highlighted tiles"""
         rectangles = cls.find_highlights(image, highlight_type)
         
-        # Group rectangles into tiles
+        # Group rectangles into tiles - be more robust about tile boundaries
         tiles = set()
         for x, y, w, h in rectangles:
-            # Calculate which tile(s) this rectangle covers
-            tile_x = x // tile_size
-            tile_y = (y - 16) // tile_size  # Account for scene Y offset
-            tiles.add((tile_x, tile_y))
+            # Adjust for canvas offset if provided
+            if canvas_offset:
+                canvas_x, canvas_y = canvas_offset
+                x -= canvas_x
+                y -= canvas_y
+            
+            # Calculate center point of rectangle for more accurate tile assignment
+            center_x = x + w // 2
+            center_y = y + h // 2
+            
+            # Calculate which tile this center point belongs to
+            tile_x = center_x // tile_size
+            tile_y = (center_y - 16) // tile_size  # Account for scene Y offset
+            
+            # Only add tiles that are within reasonable bounds (0-50 range)
+            if 0 <= tile_x <= 50 and 0 <= tile_y <= 50:
+                tiles.add((tile_x, tile_y))
         
         return len(tiles)
     
     @classmethod
-    def get_highlight_positions(cls, image: Image.Image, highlight_type: str, tile_size: int = 16) -> List[Tuple[int, int]]:
+    def get_highlight_positions(cls, image: Image.Image, highlight_type: str, tile_size: int = 16, canvas_offset: tuple = None) -> List[Tuple[int, int]]:
         """Get tile positions of all highlights"""
         rectangles = cls.find_highlights(image, highlight_type)
         
         tiles = set()
         for x, y, w, h in rectangles:
-            tile_x = x // tile_size
-            tile_y = (y - 16) // tile_size  # Account for scene Y offset
-            tiles.add((tile_x, tile_y))
+            # Adjust for canvas offset if provided
+            if canvas_offset:
+                canvas_x, canvas_y = canvas_offset
+                x -= canvas_x
+                y -= canvas_y
+            
+            # Use center point for more accurate tile assignment
+            center_x = x + w // 2
+            center_y = y + h // 2
+            
+            tile_x = center_x // tile_size
+            tile_y = (center_y - 16) // tile_size  # Account for scene Y offset
+            
+            # Only add tiles that are within reasonable bounds
+            if 0 <= tile_x <= 50 and 0 <= tile_y <= 50:
+                tiles.add((tile_x, tile_y))
         
         return sorted(list(tiles))
     
@@ -127,12 +156,103 @@ class ColorDetector:
         result = image.copy()
         draw = ImageDraw.Draw(result)
         
-        # Draw rectangles
+        # Draw rectangles and tile boundaries
         color = cls.COLORS[highlight_type]['rgb']
-        for x, y, w, h in rectangles:
+        for i, (x, y, w, h) in enumerate(rectangles):
+            # Draw the detected rectangle
             draw.rectangle([x, y, x + w, y + h], outline=color, width=2)
+            
+            # Label with index
+            draw.text((x, y), str(i), fill=color)
         
         return result
+    
+    @classmethod
+    def debug_highlight_detection(cls, image: Image.Image, highlight_type: str, tile_size: int = 16) -> dict:
+        """Debug method to analyze highlight detection"""
+        rectangles = cls.find_highlights(image, highlight_type)
+        tiles = cls.get_highlight_positions(image, highlight_type, tile_size)
+        
+        # Sample colors from areas that should contain highlights
+        sample_colors = cls.sample_highlight_colors(image, tile_size)
+        
+        return {
+            'rectangles_found': len(rectangles),
+            'rectangles': rectangles,
+            'tiles_found': len(tiles),
+            'tile_positions': tiles,
+            'color_range': cls.COLORS[highlight_type],
+            'sample_colors': sample_colors
+        }
+    
+    @classmethod
+    def detect_canvas_offset(cls, image: Image.Image, expected_canvas_size: tuple = (192, 176)) -> tuple:
+        """Detect the offset of the game canvas within the screenshot"""
+        width, height = image.size
+        canvas_width, canvas_height = expected_canvas_size
+        
+        # The canvas should be somewhere in the screenshot
+        # Look for a likely position based on common patterns
+        
+        # For most screenshots, the canvas appears to be offset from the left
+        # Based on the test output showing highlights at x=448+ when canvas is 192px wide,
+        # the offset seems to be around 450-500 pixels from the left
+        
+        # Simple heuristic: look for where highlights cluster
+        rectangles = cls.find_highlights(image, 'movement')
+        if rectangles:
+            # Find the leftmost and topmost highlight positions
+            min_x = min(rect[0] for rect in rectangles)
+            min_y = min(rect[1] for rect in rectangles)
+            
+            # Estimate canvas top-left based on highlight positions
+            # Assuming the highlights are near the canvas center
+            estimated_canvas_x = max(0, min_x - canvas_width // 2)
+            estimated_canvas_y = max(0, min_y - canvas_height // 2)
+            
+            return (estimated_canvas_x, estimated_canvas_y)
+        
+        # Fallback: assume canvas is centered in viewport
+        return ((width - canvas_width) // 2, (height - canvas_height) // 2)
+    
+    @classmethod
+    def sample_highlight_colors(cls, image: Image.Image, tile_size: int = 16) -> dict:
+        """Sample colors from the image to help calibrate detection"""
+        width, height = image.size
+        
+        # Sample from a grid of positions
+        samples = []
+        for y in range(16, height - 16, tile_size):  # Start after scene offset
+            for x in range(0, width, tile_size):
+                if x < width and y < height:
+                    # Sample from center of each tile
+                    sample_x = min(x + tile_size // 2, width - 1)
+                    sample_y = min(y + tile_size // 2, height - 1)
+                    
+                    try:
+                        pixel = image.getpixel((sample_x, sample_y))
+                        if isinstance(pixel, tuple) and len(pixel) >= 3:
+                            r, g, b = pixel[:3]
+                            # Convert RGB to BGR for comparison
+                            bgr = (b, g, r)
+                            samples.append({
+                                'position': (x // tile_size, (y - 16) // tile_size),
+                                'rgb': (r, g, b),
+                                'bgr': bgr,
+                                'is_yellowish': r > 200 and g > 200 and b < 100  # Basic yellow detection
+                            })
+                    except IndexError:
+                        pass
+        
+        # Find potentially highlighted tiles
+        yellow_samples = [s for s in samples if s['is_yellowish']]
+        
+        return {
+            'total_samples': len(samples),
+            'yellow_candidates': len(yellow_samples),
+            'yellow_positions': [s['position'] for s in yellow_samples],
+            'yellow_colors': [s['rgb'] for s in yellow_samples]
+        }
 
 
 class CoordinateHelper:

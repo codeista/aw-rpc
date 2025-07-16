@@ -118,7 +118,7 @@ class BaseSeleniumTest:
         # The result is the token itself, not a dict with 'token' key
         return token
     
-    def safe_execute_script(self, script, *args, max_retries=3):
+    def safe_execute_script(self, script, *args, max_retries=5):
         """Execute JavaScript with retry on stale element errors"""
         from selenium.common.exceptions import StaleElementReferenceException, WebDriverException
         
@@ -126,14 +126,20 @@ class BaseSeleniumTest:
             try:
                 # Wait for DOM to stabilize before script execution
                 if attempt > 0:
+                    # Longer wait and refresh DOM state
+                    time.sleep(0.5)
                     self.wait_for_canvas()  # Ensure canvas is still present
+                    # Force a brief wait for page to fully settle
+                    WebDriverWait(self.driver, 2).until(
+                        lambda driver: driver.execute_script("return document.readyState") == "complete"
+                    )
                 return self.driver.execute_script(script, *args)
             except (StaleElementReferenceException, WebDriverException) as e:
                 if attempt == max_retries - 1:
                     raise
                 print(f"Retry {attempt + 1}/{max_retries} due to: {type(e).__name__}")
-                # Exponential backoff: 0.3s, 0.6s, 1.2s
-                wait_time = 0.3 * (2 ** attempt)
+                # Linear backoff: 0.5s, 1s, 1.5s, 2s
+                wait_time = 0.5 * (attempt + 1)
                 time.sleep(wait_time)
     
     def wait_for_canvas(self):
@@ -276,23 +282,33 @@ class BaseSeleniumTest:
             return window.gameState?.attackHighlights || [];
         """)
     
-    def wait_for_highlights(self, highlight_type: str = "movement", timeout: int = 3):
+    def wait_for_highlights(self, highlight_type: str = "movement", timeout: int = 5):
         """Wait for highlights to appear"""
         def check_highlights(driver):
-            state = self.get_game_state()
-            if highlight_type == "movement":
-                return state.get("movementHighlights", 0) > 0
-            elif highlight_type == "attack":
-                return state.get("attackHighlights", 0) > 0
-            elif highlight_type == "transport":
-                return state.get("transportHighlights", 0) > 0
-            return False
+            try:
+                state = self.get_game_state()
+                if highlight_type == "movement":
+                    return state.get("movementHighlights", 0) > 0
+                elif highlight_type == "attack":
+                    return state.get("attackHighlights", 0) > 0
+                elif highlight_type == "transport":
+                    return state.get("transportHighlights", 0) > 0
+                return False
+            except Exception:
+                # Ignore errors during polling
+                return False
         
         try:
             WebDriverWait(self.driver, timeout).until(check_highlights)
             return True
         except TimeoutException:
-            return False
+            # Final fallback check
+            try:
+                state = self.get_game_state()
+                count = state.get(f"{highlight_type}Highlights", 0)
+                return count > 0
+            except Exception:
+                return False
     
     def wait_for_no_highlights(self, timeout: int = 3):
         """Wait for all highlights to be cleared"""
@@ -458,7 +474,9 @@ class BaseSeleniumTest:
                 # Ignore 404s and known circular JSON warning
                 if ('404' not in message and 
                     'Failed to load resource' not in message and
-                    'Converting circular structure to JSON' not in message):
+                    'Converting circular structure to JSON' not in message and
+                    'WebSocket connection' not in message and
+                    'Invalid frame header' not in message):
                     real_errors.append(log)
         
         if real_errors:

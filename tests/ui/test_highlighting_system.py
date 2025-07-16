@@ -202,16 +202,64 @@ class TestMovementHighlights(BaseSeleniumTest):
         highlights = self.get_movement_highlights()
         assert len(highlights) > 0, "No movement highlight data found"
         
-        # Capture canvas and verify visually
+        # Get canvas info first
+        canvas_info = self.driver.execute_script("""
+            const canvas = document.querySelector('#draw canvas');
+            const scene = window.scene;
+            return {
+                canvasWidth: canvas.width,
+                canvasHeight: canvas.height,
+                sceneTranslation: scene ? {x: scene.translation.x, y: scene.translation.y} : null,
+                sceneScale: scene ? scene.scale : null,
+                boardDimensions: window.board ? {width: window.board.width, height: window.board.height} : null
+            };
+        """)
+        print(f"Canvas info: {canvas_info}")
+        
+        # Capture canvas and verify visually with improved detection
         canvas_img = self.capture_canvas()
-        highlight_count = ColorDetector.count_highlight_tiles(canvas_img, 'movement')
         
-        # For now, just verify we have data highlights (visual verification needs work)
+        # Detect canvas offset
+        canvas_offset = ColorDetector.detect_canvas_offset(canvas_img, (canvas_info['canvasWidth'], canvas_info['canvasHeight']))
+        print(f"Detected canvas offset: {canvas_offset}")
+        
+        # Debug the highlight detection
+        debug_info = ColorDetector.debug_highlight_detection(canvas_img, 'movement')
+        print(f"Debug info: {debug_info}")
+        
+        highlight_count = ColorDetector.count_highlight_tiles(canvas_img, 'movement', canvas_offset=canvas_offset)
+        tile_positions = ColorDetector.get_highlight_positions(canvas_img, 'movement', canvas_offset=canvas_offset)
+        
+        # Analyze coordinate system mismatch
+        
         print(f"Visual highlights detected: {highlight_count}, Data highlights: {len(highlights)}")
+        print(f"Visual tile positions: {tile_positions}")
+        print(f"Data tile positions: {[(h['x'], h['y']) for h in highlights]}")
         
-        # Skip visual verification for now since rendering might need work
-        # assert highlight_count > 0, "No movement highlights detected visually"
-        # assert highlight_count == len(highlights), f"Visual highlights ({highlight_count}) don't match data ({len(highlights)})"
+        # Calculate expected canvas positions for data highlights
+        expected_pixels = []
+        for h in highlights[:5]:  # First 5 for comparison
+            canvas_x = h['x'] * 16
+            canvas_y = h['y'] * 16 + 16
+            expected_pixels.append((canvas_x, canvas_y))
+        print(f"Expected canvas pixels for data: {expected_pixels}")
+        
+        # Calculate actual canvas pixels for visual detections
+        actual_pixels = []
+        for pos in tile_positions[:5]:  # First 5 for comparison
+            canvas_x = pos[0] * 16
+            canvas_y = pos[1] * 16 + 16
+            actual_pixels.append((canvas_x, canvas_y))
+        print(f"Actual canvas pixels from visual: {actual_pixels}")
+        
+        # Create debug overlay image
+        debug_img = ColorDetector.draw_detection_overlay(canvas_img, 'movement')
+        debug_path = f"tests/ui/screenshots/highlight_debug_{int(time.time())}.png"
+        debug_img.save(debug_path)
+        print(f"Debug overlay saved to: {debug_path}")
+        
+        # Now test if detection is working better
+        assert highlight_count > 0, f"No movement highlights detected visually. Debug: {debug_info}"
         
         # Take screenshot for reference
         self.take_screenshot("movement_highlights_active")

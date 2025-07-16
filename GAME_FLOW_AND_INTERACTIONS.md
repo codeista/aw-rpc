@@ -449,13 +449,15 @@ When zooming:
    - Text remains readable
    
 2. **Persistence**:
-   - Zoom level saved to localStorage
-   - Restored on page refresh
+   - Zoom level saved to localStorage as 'canvas-zoom'
+   - Restored on page refresh via loadZoomFromStorage()
    - Mobile pinch gesture support
+   - Default: 100% zoom if no saved value
    
 3. **Sprite Loading**:
    - Sprite corrections loaded before rendering to prevent black sprites
    - Handles timing issues with async sprite data loading
+   - BLUE unit sprites: Fixed "grayed out" issue by adding proper sprite state mapping
 
 ---
 
@@ -651,9 +653,11 @@ For Black Boat repairs:
 - **Purpose**: View all unit sprites for all armies in different states
 - **Features**:
   - Shows available, unavailable, and damaged states
-  - All 25 unit types for all 5 armies
+  - All 25 unit types for all 5 armies (RED, BLUE, GREEN, YELLOW, BLACK)
   - Interactive tileset switching
   - Uses actual game sprite correction data
+  - Demonstrates sprite state rendering pipeline
+  - Useful for debugging sprite display issues
 
 ### Debug Functions (Console)
 Available in browser console for testing:
@@ -661,12 +665,21 @@ Available in browser console for testing:
 1. **simulateGameFlow()**
    - Simulates complete game flow programmatically
    - Tests unit selection, movement, and combat
-   - Useful for automated testing
+   - Executes: select unit → move → attack → end turn sequence
+   - Useful for automated testing and QA validation
+   - Returns: Boolean success status and detailed logs
 
 2. **testSpriteStates()**
-   - Logs current sprite state for all units
-   - Shows can_move, can_attack, can_capture flags
-   - Helps debug sprite display issues
+   - Logs current sprite state for all units on the board
+   - Shows can_move, can_attack, can_capture flags for each unit
+   - Displays unit position, type, army, and HP
+   - Helps debug sprite graying/availability display issues
+   - Format: "[x,y] TYPE(army) HP: can_move/can_attack/can_capture"
+
+3. **clearAllHighlights()**
+   - Manually clears all movement and attack highlights
+   - Useful when highlights get stuck after errors
+   - Called automatically after combat and major actions
 
 ### Client-Side Workarounds
 Due to server-side state management limitations, the following client-side updates are implemented:
@@ -684,3 +697,26 @@ Due to server-side state management limitations, the following client-side updat
    - Unit: can_move = false, can_attack = false
 
 These ensure sprite states update immediately without waiting for server sync.
+
+### Async Action Menu Handling
+The `showPostMoveActionMenu()` function handles async action selection after unit movement:
+
+1. **Menu Display Logic**:
+   ```javascript
+   async function showPostMoveActionMenu(actions) {
+     // Filter available actions based on unit state
+     // Show modal with action buttons
+     // Return selected action as Promise
+   }
+   ```
+
+2. **Auto-Wait Integration**:
+   - If only "Wait" action available, auto-executes without showing menu
+   - Prevents unnecessary modal popups for routine moves
+   - Improves game flow and user experience
+
+3. **Action Priority**:
+   - Attack actions shown first (red button)
+   - Capture actions for properties (flag button)
+   - Transport load/unload options
+   - Wait action always available (gray button)
