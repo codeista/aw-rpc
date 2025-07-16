@@ -118,6 +118,24 @@ class BaseSeleniumTest:
         # The result is the token itself, not a dict with 'token' key
         return token
     
+    def safe_execute_script(self, script, *args, max_retries=3):
+        """Execute JavaScript with retry on stale element errors"""
+        from selenium.common.exceptions import StaleElementReferenceException, WebDriverException
+        
+        for attempt in range(max_retries):
+            try:
+                # Wait for DOM to stabilize before script execution
+                if attempt > 0:
+                    self.wait_for_canvas()  # Ensure canvas is still present
+                return self.driver.execute_script(script, *args)
+            except (StaleElementReferenceException, WebDriverException) as e:
+                if attempt == max_retries - 1:
+                    raise
+                print(f"Retry {attempt + 1}/{max_retries} due to: {type(e).__name__}")
+                # Exponential backoff: 0.3s, 0.6s, 1.2s
+                wait_time = 0.3 * (2 ** attempt)
+                time.sleep(wait_time)
+    
     def wait_for_canvas(self):
         """Wait for the game canvas to be ready"""
         canvas = self.wait.until(
@@ -132,8 +150,19 @@ class BaseSeleniumTest:
         return canvas
     
     def get_canvas(self):
-        """Get the game canvas element"""
-        return self.driver.find_element(By.ID, self.CANVAS_ID)
+        """Get the game canvas element with retry on stale element"""
+        from selenium.common.exceptions import StaleElementReferenceException
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                canvas = self.driver.find_element(By.ID, self.CANVAS_ID)
+                # Test if element is still attached by accessing a property
+                _ = canvas.size
+                return canvas
+            except StaleElementReferenceException:
+                if attempt == max_retries - 1:
+                    raise
+                time.sleep(0.2)  # Brief pause before retry
     
     def click_tile(self, x: int, y: int):
         """Click on a specific tile coordinate"""
@@ -144,7 +173,7 @@ class BaseSeleniumTest:
         canvas_y = y * self.TILE_SIZE + (self.TILE_SIZE // 2) + self.TILE_SIZE  # +TILE_SIZE for scene offset
         
         # Use JavaScript to trigger click event directly to avoid ActionChains coordinate issues
-        result = self.driver.execute_script("""
+        result = self.safe_execute_script("""
             const canvas = document.querySelector('#draw canvas');
             if (!canvas) return {error: 'Canvas not found'};
             
@@ -173,8 +202,8 @@ class BaseSeleniumTest:
         
         print(f"Click tile ({x}, {y}) -> pixel ({canvas_x}, {canvas_y}) -> result: {result}")
         
-        # Small delay for action to register
-        time.sleep(0.1)
+        # Small delay for action to register and DOM to stabilize
+        time.sleep(0.2)
     
     def double_click_tile(self, x: int, y: int):
         """Double-click on a specific tile coordinate"""
@@ -217,7 +246,7 @@ class BaseSeleniumTest:
     
     def get_game_state(self) -> Dict[str, Any]:
         """Get the current game state via JavaScript"""
-        return self.driver.execute_script("""
+        return self.safe_execute_script("""
             return {
                 selected: window.board?.selected,
                 currentTurn: window.board?.current_turn,
@@ -237,13 +266,13 @@ class BaseSeleniumTest:
     
     def get_movement_highlights(self) -> list:
         """Get the current movement highlight positions"""
-        return self.driver.execute_script("""
+        return self.safe_execute_script("""
             return window.movementHighlights || [];
         """)
     
     def get_attack_highlights(self) -> list:
         """Get the current attack highlight positions"""
-        return self.driver.execute_script("""
+        return self.safe_execute_script("""
             return window.gameState?.attackHighlights || [];
         """)
     
@@ -300,7 +329,7 @@ class BaseSeleniumTest:
     
     def find_unit_at(self, x: int, y: int) -> Optional[Dict[str, Any]]:
         """Find unit at specific tile coordinates"""
-        return self.driver.execute_script("""
+        return self.safe_execute_script("""
             const x = arguments[0];
             const y = arguments[1];
             if (!window.board || !window.board.grid) return null;
@@ -311,7 +340,7 @@ class BaseSeleniumTest:
     
     def get_tile_info(self, x: int, y: int) -> Optional[Dict[str, Any]]:
         """Get complete tile information"""
-        return self.driver.execute_script("""
+        return self.safe_execute_script("""
             const x = arguments[0];
             const y = arguments[1];
             if (!window.board || !window.board.grid) return null;
@@ -321,7 +350,7 @@ class BaseSeleniumTest:
     
     def end_turn(self):
         """End the current turn"""
-        self.driver.execute_script("""
+        self.safe_execute_script("""
             window.armyEndTurn();
         """)
         time.sleep(0.5)  # Wait for turn transition
@@ -347,10 +376,16 @@ class BaseSeleniumTest:
         return self.get_unit_positions(current_turn)
     
     def wait_for_animation(self, timeout: float = 0.5):
-        """Wait for any animations to complete"""
+        """Wait for any animations to complete and DOM to stabilize"""
         # With animations disabled, we only need a short wait
-        # for state updates
+        # for state updates and DOM stabilization
         time.sleep(timeout)
+        
+        # Additional DOM stabilization check
+        try:
+            self.wait.until(lambda driver: driver.execute_script("return document.readyState === 'complete'"))
+        except:
+            pass  # Fallback if readyState check fails
     
     def disable_animations(self):
         """Disable animations for faster and more reliable tests"""
@@ -377,7 +412,7 @@ class BaseSeleniumTest:
     
     def get_unit_positions(self, army: str = None) -> list:
         """Get all unit positions, optionally filtered by army"""
-        result = self.driver.execute_script("""
+        result = self.safe_execute_script("""
             const army = arguments[0];
             if (!window.board || !window.board.grid) return [];
             
@@ -398,7 +433,7 @@ class BaseSeleniumTest:
         """, army)
         
         # Also get economy data to verify
-        economy = self.driver.execute_script("""
+        economy = self.safe_execute_script("""
             return window.jsonrpc('get_army_economy', {})
                 .then(result => result)
                 .catch(error => ({error: error.message}));
