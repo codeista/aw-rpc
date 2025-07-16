@@ -1,0 +1,18 @@
+# UI Testing Requirements for AW-RPC
+
+# Core testing framework
+pytest>=7.0.0
+pytest-html>=3.1.0
+pytest-xdist>=3.0.0
+
+# Selenium for browser automation
+selenium>=4.0.0
+
+# Image processing for visual verification
+Pillow>=9.0.0
+opencv-python>=4.5.0
+numpy>=1.20.0
+
+# Additional testing utilities
+pytest-timeout>=2.1.0
+pytest-rerunfailures>=10.0

@@ -4644,7 +4644,7 @@ def get_movement_costs(unit_type: str, token: str) -> dict:
         }
 
 @jsonrpc.method('get_movement_highlights')
-def get_movement_highlights(x: int, y: int, token: str) -> dict:
+def get_movement_highlights(token: str, x: int, y: int) -> dict:
     """Get valid movement positions for highlighting using the same logic as actual movement"""
     try:
         # Load the game
