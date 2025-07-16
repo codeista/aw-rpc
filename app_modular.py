@@ -19,7 +19,7 @@ from flask import redirect, render_template, abort, request
 from flask_socketio import Namespace, join_room, leave_room
 import jsons
 
-from optimized_test_map import (
+from tests.debug.optimized_test_map import (
     get_optimized_test_game, 
     create_quick_combat_scenario,
     verify_optimized_map
@@ -331,4 +331,4 @@ if __name__ == '__main__':
     app_logger.info(f"Starting modular server on {host}:{port} (debug={debug})")
     app_logger.info("=== AW-RPC Modular Application Ready ===")
     
-    socketio.run(app, host=host, port=port, debug=debug)
+    socketio.run(app, host=host, port=port, debug=debug, allow_unsafe_werkzeug=True)
