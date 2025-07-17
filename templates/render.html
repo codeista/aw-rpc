@@ -850,6 +850,12 @@
     <script src="/static/js/keyboard-shortcuts.js"></script>
     <script src="/static/js/animation-system.js"></script>
     
+    <!-- Optimized Sprite Renderer (93KB vs 370KB) -->
+    <script src="/static/js/optimized-sprite-renderer.js"></script>
+    
+    <!-- Optimized Tile Renderer (6KB vs 76KB, 92% smaller) -->
+    <script src="/static/js/optimized-tile-renderer.js"></script>
+    
     <!-- TRANSITIONAL: Load legacy render.js first during Phase 1 -->
     <script src="/static/js/render_legacy.js"></script>
     
@@ -910,6 +916,8 @@
     <script src="/static/js/transport_integration.js"></script>
     <script src="/static/js/animation-integration.js"></script>
     <script src="/static/js/test_helpers.js"></script>
+    
+    <!-- Debug scripts removed - functionality integrated into main code -->
 
     <script>
         // Modern UI Enhancement Scripts
@@ -994,8 +1002,29 @@
         });
 
         // Tileset change functionality
-        function changeTileset() {
-            // This will be handled by render.js
+        async function changeTileset() {
+            const terrainSelect = document.getElementById('terrainTilesetSelect');
+            const selectedTileset = terrainSelect.value;
+            
+            // Update optimized tile renderer if available
+            if (window.optimizedTileRenderer && window.optimizedTileRenderer.loaded) {
+                try {
+                    // Map dropdown values to tileset types
+                    let tilesetType = selectedTileset;
+                    if (selectedTileset === 'transparent') {
+                        tilesetType = 'normal_transparent';
+                    } else if (selectedTileset === 'normal') {
+                        tilesetType = 'normal';
+                    }
+                    
+                    await window.optimizedTileRenderer.setTileset(tilesetType);
+                    console.log('Switched to optimized tileset:', tilesetType);
+                } catch (error) {
+                    console.warn('Failed to switch optimized tileset:', error);
+                }
+            }
+            
+            // Rerender the map
             if (window.rerender) {
                 window.rerender();
             }

@@ -1,12 +1,12 @@
 {
   "metadata": {
-    "version": "1.0",
-    "generated": "2025-07-12T23:06:24.394Z",
-    "description": "Advance Wars Sprite Corrections"
+    "version": "1.1",
+    "generated": "2025-07-17T15:29:00.477360",
+    "description": "Advance Wars Sprite Corrections with individual sprites"
   },
   "spriteConfig": {
-    "width": 8,
-    "height": 8,
+    "width": 16,
+    "height": 16,
     "spacingX": 1,
     "spacingY": 0
   },
@@ -325,15 +325,15 @@
         "y": 672
       },
       "INFANTRY_GREY_idle_0": {
-        "x": 339,
+        "x": 3,
         "y": 1240
       },
       "INFANTRY_GREY_idle_1": {
-        "x": 356,
+        "x": 20,
         "y": 1240
       },
       "INFANTRY_GREY_idle_2": {
-        "x": 373,
+        "x": 37,
         "y": 1240
       },
       "MECH_GREEN_idle_0": {
@@ -361,15 +361,15 @@
         "y": 767
       },
       "MECH_GREY_idle_0": {
-        "x": 339,
+        "x": 3,
         "y": 1335
       },
       "MECH_GREY_idle_1": {
-        "x": 356,
+        "x": 20,
         "y": 1335
       },
       "MECH_GREY_idle_2": {
-        "x": 373,
+        "x": 37,
         "y": 1335
       },
       "RECON_GREEN_idle_0": {
@@ -397,15 +397,15 @@
         "y": 862
       },
       "RECON_GREY_idle_0": {
-        "x": 339,
+        "x": 3,
         "y": 1430
       },
       "RECON_GREY_idle_1": {
-        "x": 356,
+        "x": 20,
         "y": 1430
       },
       "RECON_GREY_idle_2": {
-        "x": 373,
+        "x": 37,
         "y": 1430
       },
       "TANK_GREEN_idle_0": {
@@ -433,15 +433,15 @@
         "y": 881
       },
       "TANK_GREY_idle_0": {
-        "x": 339,
+        "x": 3,
         "y": 1449
       },
       "TANK_GREY_idle_1": {
-        "x": 356,
+        "x": 20,
         "y": 1449
       },
       "TANK_GREY_idle_2": {
-        "x": 373,
+        "x": 37,
         "y": 1449
       },
       "MEDIUMTANK_GREEN_idle_0": {
@@ -469,15 +469,15 @@
         "y": 900
       },
       "MEDIUMTANK_GREY_idle_0": {
-        "x": 339,
+        "x": 3,
         "y": 1468
       },
       "MEDIUMTANK_GREY_idle_1": {
-        "x": 356,
+        "x": 20,
         "y": 1468
       },
       "MEDIUMTANK_GREY_idle_2": {
-        "x": 373,
+        "x": 37,
         "y": 1468
       },
       "NEOTANK_GREEN_idle_0": {
@@ -505,15 +505,15 @@
         "y": 919
       },
       "NEOTANK_GREY_idle_0": {
-        "x": 339,
+        "x": 3,
         "y": 1487
       },
       "NEOTANK_GREY_idle_1": {
-        "x": 356,
+        "x": 20,
         "y": 1487
       },
       "NEOTANK_GREY_idle_2": {
-        "x": 373,
+        "x": 37,
         "y": 1487
       },
       "APC_GREEN_idle_0": {
@@ -541,15 +541,15 @@
         "y": 938
       },
       "APC_GREY_idle_0": {
-        "x": 339,
+        "x": 3,
         "y": 1506
       },
       "APC_GREY_idle_1": {
-        "x": 356,
+        "x": 20,
         "y": 1506
       },
       "APC_GREY_idle_2": {
-        "x": 373,
+        "x": 37,
         "y": 1506
       },
       "ANTIAIR_GREEN_idle_0": {
@@ -577,15 +577,15 @@
         "y": 957
       },
       "ANTIAIR_GREY_idle_0": {
-        "x": 339,
+        "x": 3,
         "y": 1525
       },
       "ANTIAIR_GREY_idle_1": {
-        "x": 356,
+        "x": 20,
         "y": 1525
       },
       "ANTIAIR_GREY_idle_2": {
-        "x": 373,
+        "x": 37,
         "y": 1525
       },
       "ARTILLERY_GREEN_idle_0": {
@@ -625,15 +625,15 @@
         "y": 976
       },
       "ARTILLERY_GREY_idle_0": {
-        "x": 339,
+        "x": 3,
         "y": 1544
       },
       "ARTILLERY_GREY_idle_1": {
-        "x": 356,
+        "x": 20,
         "y": 1544
       },
       "ARTILLERY_GREY_idle_2": {
-        "x": 373,
+        "x": 37,
         "y": 1544
       },
       "ROCKET_GREEN_idle_0": {
@@ -661,15 +661,15 @@
         "y": 995
       },
       "ROCKET_GREY_idle_0": {
-        "x": 339,
+        "x": 3,
         "y": 1563
       },
       "ROCKET_GREY_idle_1": {
-        "x": 356,
+        "x": 20,
         "y": 1563
       },
       "ROCKET_GREY_idle_2": {
-        "x": 373,
+        "x": 37,
         "y": 1563
       },
       "MISSILE_GREEN_idle_0": {
@@ -697,15 +697,15 @@
         "y": 1014
       },
       "MISSILE_GREY_idle_0": {
-        "x": 339,
+        "x": 3,
         "y": 1582
       },
       "MISSILE_GREY_idle_1": {
-        "x": 356,
+        "x": 20,
         "y": 1582
       },
       "MISSILE_GREY_idle_2": {
-        "x": 373,
+        "x": 37,
         "y": 1582
       },
       "FIGHTER_GREEN_idle_0": {
@@ -745,15 +745,15 @@
         "y": 1033
       },
       "FIGHTER_GREY_idle_0": {
-        "x": 339,
+        "x": 3,
         "y": 1601
       },
       "FIGHTER_GREY_idle_1": {
-        "x": 356,
+        "x": 20,
         "y": 1601
       },
       "FIGHTER_GREY_idle_2": {
-        "x": 373,
+        "x": 37,
         "y": 1601
       },
       "BOMBER_GREEN_idle_0": {
@@ -781,15 +781,15 @@
         "y": 1052
       },
       "BOMBER_GREY_idle_0": {
-        "x": 339,
+        "x": 3,
         "y": 1620
       },
       "BOMBER_GREY_idle_1": {
-        "x": 356,
+        "x": 20,
         "y": 1620
       },
       "BOMBER_GREY_idle_2": {
-        "x": 373,
+        "x": 37,
         "y": 1620
       },
       "BCOPTER_GREEN_idle_0": {
@@ -817,15 +817,15 @@
         "y": 1071
       },
       "BCOPTER_GREY_idle_0": {
-        "x": 339,
+        "x": 3,
         "y": 1639
       },
       "BCOPTER_GREY_idle_1": {
-        "x": 356,
+        "x": 20,
         "y": 1639
       },
       "BCOPTER_GREY_idle_2": {
-        "x": 373,
+        "x": 37,
         "y": 1639
       },
       "TCOPTER_GREEN_idle_0": {
@@ -853,15 +853,15 @@
         "y": 1090
       },
       "TCOPTER_GREY_idle_0": {
-        "x": 339,
+        "x": 3,
         "y": 1658
       },
       "TCOPTER_GREY_idle_1": {
-        "x": 356,
+        "x": 20,
         "y": 1658
       },
       "TCOPTER_GREY_idle_2": {
-        "x": 373,
+        "x": 37,
         "y": 1658
       },
       "BATTLESHIP_GREEN_idle_0": {
@@ -889,15 +889,15 @@
         "y": 1109
       },
       "BATTLESHIP_GREY_idle_0": {
-        "x": 339,
+        "x": 3,
         "y": 1677
       },
       "BATTLESHIP_GREY_idle_1": {
-        "x": 356,
+        "x": 20,
         "y": 1677
       },
       "BATTLESHIP_GREY_idle_2": {
-        "x": 373,
+        "x": 37,
         "y": 1677
       },
       "CRUISER_GREEN_idle_0": {
@@ -925,15 +925,15 @@
         "y": 1128
       },
       "CRUISER_GREY_idle_0": {
-        "x": 339,
+        "x": 3,
         "y": 1696
       },
       "CRUISER_GREY_idle_1": {
-        "x": 356,
+        "x": 20,
         "y": 1696
       },
       "CRUISER_GREY_idle_2": {
-        "x": 373,
+        "x": 37,
         "y": 1696
       },
       "LANDER_GREEN_idle_0": {
@@ -961,15 +961,15 @@
         "y": 1147
       },
       "LANDER_GREY_idle_0": {
-        "x": 339,
+        "x": 3,
         "y": 1715
       },
       "LANDER_GREY_idle_1": {
-        "x": 356,
+        "x": 20,
         "y": 1715
       },
       "LANDER_GREY_idle_2": {
-        "x": 373,
+        "x": 37,
         "y": 1715
       },
       "SUB_GREEN_idle_0": {
@@ -997,160 +997,16 @@
         "y": 1166
       },
       "SUB_GREY_idle_0": {
-        "x": 339,
+        "x": 3,
         "y": 1734
       },
       "SUB_GREY_idle_1": {
-        "x": 356,
+        "x": 20,
         "y": 1734
       },
       "SUB_GREY_idle_2": {
-        "x": 373,
+        "x": 37,
         "y": 1734
-      },
-      "CARRIER_GREEN_idle_0": {
-        "x": 3,
-        "y": 1185
-      },
-      "CARRIER_GREEN_idle_1": {
-        "x": 3,
-        "y": 1185
-      },
-      "CARRIER_GREEN_idle_2": {
-        "x": 3,
-        "y": 1185
-      },
-      "CARRIER_YELLOW_idle_0": {
-        "x": 392,
-        "y": 1185
-      },
-      "CARRIER_YELLOW_idle_1": {
-        "x": 392,
-        "y": 1185
-      },
-      "CARRIER_YELLOW_idle_2": {
-        "x": 392,
-        "y": 1185
-      },
-      "CARRIER_GREY_idle_0": {
-        "x": 339,
-        "y": 1753
-      },
-      "CARRIER_GREY_idle_1": {
-        "x": 339,
-        "y": 1753
-      },
-      "CARRIER_GREY_idle_2": {
-        "x": 339,
-        "y": 1753
-      },
-      "BLACKBOAT_GREEN_idle_0": {
-        "x": 20,
-        "y": 1186
-      },
-      "BLACKBOAT_GREEN_idle_1": {
-        "x": 20,
-        "y": 1185
-      },
-      "BLACKBOAT_GREEN_idle_2": {
-        "x": 20,
-        "y": 1186
-      },
-      "BLACKBOAT_YELLOW_idle_0": {
-        "x": 409,
-        "y": 1186
-      },
-      "BLACKBOAT_YELLOW_idle_1": {
-        "x": 409,
-        "y": 1185
-      },
-      "BLACKBOAT_YELLOW_idle_2": {
-        "x": 409,
-        "y": 1186
-      },
-      "BLACKBOAT_GREY_idle_0": {
-        "x": 356,
-        "y": 1754
-      },
-      "BLACKBOAT_GREY_idle_1": {
-        "x": 356,
-        "y": 1753
-      },
-      "BLACKBOAT_GREY_idle_2": {
-        "x": 356,
-        "y": 1754
-      },
-      "MEGATANK_GREEN_idle_0": {
-        "x": 37,
-        "y": 1185
-      },
-      "MEGATANK_GREEN_idle_1": {
-        "x": 37,
-        "y": 1185
-      },
-      "MEGATANK_GREEN_idle_2": {
-        "x": 37,
-        "y": 1185
-      },
-      "MEGATANK_YELLOW_idle_0": {
-        "x": 426,
-        "y": 1185
-      },
-      "MEGATANK_YELLOW_idle_1": {
-        "x": 426,
-        "y": 1185
-      },
-      "MEGATANK_YELLOW_idle_2": {
-        "x": 426,
-        "y": 1185
-      },
-      "MEGATANK_GREY_idle_0": {
-        "x": 373,
-        "y": 1753
-      },
-      "MEGATANK_GREY_idle_1": {
-        "x": 373,
-        "y": 1753
-      },
-      "MEGATANK_GREY_idle_2": {
-        "x": 373,
-        "y": 1753
-      },
-      "PIPERUNNER_GREEN_idle_0": {
-        "x": 3,
-        "y": 1211
-      },
-      "PIPERUNNER_GREEN_idle_1": {
-        "x": 3,
-        "y": 1211
-      },
-      "PIPERUNNER_GREEN_idle_2": {
-        "x": 3,
-        "y": 1211
-      },
-      "PIPERUNNER_YELLOW_idle_0": {
-        "x": 392,
-        "y": 1211
-      },
-      "PIPERUNNER_YELLOW_idle_1": {
-        "x": 392,
-        "y": 1211
-      },
-      "PIPERUNNER_YELLOW_idle_2": {
-        "x": 392,
-        "y": 1211
-      },
-      "PIPERUNNER_GREY_idle_0": {
-        "x": 339,
-        "y": 1779
-      },
-      "PIPERUNNER_GREY_idle_1": {
-        "x": 339,
-        "y": 1779
-      },
-      "PIPERUNNER_GREY_idle_2": {
-        "x": 339,
-        "y": 1779
       },
       "MECH_BLUE_idle_0": {
         "x": 392,
@@ -1211,18 +1067,6 @@
       "NEOTANK_BLUE_idle_2": {
         "x": 426,
         "y": 351
-      },
-      "MEGATANK_BLUE_idle_0": {
-        "x": 426,
-        "y": 617
-      },
-      "MEGATANK_BLUE_idle_1": {
-        "x": 426,
-        "y": 617
-      },
-      "MEGATANK_BLUE_idle_2": {
-        "x": 426,
-        "y": 617
       },
       "APC_BLUE_idle_0": {
         "x": 392,
@@ -1391,126 +1235,6 @@
       "PIPERUNNER_BLUE_idle_2": {
         "x": 392,
         "y": 643
-      },
-      "BLACKBOMB_RED_idle_0": {
-        "x": 54,
-        "y": 1798
-      },
-      "BLACKBOMB_RED_idle_1": {
-        "x": 71,
-        "y": 1798
-      },
-      "BLACKBOMB_RED_idle_2": {
-        "x": 88,
-        "y": 1798
-      },
-      "BLACKBOMB_BLUE_idle_0": {
-        "x": 443,
-        "y": 1798
-      },
-      "BLACKBOMB_BLUE_idle_1": {
-        "x": 460,
-        "y": 1798
-      },
-      "BLACKBOMB_BLUE_idle_2": {
-        "x": 477,
-        "y": 1798
-      },
-      "BLACKBOMB_GREEN_idle_0": {
-        "x": 54,
-        "y": 1798
-      },
-      "BLACKBOMB_GREEN_idle_1": {
-        "x": 71,
-        "y": 1798
-      },
-      "BLACKBOMB_GREEN_idle_2": {
-        "x": 88,
-        "y": 1798
-      },
-      "BLACKBOMB_YELLOW_idle_0": {
-        "x": 54,
-        "y": 1798
-      },
-      "BLACKBOMB_YELLOW_idle_1": {
-        "x": 71,
-        "y": 1798
-      },
-      "BLACKBOMB_YELLOW_idle_2": {
-        "x": 88,
-        "y": 1798
-      },
-      "BLACKBOMB_GREY_idle_0": {
-        "x": 54,
-        "y": 1798
-      },
-      "BLACKBOMB_GREY_idle_1": {
-        "x": 71,
-        "y": 1798
-      },
-      "BLACKBOMB_GREY_idle_2": {
-        "x": 88,
-        "y": 1798
-      },
-      "STEALTH_RED_idle_0": {
-        "x": 54,
-        "y": 1817
-      },
-      "STEALTH_RED_idle_1": {
-        "x": 71,
-        "y": 1817
-      },
-      "STEALTH_RED_idle_2": {
-        "x": 88,
-        "y": 1817
-      },
-      "STEALTH_BLUE_idle_0": {
-        "x": 443,
-        "y": 1817
-      },
-      "STEALTH_BLUE_idle_1": {
-        "x": 460,
-        "y": 1817
-      },
-      "STEALTH_BLUE_idle_2": {
-        "x": 477,
-        "y": 1817
-      },
-      "STEALTH_GREEN_idle_0": {
-        "x": 54,
-        "y": 1817
-      },
-      "STEALTH_GREEN_idle_1": {
-        "x": 71,
-        "y": 1817
-      },
-      "STEALTH_GREEN_idle_2": {
-        "x": 88,
-        "y": 1817
-      },
-      "STEALTH_YELLOW_idle_0": {
-        "x": 54,
-        "y": 1817
-      },
-      "STEALTH_YELLOW_idle_1": {
-        "x": 71,
-        "y": 1817
-      },
-      "STEALTH_YELLOW_idle_2": {
-        "x": 88,
-        "y": 1817
-      },
-      "STEALTH_GREY_idle_0": {
-        "x": 54,
-        "y": 1817
-      },
-      "STEALTH_GREY_idle_1": {
-        "x": 71,
-        "y": 1817
-      },
-      "STEALTH_GREY_idle_2": {
-        "x": 88,
-        "y": 1817
       }
     },
     "movement": {
@@ -1753,7 +1477,7 @@
         "y": 560
       },
       "SUB_RED_unavailable_0": {
-        "x": 373,
+        "x": 339,
         "y": 598
       },
       "SUB_RED_unavailable_1": {
@@ -1849,15 +1573,15 @@
         "y": 672
       },
       "INFANTRY_GREY_unavailable_0": {
-        "x": 675,
+        "x": 339,
         "y": 1240
       },
       "INFANTRY_GREY_unavailable_1": {
-        "x": 692,
+        "x": 356,
         "y": 1240
       },
       "INFANTRY_GREY_unavailable_2": {
-        "x": 709,
+        "x": 373,
         "y": 1240
       },
       "MECH_GREEN_unavailable_0": {
@@ -1885,15 +1609,15 @@
         "y": 767
       },
       "MECH_GREY_unavailable_0": {
-        "x": 675,
+        "x": 339,
         "y": 1335
       },
       "MECH_GREY_unavailable_1": {
-        "x": 692,
+        "x": 356,
         "y": 1335
       },
       "MECH_GREY_unavailable_2": {
-        "x": 709,
+        "x": 373,
         "y": 1335
       },
       "RECON_GREEN_unavailable_0": {
@@ -1921,15 +1645,15 @@
         "y": 862
       },
       "RECON_GREY_unavailable_0": {
-        "x": 675,
+        "x": 339,
         "y": 1430
       },
       "RECON_GREY_unavailable_1": {
-        "x": 692,
+        "x": 356,
         "y": 1430
       },
       "RECON_GREY_unavailable_2": {
-        "x": 709,
+        "x": 373,
         "y": 1430
       },
       "TANK_GREEN_unavailable_0": {
@@ -1957,15 +1681,15 @@
         "y": 881
       },
       "TANK_GREY_unavailable_0": {
-        "x": 675,
+        "x": 339,
         "y": 1449
       },
       "TANK_GREY_unavailable_1": {
-        "x": 692,
+        "x": 356,
         "y": 1449
       },
       "TANK_GREY_unavailable_2": {
-        "x": 709,
+        "x": 373,
         "y": 1449
       },
       "MEDIUMTANK_GREEN_unavailable_0": {
@@ -1993,15 +1717,15 @@
         "y": 900
       },
       "MEDIUMTANK_GREY_unavailable_0": {
-        "x": 675,
+        "x": 339,
         "y": 1468
       },
       "MEDIUMTANK_GREY_unavailable_1": {
-        "x": 692,
+        "x": 356,
         "y": 1468
       },
       "MEDIUMTANK_GREY_unavailable_2": {
-        "x": 709,
+        "x": 373,
         "y": 1468
       },
       "NEOTANK_GREEN_unavailable_0": {
@@ -2029,15 +1753,15 @@
         "y": 919
       },
       "NEOTANK_GREY_unavailable_0": {
-        "x": 675,
+        "x": 339,
         "y": 1487
       },
       "NEOTANK_GREY_unavailable_1": {
-        "x": 692,
+        "x": 356,
         "y": 1487
       },
       "NEOTANK_GREY_unavailable_2": {
-        "x": 709,
+        "x": 373,
         "y": 1487
       },
       "APC_GREEN_unavailable_0": {
@@ -2065,15 +1789,15 @@
         "y": 938
       },
       "APC_GREY_unavailable_0": {
-        "x": 675,
+        "x": 339,
         "y": 1506
       },
       "APC_GREY_unavailable_1": {
-        "x": 692,
+        "x": 356,
         "y": 1506
       },
       "APC_GREY_unavailable_2": {
-        "x": 709,
+        "x": 373,
         "y": 1506
       },
       "ANTIAIR_GREEN_unavailable_0": {
@@ -2101,15 +1825,15 @@
         "y": 957
       },
       "ANTIAIR_GREY_unavailable_0": {
-        "x": 675,
+        "x": 339,
         "y": 1525
       },
       "ANTIAIR_GREY_unavailable_1": {
-        "x": 692,
+        "x": 356,
         "y": 1525
       },
       "ANTIAIR_GREY_unavailable_2": {
-        "x": 709,
+        "x": 373,
         "y": 1525
       },
       "ARTILLERY_GREEN_unavailable_0": {
@@ -2137,11 +1861,11 @@
         "y": 976
       },
       "ARTILLERY_GREY_unavailable_0": {
-        "x": 675,
+        "x": 339,
         "y": 1544
       },
       "ARTILLERY_GREY_unavailable_1": {
-        "x": 692,
+        "x": 356,
         "y": 1544
       },
       "ARTILLERY_BLUE_unavailable_0": {
@@ -2157,7 +1881,7 @@
         "y": 408
       },
       "ARTILLERY_GREY_unavailable_2": {
-        "x": 709,
+        "x": 373,
         "y": 1544
       },
       "ROCKET_GREEN_unavailable_0": {
@@ -2185,15 +1909,15 @@
         "y": 995
       },
       "ROCKET_GREY_unavailable_0": {
-        "x": 675,
+        "x": 339,
         "y": 1563
       },
       "ROCKET_GREY_unavailable_1": {
-        "x": 692,
+        "x": 356,
         "y": 1563
       },
       "ROCKET_GREY_unavailable_2": {
-        "x": 709,
+        "x": 373,
         "y": 1563
       },
       "MISSILE_GREEN_unavailable_0": {
@@ -2221,15 +1945,15 @@
         "y": 1014
       },
       "MISSILE_GREY_unavailable_0": {
-        "x": 675,
+        "x": 339,
         "y": 1582
       },
       "MISSILE_GREY_unavailable_1": {
-        "x": 692,
+        "x": 356,
         "y": 1582
       },
       "MISSILE_GREY_unavailable_2": {
-        "x": 709,
+        "x": 373,
         "y": 1582
       },
       "FIGHTER_GREEN_unavailable_0": {
@@ -2257,15 +1981,15 @@
         "y": 1033
       },
       "FIGHTER_GREY_unavailable_0": {
-        "x": 675,
+        "x": 339,
         "y": 1601
       },
       "FIGHTER_GREY_unavailable_1": {
-        "x": 692,
+        "x": 356,
         "y": 1601
       },
       "FIGHTER_GREY_unavailable_2": {
-        "x": 709,
+        "x": 373,
         "y": 1601
       },
       "BOMBER_GREEN_unavailable_0": {
@@ -2293,15 +2017,15 @@
         "y": 1052
       },
       "BOMBER_GREY_unavailable_0": {
-        "x": 675,
+        "x": 339,
         "y": 1620
       },
       "BOMBER_GREY_unavailable_1": {
-        "x": 692,
+        "x": 356,
         "y": 1620
       },
       "BOMBER_GREY_unavailable_2": {
-        "x": 709,
+        "x": 373,
         "y": 1620
       },
       "BCOPTER_GREEN_unavailable_0": {
@@ -2329,15 +2053,15 @@
         "y": 1071
       },
       "BCOPTER_GREY_unavailable_0": {
-        "x": 675,
+        "x": 339,
         "y": 1639
       },
       "BCOPTER_GREY_unavailable_1": {
-        "x": 692,
+        "x": 356,
         "y": 1639
       },
       "BCOPTER_GREY_unavailable_2": {
-        "x": 709,
+        "x": 373,
         "y": 1639
       },
       "TCOPTER_GREEN_unavailable_0": {
@@ -2365,15 +2089,15 @@
         "y": 1090
       },
       "TCOPTER_GREY_unavailable_0": {
-        "x": 675,
+        "x": 339,
         "y": 1658
       },
       "TCOPTER_GREY_unavailable_1": {
-        "x": 692,
+        "x": 356,
         "y": 1658
       },
       "TCOPTER_GREY_unavailable_2": {
-        "x": 709,
+        "x": 373,
         "y": 1658
       },
       "BATTLESHIP_GREEN_unavailable_0": {
@@ -2401,15 +2125,15 @@
         "y": 1109
       },
       "BATTLESHIP_GREY_unavailable_0": {
-        "x": 675,
+        "x": 339,
         "y": 1677
       },
       "BATTLESHIP_GREY_unavailable_1": {
-        "x": 692,
+        "x": 356,
         "y": 1677
       },
       "BATTLESHIP_GREY_unavailable_2": {
-        "x": 709,
+        "x": 373,
         "y": 1677
       },
       "CRUISER_GREEN_unavailable_0": {
@@ -2437,15 +2161,15 @@
         "y": 1128
       },
       "CRUISER_GREY_unavailable_0": {
-        "x": 675,
+        "x": 339,
         "y": 1696
       },
       "CRUISER_GREY_unavailable_1": {
-        "x": 692,
+        "x": 356,
         "y": 1696
       },
       "CRUISER_GREY_unavailable_2": {
-        "x": 709,
+        "x": 373,
         "y": 1696
       },
       "LANDER_GREEN_unavailable_0": {
@@ -2473,15 +2197,15 @@
         "y": 1147
       },
       "LANDER_GREY_unavailable_0": {
-        "x": 675,
+        "x": 339,
         "y": 1715
       },
       "LANDER_GREY_unavailable_1": {
-        "x": 692,
+        "x": 356,
         "y": 1715
       },
       "LANDER_GREY_unavailable_2": {
-        "x": 709,
+        "x": 373,
         "y": 1715
       },
       "SUB_GREEN_unavailable_0": {
@@ -2509,160 +2233,232 @@
         "y": 1166
       },
       "SUB_GREY_unavailable_0": {
-        "x": 675,
+        "x": 339,
         "y": 1734
       },
       "SUB_GREY_unavailable_1": {
-        "x": 692,
+        "x": 356,
         "y": 1734
       },
       "SUB_GREY_unavailable_2": {
-        "x": 709,
+        "x": 373,
         "y": 1734
       },
-      "CARRIER_GREEN_unavailable_0": {
-        "x": 339,
-        "y": 1185
-      },
-      "CARRIER_GREEN_unavailable_1": {
-        "x": 339,
-        "y": 1186
-      },
-      "CARRIER_GREEN_unavailable_2": {
-        "x": 339,
-        "y": 1185
-      },
-      "CARRIER_YELLOW_unavailable_0": {
+      "MECH_BLUE_unavailable_0": {
         "x": 728,
-        "y": 1185
+        "y": 199
       },
-      "CARRIER_YELLOW_unavailable_1": {
-        "x": 728,
-        "y": 1186
-      },
-      "CARRIER_YELLOW_unavailable_2": {
-        "x": 728,
-        "y": 1185
-      },
-      "CARRIER_GREY_unavailable_0": {
-        "x": 675,
-        "y": 1753
-      },
-      "CARRIER_GREY_unavailable_1": {
-        "x": 675,
-        "y": 1754
-      },
-      "CARRIER_GREY_unavailable_2": {
-        "x": 675,
-        "y": 1753
-      },
-      "BLACKBOAT_GREEN_unavailable_0": {
-        "x": 356,
-        "y": 1185
-      },
-      "BLACKBOAT_GREEN_unavailable_1": {
-        "x": 356,
-        "y": 1186
-      },
-      "BLACKBOAT_GREEN_unavailable_2": {
-        "x": 356,
-        "y": 1185
-      },
-      "BLACKBOAT_YELLOW_unavailable_0": {
+      "MECH_BLUE_unavailable_1": {
         "x": 745,
-        "y": 1185
+        "y": 199
       },
-      "BLACKBOAT_YELLOW_unavailable_1": {
+      "MECH_BLUE_unavailable_2": {
+        "x": 762,
+        "y": 199
+      },
+      "RECON_BLUE_unavailable_2": {
+        "x": 762,
+        "y": 294
+      },
+      "RECON_BLUE_unavailable_0": {
+        "x": 728,
+        "y": 294
+      },
+      "RECON_BLUE_unavailable_1": {
         "x": 745,
-        "y": 1186
+        "y": 294
       },
-      "BLACKBOAT_YELLOW_unavailable_2": {
+      "MEDIUMTANK_BLUE_unavailable_0": {
+        "x": 728,
+        "y": 332
+      },
+      "MEDIUMTANK_BLUE_unavailable_1": {
         "x": 745,
-        "y": 1185
+        "y": 332
       },
-      "BLACKBOAT_GREY_unavailable_0": {
-        "x": 692,
-        "y": 1753
-      },
-      "BLACKBOAT_GREY_unavailable_1": {
-        "x": 692,
-        "y": 1754
-      },
-      "BLACKBOAT_GREY_unavailable_2": {
-        "x": 692,
-        "y": 1753
-      },
-      "MEGATANK_GREEN_unavailable_0": {
-        "x": 373,
-        "y": 1185
-      },
-      "MEGATANK_GREEN_unavailable_1": {
-        "x": 373,
-        "y": 1185
-      },
-      "MEGATANK_GREEN_unavailable_2": {
-        "x": 373,
-        "y": 1185
-      },
-      "MEGATANK_YELLOW_unavailable_0": {
+      "MEDIUMTANK_BLUE_unavailable_2": {
         "x": 762,
-        "y": 1185
+        "y": 332
       },
-      "MEGATANK_YELLOW_unavailable_1": {
+      "TANK_BLUE_unavailable_0": {
+        "x": 728,
+        "y": 313
+      },
+      "TANK_BLUE_unavailable_1": {
+        "x": 745,
+        "y": 313
+      },
+      "TANK_BLUE_unavailable_2": {
         "x": 762,
-        "y": 1185
+        "y": 313
       },
-      "MEGATANK_YELLOW_unavailable_2": {
+      "NEOTANK_BLUE_unavailable_0": {
+        "x": 728,
+        "y": 351
+      },
+      "NEOTANK_BLUE_unavailable_1": {
+        "x": 745,
+        "y": 351
+      },
+      "NEOTANK_BLUE_unavailable_2": {
         "x": 762,
-        "y": 1185
+        "y": 351
       },
-      "MEGATANK_GREY_unavailable_0": {
-        "x": 709,
-        "y": 1753
-      },
-      "MEGATANK_GREY_unavailable_1": {
-        "x": 709,
-        "y": 1753
-      },
-      "MEGATANK_GREY_unavailable_2": {
-        "x": 709,
-        "y": 1753
-      },
-      "PIPERUNNER_GREEN_unavailable_0": {
-        "x": 339,
-        "y": 1211
-      },
-      "PIPERUNNER_GREEN_unavailable_1": {
-        "x": 339,
-        "y": 1211
-      },
-      "PIPERUNNER_GREEN_unavailable_2": {
-        "x": 339,
-        "y": 1211
-      },
-      "PIPERUNNER_YELLOW_unavailable_0": {
+      "APC_BLUE_unavailable_0": {
         "x": 728,
-        "y": 1211
+        "y": 370
       },
-      "PIPERUNNER_YELLOW_unavailable_1": {
+      "APC_BLUE_unavailable_1": {
+        "x": 745,
+        "y": 370
+      },
+      "APC_BLUE_unavailable_2": {
+        "x": 762,
+        "y": 370
+      },
+      "ROCKET_BLUE_unavailable_0": {
         "x": 728,
-        "y": 1211
+        "y": 427
       },
-      "PIPERUNNER_YELLOW_unavailable_2": {
+      "ROCKET_BLUE_unavailable_1": {
+        "x": 745,
+        "y": 427
+      },
+      "ROCKET_BLUE_unavailable_2": {
+        "x": 762,
+        "y": 427
+      },
+      "ANTIAIR_BLUE_unavailable_0": {
         "x": 728,
-        "y": 1211
+        "y": 389
       },
-      "PIPERUNNER_GREY_unavailable_0": {
-        "x": 675,
-        "y": 1779
+      "ANTIAIR_BLUE_unavailable_1": {
+        "x": 745,
+        "y": 389
       },
-      "PIPERUNNER_GREY_unavailable_1": {
-        "x": 675,
-        "y": 1779
+      "ANTIAIR_BLUE_unavailable_2": {
+        "x": 762,
+        "y": 389
       },
-      "PIPERUNNER_GREY_unavailable_2": {
-        "x": 675,
-        "y": 1779
+      "MISSILE_BLUE_unavailable_0": {
+        "x": 728,
+        "y": 446
+      },
+      "MISSILE_BLUE_unavailable_1": {
+        "x": 745,
+        "y": 446
+      },
+      "MISSILE_BLUE_unavailable_2": {
+        "x": 762,
+        "y": 446
+      },
+      "FIGHTER_BLUE_unavailable_0": {
+        "x": 728,
+        "y": 465
+      },
+      "FIGHTER_BLUE_unavailable_1": {
+        "x": 745,
+        "y": 465
+      },
+      "FIGHTER_BLUE_unavailable_2": {
+        "x": 762,
+        "y": 465
+      },
+      "BOMBER_BLUE_unavailable_0": {
+        "x": 728,
+        "y": 484
+      },
+      "BOMBER_BLUE_unavailable_1": {
+        "x": 745,
+        "y": 484
+      },
+      "BOMBER_BLUE_unavailable_2": {
+        "x": 762,
+        "y": 484
+      },
+      "BCOPTER_BLUE_unavailable_0": {
+        "x": 728,
+        "y": 503
+      },
+      "BCOPTER_BLUE_unavailable_1": {
+        "x": 745,
+        "y": 503
+      },
+      "BCOPTER_BLUE_unavailable_2": {
+        "x": 762,
+        "y": 503
+      },
+      "TCOPTER_BLUE_unavailable_0": {
+        "x": 728,
+        "y": 522
+      },
+      "TCOPTER_BLUE_unavailable_1": {
+        "x": 745,
+        "y": 522
+      },
+      "TCOPTER_BLUE_unavailable_2": {
+        "x": 762,
+        "y": 522
+      },
+      "BATTLESHIP_BLUE_unavailable_0": {
+        "x": 728,
+        "y": 541
+      },
+      "BATTLESHIP_BLUE_unavailable_1": {
+        "x": 745,
+        "y": 541
+      },
+      "BATTLESHIP_BLUE_unavailable_2": {
+        "x": 762,
+        "y": 541
+      },
+      "CRUISER_BLUE_unavailable_0": {
+        "x": 728,
+        "y": 560
+      },
+      "CRUISER_BLUE_unavailable_1": {
+        "x": 745,
+        "y": 560
+      },
+      "CRUISER_BLUE_unavailable_2": {
+        "x": 762,
+        "y": 560
+      },
+      "SUB_BLUE_unavailable_0": {
+        "x": 728,
+        "y": 598
+      },
+      "SUB_BLUE_unavailable_1": {
+        "x": 745,
+        "y": 598
+      },
+      "SUB_BLUE_unavailable_2": {
+        "x": 762,
+        "y": 598
+      },
+      "LANDER_BLUE_unavailable_0": {
+        "x": 728,
+        "y": 579
+      },
+      "LANDER_BLUE_unavailable_1": {
+        "x": 745,
+        "y": 579
+      },
+      "LANDER_BLUE_unavailable_2": {
+        "x": 762,
+        "y": 579
+      },
+      "INFANTRY_BLUE_unavailable_1": {
+        "x": 745,
+        "y": 104
+      },
+      "INFANTRY_BLUE_unavailable_2": {
+        "x": 762,
+        "y": 104
+      },
+      "SUB_RED_unavailable_2": {
+        "x": 373,
+        "y": 598
       }
     },
     "hp_indicators": {
@@ -2775,6 +2571,917 @@
     }
   },
   "stats": {
-    "totalCorrections": 375
+    "totalCorrections": 692
+  },
+  "individual_sprites": {
+    "STEALTH_RED_idle_0": {
+      "source": "/static/img/osstealth.gif"
+    },
+    "STEALTH_RED_idle_1": {
+      "source": "/static/img/osstealth.gif"
+    },
+    "STEALTH_RED_idle_2": {
+      "source": "/static/img/osstealth.gif"
+    },
+    "STEALTH_RED_unavailable_0": {
+      "source": "/static/img/osstealth.gif",
+      "filter": "brightness(0.4) saturate(0.5)"
+    },
+    "STEALTH_RED_unavailable_1": {
+      "source": "/static/img/osstealth.gif",
+      "filter": "brightness(0.4) saturate(0.5)"
+    },
+    "STEALTH_RED_unavailable_2": {
+      "source": "/static/img/osstealth.gif",
+      "filter": "brightness(0.4) saturate(0.5)"
+    },
+    "STEALTH_BLUE_idle_0": {
+      "source": "/static/img/bmstealth.gif"
+    },
+    "STEALTH_BLUE_idle_1": {
+      "source": "/static/img/bmstealth.gif"
+    },
+    "STEALTH_BLUE_idle_2": {
+      "source": "/static/img/bmstealth.gif"
+    },
+    "STEALTH_BLUE_unavailable_0": {
+      "source": "/static/img/bmstealth.gif",
+      "filter": "brightness(0.4) saturate(0.5)"
+    },
+    "STEALTH_BLUE_unavailable_1": {
+      "source": "/static/img/bmstealth.gif",
+      "filter": "brightness(0.4) saturate(0.5)"
+    },
+    "STEALTH_BLUE_unavailable_2": {
+      "source": "/static/img/bmstealth.gif",
+      "filter": "brightness(0.4) saturate(0.5)"
+    },
+    "STEALTH_GREEN_idle_0": {
+      "source": "/static/img/gestealth.gif"
+    },
+    "STEALTH_GREEN_idle_1": {
+      "source": "/static/img/gestealth.gif"
+    },
+    "STEALTH_GREEN_idle_2": {
+      "source": "/static/img/gestealth.gif"
+    },
+    "STEALTH_GREEN_unavailable_0": {
+      "source": "/static/img/gestealth.gif",
+      "filter": "brightness(0.4) saturate(0.5)"
+    },
+    "STEALTH_GREEN_unavailable_1": {
+      "source": "/static/img/gestealth.gif",
+      "filter": "brightness(0.4) saturate(0.5)"
+    },
+    "STEALTH_GREEN_unavailable_2": {
+      "source": "/static/img/gestealth.gif",
+      "filter": "brightness(0.4) saturate(0.5)"
+    },
+    "STEALTH_YELLOW_idle_0": {
+      "source": "/static/img/ycstealth.gif"
+    },
+    "STEALTH_YELLOW_idle_1": {
+      "source": "/static/img/ycstealth.gif"
+    },
+    "STEALTH_YELLOW_idle_2": {
+      "source": "/static/img/ycstealth.gif"
+    },
+    "STEALTH_YELLOW_unavailable_0": {
+      "source": "/static/img/ycstealth.gif",
+      "filter": "brightness(0.4) saturate(0.5)"
+    },
+    "STEALTH_YELLOW_unavailable_1": {
+      "source": "/static/img/ycstealth.gif",
+      "filter": "brightness(0.4) saturate(0.5)"
+    },
+    "STEALTH_YELLOW_unavailable_2": {
+      "source": "/static/img/ycstealth.gif",
+      "filter": "brightness(0.4) saturate(0.5)"
+    },
+    "STEALTH_GREY_idle_0": {
+      "source": "/static/img/gsstealth.gif"
+    },
+    "STEALTH_GREY_idle_1": {
+      "source": "/static/img/gsstealth.gif"
+    },
+    "STEALTH_GREY_idle_2": {
+      "source": "/static/img/gsstealth.gif"
+    },
+    "STEALTH_GREY_unavailable_0": {
+      "source": "/static/img/gsstealth.gif",
+      "filter": "brightness(0.4) saturate(0.5)"
+    },
+    "STEALTH_GREY_unavailable_1": {
+      "source": "/static/img/gsstealth.gif",
+      "filter": "brightness(0.4) saturate(0.5)"
+    },
+    "STEALTH_GREY_unavailable_2": {
+      "source": "/static/img/gsstealth.gif",
+      "filter": "brightness(0.4) saturate(0.5)"
+    },
+    "BLACKBOMB_RED_idle_0": {
+      "source": "/static/img/osblackbomb.gif"
+    },
+    "BLACKBOMB_RED_idle_1": {
+      "source": "/static/img/osblackbomb.gif"
+    },
+    "BLACKBOMB_RED_idle_2": {
+      "source": "/static/img/osblackbomb.gif"
+    },
+    "BLACKBOMB_RED_unavailable_0": {
+      "source": "/static/img/osblackbomb.gif",
+      "filter": "brightness(0.4) saturate(0.5)"
+    },
+    "BLACKBOMB_RED_unavailable_1": {
+      "source": "/static/img/osblackbomb.gif",
+      "filter": "brightness(0.4) saturate(0.5)"
+    },
+    "BLACKBOMB_RED_unavailable_2": {
+      "source": "/static/img/osblackbomb.gif",
+      "filter": "brightness(0.4) saturate(0.5)"
+    },
+    "BLACKBOMB_BLUE_idle_0": {
+      "source": "/static/img/bmblackbomb.gif"
+    },
+    "BLACKBOMB_BLUE_idle_1": {
+      "source": "/static/img/bmblackbomb.gif"
+    },
+    "BLACKBOMB_BLUE_idle_2": {
+      "source": "/static/img/bmblackbomb.gif"
+    },
+    "BLACKBOMB_BLUE_unavailable_0": {
+      "source": "/static/img/bmblackbomb.gif",
+      "filter": "brightness(0.4) saturate(0.5)"
+    },
+    "BLACKBOMB_BLUE_unavailable_1": {
+      "source": "/static/img/bmblackbomb.gif",
+      "filter": "brightness(0.4) saturate(0.5)"
+    },
+    "BLACKBOMB_BLUE_unavailable_2": {
+      "source": "/static/img/bmblackbomb.gif",
+      "filter": "brightness(0.4) saturate(0.5)"
+    },
+    "BLACKBOMB_GREEN_idle_0": {
+      "source": "/static/img/geblackbomb.gif"
+    },
+    "BLACKBOMB_GREEN_idle_1": {
+      "source": "/static/img/geblackbomb.gif"
+    },
+    "BLACKBOMB_GREEN_idle_2": {
+      "source": "/static/img/geblackbomb.gif"
+    },
+    "BLACKBOMB_GREEN_unavailable_0": {
+      "source": "/static/img/geblackbomb.gif",
+      "filter": "brightness(0.4) saturate(0.5)"
+    },
+    "BLACKBOMB_GREEN_unavailable_1": {
+      "source": "/static/img/geblackbomb.gif",
+      "filter": "brightness(0.4) saturate(0.5)"
+    },
+    "BLACKBOMB_GREEN_unavailable_2": {
+      "source": "/static/img/geblackbomb.gif",
+      "filter": "brightness(0.4) saturate(0.5)"
+    },
+    "BLACKBOMB_YELLOW_idle_0": {
+      "source": "/static/img/ycblackbomb.gif"
+    },
+    "BLACKBOMB_YELLOW_idle_1": {
+      "source": "/static/img/ycblackbomb.gif"
+    },
+    "BLACKBOMB_YELLOW_idle_2": {
+      "source": "/static/img/ycblackbomb.gif"
+    },
+    "BLACKBOMB_YELLOW_unavailable_0": {
+      "source": "/static/img/ycblackbomb.gif",
+      "filter": "brightness(0.4) saturate(0.5)"
+    },
+    "BLACKBOMB_YELLOW_unavailable_1": {
+      "source": "/static/img/ycblackbomb.gif",
+      "filter": "brightness(0.4) saturate(0.5)"
+    },
+    "BLACKBOMB_YELLOW_unavailable_2": {
+      "source": "/static/img/ycblackbomb.gif",
+      "filter": "brightness(0.4) saturate(0.5)"
+    },
+    "BLACKBOMB_GREY_idle_0": {
+      "source": "/static/img/gsblackbomb.gif"
+    },
+    "BLACKBOMB_GREY_idle_1": {
+      "source": "/static/img/gsblackbomb.gif"
+    },
+    "BLACKBOMB_GREY_idle_2": {
+      "source": "/static/img/gsblackbomb.gif"
+    },
+    "BLACKBOMB_GREY_unavailable_0": {
+      "source": "/static/img/gsblackbomb.gif",
+      "filter": "brightness(0.4) saturate(0.5)"
+    },
+    "BLACKBOMB_GREY_unavailable_1": {
+      "source": "/static/img/gsblackbomb.gif",
+      "filter": "brightness(0.4) saturate(0.5)"
+    },
+    "BLACKBOMB_GREY_unavailable_2": {
+      "source": "/static/img/gsblackbomb.gif",
+      "filter": "brightness(0.4) saturate(0.5)"
+    },
+    "MEGATANK_BLUE_idle_0": {
+      "source": "/static/img/bmmegatank.gif"
+    },
+    "MEGATANK_BLUE_idle_1": {
+      "source": "/static/img/bmmegatank.gif"
+    },
+    "MEGATANK_BLUE_idle_2": {
+      "source": "/static/img/bmmegatank.gif"
+    },
+    "MEGATANK_BLUE_unavailable_0": {
+      "source": "/static/img/bmmegatank.gif",
+      "filter": "brightness(0.4) saturate(0.5)"
+    },
+    "MEGATANK_BLUE_unavailable_1": {
+      "source": "/static/img/bmmegatank.gif",
+      "filter": "brightness(0.4) saturate(0.5)"
+    },
+    "MEGATANK_BLUE_unavailable_2": {
+      "source": "/static/img/bmmegatank.gif",
+      "filter": "brightness(0.4) saturate(0.5)"
+    }
+  },
+  "color_variants": {
+    "PIPERUNNER_GREEN_idle_0": {
+      "source": "PIPERUNNER_RED_idle_0",
+      "filter": "hue-rotate(90deg) saturate(0.8)",
+      "x": 3,
+      "y": 643
+    },
+    "PIPERUNNER_GREEN_idle_1": {
+      "source": "PIPERUNNER_RED_idle_1",
+      "filter": "hue-rotate(90deg) saturate(0.8)",
+      "x": 3,
+      "y": 643
+    },
+    "PIPERUNNER_GREEN_idle_2": {
+      "source": "PIPERUNNER_RED_idle_2",
+      "filter": "hue-rotate(90deg) saturate(0.8)",
+      "x": 3,
+      "y": 643
+    },
+    "PIPERUNNER_YELLOW_idle_0": {
+      "source": "PIPERUNNER_RED_idle_0",
+      "filter": "hue-rotate(50deg) saturate(1.5) brightness(1.2)",
+      "x": 3,
+      "y": 643
+    },
+    "PIPERUNNER_YELLOW_idle_1": {
+      "source": "PIPERUNNER_RED_idle_1",
+      "filter": "hue-rotate(50deg) saturate(1.5) brightness(1.2)",
+      "x": 3,
+      "y": 643
+    },
+    "PIPERUNNER_YELLOW_idle_2": {
+      "source": "PIPERUNNER_RED_idle_2",
+      "filter": "hue-rotate(50deg) saturate(1.5) brightness(1.2)",
+      "x": 3,
+      "y": 643
+    },
+    "PIPERUNNER_GREY_idle_0": {
+      "source": "PIPERUNNER_RED_idle_0",
+      "filter": "grayscale(100%) brightness(0.8)",
+      "x": 3,
+      "y": 643
+    },
+    "PIPERUNNER_GREY_idle_1": {
+      "source": "PIPERUNNER_RED_idle_1",
+      "filter": "grayscale(100%) brightness(0.8)",
+      "x": 3,
+      "y": 643
+    },
+    "PIPERUNNER_GREY_idle_2": {
+      "source": "PIPERUNNER_RED_idle_2",
+      "filter": "grayscale(100%) brightness(0.8)",
+      "x": 3,
+      "y": 643
+    },
+    "CARRIER_GREEN_idle_0": {
+      "source": "CARRIER_RED_idle_0",
+      "filter": "hue-rotate(90deg) saturate(0.8)",
+      "x": 3,
+      "y": 617
+    },
+    "CARRIER_GREEN_idle_1": {
+      "source": "CARRIER_RED_idle_1",
+      "filter": "hue-rotate(90deg) saturate(0.8)",
+      "x": 3,
+      "y": 617
+    },
+    "CARRIER_GREEN_idle_2": {
+      "source": "CARRIER_RED_idle_2",
+      "filter": "hue-rotate(90deg) saturate(0.8)",
+      "x": 3,
+      "y": 617
+    },
+    "CARRIER_YELLOW_idle_0": {
+      "source": "CARRIER_RED_idle_0",
+      "filter": "hue-rotate(50deg) saturate(1.5) brightness(1.2)",
+      "x": 3,
+      "y": 617
+    },
+    "CARRIER_YELLOW_idle_1": {
+      "source": "CARRIER_RED_idle_1",
+      "filter": "hue-rotate(50deg) saturate(1.5) brightness(1.2)",
+      "x": 3,
+      "y": 617
+    },
+    "CARRIER_YELLOW_idle_2": {
+      "source": "CARRIER_RED_idle_2",
+      "filter": "hue-rotate(50deg) saturate(1.5) brightness(1.2)",
+      "x": 3,
+      "y": 617
+    },
+    "CARRIER_GREY_idle_0": {
+      "source": "CARRIER_RED_idle_0",
+      "filter": "grayscale(100%) brightness(0.8)",
+      "x": 3,
+      "y": 617
+    },
+    "CARRIER_GREY_idle_1": {
+      "source": "CARRIER_RED_idle_1",
+      "filter": "grayscale(100%) brightness(0.8)",
+      "x": 3,
+      "y": 617
+    },
+    "CARRIER_GREY_idle_2": {
+      "source": "CARRIER_RED_idle_2",
+      "filter": "grayscale(100%) brightness(0.8)",
+      "x": 3,
+      "y": 617
+    },
+    "BLACKBOAT_GREEN_idle_0": {
+      "source": "BLACKBOAT_RED_idle_0",
+      "filter": "hue-rotate(90deg) saturate(0.8)",
+      "x": 20,
+      "y": 618
+    },
+    "BLACKBOAT_GREEN_idle_1": {
+      "source": "BLACKBOAT_RED_idle_1",
+      "filter": "hue-rotate(90deg) saturate(0.8)",
+      "x": 20,
+      "y": 618
+    },
+    "BLACKBOAT_GREEN_idle_2": {
+      "source": "BLACKBOAT_RED_idle_2",
+      "filter": "hue-rotate(90deg) saturate(0.8)",
+      "x": 20,
+      "y": 618
+    },
+    "BLACKBOAT_YELLOW_idle_0": {
+      "source": "BLACKBOAT_RED_idle_0",
+      "filter": "hue-rotate(50deg) saturate(1.5) brightness(1.2)",
+      "x": 20,
+      "y": 618
+    },
+    "BLACKBOAT_YELLOW_idle_1": {
+      "source": "BLACKBOAT_RED_idle_1",
+      "filter": "hue-rotate(50deg) saturate(1.5) brightness(1.2)",
+      "x": 20,
+      "y": 618
+    },
+    "BLACKBOAT_YELLOW_idle_2": {
+      "source": "BLACKBOAT_RED_idle_2",
+      "filter": "hue-rotate(50deg) saturate(1.5) brightness(1.2)",
+      "x": 20,
+      "y": 618
+    },
+    "BLACKBOAT_GREY_idle_0": {
+      "source": "BLACKBOAT_RED_idle_0",
+      "filter": "grayscale(100%) brightness(0.8)",
+      "x": 20,
+      "y": 618
+    },
+    "BLACKBOAT_GREY_idle_1": {
+      "source": "BLACKBOAT_RED_idle_1",
+      "filter": "grayscale(100%) brightness(0.8)",
+      "x": 20,
+      "y": 618
+    },
+    "BLACKBOAT_GREY_idle_2": {
+      "source": "BLACKBOAT_RED_idle_2",
+      "filter": "grayscale(100%) brightness(0.8)",
+      "x": 20,
+      "y": 618
+    },
+    "MEGATANK_GREEN_idle_0": {
+      "source": "MEGATANK_RED_idle_0",
+      "filter": "hue-rotate(90deg) saturate(0.8)",
+      "x": 37,
+      "y": 617
+    },
+    "MEGATANK_GREEN_idle_1": {
+      "source": "MEGATANK_RED_idle_1",
+      "filter": "hue-rotate(90deg) saturate(0.8)",
+      "x": 37,
+      "y": 617
+    },
+    "MEGATANK_GREEN_idle_2": {
+      "source": "MEGATANK_RED_idle_2",
+      "filter": "hue-rotate(90deg) saturate(0.8)",
+      "x": 37,
+      "y": 617
+    },
+    "MEGATANK_YELLOW_idle_0": {
+      "source": "MEGATANK_RED_idle_0",
+      "filter": "hue-rotate(50deg) saturate(1.5) brightness(1.2)",
+      "x": 37,
+      "y": 617
+    },
+    "MEGATANK_YELLOW_idle_1": {
+      "source": "MEGATANK_RED_idle_1",
+      "filter": "hue-rotate(50deg) saturate(1.5) brightness(1.2)",
+      "x": 37,
+      "y": 617
+    },
+    "MEGATANK_YELLOW_idle_2": {
+      "source": "MEGATANK_RED_idle_2",
+      "filter": "hue-rotate(50deg) saturate(1.5) brightness(1.2)",
+      "x": 37,
+      "y": 617
+    },
+    "MEGATANK_GREY_idle_0": {
+      "source": "MEGATANK_RED_idle_0",
+      "filter": "grayscale(100%) brightness(0.8)",
+      "x": 37,
+      "y": 617
+    },
+    "MEGATANK_GREY_idle_1": {
+      "source": "MEGATANK_RED_idle_1",
+      "filter": "grayscale(100%) brightness(0.8)",
+      "x": 37,
+      "y": 617
+    },
+    "MEGATANK_GREY_idle_2": {
+      "source": "MEGATANK_RED_idle_2",
+      "filter": "grayscale(100%) brightness(0.8)",
+      "x": 37,
+      "y": 617
+    }
+  },
+  "unavailable_variants": {
+    "STEALTH_RED_unavailable_0": {
+      "source": "STEALTH_RED_idle_0",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "x": 54,
+      "y": 1817
+    },
+    "STEALTH_RED_unavailable_1": {
+      "source": "STEALTH_RED_idle_1",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "x": 71,
+      "y": 1817
+    },
+    "STEALTH_RED_unavailable_2": {
+      "source": "STEALTH_RED_idle_2",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "x": 88,
+      "y": 1817
+    },
+    "STEALTH_BLUE_unavailable_0": {
+      "source": "STEALTH_BLUE_idle_0",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "use_color_variant": true
+    },
+    "STEALTH_BLUE_unavailable_1": {
+      "source": "STEALTH_BLUE_idle_1",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "use_color_variant": true
+    },
+    "STEALTH_BLUE_unavailable_2": {
+      "source": "STEALTH_BLUE_idle_2",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "use_color_variant": true
+    },
+    "STEALTH_GREEN_unavailable_0": {
+      "source": "STEALTH_GREEN_idle_0",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "use_color_variant": true
+    },
+    "STEALTH_GREEN_unavailable_1": {
+      "source": "STEALTH_GREEN_idle_1",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "use_color_variant": true
+    },
+    "STEALTH_GREEN_unavailable_2": {
+      "source": "STEALTH_GREEN_idle_2",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "use_color_variant": true
+    },
+    "STEALTH_YELLOW_unavailable_0": {
+      "source": "STEALTH_YELLOW_idle_0",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "use_color_variant": true
+    },
+    "STEALTH_YELLOW_unavailable_1": {
+      "source": "STEALTH_YELLOW_idle_1",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "use_color_variant": true
+    },
+    "STEALTH_YELLOW_unavailable_2": {
+      "source": "STEALTH_YELLOW_idle_2",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "use_color_variant": true
+    },
+    "STEALTH_GREY_unavailable_0": {
+      "source": "STEALTH_GREY_idle_0",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "use_color_variant": true
+    },
+    "STEALTH_GREY_unavailable_1": {
+      "source": "STEALTH_GREY_idle_1",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "use_color_variant": true
+    },
+    "STEALTH_GREY_unavailable_2": {
+      "source": "STEALTH_GREY_idle_2",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "use_color_variant": true
+    },
+    "BLACKBOMB_RED_unavailable_0": {
+      "source": "BLACKBOMB_RED_idle_0",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "x": 54,
+      "y": 1798
+    },
+    "BLACKBOMB_RED_unavailable_1": {
+      "source": "BLACKBOMB_RED_idle_1",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "x": 71,
+      "y": 1798
+    },
+    "BLACKBOMB_RED_unavailable_2": {
+      "source": "BLACKBOMB_RED_idle_2",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "x": 88,
+      "y": 1798
+    },
+    "BLACKBOMB_BLUE_unavailable_0": {
+      "source": "BLACKBOMB_BLUE_idle_0",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "use_color_variant": true
+    },
+    "BLACKBOMB_BLUE_unavailable_1": {
+      "source": "BLACKBOMB_BLUE_idle_1",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "use_color_variant": true
+    },
+    "BLACKBOMB_BLUE_unavailable_2": {
+      "source": "BLACKBOMB_BLUE_idle_2",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "use_color_variant": true
+    },
+    "BLACKBOMB_GREEN_unavailable_0": {
+      "source": "BLACKBOMB_GREEN_idle_0",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "use_color_variant": true
+    },
+    "BLACKBOMB_GREEN_unavailable_1": {
+      "source": "BLACKBOMB_GREEN_idle_1",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "use_color_variant": true
+    },
+    "BLACKBOMB_GREEN_unavailable_2": {
+      "source": "BLACKBOMB_GREEN_idle_2",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "use_color_variant": true
+    },
+    "BLACKBOMB_YELLOW_unavailable_0": {
+      "source": "BLACKBOMB_YELLOW_idle_0",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "use_color_variant": true
+    },
+    "BLACKBOMB_YELLOW_unavailable_1": {
+      "source": "BLACKBOMB_YELLOW_idle_1",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "use_color_variant": true
+    },
+    "BLACKBOMB_YELLOW_unavailable_2": {
+      "source": "BLACKBOMB_YELLOW_idle_2",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "use_color_variant": true
+    },
+    "BLACKBOMB_GREY_unavailable_0": {
+      "source": "BLACKBOMB_GREY_idle_0",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "use_color_variant": true
+    },
+    "BLACKBOMB_GREY_unavailable_1": {
+      "source": "BLACKBOMB_GREY_idle_1",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "use_color_variant": true
+    },
+    "BLACKBOMB_GREY_unavailable_2": {
+      "source": "BLACKBOMB_GREY_idle_2",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "use_color_variant": true
+    }
+  },
+  "sprite_filters": {
+    "CARRIER_RED_unavailable_0": {
+      "source": "CARRIER_RED_idle_0",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "type": "unavailable_darkening"
+    },
+    "CARRIER_RED_unavailable_1": {
+      "source": "CARRIER_RED_idle_1",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "type": "unavailable_darkening"
+    },
+    "CARRIER_RED_unavailable_2": {
+      "source": "CARRIER_RED_idle_2",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "type": "unavailable_darkening"
+    },
+    "CARRIER_BLUE_unavailable_0": {
+      "source": "CARRIER_BLUE_idle_0",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "type": "unavailable_darkening"
+    },
+    "CARRIER_BLUE_unavailable_1": {
+      "source": "CARRIER_BLUE_idle_1",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "type": "unavailable_darkening"
+    },
+    "CARRIER_BLUE_unavailable_2": {
+      "source": "CARRIER_BLUE_idle_2",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "type": "unavailable_darkening"
+    },
+    "CARRIER_GREEN_unavailable_0": {
+      "source": "CARRIER_RED_idle_0",
+      "filter": "hue-rotate(90deg) saturate(0.8) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "CARRIER_GREEN_unavailable_1": {
+      "source": "CARRIER_RED_idle_1",
+      "filter": "hue-rotate(90deg) saturate(0.8) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "CARRIER_GREEN_unavailable_2": {
+      "source": "CARRIER_RED_idle_2",
+      "filter": "hue-rotate(90deg) saturate(0.8) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "CARRIER_YELLOW_unavailable_0": {
+      "source": "CARRIER_RED_idle_0",
+      "filter": "hue-rotate(50deg) saturate(1.5) brightness(1.2) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "CARRIER_YELLOW_unavailable_1": {
+      "source": "CARRIER_RED_idle_1",
+      "filter": "hue-rotate(50deg) saturate(1.5) brightness(1.2) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "CARRIER_YELLOW_unavailable_2": {
+      "source": "CARRIER_RED_idle_2",
+      "filter": "hue-rotate(50deg) saturate(1.5) brightness(1.2) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "CARRIER_GREY_unavailable_0": {
+      "source": "CARRIER_RED_idle_0",
+      "filter": "grayscale(100%) brightness(0.8) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "CARRIER_GREY_unavailable_1": {
+      "source": "CARRIER_RED_idle_1",
+      "filter": "grayscale(100%) brightness(0.8) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "CARRIER_GREY_unavailable_2": {
+      "source": "CARRIER_RED_idle_2",
+      "filter": "grayscale(100%) brightness(0.8) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "BLACKBOAT_RED_unavailable_0": {
+      "source": "BLACKBOAT_RED_idle_0",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "type": "unavailable_darkening"
+    },
+    "BLACKBOAT_RED_unavailable_1": {
+      "source": "BLACKBOAT_RED_idle_1",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "type": "unavailable_darkening"
+    },
+    "BLACKBOAT_RED_unavailable_2": {
+      "source": "BLACKBOAT_RED_idle_2",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "type": "unavailable_darkening"
+    },
+    "BLACKBOAT_BLUE_unavailable_0": {
+      "source": "BLACKBOAT_BLUE_idle_0",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "type": "unavailable_darkening"
+    },
+    "BLACKBOAT_BLUE_unavailable_1": {
+      "source": "BLACKBOAT_BLUE_idle_1",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "type": "unavailable_darkening"
+    },
+    "BLACKBOAT_BLUE_unavailable_2": {
+      "source": "BLACKBOAT_BLUE_idle_2",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "type": "unavailable_darkening"
+    },
+    "BLACKBOAT_GREEN_unavailable_0": {
+      "source": "BLACKBOAT_RED_idle_0",
+      "filter": "hue-rotate(90deg) saturate(0.8) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "BLACKBOAT_GREEN_unavailable_1": {
+      "source": "BLACKBOAT_RED_idle_1",
+      "filter": "hue-rotate(90deg) saturate(0.8) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "BLACKBOAT_GREEN_unavailable_2": {
+      "source": "BLACKBOAT_RED_idle_2",
+      "filter": "hue-rotate(90deg) saturate(0.8) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "BLACKBOAT_YELLOW_unavailable_0": {
+      "source": "BLACKBOAT_RED_idle_0",
+      "filter": "hue-rotate(50deg) saturate(1.5) brightness(1.2) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "BLACKBOAT_YELLOW_unavailable_1": {
+      "source": "BLACKBOAT_RED_idle_1",
+      "filter": "hue-rotate(50deg) saturate(1.5) brightness(1.2) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "BLACKBOAT_YELLOW_unavailable_2": {
+      "source": "BLACKBOAT_RED_idle_2",
+      "filter": "hue-rotate(50deg) saturate(1.5) brightness(1.2) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "BLACKBOAT_GREY_unavailable_0": {
+      "source": "BLACKBOAT_RED_idle_0",
+      "filter": "grayscale(100%) brightness(0.8) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "BLACKBOAT_GREY_unavailable_1": {
+      "source": "BLACKBOAT_RED_idle_1",
+      "filter": "grayscale(100%) brightness(0.8) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "BLACKBOAT_GREY_unavailable_2": {
+      "source": "BLACKBOAT_RED_idle_2",
+      "filter": "grayscale(100%) brightness(0.8) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "MEGATANK_RED_unavailable_0": {
+      "source": "MEGATANK_RED_idle_0",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "type": "unavailable_darkening"
+    },
+    "MEGATANK_RED_unavailable_1": {
+      "source": "MEGATANK_RED_idle_1",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "type": "unavailable_darkening"
+    },
+    "MEGATANK_RED_unavailable_2": {
+      "source": "MEGATANK_RED_idle_2",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "type": "unavailable_darkening"
+    },
+    "MEGATANK_BLUE_unavailable_0": {
+      "source": "MEGATANK_BLUE_idle_0",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "type": "unavailable_darkening"
+    },
+    "MEGATANK_BLUE_unavailable_1": {
+      "source": "MEGATANK_BLUE_idle_1",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "type": "unavailable_darkening"
+    },
+    "MEGATANK_BLUE_unavailable_2": {
+      "source": "MEGATANK_BLUE_idle_2",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "type": "unavailable_darkening"
+    },
+    "MEGATANK_GREEN_unavailable_0": {
+      "source": "MEGATANK_RED_idle_0",
+      "filter": "hue-rotate(90deg) saturate(0.8) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "MEGATANK_GREEN_unavailable_1": {
+      "source": "MEGATANK_RED_idle_1",
+      "filter": "hue-rotate(90deg) saturate(0.8) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "MEGATANK_GREEN_unavailable_2": {
+      "source": "MEGATANK_RED_idle_2",
+      "filter": "hue-rotate(90deg) saturate(0.8) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "MEGATANK_YELLOW_unavailable_0": {
+      "source": "MEGATANK_RED_idle_0",
+      "filter": "hue-rotate(50deg) saturate(1.5) brightness(1.2) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "MEGATANK_YELLOW_unavailable_1": {
+      "source": "MEGATANK_RED_idle_1",
+      "filter": "hue-rotate(50deg) saturate(1.5) brightness(1.2) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "MEGATANK_YELLOW_unavailable_2": {
+      "source": "MEGATANK_RED_idle_2",
+      "filter": "hue-rotate(50deg) saturate(1.5) brightness(1.2) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "MEGATANK_GREY_unavailable_0": {
+      "source": "MEGATANK_RED_idle_0",
+      "filter": "grayscale(100%) brightness(0.8) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "MEGATANK_GREY_unavailable_1": {
+      "source": "MEGATANK_RED_idle_1",
+      "filter": "grayscale(100%) brightness(0.8) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "MEGATANK_GREY_unavailable_2": {
+      "source": "MEGATANK_RED_idle_2",
+      "filter": "grayscale(100%) brightness(0.8) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "PIPERUNNER_RED_unavailable_0": {
+      "source": "PIPERUNNER_RED_idle_0",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "type": "unavailable_darkening"
+    },
+    "PIPERUNNER_RED_unavailable_1": {
+      "source": "PIPERUNNER_RED_idle_1",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "type": "unavailable_darkening"
+    },
+    "PIPERUNNER_RED_unavailable_2": {
+      "source": "PIPERUNNER_RED_idle_2",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "type": "unavailable_darkening"
+    },
+    "PIPERUNNER_BLUE_unavailable_0": {
+      "source": "PIPERUNNER_BLUE_idle_0",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "type": "unavailable_darkening"
+    },
+    "PIPERUNNER_BLUE_unavailable_1": {
+      "source": "PIPERUNNER_BLUE_idle_1",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "type": "unavailable_darkening"
+    },
+    "PIPERUNNER_BLUE_unavailable_2": {
+      "source": "PIPERUNNER_BLUE_idle_2",
+      "filter": "brightness(0.4) saturate(0.5)",
+      "type": "unavailable_darkening"
+    },
+    "PIPERUNNER_GREEN_unavailable_0": {
+      "source": "PIPERUNNER_RED_idle_0",
+      "filter": "hue-rotate(90deg) saturate(0.8) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "PIPERUNNER_GREEN_unavailable_1": {
+      "source": "PIPERUNNER_RED_idle_1",
+      "filter": "hue-rotate(90deg) saturate(0.8) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "PIPERUNNER_GREEN_unavailable_2": {
+      "source": "PIPERUNNER_RED_idle_2",
+      "filter": "hue-rotate(90deg) saturate(0.8) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "PIPERUNNER_YELLOW_unavailable_0": {
+      "source": "PIPERUNNER_RED_idle_0",
+      "filter": "hue-rotate(50deg) saturate(1.5) brightness(1.2) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "PIPERUNNER_YELLOW_unavailable_1": {
+      "source": "PIPERUNNER_RED_idle_1",
+      "filter": "hue-rotate(50deg) saturate(1.5) brightness(1.2) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "PIPERUNNER_YELLOW_unavailable_2": {
+      "source": "PIPERUNNER_RED_idle_2",
+      "filter": "hue-rotate(50deg) saturate(1.5) brightness(1.2) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "PIPERUNNER_GREY_unavailable_0": {
+      "source": "PIPERUNNER_RED_idle_0",
+      "filter": "grayscale(100%) brightness(0.8) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "PIPERUNNER_GREY_unavailable_1": {
+      "source": "PIPERUNNER_RED_idle_1",
+      "filter": "grayscale(100%) brightness(0.8) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    },
+    "PIPERUNNER_GREY_unavailable_2": {
+      "source": "PIPERUNNER_RED_idle_2",
+      "filter": "grayscale(100%) brightness(0.8) brightness(0.4) saturate(0.5)",
+      "type": "color_variant_unavailable"
+    }
   }
 }

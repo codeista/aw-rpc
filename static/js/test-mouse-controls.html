@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mouse Control Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #1a1a2e;
+            color: white;
+        }
+        .test-area {
+            width: 800px;
+            height: 400px;
+            border: 2px solid #3498db;
+            margin: 20px 0;
+            position: relative;
+            background: #2c3e50;
+            cursor: crosshair;
+        }
+        .click-marker {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid red;
+            border-radius: 50%;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+        }
+        .stats {
+            background: rgba(0,0,0,0.5);
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .log {
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Mouse Control Test</h1>
+    <p>Click in the test area to check responsiveness. The test will measure:</p>
+    <ul>
+        <li>Click delay (time between mousedown and handler execution)</li>
+        <li>Double-click detection</li>
+        <li>Mouse movement smoothness</li>
+    </ul>
+    
+    <div class="test-area" id="testArea"></div>
+    
+    <div class="stats">
+        <h3>Statistics</h3>
+        <p>Total Clicks: <span id="totalClicks">0</span></p>
+        <p>Average Click Delay: <span id="avgDelay">0</span>ms</p>
+        <p>Min Delay: <span id="minDelay">-</span>ms</p>
+        <p>Max Delay: <span id="maxDelay">-</span>ms</p>
+        <p>Double Clicks: <span id="doubleClicks">0</span></p>
+        <p>Mouse Moves/sec: <span id="moveRate">0</span></p>
+    </div>
+    
+    <div class="log" id="log"></div>
+    
+    <button onclick="clearStats()">Clear Stats</button>
+    <button onclick="testThrottle()">Test with 200ms Throttle</button>
+    <button onclick="testNoThrottle()">Test without Throttle</button>
+    
+    <script>
+        const testArea = document.getElementById('testArea');
+        const log = document.getElementById('log');
+        
+        let stats = {
+            clicks: 0,
+            delays: [],
+            doubleClicks: 0,
+            moves: 0,
+            lastMoveReset: Date.now()
+        };
+        
+        let lastClickTime = 0;
+        let lastClickPos = null;
+        let currentHandler = null;
+        
+        function addLog(message) {
+            const entry = document.createElement('div');
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            log.insertBefore(entry, log.firstChild);
+            if (log.children.length > 50) {
+                log.removeChild(log.lastChild);
+            }
+        }
+        
+        function updateStats() {
+            document.getElementById('totalClicks').textContent = stats.clicks;
+            if (stats.delays.length > 0) {
+                const avg = stats.delays.reduce((a, b) => a + b, 0) / stats.delays.length;
+                document.getElementById('avgDelay').textContent = avg.toFixed(2);
+                document.getElementById('minDelay').textContent = Math.min(...stats.delays);
+                document.getElementById('maxDelay').textContent = Math.max(...stats.delays);
+            }
+            document.getElementById('doubleClicks').textContent = stats.doubleClicks;
+            
+            // Update move rate
+            const now = Date.now();
+            const timeDiff = (now - stats.lastMoveReset) / 1000;
+            if (timeDiff > 1) {
+                const moveRate = stats.moves / timeDiff;
+                document.getElementById('moveRate').textContent = moveRate.toFixed(0);
+                stats.moves = 0;
+                stats.lastMoveReset = now;
+            }
+        }
+        
+        function handleClick(ev) {
+            const clickTime = Date.now();
+            const delay = clickTime - ev.timeStamp;
+            
+            stats.clicks++;
+            stats.delays.push(delay);
+            
+            // Create visual marker
+            const marker = document.createElement('div');
+            marker.className = 'click-marker';
+            marker.style.left = ev.offsetX + 'px';
+            marker.style.top = ev.offsetY + 'px';
+            testArea.appendChild(marker);
+            setTimeout(() => marker.remove(), 1000);
+            
+            // Check for double-click
+            const pos = { x: ev.offsetX, y: ev.offsetY };
+            if (lastClickPos && 
+                Math.abs(pos.x - lastClickPos.x) < 5 && 
+                Math.abs(pos.y - lastClickPos.y) < 5 &&
+                clickTime - lastClickTime < 300) {
+                stats.doubleClicks++;
+                addLog(`Double-click detected at (${pos.x}, ${pos.y})`);
+            } else {
+                addLog(`Click at (${pos.x}, ${pos.y}) - delay: ${delay}ms`);
+            }
+            
+            lastClickTime = clickTime;
+            lastClickPos = pos;
+            
+            updateStats();
+        }
+        
+        function handleMove(ev) {
+            stats.moves++;
+        }
+        
+        // Throttle function
+        function throttle(func, limit) {
+            let inThrottle;
+            return function() {
+                const args = arguments;
+                const context = this;
+                if (!inThrottle) {
+                    func.apply(context, args);
+                    inThrottle = true;
+                    setTimeout(() => inThrottle = false, limit);
+                }
+            }
+        }
+        
+        function clearStats() {
+            stats = {
+                clicks: 0,
+                delays: [],
+                doubleClicks: 0,
+                moves: 0,
+                lastMoveReset: Date.now()
+            };
+            updateStats();
+            log.innerHTML = '';
+            addLog('Stats cleared');
+        }
+        
+        function testThrottle() {
+            if (currentHandler) {
+                testArea.removeEventListener('click', currentHandler);
+            }
+            currentHandler = throttle(handleClick, 200);
+            testArea.addEventListener('click', currentHandler);
+            addLog('🔴 Enabled 200ms throttle (simulating the issue)');
+        }
+        
+        function testNoThrottle() {
+            if (currentHandler) {
+                testArea.removeEventListener('click', currentHandler);
+            }
+            currentHandler = handleClick;
+            testArea.addEventListener('click', currentHandler);
+            addLog('🟢 Disabled throttle (fixed behavior)');
+        }
+        
+        // Start with no throttle
+        testNoThrottle();
+        testArea.addEventListener('mousemove', handleMove);
+        
+        // Update move rate periodically
+        setInterval(updateStats, 100);
+    </script>
+</body>
+</html>

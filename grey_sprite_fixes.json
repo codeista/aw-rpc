@@ -1,0 +1,46 @@
+{
+  "_comment": "GREY army sprite corrections following standard spacing pattern",
+  "base_position": {
+    "INFANTRY_GREY": {
+      "idle_x": [3, 20, 37],
+      "unavailable_x": [339, 356, 373],
+      "y": 1240
+    }
+  },
+  
+  "standard_spacing": {
+    "between_units": 19,
+    "between_frames": 17,
+    "idle_to_unavailable_x": 336
+  },
+  
+  "grey_corrections": {
+    "INFANTRY_GREY": { "y": 1240 },
+    "MECH_GREY": { "y": 1259 },
+    "RECON_GREY": { "y": 1278 },
+    "TANK_GREY": { "y": 1297 },
+    "MEDIUMTANK_GREY": { "y": 1316 },
+    "NEOTANK_GREY": { "y": 1335 },
+    "APC_GREY": { "y": 1354 },
+    "ANTIAIR_GREY": { "y": 1373 },
+    "ARTILLERY_GREY": { "y": 1392 },
+    "ROCKET_GREY": { "y": 1411 },
+    "MISSILE_GREY": { "y": 1430 },
+    "FIGHTER_GREY": { "y": 1449 },
+    "BOMBER_GREY": { "y": 1468 },
+    "BCOPTER_GREY": { "y": 1487 },
+    "TCOPTER_GREY": { "y": 1506 },
+    "BATTLESHIP_GREY": { "y": 1525 },
+    "CRUISER_GREY": { "y": 1544 },
+    "LANDER_GREY": { "y": 1563 },
+    "SUB_GREY": { "y": 1582 },
+    "PIPERUNNER_GREY": { "y": 1601 }
+  },
+  
+  "updates_needed": [
+    "Update MECH from Y=1335 to Y=1259",
+    "Update RECON from Y=1430 to Y=1278", 
+    "Update TANK from Y=1449 to Y=1297",
+    "Update all subsequent units with standard 19px spacing"
+  ]
+}

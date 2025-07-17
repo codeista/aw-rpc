@@ -1,0 +1,165 @@
+{
+  "_comment": "GREY army follows 95-pixel spacing between ALL units",
+  "grey_idle_corrections": {
+    "INFANTRY_GREY": { "y": 1240 },
+    "MECH_GREY": { "y": 1335 },      
+    "RECON_GREY": { "y": 1430 },     
+    "TANK_GREY": { "y": 1525 },       
+    "MEDIUMTANK_GREY": { "y": 1620 }, 
+    "NEOTANK_GREY": { "y": 1715 },    
+    "APC_GREY": { "y": 1810 },        
+    "ANTIAIR_GREY": { "y": 1905 },    
+    "ARTILLERY_GREY": { "y": 2000 },  
+    "ROCKET_GREY": { "y": 2095 },     
+    "MISSILE_GREY": { "y": 2190 },    
+    "FIGHTER_GREY": { "y": 2285 },    
+    "BOMBER_GREY": { "y": 2380 },     
+    "BCOPTER_GREY": { "y": 2475 },    
+    "TCOPTER_GREY": { "y": 2570 },    
+    "BATTLESHIP_GREY": { "y": 2665 }, 
+    "CRUISER_GREY": { "y": 2760 },    
+    "LANDER_GREY": { "y": 2855 },     
+    "SUB_GREY": { "y": 2950 },        
+    "PIPERUNNER_GREY": { "y": 3045 }  
+  },
+  
+  "full_corrections_idle": {
+    "TANK_GREY_idle_0": { "x": 3, "y": 1525 },
+    "TANK_GREY_idle_1": { "x": 20, "y": 1525 },
+    "TANK_GREY_idle_2": { "x": 37, "y": 1525 },
+    
+    "MEDIUMTANK_GREY_idle_0": { "x": 3, "y": 1620 },
+    "MEDIUMTANK_GREY_idle_1": { "x": 20, "y": 1620 },
+    "MEDIUMTANK_GREY_idle_2": { "x": 37, "y": 1620 },
+    
+    "NEOTANK_GREY_idle_0": { "x": 3, "y": 1715 },
+    "NEOTANK_GREY_idle_1": { "x": 20, "y": 1715 },
+    "NEOTANK_GREY_idle_2": { "x": 37, "y": 1715 },
+    
+    "APC_GREY_idle_0": { "x": 3, "y": 1810 },
+    "APC_GREY_idle_1": { "x": 20, "y": 1810 },
+    "APC_GREY_idle_2": { "x": 37, "y": 1810 },
+    
+    "ANTIAIR_GREY_idle_0": { "x": 3, "y": 1905 },
+    "ANTIAIR_GREY_idle_1": { "x": 20, "y": 1905 },
+    "ANTIAIR_GREY_idle_2": { "x": 37, "y": 1905 },
+    
+    "ARTILLERY_GREY_idle_0": { "x": 3, "y": 2000 },
+    "ARTILLERY_GREY_idle_1": { "x": 20, "y": 2000 },
+    "ARTILLERY_GREY_idle_2": { "x": 37, "y": 2000 },
+    
+    "ROCKET_GREY_idle_0": { "x": 3, "y": 2095 },
+    "ROCKET_GREY_idle_1": { "x": 20, "y": 2095 },
+    "ROCKET_GREY_idle_2": { "x": 37, "y": 2095 },
+    
+    "MISSILE_GREY_idle_0": { "x": 3, "y": 2190 },
+    "MISSILE_GREY_idle_1": { "x": 20, "y": 2190 },
+    "MISSILE_GREY_idle_2": { "x": 37, "y": 2190 },
+    
+    "FIGHTER_GREY_idle_0": { "x": 3, "y": 2285 },
+    "FIGHTER_GREY_idle_1": { "x": 20, "y": 2285 },
+    "FIGHTER_GREY_idle_2": { "x": 37, "y": 2285 },
+    
+    "BOMBER_GREY_idle_0": { "x": 3, "y": 2380 },
+    "BOMBER_GREY_idle_1": { "x": 20, "y": 2380 },
+    "BOMBER_GREY_idle_2": { "x": 37, "y": 2380 },
+    
+    "BCOPTER_GREY_idle_0": { "x": 3, "y": 2475 },
+    "BCOPTER_GREY_idle_1": { "x": 20, "y": 2475 },
+    "BCOPTER_GREY_idle_2": { "x": 37, "y": 2475 },
+    
+    "TCOPTER_GREY_idle_0": { "x": 3, "y": 2570 },
+    "TCOPTER_GREY_idle_1": { "x": 20, "y": 2570 },
+    "TCOPTER_GREY_idle_2": { "x": 37, "y": 2570 },
+    
+    "BATTLESHIP_GREY_idle_0": { "x": 3, "y": 2665 },
+    "BATTLESHIP_GREY_idle_1": { "x": 20, "y": 2665 },
+    "BATTLESHIP_GREY_idle_2": { "x": 37, "y": 2665 },
+    
+    "CRUISER_GREY_idle_0": { "x": 3, "y": 2760 },
+    "CRUISER_GREY_idle_1": { "x": 20, "y": 2760 },
+    "CRUISER_GREY_idle_2": { "x": 37, "y": 2760 },
+    
+    "LANDER_GREY_idle_0": { "x": 3, "y": 2855 },
+    "LANDER_GREY_idle_1": { "x": 20, "y": 2855 },
+    "LANDER_GREY_idle_2": { "x": 37, "y": 2855 },
+    
+    "SUB_GREY_idle_0": { "x": 3, "y": 2950 },
+    "SUB_GREY_idle_1": { "x": 20, "y": 2950 },
+    "SUB_GREY_idle_2": { "x": 37, "y": 2950 },
+    
+    "PIPERUNNER_GREY_idle_0": { "x": 3, "y": 3045 },
+    "PIPERUNNER_GREY_idle_1": { "x": 20, "y": 3045 },
+    "PIPERUNNER_GREY_idle_2": { "x": 37, "y": 3045 }
+  },
+  
+  "full_corrections_unavailable": {
+    "TANK_GREY_unavailable_0": { "x": 339, "y": 1525 },
+    "TANK_GREY_unavailable_1": { "x": 356, "y": 1525 },
+    "TANK_GREY_unavailable_2": { "x": 373, "y": 1525 },
+    
+    "MEDIUMTANK_GREY_unavailable_0": { "x": 339, "y": 1620 },
+    "MEDIUMTANK_GREY_unavailable_1": { "x": 356, "y": 1620 },
+    "MEDIUMTANK_GREY_unavailable_2": { "x": 373, "y": 1620 },
+    
+    "NEOTANK_GREY_unavailable_0": { "x": 339, "y": 1715 },
+    "NEOTANK_GREY_unavailable_1": { "x": 356, "y": 1715 },
+    "NEOTANK_GREY_unavailable_2": { "x": 373, "y": 1715 },
+    
+    "APC_GREY_unavailable_0": { "x": 339, "y": 1810 },
+    "APC_GREY_unavailable_1": { "x": 356, "y": 1810 },
+    "APC_GREY_unavailable_2": { "x": 373, "y": 1810 },
+    
+    "ANTIAIR_GREY_unavailable_0": { "x": 339, "y": 1905 },
+    "ANTIAIR_GREY_unavailable_1": { "x": 356, "y": 1905 },
+    "ANTIAIR_GREY_unavailable_2": { "x": 373, "y": 1905 },
+    
+    "ARTILLERY_GREY_unavailable_0": { "x": 339, "y": 2000 },
+    "ARTILLERY_GREY_unavailable_1": { "x": 356, "y": 2000 },
+    "ARTILLERY_GREY_unavailable_2": { "x": 373, "y": 2000 },
+    
+    "ROCKET_GREY_unavailable_0": { "x": 339, "y": 2095 },
+    "ROCKET_GREY_unavailable_1": { "x": 356, "y": 2095 },
+    "ROCKET_GREY_unavailable_2": { "x": 373, "y": 2095 },
+    
+    "MISSILE_GREY_unavailable_0": { "x": 339, "y": 2190 },
+    "MISSILE_GREY_unavailable_1": { "x": 356, "y": 2190 },
+    "MISSILE_GREY_unavailable_2": { "x": 373, "y": 2190 },
+    
+    "FIGHTER_GREY_unavailable_0": { "x": 339, "y": 2285 },
+    "FIGHTER_GREY_unavailable_1": { "x": 356, "y": 2285 },
+    "FIGHTER_GREY_unavailable_2": { "x": 373, "y": 2285 },
+    
+    "BOMBER_GREY_unavailable_0": { "x": 339, "y": 2380 },
+    "BOMBER_GREY_unavailable_1": { "x": 356, "y": 2380 },
+    "BOMBER_GREY_unavailable_2": { "x": 373, "y": 2380 },
+    
+    "BCOPTER_GREY_unavailable_0": { "x": 339, "y": 2475 },
+    "BCOPTER_GREY_unavailable_1": { "x": 356, "y": 2475 },
+    "BCOPTER_GREY_unavailable_2": { "x": 373, "y": 2475 },
+    
+    "TCOPTER_GREY_unavailable_0": { "x": 339, "y": 2570 },
+    "TCOPTER_GREY_unavailable_1": { "x": 356, "y": 2570 },
+    "TCOPTER_GREY_unavailable_2": { "x": 373, "y": 2570 },
+    
+    "BATTLESHIP_GREY_unavailable_0": { "x": 339, "y": 2665 },
+    "BATTLESHIP_GREY_unavailable_1": { "x": 356, "y": 2665 },
+    "BATTLESHIP_GREY_unavailable_2": { "x": 373, "y": 2665 },
+    
+    "CRUISER_GREY_unavailable_0": { "x": 339, "y": 2760 },
+    "CRUISER_GREY_unavailable_1": { "x": 356, "y": 2760 },
+    "CRUISER_GREY_unavailable_2": { "x": 373, "y": 2760 },
+    
+    "LANDER_GREY_unavailable_0": { "x": 339, "y": 2855 },
+    "LANDER_GREY_unavailable_1": { "x": 356, "y": 2855 },
+    "LANDER_GREY_unavailable_2": { "x": 373, "y": 2855 },
+    
+    "SUB_GREY_unavailable_0": { "x": 339, "y": 2950 },
+    "SUB_GREY_unavailable_1": { "x": 356, "y": 2950 },
+    "SUB_GREY_unavailable_2": { "x": 373, "y": 2950 },
+    
+    "PIPERUNNER_GREY_unavailable_0": { "x": 339, "y": 3045 },
+    "PIPERUNNER_GREY_unavailable_1": { "x": 356, "y": 3045 },
+    "PIPERUNNER_GREY_unavailable_2": { "x": 373, "y": 3045 }
+  }
+}

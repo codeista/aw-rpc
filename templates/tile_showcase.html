@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tile Showcase - Advance Wars RPC</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1, h2 {
+            text-align: center;
+        }
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+        }
+        .tileset-selector {
+            padding: 8px 15px;
+            margin: 0 10px;
+            border-radius: 4px;
+            border: 1px solid #7f8c8d;
+            background: #34495e;
+            color: white;
+            cursor: pointer;
+        }
+        .tile-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .tile-card {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #34495e;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+        .tile-card:hover {
+            transform: scale(1.05);
+            border-color: #3498db;
+        }
+        .tile-display {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 10px;
+            background: repeating-conic-gradient(#7f8c8d 0% 25%, transparent 0% 50%) 50% / 16px 16px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #34495e;
+        }
+        .tile-canvas {
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+        .tile-name {
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 5px;
+        }
+        .tile-info {
+            font-size: 12px;
+            color: #95a5a6;
+        }
+        .error {
+            color: #e74c3c;
+            padding: 10px;
+            background: rgba(231, 76, 60, 0.2);
+            border-radius: 4px;
+            text-align: center;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 18px;
+        }
+        .category-header {
+            grid-column: 1 / -1;
+            background: rgba(52, 152, 219, 0.2);
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .stats {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Map Tile Showcase</h1>
+        
+        <div class="controls">
+            <label>Tileset:</label>
+            <select id="tilesetSelect" class="tileset-selector">
+                <option value="normal_transparent">AW:DS (Transparent)</option>
+                <option value="normal">AW:DS (Normal)</option>
+                <option value="blackhole_transparent">Black Hole (Transparent)</option>
+                <option value="blackhole_normal">Black Hole (Normal)</option>
+            </select>
+            
+            <label style="margin-left: 20px;">Render Mode:</label>
+            <select id="renderMode" class="tileset-selector">
+                <option value="optimized">Optimized</option>
+                <option value="legacy">Legacy</option>
+            </select>
+        </div>
+        
+        <div id="stats" class="stats"></div>
+        
+        <div id="tileContainer" class="loading">
+            Loading tiles...
+        </div>
+    </div>
+
+    <script>
+        // Tile categories
+        const tileCategories = {
+            'Basic Terrain': ['PLAIN', 'WOOD', 'MOUNTAIN'],
+            'Water': ['SEA', 'REEF'],
+            'Roads': ['ROAD_HORT', 'ROAD_VERT', 'ROAD_NW', 'ROAD_NE', 'ROAD_SE', 'ROAD_SW', 
+                     'SWNRoad', 'ESWRoad', 'WNERoad', 'NESRoad', 'CRoad'],
+            'Bridges': ['HBridge', 'VBridge'],
+            'Rivers': ['RIVER_HORT', 'RIVER_VERT', 'RIVER_NW', 'RIVER_NE', 'RIVER_SE', 'RIVER_SW',
+                      'SWNRiver', 'ESWRiver', 'WNERiver', 'NESRiver'],
+            'Beaches': ['BEACH_N', 'BEACH_E', 'BEACH_S', 'BEACH_W',
+                       'BEACH_NW', 'BEACH_NE', 'BEACH_SE', 'BEACH_SW',
+                       'BEACH_END_N', 'BEACH_END_E', 'BEACH_END_S', 'BEACH_END_W'],
+            'Pipes': ['PIPE_HORT', 'PIPE_VERT', 'PIPE_END_N', 'PIPE_END_E', 'PIPE_END_S', 'PIPE_END_W',
+                     'PIPE_END_NW', 'PIPE_END_NE', 'PIPE_END_SE', 'PIPE_END_SW'],
+            'Buildings': ['CITY', 'FACTORY', 'AIRPORT', 'PORT', 'LAB', 'COM_TOWER',
+                         'MISSILE_SILO', 'EMPTY_SILO', 'BASE_TOWER_0', 'BASE_TOWER_1',
+                         'BASE_TOWER_2', 'BASE_TOWER_3', 'BASE_TOWER_4']
+        };
+
+        let tileMap = null;
+        let optimizedMap = null;
+        let tilesetImage = null;
+        let currentMode = 'optimized';
+        
+        async function loadTileMaps() {
+            try {
+                // Load legacy tile map
+                const legacyResponse = await fetch('/templates/tile_sprite_map.json');
+                tileMap = await legacyResponse.json();
+                
+                // Try to load optimized map
+                try {
+                    const optimizedResponse = await fetch('/static/img/optimized_tileset_map.json');
+                    optimizedMap = await optimizedResponse.json();
+                } catch (e) {
+                    console.warn('Optimized tileset not available');
+                }
+                
+                // Load initial tileset
+                await loadTileset();
+                
+                // Display tiles
+                displayTiles();
+                
+            } catch (error) {
+                document.getElementById('tileContainer').innerHTML = 
+                    `<div class="error">Error loading tile maps: ${error.message}</div>`;
+            }
+        }
+        
+        async function loadTileset() {
+            const tilesetType = document.getElementById('tilesetSelect').value;
+            currentMode = document.getElementById('renderMode').value;
+            
+            let imagePath;
+            if (currentMode === 'optimized' && optimizedMap && 
+                (tilesetType === 'normal_transparent' || tilesetType === 'normal')) {
+                // Use optimized tileset
+                imagePath = tilesetType === 'normal_transparent' ? 
+                    '/static/img/optimized_tileset_transparent.png' : 
+                    '/static/img/optimized_tileset_normal.png';
+            } else {
+                // Use legacy tileset
+                switch (tilesetType) {
+                    case 'normal_transparent':
+                        imagePath = '/static/img/Advance_Wars_Dual_Strike_Tileset_Normal_Transparent.png';
+                        break;
+                    case 'normal':
+                        imagePath = '/static/img/Advance_Wars_Dual_Strike_Tileset_Normal.png';
+                        break;
+                    case 'blackhole_transparent':
+                        imagePath = '/static/img/aw2_blackhole_tileset_normal_transparent.png';
+                        break;
+                    case 'blackhole_normal':
+                        imagePath = '/static/img/aw2_blackhole_tileset_normal.png';
+                        break;
+                }
+            }
+            
+            return new Promise((resolve, reject) => {
+                tilesetImage = new Image();
+                tilesetImage.onload = resolve;
+                tilesetImage.onerror = reject;
+                tilesetImage.src = imagePath;
+            });
+        }
+        
+        function getTileData(tileName, variant = null) {
+            const map = (currentMode === 'optimized' && optimizedMap) ? optimizedMap : tileMap;
+            const tileData = map.tiles[tileName];
+            
+            if (!tileData) return null;
+            
+            if (tileData.variants && variant) {
+                return tileData.variants[variant] || tileData.variants.neutral || null;
+            } else if (tileData.variants) {
+                return tileData.variants.neutral || tileData.variants[Object.keys(tileData.variants)[0]];
+            }
+            
+            return tileData;
+        }
+        
+        function drawTile(canvas, tileName, variant = null) {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const tileData = getTileData(tileName, variant);
+            if (!tileData) return false;
+            
+            let srcX, srcY;
+            if (currentMode === 'optimized' && optimizedMap) {
+                // Direct coordinates for optimized
+                srcX = tileData.x;
+                srcY = tileData.y;
+            } else {
+                // Center-based offsets for legacy
+                const centerX = tileMap.sprite_sheet.center_x;
+                const centerY = tileMap.sprite_sheet.center_y;
+                srcX = centerX + tileData.x;
+                srcY = centerY + tileData.y;
+            }
+            
+            // Scale factor for display
+            const scale = 2;
+            canvas.width = tileData.width * scale;
+            canvas.height = tileData.height * scale;
+            
+            // Enable pixelated rendering
+            ctx.imageSmoothingEnabled = false;
+            
+            // Draw the tile
+            ctx.drawImage(
+                tilesetImage,
+                srcX, srcY, tileData.width, tileData.height,
+                0, 0, canvas.width, canvas.height
+            );
+            
+            return true;
+        }
+        
+        function displayTiles() {
+            const container = document.getElementById('tileContainer');
+            container.innerHTML = '';
+            container.className = 'tile-grid';
+            
+            let totalTiles = 0;
+            let loadedTiles = 0;
+            
+            // Display tiles by category
+            for (const [category, tiles] of Object.entries(tileCategories)) {
+                // Add category header
+                const header = document.createElement('div');
+                header.className = 'category-header';
+                header.textContent = category;
+                container.appendChild(header);
+                
+                // Display tiles in category
+                for (const tileName of tiles) {
+                    const tileData = getTileData(tileName);
+                    if (!tileData) continue;
+                    
+                    // Check if tile has variants
+                    const map = (currentMode === 'optimized' && optimizedMap) ? optimizedMap : tileMap;
+                    const hasVariants = map.tiles[tileName] && map.tiles[tileName].variants;
+                    
+                    if (hasVariants) {
+                        // Show each variant
+                        const variants = ['neutral', 'RED', 'BLUE', 'GREEN', 'YELLOW', 'GREY'];
+                        for (const variant of variants) {
+                            if (getTileData(tileName, variant)) {
+                                totalTiles++;
+                                createTileCard(container, tileName, variant);
+                                if (drawTileOnCard(tileName, variant)) {
+                                    loadedTiles++;
+                                }
+                            }
+                        }
+                    } else {
+                        // Single tile
+                        totalTiles++;
+                        createTileCard(container, tileName);
+                        if (drawTileOnCard(tileName)) {
+                            loadedTiles++;
+                        }
+                    }
+                }
+            }
+            
+            // Update stats
+            updateStats(totalTiles, loadedTiles);
+        }
+        
+        function createTileCard(container, tileName, variant = null) {
+            const card = document.createElement('div');
+            card.className = 'tile-card';
+            card.id = `tile-${tileName}${variant ? '-' + variant : ''}`;
+            
+            const display = document.createElement('div');
+            display.className = 'tile-display';
+            
+            const canvas = document.createElement('canvas');
+            canvas.className = 'tile-canvas';
+            display.appendChild(canvas);
+            
+            const name = document.createElement('div');
+            name.className = 'tile-name';
+            name.textContent = variant ? `${tileName} (${variant})` : tileName;
+            
+            const info = document.createElement('div');
+            info.className = 'tile-info';
+            const tileData = getTileData(tileName, variant);
+            if (tileData) {
+                info.textContent = `${tileData.width}×${tileData.height}`;
+            }
+            
+            card.appendChild(display);
+            card.appendChild(name);
+            card.appendChild(info);
+            container.appendChild(card);
+        }
+        
+        function drawTileOnCard(tileName, variant = null) {
+            const cardId = `tile-${tileName}${variant ? '-' + variant : ''}`;
+            const card = document.getElementById(cardId);
+            if (!card) return false;
+            
+            const canvas = card.querySelector('canvas');
+            return drawTile(canvas, tileName, variant);
+        }
+        
+        function updateStats(total, loaded) {
+            const stats = document.getElementById('stats');
+            const mode = currentMode === 'optimized' ? 'Optimized' : 'Legacy';
+            const tileset = document.getElementById('tilesetSelect').selectedOptions[0].text;
+            
+            stats.innerHTML = `
+                <strong>Mode:</strong> ${mode} | 
+                <strong>Tileset:</strong> ${tileset} | 
+                <strong>Tiles:</strong> ${loaded}/${total} loaded
+            `;
+        }
+        
+        // Event listeners
+        document.getElementById('tilesetSelect').addEventListener('change', async () => {
+            await loadTileset();
+            displayTiles();
+        });
+        
+        document.getElementById('renderMode').addEventListener('change', async () => {
+            await loadTileset();
+            displayTiles();
+        });
+        
+        // Initialize on load
+        window.addEventListener('load', loadTileMaps);
+    </script>
+</body>
+</html>

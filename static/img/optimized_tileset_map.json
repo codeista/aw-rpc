@@ -1,0 +1,431 @@
+{
+  "sprite_sheet": {
+    "version": "2.0",
+    "optimized": true,
+    "width": 256,
+    "height": 102,
+    "file": "optimized_tileset_transparent.png"
+  },
+  "tiles": {
+    "CITY": {
+      "variants": {
+        "neutral": {
+          "x": 1,
+          "y": 1,
+          "width": 16,
+          "height": 32
+        },
+        "RED": {
+          "x": 18,
+          "y": 1,
+          "width": 16,
+          "height": 32
+        },
+        "BLUE": {
+          "x": 35,
+          "y": 1,
+          "width": 16,
+          "height": 32
+        },
+        "GREEN": {
+          "x": 52,
+          "y": 1,
+          "width": 16,
+          "height": 32
+        },
+        "YELLOW": {
+          "x": 69,
+          "y": 1,
+          "width": 16,
+          "height": 32
+        },
+        "GREY": {
+          "x": 86,
+          "y": 1,
+          "width": 16,
+          "height": 32
+        }
+      }
+    },
+    "PLAIN": {
+      "x": 103,
+      "y": 1,
+      "width": 16,
+      "height": 16
+    },
+    "WOOD": {
+      "x": 120,
+      "y": 1,
+      "width": 16,
+      "height": 16
+    },
+    "MOUNTAIN": {
+      "x": 137,
+      "y": 1,
+      "width": 16,
+      "height": 16
+    },
+    "REEF": {
+      "x": 154,
+      "y": 1,
+      "width": 16,
+      "height": 16
+    },
+    "SEA": {
+      "x": 171,
+      "y": 1,
+      "width": 16,
+      "height": 16
+    },
+    "HBridge": {
+      "x": 188,
+      "y": 1,
+      "width": 16,
+      "height": 16
+    },
+    "VBridge": {
+      "x": 205,
+      "y": 1,
+      "width": 16,
+      "height": 16
+    },
+    "RIVER_HORT": {
+      "x": 222,
+      "y": 1,
+      "width": 16,
+      "height": 16
+    },
+    "RIVER_VERT": {
+      "x": 239,
+      "y": 1,
+      "width": 16,
+      "height": 16
+    },
+    "RIVER_NW": {
+      "x": 1,
+      "y": 34,
+      "width": 16,
+      "height": 16
+    },
+    "RIVER_NE": {
+      "x": 18,
+      "y": 34,
+      "width": 16,
+      "height": 16
+    },
+    "RIVER_SE": {
+      "x": 35,
+      "y": 34,
+      "width": 16,
+      "height": 16
+    },
+    "RIVER_SW": {
+      "x": 52,
+      "y": 34,
+      "width": 16,
+      "height": 16
+    },
+    "ROAD_HORT": {
+      "x": 69,
+      "y": 34,
+      "width": 16,
+      "height": 16
+    },
+    "ROAD_VERT": {
+      "x": 86,
+      "y": 34,
+      "width": 16,
+      "height": 16
+    },
+    "ROAD_NW": {
+      "x": 103,
+      "y": 34,
+      "width": 16,
+      "height": 16
+    },
+    "ROAD_NE": {
+      "x": 120,
+      "y": 34,
+      "width": 16,
+      "height": 16
+    },
+    "ROAD_SE": {
+      "x": 137,
+      "y": 34,
+      "width": 16,
+      "height": 16
+    },
+    "ROAD_SW": {
+      "x": 154,
+      "y": 34,
+      "width": 16,
+      "height": 16
+    },
+    "BEACH_N": {
+      "x": 171,
+      "y": 34,
+      "width": 16,
+      "height": 16
+    },
+    "BEACH_E": {
+      "x": 188,
+      "y": 34,
+      "width": 16,
+      "height": 16
+    },
+    "BEACH_S": {
+      "x": 205,
+      "y": 34,
+      "width": 16,
+      "height": 16
+    },
+    "BEACH_W": {
+      "x": 222,
+      "y": 34,
+      "width": 16,
+      "height": 16
+    },
+    "BEACH_NW": {
+      "x": 239,
+      "y": 34,
+      "width": 16,
+      "height": 16
+    },
+    "BEACH_NE": {
+      "x": 1,
+      "y": 51,
+      "width": 16,
+      "height": 16
+    },
+    "BEACH_SE": {
+      "x": 18,
+      "y": 51,
+      "width": 16,
+      "height": 16
+    },
+    "BEACH_SW": {
+      "x": 35,
+      "y": 51,
+      "width": 16,
+      "height": 16
+    },
+    "BEACH_END_N": {
+      "x": 52,
+      "y": 51,
+      "width": 16,
+      "height": 16
+    },
+    "BEACH_END_E": {
+      "x": 69,
+      "y": 51,
+      "width": 16,
+      "height": 16
+    },
+    "BEACH_END_S": {
+      "x": 86,
+      "y": 51,
+      "width": 16,
+      "height": 16
+    },
+    "BEACH_END_W": {
+      "x": 103,
+      "y": 51,
+      "width": 16,
+      "height": 16
+    },
+    "PIPE_HORT": {
+      "x": 120,
+      "y": 51,
+      "width": 16,
+      "height": 16
+    },
+    "PIPE_VERT": {
+      "x": 137,
+      "y": 51,
+      "width": 16,
+      "height": 16
+    },
+    "PIPE_END_N": {
+      "x": 154,
+      "y": 51,
+      "width": 16,
+      "height": 16
+    },
+    "PIPE_END_E": {
+      "x": 171,
+      "y": 51,
+      "width": 16,
+      "height": 16
+    },
+    "PIPE_END_S": {
+      "x": 188,
+      "y": 51,
+      "width": 16,
+      "height": 16
+    },
+    "PIPE_END_W": {
+      "x": 205,
+      "y": 51,
+      "width": 16,
+      "height": 16
+    },
+    "PIPE_END_NW": {
+      "x": 222,
+      "y": 51,
+      "width": 16,
+      "height": 16
+    },
+    "PIPE_END_NE": {
+      "x": 239,
+      "y": 51,
+      "width": 16,
+      "height": 16
+    },
+    "PIPE_END_SE": {
+      "x": 1,
+      "y": 68,
+      "width": 16,
+      "height": 16
+    },
+    "PIPE_END_SW": {
+      "x": 18,
+      "y": 68,
+      "width": 16,
+      "height": 16
+    },
+    "SWNRoad": {
+      "x": 35,
+      "y": 68,
+      "width": 16,
+      "height": 16
+    },
+    "ESWRoad": {
+      "x": 52,
+      "y": 68,
+      "width": 16,
+      "height": 16
+    },
+    "WNERoad": {
+      "x": 69,
+      "y": 68,
+      "width": 16,
+      "height": 16
+    },
+    "NESRoad": {
+      "x": 86,
+      "y": 68,
+      "width": 16,
+      "height": 16
+    },
+    "CRoad": {
+      "x": 103,
+      "y": 68,
+      "width": 16,
+      "height": 16
+    },
+    "SWNRiver": {
+      "x": 120,
+      "y": 68,
+      "width": 16,
+      "height": 16
+    },
+    "ESWRiver": {
+      "x": 137,
+      "y": 68,
+      "width": 16,
+      "height": 16
+    },
+    "WNERiver": {
+      "x": 154,
+      "y": 68,
+      "width": 16,
+      "height": 16
+    },
+    "NESRiver": {
+      "x": 171,
+      "y": 68,
+      "width": 16,
+      "height": 16
+    },
+    "FACTORY": {
+      "variants": {
+        "neutral": {
+          "x": 188,
+          "y": 68,
+          "width": 16,
+          "height": 16
+        },
+        "RED": {
+          "x": 205,
+          "y": 68,
+          "width": 16,
+          "height": 16
+        },
+        "BLUE": {
+          "x": 222,
+          "y": 68,
+          "width": 16,
+          "height": 16
+        },
+        "GREEN": {
+          "x": 239,
+          "y": 68,
+          "width": 16,
+          "height": 16
+        },
+        "YELLOW": {
+          "x": 1,
+          "y": 85,
+          "width": 16,
+          "height": 16
+        },
+        "GREY": {
+          "x": 18,
+          "y": 85,
+          "width": 16,
+          "height": 16
+        }
+      }
+    },
+    "AIRPORT": {
+      "variants": {
+        "neutral": {
+          "x": 35,
+          "y": 85,
+          "width": 16,
+          "height": 16
+        },
+        "RED": {
+          "x": 52,
+          "y": 85,
+          "width": 16,
+          "height": 16
+        },
+        "BLUE": {
+          "x": 69,
+          "y": 85,
+          "width": 16,
+          "height": 16
+        },
+        "GREEN": {
+          "x": 86,
+          "y": 85,
+          "width": 16,
+          "height": 16
+        },
+        "YELLOW": {
+          "x": 103,
+          "y": 85,
+          "width": 16,
+          "height": 16
+        },
+        "GREY": {
+          "x": 120,
+          "y": 85,
+          "width": 16,
+          "height": 16
+        }
+      }
+    }
+  }
+}

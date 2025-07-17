@@ -1,0 +1,37 @@
+{
+  "grey_army_corrections": {
+    "MEDIUMTANK_GREY": {
+      "current_y": 1468,
+      "correct_y": 1470,
+      "change": "+2"
+    },
+    "NEOTANK_GREY": {
+      "current_y": 1487,
+      "correct_y": 1488,
+      "change": "+1"
+    },
+    "SUB_GREY": {
+      "current_y": 1734,
+      "correct_y": 1737,
+      "change": "+3",
+      "note": "Also X position for unavailable sprites: 339 → 340"
+    }
+  },
+  
+  "units_to_update": [
+    "MEDIUMTANK_GREY_idle_0", "MEDIUMTANK_GREY_idle_1", "MEDIUMTANK_GREY_idle_2",
+    "MEDIUMTANK_GREY_unavailable_0", "MEDIUMTANK_GREY_unavailable_1", "MEDIUMTANK_GREY_unavailable_2",
+    "NEOTANK_GREY_idle_0", "NEOTANK_GREY_idle_1", "NEOTANK_GREY_idle_2",
+    "NEOTANK_GREY_unavailable_0", "NEOTANK_GREY_unavailable_1", "NEOTANK_GREY_unavailable_2"
+  ],
+  
+  "verified_correct": [
+    "INFANTRY (1240)",
+    "MECH (1335)",
+    "RECON (1430)",
+    "TANK (1449)",
+    "SUB (1734)"
+  ],
+  
+  "final_pattern": "GREY army uses 95px gaps for INFANTRY→MECH→RECON, then ~19px spacing with minor adjustments"
+}

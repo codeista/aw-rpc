@@ -158,6 +158,9 @@ python3 tests/integration/test_victory_conditions.py
 
 ## Architecture
 
+### Sprite System
+See [SPRITE_STATUS.md](SPRITE_STATUS.md) for current sprite mapping progress and limitations.
+
 ### Frontend
 - **render.js**: Game rendering with Two.js
 - **Socket.IO**: Real-time multiplayer updates

@@ -1416,6 +1416,25 @@ function renderBaseTile(tile) {
 function makeMapTile(tile) {
     var showMapTiles = document.getElementById('inputshowmap').checked;
     if (showMapTiles) {
+        // Try to use optimized tile renderer first
+        if (window.optimizedTileRenderer && window.optimizedTileRenderer.loaded) {
+            try {
+                // Check if needs base layer
+                if (window.optimizedTileRenderer.needsBaseLayer(tile.mapTile.type)) {
+                    window.optimizedTileRenderer.renderBaseTile(two, tile, window.TILESIZE);
+                }
+                
+                // Render the tile
+                const tileElement = window.optimizedTileRenderer.renderTile(two, tile, window.TILESIZE);
+                if (tileElement) {
+                    return; // Successfully rendered with optimized renderer
+                }
+            } catch (error) {
+                console.warn('Optimized tile render failed, falling back to legacy:', error);
+            }
+        }
+        
+        // Legacy rendering fallback
         // Check if this terrain type needs a base layer (structures)
         const structureTypes = ['CITY', 'FACTORY', 'AIRPORT', 'PORT', 'COM_TOWER', 'LAB', 'MISSILE_SILO', 'EMPTY_SILO', 
                               'BASE_TOWER_0', 'BASE_TOWER_1', 'BASE_TOWER_2', 'BASE_TOWER_3', 'BASE_TOWER_4', 'MOUNTAIN'];
@@ -1912,6 +1931,27 @@ function makeMapTile(tile) {
  * Load sprite corrector data from JSON file
  */
 async function loadSpriteCorrector() {
+    // Try to load optimized sprite renderer first
+    if (window.optimizedSpriteRenderer && !window.optimizedSpriteRenderer.loaded) {
+        try {
+            await window.optimizedSpriteRenderer.initialize();
+            logger.info('✅ Using optimized sprite sheet (93KB vs 370KB)');
+        } catch (error) {
+            logger.warn('Failed to load optimized sprites, falling back to legacy:', error);
+        }
+    }
+    
+    // Try to load optimized tile renderer
+    if (window.optimizedTileRenderer && !window.optimizedTileRenderer.loaded) {
+        try {
+            await window.optimizedTileRenderer.initialize();
+            logger.info('✅ Using optimized tileset (6KB vs 76KB, 92% smaller)');
+        } catch (error) {
+            logger.warn('Failed to load optimized tiles, falling back to legacy:', error);
+        }
+    }
+    
+    // Fall back to legacy sprite corrections
     if (window.spriteCorrections) {
         return; // Already loaded
     }
@@ -1924,7 +1964,7 @@ async function loadSpriteCorrector() {
         window.spriteCorrections = data.corrections;
         window.spriteConfig = data.spriteConfig;
         
-        logger.debug('Sprite corrector data loaded successfully');
+        logger.debug('Legacy sprite corrector data loaded');
         logger.debug('SpriteConfig:', window.spriteConfig);
         logger.debug('Total correction categories:', Object.keys(data.corrections).length);
         logger.debug('Sample blue unit coords:', data.corrections.idle?.INFANTRY_BLUE_idle_0);
@@ -1969,6 +2009,9 @@ async function generateUnitTexture(tile) {
             const canAct = tile.unit.can_move || tile.unit.can_attack;
             const state = canAct ? 'idle' : 'unavailable';
             
+            // Build sprite key using sprite corrector format
+            spriteKey = `${tile.unit.type}_${tile.unit.army}_${state}_0`;
+            
             // Debug logging for sprite state
             if (tile.unit.army === board.current_turn) {
                 logger.info(`Unit ${tile.unit.type} at (${tile.x},${tile.y}): can_move=${tile.unit.can_move}, can_attack=${tile.unit.can_attack}, can_capture=${tile.unit.can_capture} -> state=${state}`);
@@ -1978,9 +2021,6 @@ async function generateUnitTexture(tile) {
                     logger.debug(`DEBUG: Unavailable Infantry sprite key: ${spriteKey}`);
                 }
             }
-            
-            // Build sprite key using sprite corrector format
-            spriteKey = `${tile.unit.type}_${tile.unit.army}_${state}_0`;
             
             // Removed debug logging - use debugSpriteCorrections() instead
             

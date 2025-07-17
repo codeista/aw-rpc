@@ -1095,6 +1095,20 @@ def sprite_showcase():
     return render_template('sprite_showcase.html')
 
 
+@app.route('/tile_optimization_test')
+def tile_optimization_test():
+    """Tile optimization comparison page"""
+    app_logger.info("Tile optimization test accessed")
+    return render_template('tile_optimization_test.html')
+
+
+@app.route('/tiles')
+def tile_showcase():
+    """Tile showcase page to view all map tiles"""
+    app_logger.info("Tile showcase accessed")
+    return render_template('tile_showcase.html')
+
+
 @app.route('/api/test_create_custom_game', methods=['POST'])
 def test_create_custom_game():
     """API endpoint for test interface to create custom games"""
