@@ -1,0 +1,35 @@
+ FOG of WAR
+ The Fog of War is a special condition where a dark shroud envelops the battlefield which prevents units from seeing, as well as attacking enemy units hidden within it, even if the location of the unit is otherwise clearly known. Statistical information on opposing armies is also hidden, such as funding, daily income, army value and unit count, but not opposing CO power bar charge.
+
+Units push back the fog in a radius of tiles around them equal to their vision range. Owned properties will also provide vision of units on top of them, including hidden Stealths and Subs. Vision is collective and will be shared between units and across players in the case of allied teams as well.
+
+Moving units into tiles beyond vision range carries a risk of being 'ambushed' or 'trapped' by a hidden enemy unit occupying any tile in the movement path. Upon encountering the hidden enemy unit, the ambushed unit's movement is immediately interrupted at the first point of contact, and the unit is unable to take any other actions for the remainder of the turn.
+
+Some terrain tiles have additional interactions in fog - Woods and Reefs will always hide ground and sea units (but not air units) from vision, unless an allied unit is directly adjacent to them, while Mountains boost vision range of Infantry and Mechs that stand on top of them by 3, giving them as much vision range as a Recon. Rainy weather will reduce vision range for all units by 1 while it is falling, though it cannot reduce vision below 1.
+FogOfWar trapped
+
+A Blue Moon Infantry being trapped trying to enter an occupied forest.
+
+Enabling fog of war changes the metagame of Advance Wars considerably - unlike in the default game which is essentially a game of perfect information, in fog, games are imperfect, where some information such as enemy army positions and compositions must be appropriately gathered before they can be known and others, such as a player's funding and property ownership, cannot be known for sure at all. This introduces strategic elements of risk management and prediction, where the opportunity cost of a move not must not only consider units that are visible, but also the potential risk of a previously unseen unit approaching from fog. On a tactical level, it also introduces information warfare - ensuring consistent vision as well as denying enemy vision can be a useful tool in skirmishes to both reveal favorable trades and allow more loose positioning requirements without retaliation.
+
+The primary difference unit-wise is the addition of far more Recons in day-to-day fighting, having an excellent 5 vision while being cheap and fast to enable interrupting captures in the early game and transitioning to pure scouts in the later stages. Indirect units such as Artillery also benefit from fog, being more difficult to scout due to their range and able to steathily cover hotspot areas such as a contested property. These factors can be affected by map design - in the interests of producing faster gameplay, most are designed to be more open to prevent the risk factor from growing too high due to hidden indirects, with less chokepoints overall from mountain and sea and pipes tiles. These are the primary drivers behind the changes to the Standard Tier List brought on by fog. 
+
+MOVEMENT
+
+Tiles may only be occupied by one unit at a time. Units can freely pass through other allied units, but enemy units are always impassable, even for units that logically should not have issues passing over or under them (such as footsoldiers and planes). If all units are destroyed, the army will be routed, counting as a defeat.
+
+Unit movement is linked to the grid-based system the map uses - units can only travel between directly adjacent tiles, with their mobility being determined by the unit and its interactions with the terrain tiles it travels over. Ground and to a lesser extent sea units are generally impeded by heavy terrain and blocked entirely by sea or land tiles, respectively, while air units are free to move regardless of terrain except for over Pipes. In exchange, air units cannot benefit from terrain bonuses such as defense stars and concealment from woods and reefs in Fog of War.
+
+Units may be commanded to perform a wide variety of actions on the battlefield as described below. All of these actions will end the turn of the unit that uses it - they can no longer be moved again until the next day when they will refresh.
+
+    Fire commands a unit to engage an enemy unit within range in combat (see #Combat below). Range for units varies - most units, known as direct units, must be directly adjacent to a unit to attack it, whereas indirect units such as Artillery have a range greater than 1 tile but cannot move and attack in the same turn.
+    Wait commands a unit to simply end their move with no further actions, usually after moving. The Wait command is generally not needed for units that are not moved that turn but it is still helpful for units you explicitly do not want to move that turn, such as a Recon scouting by hiding in Woods.
+    Capture will become available for Infantry or Mechs if they are on a neutral or enemy property. Every property starts with 20 capture points and is reduced by an amount equal to your unit's HP every time you capture. Once the number is reduced to 0, the property is yours.
+    Join will command two of the same type of unit to combine by moving one on top of the other, provided the unit being joined into is at 9HP or less. The resultant single unit will have the combined health, ammo and fuel as the constituent units. The usual caps for these values are respected - excess fuel and ammo above the normal capacity of the unit is simply lost, but any excess HP over 10 is converted to funds at a rate of 10% of the unit's base price per HP lost. This will end the turn of the resultant unit - if the unit being joined into has not moved, its turn will be spent.
+    Load / Unload will cause a unit to board a transport/a transport to unboard a unit, respectively.
+    Resupply will command a selected APC to manually resupply all adjacent units around that location.
+    Repair will command a selected Black Boat to repair and resupply an adjacent selected unit.
+    Hide commands a Sub or Stealth to submerge or stealth, rendering them invisible to non-adjacent units and immune to attack from most units.
+    Launch will only appear if an Infantry or Mech is stood upon a Missile Silo. Selecting it will cause a grid overlay to appear under your cursor; clicking again will fire the missile, at which point the Missile Silo cannot be used again for the rest of the game.
+    Explode will command a Black Bomb to detonate, causing 5HP of damage to all units within a 3-tile radius. This destroys the Black Bomb.
+    Delete can be used if the unit has not used its turn yet and will delete it from the game. You do not receive the funds or power charge for this unit when you delete it; it is just gone.
