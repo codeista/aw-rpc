@@ -2504,63 +2504,287 @@
       }
     },
     "hp_unavailable": {
-      "hp_unavailable_0": {
+      "hp_unavailable_RED_0": {
         "x": 428,
         "y": 1233
       },
-      "hp_unavailable_1": {
+      "hp_unavailable_RED_1": {
         "x": 437,
         "y": 1233
       },
-      "hp_unavailable_2": {
+      "hp_unavailable_RED_2": {
         "x": 446,
         "y": 1233
       },
-      "hp_unavailable_3": {
+      "hp_unavailable_RED_3": {
         "x": 455,
         "y": 1233
       },
-      "hp_unavailable_4": {
+      "hp_unavailable_RED_4": {
         "x": 464,
         "y": 1233
       },
-      "hp_unavailable_5": {
+      "hp_unavailable_RED_5": {
         "x": 473,
         "y": 1233
       },
-      "hp_unavailable_6": {
+      "hp_unavailable_RED_6": {
         "x": 482,
         "y": 1233
       },
-      "hp_unavailable_7": {
+      "hp_unavailable_RED_7": {
         "x": 491,
         "y": 1233
       },
-      "hp_unavailable_8": {
+      "hp_unavailable_RED_8": {
         "x": 500,
         "y": 1233
       },
-      "hp_unavailable_9": {
+      "hp_unavailable_RED_9": {
         "x": 509,
         "y": 1233
+      },
+      "hp_unavailable_BLUE_0": {
+        "x": 428,
+        "y": 1242
+      },
+      "hp_unavailable_BLUE_1": {
+        "x": 437,
+        "y": 1242
+      },
+      "hp_unavailable_BLUE_2": {
+        "x": 446,
+        "y": 1242
+      },
+      "hp_unavailable_BLUE_3": {
+        "x": 455,
+        "y": 1242
+      },
+      "hp_unavailable_BLUE_4": {
+        "x": 464,
+        "y": 1242
+      },
+      "hp_unavailable_BLUE_5": {
+        "x": 473,
+        "y": 1242
+      },
+      "hp_unavailable_BLUE_6": {
+        "x": 482,
+        "y": 1242
+      },
+      "hp_unavailable_BLUE_7": {
+        "x": 491,
+        "y": 1242
+      },
+      "hp_unavailable_BLUE_8": {
+        "x": 500,
+        "y": 1242
+      },
+      "hp_unavailable_BLUE_9": {
+        "x": 509,
+        "y": 1242
+      },
+      "hp_unavailable_GREEN_0": {
+        "x": 428,
+        "y": 1251
+      },
+      "hp_unavailable_GREEN_1": {
+        "x": 437,
+        "y": 1251
+      },
+      "hp_unavailable_GREEN_2": {
+        "x": 446,
+        "y": 1251
+      },
+      "hp_unavailable_GREEN_3": {
+        "x": 455,
+        "y": 1251
+      },
+      "hp_unavailable_GREEN_4": {
+        "x": 464,
+        "y": 1251
+      },
+      "hp_unavailable_GREEN_5": {
+        "x": 473,
+        "y": 1251
+      },
+      "hp_unavailable_GREEN_6": {
+        "x": 482,
+        "y": 1251
+      },
+      "hp_unavailable_GREEN_7": {
+        "x": 491,
+        "y": 1251
+      },
+      "hp_unavailable_GREEN_8": {
+        "x": 500,
+        "y": 1251
+      },
+      "hp_unavailable_GREEN_9": {
+        "x": 509,
+        "y": 1251
+      },
+      "hp_unavailable_YELLOW_0": {
+        "x": 428,
+        "y": 1260
+      },
+      "hp_unavailable_YELLOW_1": {
+        "x": 437,
+        "y": 1260
+      },
+      "hp_unavailable_YELLOW_2": {
+        "x": 446,
+        "y": 1260
+      },
+      "hp_unavailable_YELLOW_3": {
+        "x": 455,
+        "y": 1260
+      },
+      "hp_unavailable_YELLOW_4": {
+        "x": 464,
+        "y": 1260
+      },
+      "hp_unavailable_YELLOW_5": {
+        "x": 473,
+        "y": 1260
+      },
+      "hp_unavailable_YELLOW_6": {
+        "x": 482,
+        "y": 1260
+      },
+      "hp_unavailable_YELLOW_7": {
+        "x": 491,
+        "y": 1260
+      },
+      "hp_unavailable_YELLOW_8": {
+        "x": 500,
+        "y": 1260
+      },
+      "hp_unavailable_YELLOW_9": {
+        "x": 509,
+        "y": 1260
+      },
+      "hp_unavailable_GREY_0": {
+        "x": 428,
+        "y": 1269
+      },
+      "hp_unavailable_GREY_1": {
+        "x": 437,
+        "y": 1269
+      },
+      "hp_unavailable_GREY_2": {
+        "x": 446,
+        "y": 1269
+      },
+      "hp_unavailable_GREY_3": {
+        "x": 455,
+        "y": 1269
+      },
+      "hp_unavailable_GREY_4": {
+        "x": 464,
+        "y": 1269
+      },
+      "hp_unavailable_GREY_5": {
+        "x": 473,
+        "y": 1269
+      },
+      "hp_unavailable_GREY_6": {
+        "x": 482,
+        "y": 1269
+      },
+      "hp_unavailable_GREY_7": {
+        "x": 491,
+        "y": 1269
+      },
+      "hp_unavailable_GREY_8": {
+        "x": 500,
+        "y": 1269
+      },
+      "hp_unavailable_GREY_9": {
+        "x": 509,
+        "y": 1269
       }
     },
     "status_icons": {
-      "status_icons_0": {
+      "status_icons_RED_0": {
         "x": 520,
         "y": 1233
       },
-      "status_icons_1": {
+      "status_icons_RED_1": {
         "x": 529,
         "y": 1233
       },
-      "status_icons_2": {
+      "status_icons_RED_2": {
         "x": 538,
         "y": 1233
       },
-      "status_icons_3": {
+      "status_icons_RED_3": {
         "x": 547,
         "y": 1233
+      },
+      "status_icons_BLUE_0": {
+        "x": 520,
+        "y": 1242
+      },
+      "status_icons_BLUE_1": {
+        "x": 529,
+        "y": 1242
+      },
+      "status_icons_BLUE_2": {
+        "x": 538,
+        "y": 1242
+      },
+      "status_icons_BLUE_3": {
+        "x": 547,
+        "y": 1242
+      },
+      "status_icons_GREEN_0": {
+        "x": 520,
+        "y": 1251
+      },
+      "status_icons_GREEN_1": {
+        "x": 529,
+        "y": 1251
+      },
+      "status_icons_GREEN_2": {
+        "x": 538,
+        "y": 1251
+      },
+      "status_icons_GREEN_3": {
+        "x": 547,
+        "y": 1251
+      },
+      "status_icons_YELLOW_0": {
+        "x": 520,
+        "y": 1260
+      },
+      "status_icons_YELLOW_1": {
+        "x": 529,
+        "y": 1260
+      },
+      "status_icons_YELLOW_2": {
+        "x": 538,
+        "y": 1260
+      },
+      "status_icons_YELLOW_3": {
+        "x": 547,
+        "y": 1260
+      },
+      "status_icons_GREY_0": {
+        "x": 520,
+        "y": 1269
+      },
+      "status_icons_GREY_1": {
+        "x": 529,
+        "y": 1269
+      },
+      "status_icons_GREY_2": {
+        "x": 538,
+        "y": 1269
+      },
+      "status_icons_GREY_3": {
+        "x": 547,
+        "y": 1269
       }
     },
     "config": {
@@ -2568,10 +2792,126 @@
       "height": 16,
       "spacingX": 0,
       "spacingY": 0
+    },
+    "name_tiles": {
+      "name_INF": {
+        "x": 392,
+        "y": 1567,
+        "width": 32,
+        "height": 16
+      },
+      "name_MECH": {
+        "x": 425,
+        "y": 1567,
+        "width": 32,
+        "height": 16
+      },
+      "name_RECON": {
+        "x": 460,
+        "y": 1567,
+        "width": 32,
+        "height": 16
+      },
+      "name_TANK": {
+        "x": 493,
+        "y": 1567,
+        "width": 32,
+        "height": 16
+      },
+      "name_MD.TANK": {
+        "x": 526,
+        "y": 1567,
+        "width": 32,
+        "height": 16
+      },
+      "name_NEO.TANK": {
+        "x": 559,
+        "y": 1567,
+        "width": 32,
+        "height": 16
+      },
+      "name_APC": {
+        "x": 592,
+        "y": 1567,
+        "width": 32,
+        "height": 16
+      },
+      "name_ARTILLERY": {
+        "x": 658,
+        "y": 1567,
+        "width": 32,
+        "height": 16
+      },
+      "name_ROCKET": {
+        "x": 691,
+        "y": 1567,
+        "width": 32,
+        "height": 16
+      },
+      "name_ANTI-AIR": {
+        "x": 625,
+        "y": 1567,
+        "width": 32,
+        "height": 16
+      },
+      "name_MISSILE": {
+        "x": 724,
+        "y": 1567,
+        "width": 32,
+        "height": 16
+      },
+      "name_B-COPTER": {
+        "x": 458,
+        "y": 1586,
+        "width": 32,
+        "height": 16
+      },
+      "name_T-COPTER": {
+        "x": 491,
+        "y": 1586,
+        "width": 32,
+        "height": 16
+      },
+      "name_FIGHTER": {
+        "x": 392,
+        "y": 1586,
+        "width": 32,
+        "height": 16
+      },
+      "name_BOMBER": {
+        "x": 425,
+        "y": 1586,
+        "width": 32,
+        "height": 16
+      },
+      "name_CRUISER": {
+        "x": 559,
+        "y": 1586,
+        "width": 32,
+        "height": 16
+      },
+      "name_BATTLESHIP": {
+        "x": 526,
+        "y": 1586,
+        "width": 32,
+        "height": 16
+      },
+      "name_LANDER": {
+        "x": 592,
+        "y": 1586,
+        "width": 32,
+        "height": 16
+      },
+      "name_SUB": {
+        "x": 625,
+        "y": 1586,
+        "width": 32,
+        "height": 16
+      }
     }
   },
   "stats": {
-    "totalCorrections": 692
+    "totalCorrections": 716
   },
   "individual_sprites": {
     "STEALTH_RED_idle_0": {

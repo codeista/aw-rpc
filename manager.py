@@ -1546,7 +1546,7 @@ class GameManager:
                 tile.capture_hp = 20
         
         # Log income processing
-        if hasattr(self, 'app_logger'):
+        if hasattr(self, 'app_logger') and self.app_logger is not None:
             self.app_logger.info(f"{current_army.name} received {daily_income} income")
 
     def is_apc(self, unit) -> bool:
@@ -1582,7 +1582,7 @@ class GameManager:
             for cargo_unit in transport.status.cargo:
                 if cargo_unit:  # Skip empty slots
                     self.resupply_unit(cargo_unit)
-                    if hasattr(self, 'app_logger'):
+                    if hasattr(self, 'app_logger') and self.app_logger is not None:
                         self.app_logger.info(f"{transport.type.name} auto-resupplied {cargo_unit.type.name}")
     
     def _validate_move_destination(self, x: int, y: int, moving_unit):

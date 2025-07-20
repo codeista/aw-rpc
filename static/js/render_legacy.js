@@ -3,17 +3,21 @@
 //
 
 // constants
-if (!window.window.TILESIZE) {
-    window.window.TILESIZE = 16;
+if (!window.TILESIZE) {
+    window.TILESIZE = 16;
 }
-// Use window.window.TILESIZE directly to avoid conflicts with other files
+// Use window.TILESIZE directly to avoid conflicts with other files
 
 // Tileset management functions
 function getSelectedTerrainTileset() {
     const select = document.getElementById('terrainTilesetSelect');
-    if (!select) return '/static/img/Advance_Wars_Dual_Strike_Tileset_Normal_Transparent.png'; // fallback
+    // Default to AWDS tileset - known working
+    if (!select) return '/static/img/Advance_Wars_Dual_Strike_Tileset_Normal_Transparent.png';
     
     switch (select.value) {
+        case 'aw2_rgb':
+        case 'optimized':
+            return '/static/img/Game Boy Advance - Advance Wars 2 Black Hole Rising - Overworld Tileset Buildings.png';
         case 'transparent':
             return '/static/img/Advance_Wars_Dual_Strike_Tileset_Normal_Transparent.png';
         case 'normal':
@@ -23,27 +27,62 @@ function getSelectedTerrainTileset() {
         case 'blackhole_normal':
             return '/static/img/aw2_blackhole_tileset_normal.png';
         default:
-            return '/static/img/Advance_Wars_Dual_Strike_Tileset_Normal_Transparent.png';
+            return '/static/img/Game Boy Advance - Advance Wars 2 Black Hole Rising - Overworld Tileset Buildings.png';
     }
 }
 
 function getSelectedUnitTileset() {
     const select = document.getElementById('unitTilesetSelect');
-    if (!select) return '/static/img/aw2_blackhole_units_map_transparent.png'; // fallback
+    if (!select) return '/static/img/units_sprite_sheet_complete.png'; // Use complete optimized sheet as default
     
     switch (select.value) {
+        case 'optimized':
+        case 'complete':
+            return '/static/img/units_sprite_sheet_complete.png';
         case 'blackhole_transparent':
             return '/static/img/aw2_blackhole_units_map_transparent.png';
         case 'blackhole_normal':
             return '/static/img/aw2_blackhole_units_map.png';
         default:
-            return '/static/img/aw2_blackhole_units_map_transparent.png';
+            return '/static/img/units_sprite_sheet_complete.png';
+    }
+}
+
+// Load sprite map for optimized sprite sheet
+let optimizedSpriteMap = null;
+async function loadOptimizedSpriteMap() {
+    if (optimizedSpriteMap) return optimizedSpriteMap;
+    
+    try {
+        const response = await fetch('/static/img/units_sprite_map_complete.json');
+        optimizedSpriteMap = await response.json();
+        logger.debug('Loaded complete sprite map with', Object.keys(optimizedSpriteMap.sprites).length, 'sprites');
+        return optimizedSpriteMap;
+    } catch (error) {
+        logger.error('Failed to load complete sprite map:', error);
+        return null;
+    }
+}
+
+// Load tileset map for AW2 RGB tileset
+let aw2TilesetMap = null;
+async function loadAW2TilesetMap() {
+    if (aw2TilesetMap) return aw2TilesetMap;
+    
+    try {
+        const response = await fetch('/static/img/aw2_tileset_labeled_mapping.json');
+        aw2TilesetMap = await response.json();
+        logger.debug('Loaded AW2 RGB tileset map with', Object.keys(aw2TilesetMap.tiles).length, 'tiles');
+        return aw2TilesetMap;
+    } catch (error) {
+        logger.error('Failed to load AW2 tileset map:', error);
+        return null;
     }
 }
 
 // Transport visual constants - use window to avoid conflicts
-window.window.TRANSPORT_HIGHLIGHT_OPACITY = window.window.TRANSPORT_HIGHLIGHT_OPACITY || 0.3;
-window.window.TRANSPORT_BORDER_WIDTH = window.window.TRANSPORT_BORDER_WIDTH || 2;
+window.TRANSPORT_HIGHLIGHT_OPACITY = window.TRANSPORT_HIGHLIGHT_OPACITY || 0.3;
+window.TRANSPORT_BORDER_WIDTH = window.TRANSPORT_BORDER_WIDTH || 2;
 
 // globals
 var token = document.getElementById('draw').getAttribute('x-token');
@@ -300,7 +339,7 @@ function jsonrpc(method, params, callback) {
 async function update() {
     // Use operation queue to prevent concurrent updates
     window.operationQueue.add(
-        () => jsonrpc('game_board', {}),
+        () => jsonrpc('game_board', {token: token}),
         {
             id: 'update-board',
             description: 'Updating board',
@@ -457,8 +496,19 @@ async function update() {
                         }
                     };
                     // Remove throttle - centralized handler will manage this
-                    canvas.onclick = advanceWarsCanvasClick;
-                    canvas.ondblclick = advanceWarsDoubleClick;
+                    // Let centralized handler take over if it's loaded
+                    if (!window.clickHandler) {
+                        canvas.onclick = advanceWarsCanvasClick;
+                        canvas.ondblclick = advanceWarsDoubleClick;
+                    } else {
+                        logger.info('Centralized click handler detected, deferring to it');
+                        // Re-initialize the centralized handler to ensure it's attached
+                        setTimeout(() => {
+                            if (window.clickHandler && window.clickHandler.initialize) {
+                                window.clickHandler.initialize();
+                            }
+                        }, 100);
+                    }
 
                     // NEW: Prevent right-click context menu
                     canvas.addEventListener('contextmenu', function(event) {
@@ -520,7 +570,7 @@ async function update() {
         }
         
         // Always render transport highlights if present
-        if (window.transportHighlights && window.window.transportState.length > 0) {
+        if (window.transportHighlights && window.transportState && window.transportState.length > 0) {
             renderTransportHighlights();
         }
 
@@ -568,7 +618,21 @@ Controls: Click=move/attack, Ctrl+Click=load, Alt+Click=unload, Double-click=cap
         // update code (JSON display)
         var code = document.getElementById('code');
         if (code) {
-            code.value = JSON.stringify(board, null, 2);
+            try {
+                // Create a simplified board object without circular references
+                var simplifiedBoard = {
+                    width: board.width,
+                    height: board.height,
+                    current_turn: board.current_turn,
+                    current_day: board.current_day,
+                    game_active: board.game_active,
+                    armies: board.armies,
+                    // Don't include grid as it may have circular references
+                };
+                code.value = JSON.stringify(simplifiedBoard, null, 2);
+            } catch (e) {
+                code.value = "Error serializing board: " + e.message;
+            }
         }
     });
 }
@@ -606,7 +670,7 @@ function armyEndTurn() {
         }
         
         // Call the original RPC method
-        return await jsonrpc('army_end_turn', {});
+        return await jsonrpc('army_end_turn', {token: token});
     }, {
         id: 'end-turn',
         description: 'Ending turn',
@@ -657,6 +721,7 @@ function endGame() {
 
 function unitCreate(tile) {
     var modal = document.getElementById('modalcreate');
+    modal.style.display = 'block';  // Show the modal
     var span = document.getElementsByClassName('close')[0];
     span.onclick = function() {
         modal.style.display = 'none';
@@ -677,7 +742,7 @@ function unitCreate(tile) {
         
         // Use operation queue to prevent double-creation
         window.operationQueue.add(
-            () => jsonrpc('unit_create', {army: army, unit_type: unitType, x: tile.x, y: tile.y}),
+            () => jsonrpc('unit_create', {token: token, army: army, unit_type: unitType, x: tile.x, y: tile.y}),
             {
                 id: `create-${tile.x}-${tile.y}-${unitType}`,
                 description: `Creating ${unitType}`,
@@ -694,11 +759,11 @@ function unitCreate(tile) {
             }
         });
     };
-    modal.style.display = 'block';
 }
 
 function airunitCreate(tile) {
     var modal = document.getElementById('modalcreate');
+    modal.style.display = 'block';  // Show the modal
     var span = document.getElementsByClassName('close')[0];
     span.onclick = function() {
         modal.style.display = 'none';
@@ -718,7 +783,7 @@ function airunitCreate(tile) {
         
         // Use operation queue to prevent double-creation
         window.operationQueue.add(
-            () => jsonrpc('unit_create', {army: army, unit_type: unitType, x: tile.x, y: tile.y}),
+            () => jsonrpc('unit_create', {token: token, army: army, unit_type: unitType, x: tile.x, y: tile.y}),
             {
                 id: `create-${tile.x}-${tile.y}-${unitType}`,
                 description: `Creating ${unitType}`,
@@ -735,11 +800,11 @@ function airunitCreate(tile) {
             }
         });
     };
-    modal.style.display = 'block';
 }
 
 function seaunitCreate(tile) {
     var modal = document.getElementById('modalcreate');
+    modal.style.display = 'block';  // Show the modal
     var span = document.getElementsByClassName('close')[0];
     span.onclick = function() {
         modal.style.display = 'none';
@@ -759,7 +824,7 @@ function seaunitCreate(tile) {
         
         // Use operation queue to prevent double-creation
         window.operationQueue.add(
-            () => jsonrpc('unit_create', {army: army, unit_type: unitType, x: tile.x, y: tile.y}),
+            () => jsonrpc('unit_create', {token: token, army: army, unit_type: unitType, x: tile.x, y: tile.y}),
             {
                 id: `create-${tile.x}-${tile.y}-${unitType}`,
                 description: `Creating ${unitType}`,
@@ -1064,17 +1129,19 @@ function canvasMove(ev) {
     
     // Update cursor
     draw.style.cursor = 'default';
-    if (tile && tile.can_be_moved_to)
-        draw.style.cursor = 'pointer';
-    else if (tile.can_be_attacked)
-             draw.style.cursor = 'crosshair';
-    else if (tile.unit != null && tile.unit.army == board.current_turn)
-             draw.style.cursor = 'pointer';
-    else if (tile.mapTile.army == board.current_turn)
-             if (tile.mapTile.type == 'FACTORY' ||
-                 tile.mapTile.type == 'AIRPORT' ||
-                 tile.mapTile.type == 'PORT')
-                 draw.style.cursor = 'pointer';
+    if (tile) {
+        if (tile.can_be_moved_to)
+            draw.style.cursor = 'pointer';
+        else if (tile.can_be_attacked)
+            draw.style.cursor = 'crosshair';
+        else if (tile.unit != null && tile.unit.army == board.current_turn)
+            draw.style.cursor = 'pointer';
+        else if (tile.mapTile && tile.mapTile.army == board.current_turn)
+            if (tile.mapTile.type == 'FACTORY' ||
+                tile.mapTile.type == 'AIRPORT' ||
+                tile.mapTile.type == 'PORT')
+                draw.style.cursor = 'pointer';
+    }
     
     // Update info panel with tile details on hover
     var infobox = document.getElementById('infobox');
@@ -1416,8 +1483,8 @@ function renderBaseTile(tile) {
 function makeMapTile(tile) {
     var showMapTiles = document.getElementById('inputshowmap').checked;
     if (showMapTiles) {
-        // Try to use optimized tile renderer first
-        if (window.optimizedTileRenderer && window.optimizedTileRenderer.loaded) {
+        // Try to use optimized tile renderer first - DISABLED due to palette conversion issues
+        if (false && window.optimizedTileRenderer && window.optimizedTileRenderer.loaded) {
             try {
                 // Check if needs base layer
                 if (window.optimizedTileRenderer.needsBaseLayer(tile.mapTile.type)) {
@@ -1941,8 +2008,8 @@ async function loadSpriteCorrector() {
         }
     }
     
-    // Try to load optimized tile renderer
-    if (window.optimizedTileRenderer && !window.optimizedTileRenderer.loaded) {
+    // Try to load optimized tile renderer - DISABLED due to palette conversion issues
+    if (false && window.optimizedTileRenderer && !window.optimizedTileRenderer.loaded) {
         try {
             await window.optimizedTileRenderer.initialize();
             logger.info('✅ Using optimized tileset (6KB vs 76KB, 92% smaller)');
@@ -1999,8 +2066,8 @@ async function generateUnitTexture(tile) {
     const spriteSheetImg = new Image();
     const unitsSrc = getSelectedUnitTileset();
     
-    return new Promise((resolve, reject) => {
-        spriteSheetImg.onload = function() {
+    return new Promise(async (resolve, reject) => {
+        spriteSheetImg.onload = async function() {
             // Use sprite corrector data to get accurate coordinates
             let spriteKey, x, y;
             
@@ -2022,10 +2089,24 @@ async function generateUnitTexture(tile) {
                 }
             }
             
-            // Removed debug logging - use debugSpriteCorrections() instead
+            // Check if using optimized sprite sheet
+            const isOptimized = unitsSrc.includes('units_sprite_sheet_complete.png');
             
-            // Get coordinates from sprite corrector data
-            if (window.spriteCorrections && window.spriteCorrections[state] && window.spriteCorrections[state][spriteKey]) {
+            if (isOptimized) {
+                // Load and use optimized sprite map
+                const spriteMap = await loadOptimizedSpriteMap();
+                if (spriteMap && spriteMap.sprites[spriteKey]) {
+                    const spriteData = spriteMap.sprites[spriteKey];
+                    x = spriteData.x;
+                    y = spriteData.y;
+                } else {
+                    logger.warn(`Sprite not found in optimized map: ${spriteKey}`);
+                    // Default to center of sprite sheet
+                    x = 0;
+                    y = 0;
+                }
+            } else if (window.spriteCorrections && window.spriteCorrections[state] && window.spriteCorrections[state][spriteKey]) {
+                // Use original sprite corrector data
                 const coords = window.spriteCorrections[state][spriteKey];
                 x = coords.x;
                 y = coords.y;
@@ -2437,7 +2518,7 @@ function renderTransportHighlights() {
         transportHighlightGroup = null;
     }
     
-    if (!window.transportHighlights || window.window.transportState.length === 0) {
+    if (!window.transportHighlights || !window.transportState || window.transportState.length === 0) {
         return; // No highlights to show
     }
     
@@ -3599,7 +3680,7 @@ function advanceWarsUnitSelect(tile) {
     try {
         logger.debug('🎯 advanceWarsUnitSelect called with tile:', tile);
         // Step 1: Backend unit selection
-        jsonrpc('unit_select', {x: tile.x, y: tile.y}).then(result => {
+        jsonrpc('unit_select', {token: token, x: tile.x, y: tile.y}).then(result => {
             if (result && !result.error) {
                 // Set selection state
                 board.selected = tile;
@@ -3614,6 +3695,12 @@ function advanceWarsUnitSelect(tile) {
                 if (tile.unit && tile.unit.army === board.current_turn) {
                     clearAllHighlights();
                     showMovementRange(tile.x, tile.y);
+                    
+                    // Auto-trigger attack highlights if unit can attack
+                    if (tile.unit.can_attack) {
+                        logger.debug('🎯 Auto-triggering attack highlights for unit');
+                        showAttackTargets(tile.x, tile.y);
+                    }
                 } else {
                     clearAllHighlights();
                 }
@@ -3917,16 +4004,24 @@ function renderAttackHighlights() {
 
 function showMovementRange(unitX, unitY) {
     
-    // Use the backend movement highlights RPC
-    jsonrpc('get_movement_highlights', {x: unitX, y: unitY})
+    // Use the correct backend movement RPC
+    jsonrpc('unit_valid_moves', {token: token, x: unitX, y: unitY})
         .then(result => {
-            if (result && result.success && result.moves) {
-                applyMovementHighlights(result.moves);
+            logger.debug('unit_valid_moves result:', result);
+            if (result && result.valid_moves) {
+                // Transform to expected format - valid_moves is array of [x,y] tuples
+                const highlightMoves = result.valid_moves.map(move => ({
+                    x: move[0],
+                    y: move[1],
+                    cost: 1  // Default cost, actual cost not provided by this RPC
+                }));
+                applyMovementHighlights(highlightMoves);
             } else {
                 calculateMovementRangeLocally(unitX, unitY);
             }
         })
         .catch(error => {
+            logger.error('Failed to get valid moves:', error);
             calculateMovementRangeLocally(unitX, unitY);
         });
 }
@@ -4262,7 +4357,7 @@ function advanceWarsCanvasClick(ev) {
     }
     
     // PRIORITY 8: Unit selection
-    if (tile.unit && tile.unit.army === board.current_turn) {
+    if (tile.unit && window.board && tile.unit.army === window.board.current_turn) {
         advanceWarsUnitSelect(tile);
         return;
     }
@@ -4613,12 +4708,19 @@ function advanceWarsDoubleClick(ev) {
     var x = ev.offsetX;
     var y = ev.offsetY;
     var tile = tileAt(x, y);
+    
+    // Check if tile exists
+    if (!tile) {
+        return;
+    }
+    
     // Double click on capturable properties
-    if (tile.mapTile.type === 'CITY' ||
+    if (tile.mapTile && (
+        tile.mapTile.type === 'CITY' ||
         tile.mapTile.type === 'BASE_TOWER_1' ||
         tile.mapTile.type === 'FACTORY' ||
         tile.mapTile.type === 'PORT' ||
-        tile.mapTile.type === 'AIRPORT') {
+        tile.mapTile.type === 'AIRPORT')) {
         
         if (tile.unit &&
             tile.unit.can_capture &&
@@ -4917,8 +5019,8 @@ logger.debug('💡 TIP: Run debugSpriteCorrections() to check sprite data');
 // =============================================================================
 
 // Complete list of units from your config.ini
-// Use window.window.ALL_UNIT_TYPES to avoid conflicts
-window.window.ALL_UNIT_TYPES = window.window.ALL_UNIT_TYPES || [
+// Use window.ALL_UNIT_TYPES to avoid conflicts
+window.ALL_UNIT_TYPES = window.ALL_UNIT_TYPES || [
     'INFANTRY', 'MECH', 'RECON', 'TANK', 'MEDIUMTANK', 'ANTIAIR', 
     'ARTILLERY', 'BCOPTER', 'BATTLESHIP', 'BLACKBOAT', 'BLACKBOMB',
     'BOMBER', 'CARRIER', 'CRUISER', 'FIGHTER', 'LANDER', 'MEGATANK',
@@ -4927,7 +5029,7 @@ window.window.ALL_UNIT_TYPES = window.window.ALL_UNIT_TYPES || [
 ];
 
 // Unit categories for organized testing
-window.window.UNIT_CATEGORIES = window.window.UNIT_CATEGORIES || {
+window.UNIT_CATEGORIES = window.UNIT_CATEGORIES || {
     LAND: ['INFANTRY', 'MECH', 'RECON', 'TANK', 'MEDIUMTANK', 'ANTIAIR', 
            'ARTILLERY', 'MISSILE', 'NEOTANK', 'ROCKET', 'APC', 'MEGATANK', 'PIPERUNNER'],
     AIR: ['BCOPTER', 'BOMBER', 'FIGHTER', 'TCOPTER', 'BLACKBOMB', 'STEALTH'],

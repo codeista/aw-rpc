@@ -141,17 +141,17 @@ registerClickHandler('production', {
         logger.debug('Production building check:', {
             type: tile.mapTile?.type,
             army: tile.mapTile?.army,
-            currentTurn: board?.current_turn,
+            currentTurn: window.board?.current_turn,
             hasUnit: !!tile.unit,
-            hasSelected: !!board?.selected
+            hasSelected: !!window.board?.selected
         });
         
         return (tile.mapTile.type === 'FACTORY' || 
                 tile.mapTile.type === 'AIRPORT' || 
                 tile.mapTile.type === 'PORT') &&
-               tile.mapTile.army === board.current_turn &&
+               tile.mapTile.army === window.board.current_turn &&
                !tile.unit &&
-               !board.selected;
+               !window.board.selected;
     },
     handle: (tile, event) => {
         const logger = window.logger || console;
@@ -202,8 +202,8 @@ registerClickHandler('selection', {
         if (tile.unit) {
             logger.info('Unit selection check:', {
                 unitArmy: tile.unit.army,
-                currentTurn: board.current_turn,
-                armyMatch: tile.unit.army === board.current_turn,
+                currentTurn: window.board.current_turn,
+                armyMatch: tile.unit.army === window.board.current_turn,
                 onMovementHighlight: window.movementHighlights?.some(h => h.x === tile.x && h.y === tile.y),
                 canMove: tile.unit.can_move,
                 tileType: tile.mapTile?.type
@@ -211,21 +211,21 @@ registerClickHandler('selection', {
         }
         
         return tile.unit && 
-               tile.unit.army === board.current_turn &&
+               tile.unit.army === window.board.current_turn &&
                !window.movementHighlights?.some(h => h.x === tile.x && h.y === tile.y);
     },
     handle: (tile, event) => {
         const logger = window.logger || console;
         
         // If clicking on already selected unit with movement highlights shown, don't deselect
-        if (board.selected?.x === tile.x && board.selected?.y === tile.y) {
+        if (window.board.selected?.x === tile.x && window.board.selected?.y === tile.y) {
             if (window.movementHighlights && window.movementHighlights.length > 0) {
                 logger.info('Keeping unit selected - movement highlights active');
                 return true; // Keep selection
             }
             
             logger.info('Deselecting unit');
-            board.selected = null;
+            window.board.selected = null;
             clearAllHighlights();
             if (typeof clearMovementHighlights === 'function') {
                 clearMovementHighlights();
@@ -235,7 +235,7 @@ registerClickHandler('selection', {
             }
         } else {
             // Clear previous selection first
-            if (board.selected) {
+            if (window.board.selected) {
                 clearAllHighlights();
                 if (typeof clearMovementHighlights === 'function') {
                     clearMovementHighlights();
@@ -247,7 +247,7 @@ registerClickHandler('selection', {
             
             // Select new unit
             logger.info(`Selecting unit at (${tile.x}, ${tile.y})`);
-            board.selected = tile;
+            window.board.selected = tile;
             
             // Store in gameState too for compatibility
             if (window.gameState) {
@@ -300,7 +300,7 @@ registerClickHandler('movement', {
     priority: 0,
     condition: (tile, event) => {
         const logger = window.logger || console;
-        const hasSelected = !!board.selected;
+        const hasSelected = !!window.board.selected;
         const hasNoUnit = !tile.unit;
         const isHighlighted = window.movementHighlights?.some(h => h.x === tile.x && h.y === tile.y);
         const canMoveToTile = !!tile.can_be_moved_to;
@@ -344,9 +344,9 @@ registerClickHandler('contextual', {
     name: 'attack-execution',
     priority: 0,
     condition: (tile, event) => {
-        return board.selected && 
+        return window.board.selected && 
                tile.unit && 
-               tile.unit.army !== board.current_turn &&
+               tile.unit.army !== window.board.current_turn &&
                window.gameState?.attackHighlights?.some(h => h.x === tile.x && h.y === tile.y);
     },
     handle: (tile, event) => {
@@ -381,7 +381,7 @@ registerClickHandler('modifiers', {
         }
         
         // Handle transport load
-        if (board.selected?.unit && canUnitBoardTransports(board.selected.unit)) {
+        if (window.board.selected?.unit && canUnitBoardTransports(window.board.selected.unit)) {
             // Implementation for loading
         }
         
@@ -488,7 +488,7 @@ registerClickHandler('fallback', {
         logger.info('Clearing selection - clicked empty tile');
         
         // Clear selection
-        board.selected = null;
+        window.board.selected = null;
         
         // Clear all highlights
         clearAllHighlights();
@@ -552,11 +552,11 @@ window.advanceWarsCanvasClick = window.canvasClick;
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         // Wait longer to ensure render_legacy.js has finished
-        setTimeout(initializeClickHandler, 2000);
+        setTimeout(initializeClickHandler, 3000);
     });
 } else {
     // Wait longer to ensure render_legacy.js has finished
-    setTimeout(initializeClickHandler, 2000);
+    setTimeout(initializeClickHandler, 3000);
 }
 
 // Also add a watcher to ensure our handler stays in place

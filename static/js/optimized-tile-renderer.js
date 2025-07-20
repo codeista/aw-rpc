@@ -182,12 +182,7 @@ class OptimizedTileRenderer {
 
         // Create Two.js texture from canvas
         const dataUrl = tileCanvas.toDataURL();
-        const texture = new Two.Texture(dataUrl, () => {
-            // Texture loaded callback
-            if (window.two && window.two.update) {
-                window.two.update();
-            }
-        });
+        const texture = new Two.Texture(dataUrl);
         
         // Calculate position
         const x = tile.x * tileSize + tileSize / 2;
@@ -218,12 +213,7 @@ class OptimizedTileRenderer {
         }
 
         const dataUrl = plainCanvas.toDataURL();
-        const texture = new Two.Texture(dataUrl, () => {
-            // Texture loaded callback
-            if (window.two && window.two.update) {
-                window.two.update();
-            }
-        });
+        const texture = new Two.Texture(dataUrl);
         const x = tile.x * tileSize + tileSize / 2;
         const y = tile.y * tileSize + tileSize / 2;
 

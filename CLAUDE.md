@@ -32,6 +32,69 @@ This is a complete implementation of Advance Wars as a web-based RPC game. Key s
 - `app.py` - RPC endpoints and server
 - `render.js` - Frontend game rendering
 
+### Tileset System  
+- **Current tileset**: AWDS tileset (reverted from AW2 RGB due to rendering issues)
+- **Working tileset**: `/static/img/Advance_Wars_Dual_Strike_Tileset_Normal_Transparent.png`
+- **Optimized tiles DISABLED**: Palette conversion corrupts terrain tiles (see TILE_OPTIMIZATION_ISSUES.md)
+
+## RECENT FIXES (2025-07-20)
+
+### UI/UX Fixes Applied
+1. **Mouse Hover Jumping** - Fixed null reference errors in canvasMove()
+2. **Circular JSON Error** - Fixed JSON.stringify issue with board object
+3. **Tile Info Display** - Hover now correctly shows tile information
+4. **Production Menu** - API returns correct data structure
+5. **Movement System** - Correctly enforces "no move on creation turn" rule
+
+### Selenium Testing Results
+- ✅ Canvas renders at correct size (192x176 for 12x10 map)
+- ✅ Hover info updates correctly
+- ✅ No critical JavaScript errors
+- ✅ All game elements visible and positioned correctly
+- ✅ Turn/Day/Funds information displays properly
+
+## RECENT RENDERING FIXES (2025-07-20)
+
+### Issues Fixed
+1. **JavaScript Syntax Errors**
+   - Fixed all `window.window.` typos → `window.` in render_legacy.js
+   - Total: 6 instances corrected
+
+2. **Corrupted Optimized Tile Renderer**
+   - Disabled with `if (false && window.optimizedTileRenderer...` 
+   - Issue: Palette mode (P) to RGBA conversion corrupted terrain tiles
+   - Buildings rendered OK but terrain tiles lost color data
+
+3. **Wrong Default Tileset**
+   - Changed from problematic AW2 RGB tileset back to AWDS tileset
+   - Function: `getSelectedTerrainTileset()` in render_legacy.js
+
+### Current Status
+- ✅ Full map displays (was only showing top 5 of 10 rows)
+- ✅ Units appear when created
+- ✅ No rendering crashes
+- ✅ Legacy tile renderer with AWDS tileset
+- ✅ Optimized unit sprites still work (93KB vs 370KB)
+
+### Known Issues
+1. ~~**Logger Error on End Turn**~~ ✅ FIXED - Added null checks in manager.py
+2. ~~**Missing sprite files**~~ ✅ FIXED - Restored units_sprite_sheet_v2.png and aw2_blackhole_units_map_transparent.png from backup
+3. ~~**Circular JSON Error**~~ ✅ FIXED - Fixed JSON.stringify circular reference in render_legacy.js
+4. ~~**Mouse hover null errors**~~ ✅ FIXED - Added proper null checks in canvasMove function
+
+### How to Test Rendering
+```bash
+# Start server
+nohup python app.py > /tmp/game_server.log 2>&1 &
+
+# Run test
+python temp/test_rendering_fixes.py
+```
+Should show:
+- ✅ Board Dimensions (12x10, all rows visible)  
+- ✅ Unit Creation (units appear)
+- ❌ End Turn (logger error, not rendering issue)
+
 ## STANDARD WORKFLOW
 1. First think through the problem, read the codebase for relevant files and write a plan to tasks/todo.md. 
 2. the plan should have a list of todo items that can be checked off as we go.
@@ -46,3 +109,18 @@ Do what has been asked; nothing more, nothing less.
 NEVER create files unless they're absolutely necessary for achieving your goal.
 ALWAYS prefer editing an existing file to creating a new one.
 NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
+
+## Development Reminders
+- Always check current docs for info on game mechanics and API methods
+- Please test before committing and pushing
+- **Use temp/ folder for temporary analysis files**
+- **Clean up test/verification files after use**
+- **Current tileset work**: Replacing old center-based coordinate system with new direct coordinates
+
+## Helper Documentation Locations
+- Core game logic and rules: `manager.py`
+- Transport mechanics: `transport_system.py`
+- RPC endpoints: `app.py`
+- Frontend rendering: `render.js`
+- Tile optimization issues: `TILE_OPTIMIZATION_ISSUES.md`
+- Game mechanics details: `GAME_MECHANICS.md`

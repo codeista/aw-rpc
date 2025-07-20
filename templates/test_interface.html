@@ -317,6 +317,16 @@
                 <span>Multiplayer Armies</span>
             </button>
             
+            <button class="test-button" onclick="runTest('click_handler', 'test_click_handling.py')">
+                <span class="button-icon">🖱️</span>
+                <span>Click Handler</span>
+            </button>
+            
+            <button class="test-button" onclick="runTest('sprite_extraction', 'test_sprite_extraction.py')">
+                <span class="button-icon">🎨</span>
+                <span>Sprite Extraction</span>
+            </button>
+            
             <div class="divider"></div>
             
             <button class="test-button" onclick="runAllTests()" style="background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.5);">
@@ -433,6 +443,14 @@
                     <span>👥 Multiplayer Armies</span>
                     <span class="status-indicator ready" id="status-multiplayer"></span>
                 </div>
+                <div class="status-item">
+                    <span>🖱️ Click Handler</span>
+                    <span class="status-indicator ready" id="status-click_handler"></span>
+                </div>
+                <div class="status-item">
+                    <span>🎨 Sprite Extraction</span>
+                    <span class="status-indicator ready" id="status-sprite_extraction"></span>
+                </div>
             </div>
         </div>
         
@@ -513,7 +531,7 @@
             `;
             
             // Reset all status indicators
-            ['combat', 'economic', 'movement', 'victory', 'transport', 'repair_refuel', 'integration', 'multiplayer'].forEach(test => {
+            ['combat', 'economic', 'movement', 'victory', 'transport', 'repair_refuel', 'integration', 'multiplayer', 'click_handler', 'sprite_extraction'].forEach(test => {
                 setTestStatus(test, 'ready');
             });
             
@@ -616,7 +634,9 @@
                 { name: 'transport', script: 'test_transport_final.py' },
                 { name: 'repair_refuel', script: 'test_repair_refuel_proper.py' },
                 { name: 'integration', script: 'updated_test_phase1.py' },
-                { name: 'multiplayer', script: 'test_multiplayer_armies.py' }
+                { name: 'multiplayer', script: 'test_multiplayer_armies.py' },
+                { name: 'click_handler', script: 'test_click_handling.py' },
+                { name: 'sprite_extraction', script: 'test_sprite_extraction.py' }
             ];
             
             // Disable all buttons

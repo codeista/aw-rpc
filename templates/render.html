@@ -190,8 +190,7 @@
             image-rendering: pixelated;
             image-rendering: -moz-crisp-edges;
             image-rendering: crisp-edges;
-            /* Fixed size - no scaling */
-            /* Canvas will be sized by JavaScript based on map dimensions */
+            /* Canvas sized by JavaScript based on map dimensions */
         }
 
         .info-panel {
@@ -660,6 +659,23 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        
+        /* Fix for production menu dropdown */
+        #selectcreate option {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 5px;
+        }
+        
+        #selectcreate:focus {
+            outline: 2px solid #3498db;
+        }
+        
+        /* Ensure dropdown options are visible on all browsers */
+        select option {
+            background-color: #34495e !important;
+            color: white !important;
+        }
     </style>
 </head>
 <body>
@@ -771,8 +787,8 @@
                         <button class="quick-btn btn-primary" onclick="rerender();">
                             🔄 Refresh
                         </button>
-                        <button class="quick-btn btn-warning" onclick="showGameStats();">
-                            📊 Stats
+                        <button class="quick-btn btn-warning" onclick="runClickTests();">
+                            🧪 Test Clicks
                         </button>
                         <button class="quick-btn btn-danger buttonendgame" onclick="endGame();">
                             🏁 End Game
@@ -874,8 +890,11 @@
     <script src="/static/js/debug-tileat.js"></script>
     -->
     
-    <!-- Centralized Click Handler - DISABLED due to conflicts with render_legacy.js -->
-    <!-- <script src="/static/js/click-handler.js"></script> -->
+    <!-- Centralized Click Handler -->
+    <script src="/static/js/click-handler.js"></script>
+    
+    <!-- Click Handler Tests -->
+    <script src="/static/js/test-click-handler.js"></script>
     
     <!-- Unit Creation Test - File doesn't exist -->
     <!-- <script src="/static/js/test-unit-creation.js"></script> -->
@@ -915,7 +934,6 @@
     
     <script src="/static/js/transport_integration.js"></script>
     <script src="/static/js/animation-integration.js"></script>
-    <script src="/static/js/test_helpers.js"></script>
     
     <!-- Debug scripts removed - functionality integrated into main code -->
 
@@ -951,10 +969,17 @@
             }
         }
 
-        // Show game statistics
-        function showGameStats() {
-            // This would show a modal or panel with game statistics
-            alert('Game statistics feature coming soon!');
+        // Run click handler tests
+        function runClickTests() {
+            if (window.ClickHandlerTests) {
+                console.log('🧪 Running click handler tests...');
+                const tester = new window.ClickHandlerTests();
+                tester.runAllTests().then(() => {
+                    console.log('✅ Tests completed! Check console for results.');
+                });
+            } else {
+                console.error('❌ Test suite not loaded. Please reload the page and try again.');
+            }
         }
 
         // Enhanced chat functionality
@@ -1069,6 +1094,15 @@
                 currentZoom = 1.0;
             }
             updateZoomDisplay();
+            
+            // Initialize keyboard shortcuts
+            if (typeof KeyboardShortcuts !== 'undefined') {
+                window.keyboardShortcuts = new KeyboardShortcuts();
+                window.keyboardShortcuts.initialize();
+                console.log('✅ Keyboard shortcuts initialized');
+            } else {
+                console.warn('⚠️ KeyboardShortcuts not found');
+            }
             
             // Auto-fit the board to screen
             setTimeout(() => {

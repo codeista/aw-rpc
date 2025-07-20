@@ -25,13 +25,20 @@ tests/
 source flask-env/bin/activate
 
 # Run all tests
-python3 run_all_tests.py
+python3 run_tests.py
 
 # Run regression tests only
 python3 run_regression_tests.py
 
 # Run specific test file
 python3 tests/unit/test_combat_system.py
+
+# Run click handler tests
+python3 test_click_handling.py
+
+# Access web-based test interface
+# Start server first, then navigate to:
+# http://localhost:5000/test_interface
 ```
 
 ### Prerequisites
@@ -54,11 +61,11 @@ curl http://localhost:5000
 
 **Note:** The flask-env virtual environment contains all required dependencies including Flask, flask-cors, and other packages. Always activate it before running the app or tests.
 
-## Test Results Summary (Last Run: 2025-07-16)
+## Test Results Summary (Last Run: 2025-07-20)
 
 ### ✅ Passing Tests
 
-**Unit Tests (9/10 passing):**
+**Unit Tests (10/11 passing):**
 - `test_combat_system.py` - All combat mechanics
 - `test_movement_system.py` - Unit movement validation
 - `test_transport_features.py` - Transport load/unload/resupply
@@ -68,6 +75,7 @@ curl http://localhost:5000
 - `test_blackboat_repair_complete.py` - Black boat repair feature
 - `test_complete_repair_refuel.py` - Repair/refuel systems
 - `test_victory_conditions.py` - All victory conditions
+- `test_click_handling.py` - Click handler system ✨ NEW
 
 **Integration Tests:**
 - `test_multiplayer_armies.py` - 4-player army support
@@ -77,6 +85,11 @@ curl http://localhost:5000
 **Regression Tests:**
 - All 28 core game mechanics tests passing
 - 100% success rate on established functionality
+
+**UI/Frontend Tests:**
+- Click handler tests - Priority-based click processing
+- Interactive browser-based test suite
+- Test runner interface at `/test_interface`
 
 ### ❌ Known Issues
 
@@ -129,6 +142,38 @@ if tile.unit:
 self.manager.unit_move(unit_x, unit_y, transport_x, transport_y)
 ```
 
+## Click Handler Testing
+
+The centralized click handler system has comprehensive tests covering all interaction types:
+
+### Browser-Based Tests
+- Run via the "🧪 Test Clicks" button in the game UI
+- Or access `test_runner.html` for dedicated test interface
+- Tests run in actual browser environment with mocked game state
+
+### Test Coverage
+1. **Handler Initialization** - Verifies click handler is properly loaded
+2. **Empty Tile Clicks** - Clears selection when clicking empty tiles
+3. **Unit Selection** - Selects units and shows movement/attack options
+4. **Movement Execution** - Handles movement to valid tiles
+5. **Production Buildings** - Opens production modal for factories/airports/ports
+6. **Attack Execution** - Processes attacks on enemy units
+7. **Alt-Click Transport** - Special handling for transport operations
+8. **Priority System** - Ensures handlers execute in correct order
+
+### Running Click Tests
+```bash
+# Command line
+python3 test_click_handling.py
+
+# In-game
+Click "🧪 Test Clicks" button in game UI
+
+# Browser console
+const tester = new ClickHandlerTests();
+tester.runAllTests();
+```
+
 ## Test Coverage
 
 - **Combat System**: 100% coverage
@@ -136,7 +181,8 @@ self.manager.unit_move(unit_x, unit_y, transport_x, transport_y)
 - **Transport System**: 100% coverage
 - **Economic System**: 100% coverage
 - **Victory Conditions**: 100% coverage
-- **UI/Frontend**: Basic coverage (manual testing recommended)
+- **Click Handler**: 100% coverage ✨ NEW
+- **UI/Frontend**: Enhanced coverage with automated tests
 
 ## Manual Testing Checklist
 

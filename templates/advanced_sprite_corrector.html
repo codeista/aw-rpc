@@ -80,6 +80,7 @@
             background: #000;
             overflow: auto;
             max-height: 700px;
+            display: inline-block;
         }
         
         .sprite-sheet {
@@ -451,6 +452,7 @@
                         <button class="indicator-btn" data-type="hp_indicators">HP Available</button>
                         <button class="indicator-btn" data-type="hp_unavailable">HP Unavailable</button>
                         <button class="indicator-btn" data-type="status_icons">Status Icons</button>
+                        <button class="indicator-btn" data-type="name_tiles">Unit Names</button>
                     </div>
                 </div>
 
@@ -491,6 +493,37 @@
                     </select>
                 </div>
 
+                <div class="control-group" id="nameSelectGroup" style="display: none;">
+                    <h3>📝 Unit Names</h3>
+                    <select id="nameSelect" class="unit-select">
+                        <option value="INF">INF</option>
+                        <option value="MECH">MECH</option>
+                        <option value="RECON">RECON</option>
+                        <option value="TANK">TANK</option>
+                        <option value="MD.TANK">MD.TANK</option>
+                        <option value="NEO.TANK">NEO.TANK</option>
+                        <option value="APC">APC</option>
+                        <option value="ARTILLERY">ARTILLERY</option>
+                        <option value="ROCKET">ROCKET</option>
+                        <option value="ANTI-AIR">ANTI-AIR</option>
+                        <option value="MISSILE">MISSILE</option>
+                        <option value="B-COPTER">B-COPTER</option>
+                        <option value="T-COPTER">T-COPTER</option>
+                        <option value="FIGHTER">FIGHTER</option>
+                        <option value="BOMBER">BOMBER</option>
+                        <option value="CRUISER">CRUISER</option>
+                        <option value="BATTLESHIP">BATTLESHIP</option>
+                        <option value="LANDER">LANDER</option>
+                        <option value="SUB">SUB</option>
+                        <option value="CARRIER">CARRIER</option>
+                        <option value="MEGATANK">MEGATANK</option>
+                        <option value="BLACK.BOAT">BLACK.BOAT</option>
+                        <option value="STEALTH">STEALTH</option>
+                        <option value="BLACK.BOMB">BLACK.BOMB</option>
+                        <option value="PIPERUNNER">PIPERUNNER</option>
+                    </select>
+                </div>
+
                 <div class="control-group" id="frameControls">
                     <h3>🎬 Frame/Direction</h3>
                     <div class="frame-selector" id="frameSelector">
@@ -520,6 +553,7 @@
                         <button class="adjust-btn" onclick="adjustPosition(0, 1)">↓</button>
                         <button class="adjust-btn" onclick="adjustPosition(1, 1)">↘</button>
                     </div>
+                    <button class="save-btn" onclick="saveCorrection()" style="width: 100%; margin-top: 10px;">Save Correction (Enter)</button>
                 </div>
 
                 <div class="coordinates-display" id="coordsDisplay">
@@ -581,6 +615,7 @@
             hp_indicators: {},
             hp_unavailable: {},
             status_icons: {},
+            name_tiles: {},
             config: {
                 ...spriteConfig
             }
@@ -697,6 +732,10 @@
                 
                 if (selectedIndicatorType === 'units') {
                     selectedState = 'idle'; // Default to idle for units
+                    selectedUnit = document.getElementById('unitSelect').value;
+                } else if (selectedIndicatorType === 'name_tiles') {
+                    selectedState = 'name_tiles';
+                    selectedUnit = document.getElementById('nameSelect').value;
                 } else {
                     selectedState = selectedIndicatorType; // hp_indicators, hp_unavailable, status_icons
                 }
@@ -713,6 +752,11 @@
             updateDisplay();
         });
         
+        document.getElementById('nameSelect').addEventListener('change', function() {
+            selectedUnit = this.value;
+            updateDisplay();
+        });
+        
         document.getElementById('stateSelect').addEventListener('change', function() {
             selectedState = this.value;
             updateFrameControls();
@@ -725,16 +769,28 @@
             try {
                 // Find sections by looking for specific elements inside them
                 const armySection = document.querySelector('.army-buttons')?.closest('.control-group');
-                const unitSection = document.querySelector('.unit-select')?.closest('.control-group');
+                const unitSelectGroup = document.getElementById('unitSelectGroup');
+                const nameSelectGroup = document.getElementById('nameSelectGroup');
+                const stateSelect = document.getElementById('stateSelect');
                 
                 if (selectedIndicatorType === 'units') {
                     // Show army and unit selection for regular unit sprites
                     if (armySection) armySection.style.display = 'block';
-                    if (unitSection) unitSection.style.display = 'block';
-                } else {
-                    // Hide army and unit selection for HP/status icons
+                    if (unitSelectGroup) unitSelectGroup.style.display = 'block';
+                    if (nameSelectGroup) nameSelectGroup.style.display = 'none';
+                    if (stateSelect) stateSelect.style.display = 'block';
+                } else if (selectedIndicatorType === 'name_tiles') {
+                    // Show name selection but hide army and state for name tiles
                     if (armySection) armySection.style.display = 'none';
-                    if (unitSection) unitSection.style.display = 'none';
+                    if (unitSelectGroup) unitSelectGroup.style.display = 'none';
+                    if (nameSelectGroup) nameSelectGroup.style.display = 'block';
+                    if (stateSelect) stateSelect.style.display = 'none';
+                } else {
+                    // Hide all selections for HP/status icons
+                    if (armySection) armySection.style.display = 'none';
+                    if (unitSelectGroup) unitSelectGroup.style.display = 'none';
+                    if (nameSelectGroup) nameSelectGroup.style.display = 'none';
+                    if (stateSelect) stateSelect.style.display = 'block';
                 }
             } catch (error) {
                 console.error('Error updating army controls:', error);
@@ -777,6 +833,16 @@
                 spriteConfig.width = 8;
                 spriteConfig.height = 8;
                 
+            } else if (selectedState === 'name_tiles') {
+                // Unit name tiles - set size to 32x16
+                document.getElementById('spriteWidth').value = 32;
+                document.getElementById('spriteHeight').value = 16;
+                spriteConfig.width = 32;
+                spriteConfig.height = 16;
+                frameSelector.innerHTML = '<p style="margin: 0; padding: 10px;">Name tiles are unit-specific (32x16 pixels)</p>';
+                
+                // Force update display to show new dimensions
+                updateDisplay();
             } else if (selectedState === 'status_icons') {
                 // Status icons: Loaded, Capturing, Submerged, Unknown
                 const statusLabels = ['Loaded', 'Capturing', 'Submerged', 'Unknown'];
@@ -869,6 +935,9 @@
                 if (selectedState === 'hp_indicators' || selectedState === 'hp_unavailable' || selectedState === 'status_icons') {
                     // HP/status icons are independent of unit and army
                     key = `${selectedState}_${selectedFrame}`;
+                } else if (selectedState === 'name_tiles') {
+                    // Name tiles use unit name only
+                    key = `name_${selectedUnit}`;
                 } else {
                     // Regular unit sprites use unit + army + state + frame
                     key = `${selectedUnit}_${selectedArmy}_${selectedState}_${selectedFrame}`;
@@ -879,8 +948,8 @@
                     return spriteCorrections[selectedState][key];
                 }
                 
-                // For HP/status icons, return a placeholder position
-                if (selectedState === 'hp_indicators' || selectedState === 'hp_unavailable' || selectedState === 'status_icons') {
+                // For HP/status icons and name tiles, return a placeholder position
+                if (selectedState === 'hp_indicators' || selectedState === 'hp_unavailable' || selectedState === 'status_icons' || selectedState === 'name_tiles') {
                     return { x: 100, y: 100 }; // Click on sprite sheet to set correct position
                 }
             } catch (error) {
@@ -944,8 +1013,16 @@
             const y = Math.floor((event.clientY - rect.top) * scaleY);
             
             correctPosition = { x, y };
-            saveCorrection();
+            
+            console.log('Sheet clicked:', {
+                selectedState,
+                selectedUnit,
+                correctPosition,
+                spriteConfig
+            });
+            
             updateDisplay();
+            showStatus('Position selected. Click "Save Correction" or press Enter to save.', 'info');
         }
         
         // Save correction
@@ -964,6 +1041,9 @@
                     const statusLabels = ['Loaded', 'Capturing', 'Submerged', 'Unknown'];
                     description = `Status icon ${statusLabels[selectedFrame]}`;
                 }
+            } else if (selectedState === 'name_tiles') {
+                key = `name_${selectedUnit}`;
+                description = `${selectedUnit} name tile`;
             } else {
                 key = `${selectedUnit}_${selectedArmy}_${selectedState}_${selectedFrame}`;
                 description = `${selectedUnit} ${selectedState} frame ${selectedFrame + 1}`;
@@ -988,6 +1068,8 @@
             let key;
             if (selectedState === 'hp_indicators' || selectedState === 'hp_unavailable' || selectedState === 'status_icons') {
                 key = `${selectedState}_${selectedFrame}`;
+            } else if (selectedState === 'name_tiles') {
+                key = `name_${selectedUnit}`;
             } else {
                 key = `${selectedUnit}_${selectedArmy}_${selectedState}_${selectedFrame}`;
             }
@@ -1005,6 +1087,9 @@
             if (selectedState === 'hp_indicators' || selectedState === 'hp_unavailable' || selectedState === 'status_icons') {
                 key = `${selectedState}_${selectedFrame}`;
                 description = `${selectedState} ${selectedFrame}`;
+            } else if (selectedState === 'name_tiles') {
+                key = `name_${selectedUnit}`;
+                description = `${selectedUnit} name tile`;
             } else {
                 key = `${selectedUnit}_${selectedArmy}_${selectedState}_${selectedFrame}`;
                 description = `${selectedUnit} ${selectedState}`;
@@ -1022,19 +1107,30 @@
                 if (!spriteSheet) return;
                 
                 const currentPos = calculateCurrentPosition();
-                if (!currentPos) return;
                 
-                // Update overlays with current sprite dimensions
-                updateOverlay('currentOverlay', currentPos, '#ff6b6b');
-                if (correctPosition) {
-                    updateOverlay('correctOverlay', correctPosition, '#2ecc71');
+                // Clear overlays first
+                const currentOverlay = document.getElementById('currentOverlay');
+                const correctOverlay = document.getElementById('correctOverlay');
+                if (currentOverlay) currentOverlay.style.display = 'none';
+                if (correctOverlay) correctOverlay.style.display = 'none';
+                
+                // Show current position if available
+                if (currentPos) {
+                    updateOverlay('currentOverlay', currentPos, '#ff6b6b');
+                    updateCoordinatesDisplay(currentPos);
+                    updatePreview(currentPos);
                 }
                 
-                // Update coordinates display
-                updateCoordinatesDisplay(currentPos);
-                
-                // Update preview
-                updatePreview(currentPos);
+                // Always show correct position if clicked
+                if (correctPosition) {
+                    updateOverlay('correctOverlay', correctPosition, '#2ecc71');
+                    
+                    // If no current position, use correct position for display
+                    if (!currentPos) {
+                        updateCoordinatesDisplay(correctPosition);
+                        updatePreview(correctPosition);
+                    }
+                }
             } catch (error) {
                 console.error('Error updating display:', error);
                 showStatus('Display update error: ' + error.message, 'warning');
@@ -1046,16 +1142,37 @@
             const overlay = document.getElementById(overlayId);
             const img = document.getElementById('spriteSheet');
             
-            if (!img.naturalWidth) return;
+            if (!overlay || !img || !img.naturalWidth) {
+                console.error('Missing overlay elements:', { overlay: !!overlay, img: !!img, naturalWidth: img?.naturalWidth });
+                return;
+            }
             
             const scale = img.clientWidth / img.naturalWidth;
             
+            // Get the image's position relative to its container
+            const imgRect = img.getBoundingClientRect();
+            const containerRect = img.parentElement.getBoundingClientRect();
+            const offsetX = imgRect.left - containerRect.left;
+            const offsetY = imgRect.top - containerRect.top;
+            
             overlay.style.display = 'block';
-            overlay.style.left = (pos.x * scale) + 'px';
-            overlay.style.top = (pos.y * scale) + 'px';
+            overlay.style.left = (offsetX + pos.x * scale) + 'px';
+            overlay.style.top = (offsetY + pos.y * scale) + 'px';
             overlay.style.width = (spriteConfig.width * scale) + 'px';
             overlay.style.height = (spriteConfig.height * scale) + 'px';
             overlay.style.borderColor = color;
+            
+            console.log('Overlay updated:', overlayId, {
+                pos, 
+                spriteConfig, 
+                scale, 
+                overlayPos: {
+                    left: overlay.style.left,
+                    top: overlay.style.top,
+                    width: overlay.style.width,
+                    height: overlay.style.height
+                }
+            });
         }
         
         // Update coordinates display
@@ -1075,6 +1192,10 @@
                     const statusLabels = ['Loaded', 'Capturing', 'Submerged', 'Unknown'];
                     frameLabel = statusLabels[selectedFrame];
                 }
+            } else if (selectedState === 'name_tiles') {
+                key = `name_${selectedUnit}`;
+                displayTitle = `Unit Name: ${selectedUnit}`;
+                frameLabel = 'Name Tile';
             } else {
                 key = `${selectedUnit}_${selectedArmy}_${selectedState}_${selectedFrame}`;
                 displayTitle = `${selectedUnit} (${selectedArmy}) - ${selectedState}`;
@@ -1108,10 +1229,18 @@
             ctx.imageSmoothingEnabled = false;
             
             try {
+                // For name tiles, double the width in preview
+                let previewWidth = spriteConfig.width;
+                let previewHeight = spriteConfig.height;
+                
+                if (selectedState === 'name_tiles') {
+                    previewWidth = spriteConfig.width * 2;  // Double width for name tiles
+                }
+                
                 // Calculate scale to fit in preview canvas
-                const scale = Math.min(canvas.width / spriteConfig.width, canvas.height / spriteConfig.height);
-                const scaledWidth = spriteConfig.width * scale;
-                const scaledHeight = spriteConfig.height * scale;
+                const scale = Math.min(canvas.width / previewWidth, canvas.height / previewHeight);
+                const scaledWidth = previewWidth * scale;
+                const scaledHeight = previewHeight * scale;
                 
                 // Center the sprite in canvas
                 const offsetX = (canvas.width - scaledWidth) / 2;
@@ -1202,7 +1331,8 @@
                                     Object.keys(spriteCorrections.unavailable).length +
                                     Object.keys(spriteCorrections.hp_indicators).length +
                                     Object.keys(spriteCorrections.hp_unavailable).length +
-                                    Object.keys(spriteCorrections.status_icons).length
+                                    Object.keys(spriteCorrections.status_icons).length +
+                                    Object.keys(spriteCorrections.name_tiles).length
                 }
             };
             
@@ -1242,6 +1372,7 @@
                                 hp_indicators: importData.corrections.hp_indicators || {},
                                 hp_unavailable: importData.corrections.hp_unavailable || {},
                                 status_icons: importData.corrections.status_icons || {},
+                                name_tiles: importData.corrections.name_tiles || {},
                                 config: importData.corrections.config || spriteConfig
                             };
                         }
@@ -1434,6 +1565,19 @@
             const saved = localStorage.getItem('advanceWarsSpritCorrections');
             if (saved) {
                 showStatus('Found saved corrections. Click "Load from Browser" to restore.', 'info');
+            }
+            
+            // Add keyboard support
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && correctPosition) {
+                    saveCorrection();
+                }
+            });
+            
+            // Ensure sprite viewer has position relative for absolute overlays
+            const viewer = document.querySelector('.sprite-viewer');
+            if (viewer) {
+                viewer.style.position = 'relative';
             }
         });
     </script>
