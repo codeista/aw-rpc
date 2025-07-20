@@ -122,5 +122,28 @@ NEVER proactively create documentation files (*.md) or README files. Only create
 - Transport mechanics: `transport_system.py`
 - RPC endpoints: `app.py`
 - Frontend rendering: `render.js`
-- Tile optimization issues: `TILE_OPTIMIZATION_ISSUES.md`
+- **Sprite and tile guide: `SPRITE_AND_TILE_GUIDE.md`** (consolidated guide)
 - Game mechanics details: `GAME_MECHANICS.md`
+
+## Key Documentation Files
+- **[README.md](README.md)** - Project overview, setup instructions, API reference
+- **[SPRITE_AND_TILE_GUIDE.md](SPRITE_AND_TILE_GUIDE.md)** - Complete sprite/tile extraction and upscaling guide
+- **[TESTING.md](TESTING.md)** - Testing documentation
+- **[movement-fog.txt](movement-fog.txt)** - Movement and fog of war mechanics
+
+## Sprite System
+- See **[SPRITE_AND_TILE_GUIDE.md](SPRITE_AND_TILE_GUIDE.md)** for complete details on:
+  - Which sprite sheets to use
+  - Extraction coordinates and scripts
+  - Upscaling approach for pixel art
+  - PNG palette mode handling
+
+## Testing Documentation
+- **Run Tests**: `python3 run_tests.py` - Runs click handler and sprite extraction tests
+- **Regression Tests**: `python3 run_regression_tests.py` - Comprehensive mechanics validation
+- **Test Interface**: http://localhost:5000/test_interface - Interactive testing UI
+
+## API Documentation
+- **API Docs**: http://localhost:5000/api/docs - Categorized API reference
+- **API Browser**: http://localhost:5000/api/browse - Interactive RPC testing
+- **RPC Methods**: See README.md for complete list of 60+ RPC methods

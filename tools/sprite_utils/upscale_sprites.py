@@ -138,7 +138,7 @@ def create_coordinate_mapping(original_size=16, new_size=48):
 
 def main():
     # Paths
-    unit_sprites = "/home/box/Documents/aw-rpc/static/img/units_sprite_sheet_v2.png"
+    unit_sprites = "/home/box/Documents/aw-rpc/static/img/units_sprite_sheet_complete.png"
     
     print("=== Sprite Upscaling Preparation ===\n")
     
