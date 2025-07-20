@@ -4,6 +4,7 @@
 
 # python cache
 __pycache__/
+*.py[cod]
 
 # mac turds
 .DS_Store
@@ -20,8 +21,27 @@ scratch
 *.log
 logs/
 bot.py
-<<<<<<< Updated upstream
 jeskstra.py
-=======
-.vscode/
->>>>>>> Stashed changes
+
+# Temporary sprite extraction files
+temp/batch_*/
+temp/complete_sprites_to_upscale/
+temp/terrain_grid/
+temp/sprites_to_upscale/
+temp/extracted_sprites/
+temp/upscaled_sprites/
+
+# Backup directories
+backup*/
+*_backup/
+backup_before_*/
+static/img/backup_*/
+
+# Archive directories
+archive/
+
+# Verification outputs
+verify_*.json
+verify_*.txt
+extracted_*.json
+sprite_index_*.json
