@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Enhanced Sprite & Tileset Showcase - Advance Wars RPC</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #1a1a2e;
+            color: #eee;
+        }
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+        h1, h2, h3 {
+            text-align: center;
+            color: #3498db;
+        }
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 5px;
+        }
+        .tab {
+            padding: 12px 24px;
+            margin: 0 5px;
+            border-radius: 6px;
+            background: #2c3e50;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        .tab:hover {
+            background: #34495e;
+        }
+        .tab.active {
+            background: #3498db;
+            border-color: #2980b9;
+        }
+        .content {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+        .content.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .showcase-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 15px;
+            padding: 20px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+        }
+        .tile-showcase-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 10px;
+            padding: 20px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+        }
+        .sprite-item, .tile-item {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #34495e;
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .sprite-item:hover, .tile-item:hover {
+            transform: translateY(-2px);
+            border-color: #3498db;
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+        }
+        .sprite-display, .tile-display {
+            background: repeating-conic-gradient(#444 0% 25%, #333 0% 50%) 50% / 16px 16px;
+            margin: 0 auto 8px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .sprite-display {
+            width: 64px;
+            height: 64px;
+        }
+        .tile-display {
+            width: 48px;
+            height: 48px;
+        }
+        canvas {
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+        .label {
+            font-size: 11px;
+            color: #3498db;
+            margin-top: 5px;
+        }
+        .info {
+            font-size: 10px;
+            color: #7f8c8d;
+        }
+        .category-header {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, rgba(52, 152, 219, 0.2), rgba(46, 204, 113, 0.2));
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .controls {
+            background: rgba(0,0,0,0.3);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .filter-group {
+            margin: 10px 0;
+        }
+        .filter-label {
+            display: inline-block;
+            width: 100px;
+            font-weight: bold;
+        }
+        button {
+            padding: 8px 16px;
+            margin: 0 5px;
+            border-radius: 4px;
+            border: 1px solid #3498db;
+            background: #2c3e50;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        button:hover {
+            background: #3498db;
+            transform: translateY(-1px);
+        }
+        button.active {
+            background: #3498db;
+            border-color: #2980b9;
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .status.success {
+            background: rgba(46, 204, 113, 0.2);
+            border: 1px solid #27ae60;
+            color: #2ecc71;
+        }
+        .status.error {
+            background: rgba(231, 76, 60, 0.2);
+            border: 1px solid #c0392b;
+            color: #e74c3c;
+        }
+        .status.info {
+            background: rgba(52, 152, 219, 0.2);
+            border: 1px solid #2980b9;
+            color: #3498db;
+        }
+        .comparison-view {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+        .comparison-section {
+            flex: 1;
+            background: rgba(0,0,0,0.3);
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: rgba(0,0,0,0.5);
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            border: 1px solid #34495e;
+        }
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #3498db;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Enhanced Sprite & Tileset Showcase</h1>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('units')">Unit Sprites</div>
+            <div class="tab" onclick="showTab('tiles')">Terrain Tiles</div>
+            <div class="tab" onclick="showTab('comparison')">Tileset Comparison</div>
+            <div class="tab" onclick="showTab('test')">Test Rendering</div>
+        </div>
+
+        <div id="statusMessage"></div>
+
+        <!-- Units Tab -->
+        <div id="units" class="content active">
+            <h2>Unit Sprites (16x16 Optimized + Special Units)</h2>
+            
+            <div class="controls">
+                <div class="filter-group">
+                    <span class="filter-label">Armies:</span>
+                    <button class="army-filter active" data-army="RED">RED</button>
+                    <button class="army-filter active" data-army="BLUE">BLUE</button>
+                    <button class="army-filter active" data-army="GREEN">GREEN</button>
+                    <button class="army-filter active" data-army="YELLOW">YELLOW</button>
+                    <button class="army-filter active" data-army="GREY">GREY</button>
+                </div>
+                <div class="filter-group">
+                    <span class="filter-label">States:</span>
+                    <button class="state-filter active" data-state="idle">Idle</button>
+                    <button class="state-filter active" data-state="unavailable">Unavailable</button>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="unitCount">0</div>
+                    <div class="stat-label">Total Units</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="unitSpriteCount">0</div>
+                    <div class="stat-label">Unit Sprites</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="missingSpriteCount">0</div>
+                    <div class="stat-label">Missing Sprites</div>
+                </div>
+            </div>
+
+            <div id="unitShowcase" class="showcase-grid"></div>
+        </div>
+
+        <!-- Tiles Tab -->
+        <div id="tiles" class="content">
+            <h2>Terrain Tiles (Optimized RGB)</h2>
+            
+            <div class="controls">
+                <div class="filter-group">
+                    <span class="filter-label">Categories:</span>
+                    <button class="tile-filter active" data-category="terrain">Terrain</button>
+                    <button class="tile-filter active" data-category="roads">Roads</button>
+                    <button class="tile-filter active" data-category="buildings">Buildings</button>
+                    <button class="tile-filter active" data-category="special">Special</button>
+                </div>
+                <div class="filter-group">
+                    <span class="filter-label">Source:</span>
+                    <button onclick="switchTileSource('optimized')">Optimized RGB</button>
+                    <button onclick="switchTileSource('legacy')">Legacy Indexed</button>
+                    <button onclick="switchTileSource('new')">New AW2 Sheet</button>
+                </div>
+            </div>
+
+            <div id="tileShowcase" class="tile-showcase-grid"></div>
+        </div>
+
+        <!-- Comparison Tab -->
+        <div id="comparison" class="content">
+            <h2>Tileset Comparison</h2>
+            
+            <div class="comparison-view">
+                <div class="comparison-section">
+                    <h3>Legacy Tileset (Indexed Color)</h3>
+                    <ul>
+                        <li>Size: 445 x 1163 pixels</li>
+                        <li>File size: 74.4 KB</li>
+                        <li>Color mode: 8-bit palette (256 colors)</li>
+                        <li>Contains: Complete terrain, animations, fog</li>
+                    </ul>
+                    <img src="../static/img/tileset_comparison.png" style="max-width: 100%; margin-top: 10px;">
+                </div>
+                
+                <div class="comparison-section">
+                    <h3>New AW2 Tileset (RGB)</h3>
+                    <ul>
+                        <li>Size: 1200 x 604 pixels</li>
+                        <li>File size: 124 KB</li>
+                        <li>Color mode: Full RGBA</li>
+                        <li>Contains: Buildings, roads, terrain</li>
+                    </ul>
+                    <h3>Optimized Combined (RGB)</h3>
+                    <ul>
+                        <li>Size: 640 x 240 pixels</li>
+                        <li>File size: ~53 KB</li>
+                        <li>Best tiles from both sources</li>
+                        <li>Organized grid layout</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Tab -->
+        <div id="test" class="content">
+            <h2>Test Rendering</h2>
+            
+            <div class="controls">
+                <button onclick="testUnitRendering()">Test Unit Rendering</button>
+                <button onclick="testTileRendering()">Test Tile Rendering</button>
+                <button onclick="testCombinedRendering()">Test Combined Scene</button>
+                <button onclick="exportRenderConfig()">Export Render Config</button>
+            </div>
+
+            <canvas id="testCanvas" width="800" height="600" style="border: 1px solid #34495e; margin-top: 20px;"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let unitSpriteSheet = null;
+        let unitSpriteMap = null;
+        let optimizedTileSheet = null;
+        let optimizedTileMap = null;
+        let legacyTileSheet = null;
+        let newAW2TileSheet = null;
+        
+        let activeFilters = {
+            armies: ['RED', 'BLUE', 'GREEN', 'YELLOW', 'GREY'],
+            states: ['idle', 'unavailable'],
+            tileCategories: ['terrain', 'roads', 'buildings', 'special']
+        };
+
+        // Initialize
+        async function init() {
+            showStatus('Loading resources...', 'info');
+            
+            try {
+                // Load unit sprites (complete version with special units)
+                const unitMapResponse = await fetch('../static/img/units_sprite_map_complete.json');
+                unitSpriteMap = await unitMapResponse.json();
+                unitSpriteSheet = await loadImage('../static/img/units_sprite_sheet_complete.png');
+                
+                // Load optimized tileset
+                const tileMapResponse = await fetch('../static/img/tileset_optimized_map.json');
+                optimizedTileMap = await tileMapResponse.json();
+                optimizedTileSheet = await loadImage('../static/img/tileset_optimized.png');
+                
+                // Load other tilesets
+                legacyTileSheet = await loadImage('../static/img/Advance_Wars_Dual_Strike_Tileset_Normal_Transparent.png');
+                newAW2TileSheet = await loadImage('../static/img/Game Boy Advance - Advance Wars 2 Black Hole Rising - Overworld Tileset Buildings.png');
+                
+                showStatus('Resources loaded successfully', 'success');
+                
+                // Display initial content
+                displayUnits();
+                displayTiles();
+                
+            } catch (error) {
+                showStatus(`Error loading resources: ${error.message}`, 'error');
+            }
+        }
+
+        function loadImage(src) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = src;
+            });
+        }
+
+        function showStatus(message, type = 'info') {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.className = `status ${type}`;
+            statusEl.textContent = message;
+            
+            if (type === 'success') {
+                setTimeout(() => statusEl.style.display = 'none', 3000);
+            }
+        }
+
+        function showTab(tabName) {
+            // Update tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update content
+            document.querySelectorAll('.content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        function displayUnits() {
+            const container = document.getElementById('unitShowcase');
+            container.innerHTML = '';
+            
+            let totalUnits = 0;
+            let totalSprites = 0;
+            let missingSprites = 0;
+            
+            const unitTypes = [
+                'INFANTRY', 'MECH', 'RECON', 'TANK', 'MEDIUMTANK', 'NEOTANK', 'MEGATANK',
+                'APC', 'ARTILLERY', 'ROCKET', 'ANTIAIR', 'MISSILE', 'PIPERUNNER',
+                'FIGHTER', 'BOMBER', 'BCOPTER', 'TCOPTER', 'STEALTH', 'BLACKBOMB',
+                'BATTLESHIP', 'CRUISER', 'LANDER', 'SUB', 'CARRIER', 'BLACKBOAT'
+            ];
+            
+            activeFilters.armies.forEach(army => {
+                const header = document.createElement('div');
+                header.className = 'category-header';
+                header.textContent = `${army} Army Units`;
+                container.appendChild(header);
+                
+                unitTypes.forEach(unitType => {
+                    activeFilters.states.forEach(state => {
+                        const spriteKey = `${unitType}_${army}_${state}_0`;
+                        const spriteData = unitSpriteMap?.sprites[spriteKey];
+                        
+                        if (spriteData) {
+                            const item = createSpriteItem(unitType, army, state, spriteData);
+                            container.appendChild(item);
+                            totalSprites++;
+                        } else {
+                            missingSprites++;
+                        }
+                        
+                        totalUnits++;
+                    });
+                });
+            });
+            
+            // Update stats
+            document.getElementById('unitCount').textContent = unitTypes.length;
+            document.getElementById('unitSpriteCount').textContent = totalSprites;
+            document.getElementById('missingSpriteCount').textContent = missingSprites;
+        }
+
+        function createSpriteItem(unitType, army, state, spriteData) {
+            const item = document.createElement('div');
+            item.className = 'sprite-item';
+            
+            const display = document.createElement('div');
+            display.className = 'sprite-display';
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            
+            if (unitSpriteSheet && spriteData) {
+                const ctx = canvas.getContext('2d');
+                ctx.imageSmoothingEnabled = false;
+                ctx.drawImage(
+                    unitSpriteSheet,
+                    spriteData.x, spriteData.y, 16, 16,
+                    0, 0, 64, 64
+                );
+            }
+            
+            display.appendChild(canvas);
+            item.appendChild(display);
+            
+            const label = document.createElement('div');
+            label.className = 'label';
+            label.textContent = unitType;
+            item.appendChild(label);
+            
+            const info = document.createElement('div');
+            info.className = 'info';
+            info.textContent = `${army} - ${state}`;
+            item.appendChild(info);
+            
+            return item;
+        }
+
+        function displayTiles() {
+            const container = document.getElementById('tileShowcase');
+            container.innerHTML = '';
+            
+            if (!optimizedTileMap) return;
+            
+            // Group tiles by category
+            const categories = {
+                terrain: [],
+                roads: [],
+                buildings: [],
+                special: []
+            };
+            
+            Object.entries(optimizedTileMap.tiles).forEach(([tileName, tileData]) => {
+                if (tileName.includes('terrain')) categories.terrain.push({name: tileName, ...tileData});
+                else if (tileName.includes('road')) categories.roads.push({name: tileName, ...tileData});
+                else if (tileName.includes('building')) categories.buildings.push({name: tileName, ...tileData});
+                else categories.special.push({name: tileName, ...tileData});
+            });
+            
+            activeFilters.tileCategories.forEach(category => {
+                if (categories[category].length > 0) {
+                    const header = document.createElement('div');
+                    header.className = 'category-header';
+                    header.textContent = category.charAt(0).toUpperCase() + category.slice(1);
+                    container.appendChild(header);
+                    
+                    categories[category].forEach(tileData => {
+                        const item = createTileItem(tileData);
+                        container.appendChild(item);
+                    });
+                }
+            });
+        }
+
+        function createTileItem(tileData) {
+            const item = document.createElement('div');
+            item.className = 'tile-item';
+            
+            const display = document.createElement('div');
+            display.className = 'tile-display';
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = 48;
+            canvas.height = 48;
+            
+            if (optimizedTileSheet) {
+                const ctx = canvas.getContext('2d');
+                ctx.imageSmoothingEnabled = false;
+                ctx.drawImage(
+                    optimizedTileSheet,
+                    tileData.x, tileData.y, tileData.width, tileData.height,
+                    0, 0, 48, 48 * (tileData.height / tileData.width)
+                );
+            }
+            
+            display.appendChild(canvas);
+            item.appendChild(display);
+            
+            const label = document.createElement('div');
+            label.className = 'label';
+            label.textContent = tileData.name.replace(/_/g, ' ');
+            item.appendChild(label);
+            
+            return item;
+        }
+
+        // Filter handlers
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('army-filter')) {
+                e.target.classList.toggle('active');
+                const army = e.target.dataset.army;
+                const index = activeFilters.armies.indexOf(army);
+                
+                if (index > -1) {
+                    activeFilters.armies.splice(index, 1);
+                } else {
+                    activeFilters.armies.push(army);
+                }
+                
+                displayUnits();
+            }
+            
+            if (e.target.classList.contains('state-filter')) {
+                e.target.classList.toggle('active');
+                const state = e.target.dataset.state;
+                const index = activeFilters.states.indexOf(state);
+                
+                if (index > -1) {
+                    activeFilters.states.splice(index, 1);
+                } else {
+                    activeFilters.states.push(state);
+                }
+                
+                displayUnits();
+            }
+            
+            if (e.target.classList.contains('tile-filter')) {
+                e.target.classList.toggle('active');
+                const category = e.target.dataset.category;
+                const index = activeFilters.tileCategories.indexOf(category);
+                
+                if (index > -1) {
+                    activeFilters.tileCategories.splice(index, 1);
+                } else {
+                    activeFilters.tileCategories.push(category);
+                }
+                
+                displayTiles();
+            }
+        });
+
+        // Test functions
+        function testUnitRendering() {
+            const canvas = document.getElementById('testCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = '#2c3e50';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw test units
+            let x = 20;
+            let y = 20;
+            
+            ['INFANTRY', 'TANK', 'RECON', 'FIGHTER', 'BATTLESHIP'].forEach(unitType => {
+                ['RED', 'BLUE'].forEach((army, armyIndex) => {
+                    const spriteKey = `${unitType}_${army}_idle_0`;
+                    const spriteData = unitSpriteMap?.sprites[spriteKey];
+                    
+                    if (spriteData && unitSpriteSheet) {
+                        ctx.imageSmoothingEnabled = false;
+                        ctx.drawImage(
+                            unitSpriteSheet,
+                            spriteData.x, spriteData.y, 16, 16,
+                            x + armyIndex * 20, y, 16, 16
+                        );
+                    }
+                });
+                
+                ctx.fillStyle = 'white';
+                ctx.font = '10px Arial';
+                ctx.fillText(unitType, x + 45, y + 12);
+                
+                y += 25;
+            });
+            
+            showStatus('Unit rendering test complete', 'success');
+        }
+
+        function testTileRendering() {
+            const canvas = document.getElementById('testCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = '#2c3e50';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw test tiles
+            let x = 20;
+            let y = 20;
+            
+            if (optimizedTileSheet && optimizedTileMap) {
+                Object.entries(optimizedTileMap.tiles).slice(0, 50).forEach(([tileName, tileData], index) => {
+                    ctx.imageSmoothingEnabled = false;
+                    ctx.drawImage(
+                        optimizedTileSheet,
+                        tileData.x, tileData.y, tileData.width, tileData.height,
+                        x + (index % 20) * 18, y + Math.floor(index / 20) * 18,
+                        16, 16
+                    );
+                });
+            }
+            
+            showStatus('Tile rendering test complete', 'success');
+        }
+
+        function testCombinedRendering() {
+            const canvas = document.getElementById('testCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Create a simple scene
+            ctx.fillStyle = '#2c3e50';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw terrain grid
+            for (let y = 0; y < 20; y++) {
+                for (let x = 0; x < 30; x++) {
+                    // Draw grass tile (placeholder)
+                    ctx.fillStyle = '#27ae60';
+                    ctx.fillRect(x * 16, y * 16, 16, 16);
+                    ctx.strokeStyle = '#229954';
+                    ctx.strokeRect(x * 16, y * 16, 16, 16);
+                }
+            }
+            
+            // Add some units
+            const testUnits = [
+                {type: 'TANK', army: 'RED', x: 5, y: 5},
+                {type: 'INFANTRY', army: 'BLUE', x: 10, y: 8},
+                {type: 'FIGHTER', army: 'RED', x: 15, y: 3}
+            ];
+            
+            testUnits.forEach(unit => {
+                const spriteKey = `${unit.type}_${unit.army}_idle_0`;
+                const spriteData = unitSpriteMap?.sprites[spriteKey];
+                
+                if (spriteData && unitSpriteSheet) {
+                    ctx.imageSmoothingEnabled = false;
+                    ctx.drawImage(
+                        unitSpriteSheet,
+                        spriteData.x, spriteData.y, 16, 16,
+                        unit.x * 16, unit.y * 16, 16, 16
+                    );
+                }
+            });
+            
+            showStatus('Combined scene rendering test complete', 'success');
+        }
+
+        function exportRenderConfig() {
+            const config = {
+                unitSprites: {
+                    sheet: '/static/img/units_sprite_sheet_complete.png',
+                    map: '/static/img/units_sprite_map_complete.json',
+                    size: 16,
+                    totalSprites: 250,
+                    includesSpecialUnits: true
+                },
+                terrainTiles: {
+                    optimized: {
+                        sheet: '/static/img/tileset_optimized.png',
+                        map: '/static/img/tileset_optimized_map.json'
+                    },
+                    legacy: {
+                        sheet: '/static/img/Advance_Wars_Dual_Strike_Tileset_Normal_Transparent.png'
+                    }
+                },
+                usage: 'Use optimized for buildings/roads, legacy for animated tiles'
+            };
+            
+            const blob = new Blob([JSON.stringify(config, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'render_config.json';
+            a.click();
+            
+            showStatus('Render configuration exported', 'success');
+        }
+
+        // Initialize on load
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

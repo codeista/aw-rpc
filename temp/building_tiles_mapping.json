@@ -1,0 +1,29 @@
+{
+  "building_tiles": {
+    "description": "Building tiles",
+    "first_tile_corners": {
+      "top_left": [
+        233,
+        60
+      ],
+      "top_right": [
+        243,
+        60
+      ],
+      "bottom_left": [
+        233,
+        117
+      ],
+      "bottom_right": [
+        243,
+        117
+      ]
+    },
+    "tile_size": {
+      "width": 10,
+      "height": 57
+    },
+    "special_notes": "Pink/magenta background should be transparent",
+    "tiles": []
+  }
+}

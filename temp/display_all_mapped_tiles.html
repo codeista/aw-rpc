@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Display All Mapped Tiles</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+        }
+        .section {
+            background: rgba(0,0,0,0.3);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .tile-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .tile-item {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #34495e;
+            border-radius: 4px;
+            padding: 10px;
+            text-align: center;
+        }
+        canvas {
+            image-rendering: pixelated;
+            background: repeating-conic-gradient(#7f8c8d 0% 25%, transparent 0% 50%) 50% / 8px 8px;
+        }
+        .label {
+            font-size: 11px;
+            color: #3498db;
+            margin-top: 5px;
+        }
+        #status {
+            padding: 20px;
+            text-align: center;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <h1>All Mapped Tiles Display</h1>
+    <div id="status">Loading tileset...</div>
+    
+    <div id="terrainSection" class="section" style="display:none;">
+        <h2>Terrain Tiles (16x16)</h2>
+        <div id="terrainTiles" class="tile-grid"></div>
+    </div>
+    
+    <div id="roadSection" class="section" style="display:none;">
+        <h2>Road Tiles (8x8)</h2>
+        <div id="roadTiles" class="tile-grid"></div>
+    </div>
+    
+    <div id="pipeSection" class="section" style="display:none;">
+        <h2>Pipe Tiles (15x15)</h2>
+        <div id="pipeTiles" class="tile-grid"></div>
+    </div>
+    
+    <div id="waterSection" class="section" style="display:none;">
+        <h2>Water/Beach/River Tiles (8x8)</h2>
+        <div id="waterTiles" class="tile-grid"></div>
+    </div>
+    
+    <div id="buildingSection" class="section" style="display:none;">
+        <h2>Building Tiles (8x16)</h2>
+        <div id="buildingTiles" class="tile-grid"></div>
+    </div>
+
+    <script>
+        const tileset = new Image();
+        let mappings = {};
+        
+        // Load all mappings embedded directly
+        const terrainMapping = {"terrain_tiles":{"PLAIN":{"x":238,"y":18,"width":16,"height":16},"WOOD":{"x":238,"y":35,"width":16,"height":16},"MOUNTAIN":{"x":255,"y":18,"width":16,"height":16},"VOLCANO":{"x":255,"y":35,"width":16,"height":16}}};
+        
+        const roadMapping = {"road_tiles":{"tile_size":8,"tiles":[{"name":"ROAD_HORT","x":0,"y":0},{"name":"ROAD_VERT","x":9,"y":0},{"name":"ROAD_NE","x":18,"y":0},{"name":"ROAD_SE","x":27,"y":0},{"name":"ROAD_SW","x":36,"y":0},{"name":"ROAD_NW","x":45,"y":0},{"name":"ROAD_T_N","x":54,"y":0},{"name":"ROAD_T_E","x":63,"y":0},{"name":"ROAD_CROSS","x":0,"y":9},{"name":"ROAD_T_S","x":9,"y":9},{"name":"ROAD_T_W","x":18,"y":9}]}};
+        
+        const pipeMapping = {"pipe_tiles":{"tiles":[{"name":"PIPE_HORT","x":167,"y":166,"width":15,"height":15},{"name":"PIPE_VERT","x":184,"y":166,"width":15,"height":15},{"name":"PIPE_NE","x":201,"y":166,"width":15,"height":15},{"name":"PIPE_SE","x":218,"y":166,"width":15,"height":15},{"name":"PIPE_SW","x":167,"y":183,"width":15,"height":15},{"name":"PIPE_NW","x":184,"y":183,"width":15,"height":15},{"name":"PIPE_CROSS","x":201,"y":183,"width":15,"height":15},{"name":"PIPE_T_N","x":218,"y":183,"width":15,"height":15}]}};
+        
+        const waterMapping = {"water_box_1":{"tiles":[{"tiles":[{"x":42,"y":142,"width":8,"height":8},{"x":51,"y":142,"width":8,"height":8},{"x":42,"y":151,"width":8,"height":8},{"x":51,"y":151,"width":8,"height":8}],"edge_type":"WATER"}]},"beach_box_2":{"tiles":[{"tiles":[{"x":42,"y":160,"width":8,"height":8},{"x":51,"y":160,"width":8,"height":8},{"x":42,"y":169,"width":8,"height":8},{"x":51,"y":169,"width":8,"height":8}],"edge_type":"BEACH"}]},"river_box_4":{"tiles":[{"tiles":[{"x":42,"y":233,"width":8,"height":8},{"x":51,"y":233,"width":8,"height":8}],"edge_type":"RIVER"}]},"reef_box_6":{"tiles":[{"tiles":[{"x":42,"y":340,"width":8,"height":8}],"edge_type":"REEF"}]}};
+        
+        const buildingMapping = {"building_tiles":{"tiles":[{"name":"HQ_RED","x":480,"y":0,"width":8,"height":16},{"name":"CITY_RED","x":488,"y":0,"width":8,"height":16},{"name":"BASE_RED","x":496,"y":0,"width":8,"height":16},{"name":"AIRPORT_RED","x":504,"y":0,"width":8,"height":16},{"name":"PORT_RED","x":512,"y":0,"width":8,"height":16},{"name":"HQ_BLUE","x":480,"y":54,"width":8,"height":16},{"name":"CITY_BLUE","x":488,"y":54,"width":8,"height":16},{"name":"BASE_BLUE","x":496,"y":54,"width":8,"height":16},{"name":"AIRPORT_BLUE","x":504,"y":54,"width":8,"height":16},{"name":"HQ_YELLOW","x":480,"y":108,"width":8,"height":16},{"name":"CITY_YELLOW","x":488,"y":108,"width":8,"height":16},{"name":"HQ_GREEN","x":480,"y":162,"width":8,"height":16},{"name":"CITY_GREEN","x":488,"y":162,"width":8,"height":16},{"name":"CITY_NEUTRAL","x":488,"y":280,"width":8,"height":16},{"name":"BASE_NEUTRAL","x":496,"y":280,"width":8,"height":16}]}};
+        
+        tileset.onload = function() {
+            document.getElementById('status').textContent = 'Displaying all mapped tiles...';
+            displayAllTiles();
+        };
+        
+        tileset.onerror = function() {
+            document.getElementById('status').textContent = 'Error loading tileset!';
+        };
+        
+        tileset.src = '/static/img/Game Boy Advance - Advance Wars 2 Black Hole Rising - Overworld Tileset Buildings.png';
+        
+        function drawTile(x, y, width, height, scale = 4) {
+            const canvas = document.createElement('canvas');
+            canvas.width = width * scale;
+            canvas.height = height * scale;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+            
+            ctx.drawImage(tileset, x, y, width, height, 0, 0, canvas.width, canvas.height);
+            
+            // Make pink transparent
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                if (data[i] > 240 && data[i + 2] > 240 && data[i + 1] < 100) {
+                    data[i + 3] = 0;
+                }
+            }
+            
+            ctx.putImageData(imageData, 0, 0);
+            return canvas;
+        }
+        
+        function createTileItem(name, x, y, width, height) {
+            const item = document.createElement('div');
+            item.className = 'tile-item';
+            
+            const canvas = drawTile(x, y, width, height);
+            item.appendChild(canvas);
+            
+            const label = document.createElement('div');
+            label.className = 'label';
+            label.textContent = name + ' (' + width + 'x' + height + ')';
+            
+            item.appendChild(label);
+            return item;
+        }
+        
+        function displayAllTiles() {
+            // Terrain tiles
+            const terrainContainer = document.getElementById('terrainTiles');
+            Object.entries(terrainMapping.terrain_tiles).forEach(([name, tile]) => {
+                terrainContainer.appendChild(createTileItem(name, tile.x, tile.y, tile.width, tile.height));
+            });
+            document.getElementById('terrainSection').style.display = 'block';
+            
+            // Road tiles
+            const roadContainer = document.getElementById('roadTiles');
+            roadMapping.road_tiles.tiles.forEach(tile => {
+                const size = roadMapping.road_tiles.tile_size;
+                roadContainer.appendChild(createTileItem(tile.name, tile.x, tile.y, size, size));
+            });
+            document.getElementById('roadSection').style.display = 'block';
+            
+            // Pipe tiles
+            const pipeContainer = document.getElementById('pipeTiles');
+            pipeMapping.pipe_tiles.tiles.forEach(tile => {
+                pipeContainer.appendChild(createTileItem(tile.name, tile.x, tile.y, tile.width, tile.height));
+            });
+            document.getElementById('pipeSection').style.display = 'block';
+            
+            // Water tiles
+            const waterContainer = document.getElementById('waterTiles');
+            Object.entries(waterMapping).forEach(([key, section]) => {
+                if (section.tiles && section.tiles[0] && section.tiles[0].tiles) {
+                    section.tiles[0].tiles.forEach((tile, idx) => {
+                        const name = section.tiles[0].edge_type + '_' + idx;
+                        waterContainer.appendChild(createTileItem(name, tile.x, tile.y, tile.width, tile.height));
+                    });
+                }
+            });
+            document.getElementById('waterSection').style.display = 'block';
+            
+            // Building tiles
+            const buildingContainer = document.getElementById('buildingTiles');
+            buildingMapping.building_tiles.tiles.forEach(tile => {
+                buildingContainer.appendChild(createTileItem(tile.name, tile.x, tile.y, tile.width, tile.height));
+            });
+            document.getElementById('buildingSection').style.display = 'block';
+            
+            document.getElementById('status').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

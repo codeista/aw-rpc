@@ -1,0 +1,27 @@
+{
+  "overview": "This system uses two tilesets for optimal quality",
+  "tilesets": {
+    "optimized": {
+      "path": "/static/img/tileset_optimized.png",
+      "use_for": [
+        "buildings",
+        "roads",
+        "terrain with better colors"
+      ],
+      "format": "RGBA with full transparency"
+    },
+    "legacy": {
+      "path": "/static/img/Advance_Wars_Dual_Strike_Tileset_Normal_Transparent.png",
+      "use_for": [
+        "animated water",
+        "fog effects",
+        "weather",
+        "fallback"
+      ],
+      "format": "Indexed color"
+    }
+  },
+  "implementation": {
+    "render_function": "\nfunction getTilesetForTerrain(terrainType) {\n    // Use optimized tileset for buildings and roads\n    const optimizedTypes = ['CITY', 'FACTORY', 'AIRPORT', 'PORT', 'HQ', 'ROAD', 'BRIDGE'];\n    \n    if (optimizedTypes.includes(terrainType)) {\n        return {\n            sheet: '/static/img/tileset_optimized.png',\n            map: tilesetOptimizedMap\n        };\n    }\n    \n    // Use legacy for animated and special tiles\n    return {\n        sheet: getSelectedTerrainTileset(),\n        map: null  // Use hardcoded positions\n    };\n}"
+  }
+}

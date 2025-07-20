@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tile Verification</title>
+    <style>
+        body {
+            background: #222;
+            color: #fff;
+            font-family: monospace;
+            padding: 20px;
+        }
+        .category {
+            margin: 20px 0;
+            border: 1px solid #444;
+            padding: 10px;
+            background: #333;
+        }
+        .tiles {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .tile {
+            border: 1px solid #555;
+            padding: 5px;
+            text-align: center;
+            background: #2a2a2a;
+        }
+        .tile img {
+            display: block;
+            margin: 0 auto;
+            image-rendering: pixelated;
+        }
+        .tile-name {
+            color: #3498db;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        h2 {
+            color: #3498db;
+            margin: 0 0 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tile Mapping Verification</h1>
+<div class="category">
+<h2>Terrain (3 tiles)</h2>
+<div class="tiles">
+<div class="tile">
+    <img src="mountain.png" alt="MOUNTAIN">
+    <div class="tile-name">MOUNTAIN</div>
+</div>
+<div class="tile">
+    <img src="plain.png" alt="PLAIN">
+    <div class="tile-name">PLAIN</div>
+</div>
+<div class="tile">
+    <img src="wood.png" alt="WOOD">
+    <div class="tile-name">WOOD</div>
+</div>
+</div>
+</div>
+<div class="category">
+<h2>Roads (15 tiles)</h2>
+<div class="tiles">
+<div class="tile">
+    <img src="road_cross.png" alt="ROAD_CROSS">
+    <div class="tile-name">ROAD_CROSS</div>
+</div>
+<div class="tile">
+    <img src="road_end_e.png" alt="ROAD_END_E">
+    <div class="tile-name">ROAD_END_E</div>
+</div>
+<div class="tile">
+    <img src="road_end_n.png" alt="ROAD_END_N">
+    <div class="tile-name">ROAD_END_N</div>
+</div>
+<div class="tile">
+    <img src="road_end_s.png" alt="ROAD_END_S">
+    <div class="tile-name">ROAD_END_S</div>
+</div>
+<div class="tile">
+    <img src="road_end_w.png" alt="ROAD_END_W">
+    <div class="tile-name">ROAD_END_W</div>
+</div>
+<div class="tile">
+    <img src="road_hort.png" alt="ROAD_HORT">
+    <div class="tile-name">ROAD_HORT</div>
+</div>
+<div class="tile">
+    <img src="road_ne.png" alt="ROAD_NE">
+    <div class="tile-name">ROAD_NE</div>
+</div>
+<div class="tile">
+    <img src="road_nw.png" alt="ROAD_NW">
+    <div class="tile-name">ROAD_NW</div>
+</div>
+<div class="tile">
+    <img src="road_se.png" alt="ROAD_SE">
+    <div class="tile-name">ROAD_SE</div>
+</div>
+<div class="tile">
+    <img src="road_sw.png" alt="ROAD_SW">
+    <div class="tile-name">ROAD_SW</div>
+</div>
+<div class="tile">
+    <img src="road_t_e.png" alt="ROAD_T_E">
+    <div class="tile-name">ROAD_T_E</div>
+</div>
+<div class="tile">
+    <img src="road_t_n.png" alt="ROAD_T_N">
+    <div class="tile-name">ROAD_T_N</div>
+</div>
+<div class="tile">
+    <img src="road_t_s.png" alt="ROAD_T_S">
+    <div class="tile-name">ROAD_T_S</div>
+</div>
+<div class="tile">
+    <img src="road_t_w.png" alt="ROAD_T_W">
+    <div class="tile-name">ROAD_T_W</div>
+</div>
+<div class="tile">
+    <img src="road_vert.png" alt="ROAD_VERT">
+    <div class="tile-name">ROAD_VERT</div>
+</div>
+</div>
+</div>
+<div class="category">
+<h2>Pipes (10 tiles)</h2>
+<div class="tiles">
+<div class="tile">
+    <img src="pipe_cross.png" alt="PIPE_CROSS">
+    <div class="tile-name">PIPE_CROSS</div>
+</div>
+<div class="tile">
+    <img src="pipe_end_n.png" alt="PIPE_END_N">
+    <div class="tile-name">PIPE_END_N</div>
+</div>
+<div class="tile">
+    <img src="pipe_end_s.png" alt="PIPE_END_S">
+    <div class="tile-name">PIPE_END_S</div>
+</div>
+<div class="tile">
+    <img src="pipe_hort.png" alt="PIPE_HORT">
+    <div class="tile-name">PIPE_HORT</div>
+</div>
+<div class="tile">
+    <img src="pipe_ne.png" alt="PIPE_NE">
+    <div class="tile-name">PIPE_NE</div>
+</div>
+<div class="tile">
+    <img src="pipe_nw.png" alt="PIPE_NW">
+    <div class="tile-name">PIPE_NW</div>
+</div>
+<div class="tile">
+    <img src="pipe_se.png" alt="PIPE_SE">
+    <div class="tile-name">PIPE_SE</div>
+</div>
+<div class="tile">
+    <img src="pipe_seam.png" alt="PIPE_SEAM">
+    <div class="tile-name">PIPE_SEAM</div>
+</div>
+<div class="tile">
+    <img src="pipe_sw.png" alt="PIPE_SW">
+    <div class="tile-name">PIPE_SW</div>
+</div>
+<div class="tile">
+    <img src="pipe_vert.png" alt="PIPE_VERT">
+    <div class="tile-name">PIPE_VERT</div>
+</div>
+</div>
+</div>
+<div class="category">
+<h2>Buildings (5 tiles)</h2>
+<div class="tiles">
+<div class="tile">
+    <img src="airport.png" alt="AIRPORT">
+    <div class="tile-name">AIRPORT</div>
+</div>
+<div class="tile">
+    <img src="city.png" alt="CITY">
+    <div class="tile-name">CITY</div>
+</div>
+<div class="tile">
+    <img src="factory.png" alt="FACTORY">
+    <div class="tile-name">FACTORY</div>
+</div>
+<div class="tile">
+    <img src="hq.png" alt="HQ">
+    <div class="tile-name">HQ</div>
+</div>
+<div class="tile">
+    <img src="port.png" alt="PORT">
+    <div class="tile-name">PORT</div>
+</div>
+</div>
+</div>
+<div class="category">
+<h2>Water/Beach (6 tiles)</h2>
+<div class="tiles">
+<div class="tile">
+    <img src="reef.png" alt="REEF">
+    <div class="tile-name">REEF</div>
+</div>
+<div class="tile">
+    <img src="sea.png" alt="SEA">
+    <div class="tile-name">SEA</div>
+</div>
+<div class="tile">
+    <img src="shoal.png" alt="SHOAL">
+    <div class="tile-name">SHOAL</div>
+</div>
+<div class="tile">
+    <img src="water_beach.png" alt="WATER_BEACH">
+    <div class="tile-name">WATER_BEACH</div>
+</div>
+<div class="tile">
+    <img src="water_coast.png" alt="WATER_COAST">
+    <div class="tile-name">WATER_COAST</div>
+</div>
+<div class="tile">
+    <img src="water_shore.png" alt="WATER_SHORE">
+    <div class="tile-name">WATER_SHORE</div>
+</div>
+</div>
+</div>
+<div class="category">
+<h2>Rivers (10 tiles)</h2>
+<div class="tiles">
+<div class="tile">
+    <img src="river_alt_cross.png" alt="RIVER_ALT_CROSS">
+    <div class="tile-name">RIVER_ALT_CROSS</div>
+</div>
+<div class="tile">
+    <img src="river_alt_style.png" alt="RIVER_ALT_STYLE">
+    <div class="tile-name">RIVER_ALT_STYLE</div>
+</div>
+<div class="tile">
+    <img src="river_hort.png" alt="RIVER_HORT">
+    <div class="tile-name">RIVER_HORT</div>
+</div>
+<div class="tile">
+    <img src="river_mouth_e.png" alt="RIVER_MOUTH_E">
+    <div class="tile-name">RIVER_MOUTH_E</div>
+</div>
+<div class="tile">
+    <img src="river_mouth_w.png" alt="RIVER_MOUTH_W">
+    <div class="tile-name">RIVER_MOUTH_W</div>
+</div>
+<div class="tile">
+    <img src="river_ne.png" alt="RIVER_NE">
+    <div class="tile-name">RIVER_NE</div>
+</div>
+<div class="tile">
+    <img src="river_nw.png" alt="RIVER_NW">
+    <div class="tile-name">RIVER_NW</div>
+</div>
+<div class="tile">
+    <img src="river_se.png" alt="RIVER_SE">
+    <div class="tile-name">RIVER_SE</div>
+</div>
+<div class="tile">
+    <img src="river_sw.png" alt="RIVER_SW">
+    <div class="tile-name">RIVER_SW</div>
+</div>
+<div class="tile">
+    <img src="river_vert.png" alt="RIVER_VERT">
+    <div class="tile-name">RIVER_VERT</div>
+</div>
+</div>
+</div>
+<div class="category">
+<h2>Special (2 tiles)</h2>
+<div class="tiles">
+<div class="tile">
+    <img src="river.png" alt="RIVER">
+    <div class="tile-name">RIVER</div>
+</div>
+<div class="tile">
+    <img src="volcano.png" alt="VOLCANO">
+    <div class="tile-name">VOLCANO</div>
+</div>
+</div>
+</div>
+
+</body>
+</html>

@@ -15,8 +15,8 @@ def test_sprite_extraction():
     # Test 1: Check extraction scripts exist
     print("1. Checking extraction scripts...")
     scripts = [
-        'upscale_sprites.py',
-        'create_correct_final_batch.py'
+        'tools/sprite_utils/upscale_sprites.py',
+        'tools/sprite_utils/create_correct_final_batch.py'
     ]
     
     all_exist = True

@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>New AW2 RGB Tileset Showcase</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #1a1a2e;
+            color: #eee;
+        }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #3498db;
+        }
+        .info-panel {
+            background: rgba(52, 152, 219, 0.2);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .main-content {
+            display: flex;
+            gap: 20px;
+        }
+        .tileset-view {
+            flex: 2;
+            background: rgba(0,0,0,0.5);
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .mapped-tiles-panel {
+            flex: 1;
+            background: rgba(0,0,0,0.5);
+            padding: 20px;
+            border-radius: 8px;
+            max-height: 800px;
+            overflow-y: auto;
+        }
+        .canvas-container {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            overflow: auto;
+            max-height: 600px;
+            position: relative;
+        }
+        canvas {
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+            display: block;
+        }
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        button {
+            padding: 8px 16px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        button.active {
+            background: #2ecc71;
+        }
+        .tile-entry {
+            background: rgba(52, 152, 219, 0.2);
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .tile-preview-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .tile-preview {
+            background: repeating-conic-gradient(#444 0% 25%, #333 0% 50%) 50% / 8px 8px;
+            border: 1px solid #34495e;
+            position: relative;
+        }
+        .scale-label {
+            font-size: 10px;
+            color: #7f8c8d;
+            text-align: center;
+            margin-top: 2px;
+        }
+        .tile-info {
+            flex: 1;
+        }
+        .tile-name {
+            font-weight: bold;
+            color: #3498db;
+        }
+        .tile-coords {
+            font-size: 12px;
+            color: #7f8c8d;
+            font-family: monospace;
+        }
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .comparison-item {
+            background: rgba(0,0,0,0.7);
+            border: 2px solid #34495e;
+            border-radius: 6px;
+            padding: 15px;
+            text-align: center;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .status.info { background: rgba(52, 152, 219, 0.2); color: #3498db; }
+        .highlight-box {
+            position: absolute;
+            border: 2px solid #e74c3c;
+            pointer-events: none;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 New AW2 RGB Tileset (8x8 Base)</h1>
+        
+        <div class="info-panel">
+            <h3>Tileset Information</h3>
+            <ul>
+                <li><strong>Source:</strong> Game Boy Advance - Advance Wars 2 Black Hole Rising</li>
+                <li><strong>Base tile size:</strong> 8x8 pixels (half of standard 16x16)</li>
+                <li><strong>Rendering:</strong> Requires 2x scaling for standard gameplay</li>
+                <li><strong>Benefits:</strong> Full RGB color, better quality, smaller file size</li>
+            </ul>
+        </div>
+        
+        <div id="status" class="status info">Loading tileset...</div>
+        
+        <div class="main-content">
+            <div class="tileset-view">
+                <div class="controls">
+                    <label>Zoom:</label>
+                    <button onclick="setZoom(1)">1x</button>
+                    <button onclick="setZoom(2)" class="active">2x</button>
+                    <button onclick="setZoom(4)">4x</button>
+                    <button onclick="toggleGrid()">Toggle Grid</button>
+                    <label style="margin-left: 20px;">
+                        Grid size: 
+                        <select id="gridSize" onchange="redraw()">
+                            <option value="8" selected>8x8</option>
+                            <option value="16">16x16</option>
+                        </select>
+                    </label>
+                </div>
+                
+                <div class="canvas-container">
+                    <canvas id="tilesetCanvas"></canvas>
+                    <div id="highlights"></div>
+                </div>
+            </div>
+            
+            <div class="mapped-tiles-panel">
+                <h3>Mapped Tiles</h3>
+                <p style="color: #7f8c8d; font-size: 14px;">
+                    Showing tiles at actual size (8x8) and scaled 2x (16x16)
+                </p>
+                <div id="mappedTilesList"></div>
+            </div>
+        </div>
+        
+        <div class="comparison-grid" id="comparisonGrid">
+            <!-- Comparison tiles will go here -->
+        </div>
+    </div>
+
+    <script>
+        let tileset = null;
+        let tileMapping = null;
+        let zoom = 2;
+        let showGrid = true;
+
+        async function init() {
+            try {
+                // Load tileset
+                tileset = await loadImage('../static/img/Game Boy Advance - Advance Wars 2 Black Hole Rising - Overworld Tileset Buildings.png');
+                
+                // Try to load mapping
+                try {
+                    const response = await fetch('../templates/aw2_tileset_corrected_mapping(1).json');
+                    tileMapping = await response.json();
+                    showStatus(`Loaded ${Object.keys(tileMapping.tiles).length} mapped tiles`, 'info');
+                } catch (e) {
+                    showStatus('No mapping file found yet', 'info');
+                    tileMapping = { tiles: {} };
+                }
+                
+                redraw();
+                displayMappedTiles();
+                
+            } catch (error) {
+                showStatus('Error loading tileset: ' + error.message, 'error');
+            }
+        }
+
+        function loadImage(src) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = src;
+            });
+        }
+
+        function redraw() {
+            if (!tileset) return;
+            
+            const canvas = document.getElementById('tilesetCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = tileset.width * zoom;
+            canvas.height = tileset.height * zoom;
+            
+            ctx.imageSmoothingEnabled = false;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw tileset
+            ctx.drawImage(tileset, 0, 0, canvas.width, canvas.height);
+            
+            // Draw grid
+            if (showGrid) {
+                const gridSize = parseInt(document.getElementById('gridSize').value);
+                ctx.strokeStyle = 'rgba(255, 255, 0, 0.3)';
+                ctx.lineWidth = 1;
+                
+                for (let x = 0; x <= tileset.width; x += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(x * zoom, 0);
+                    ctx.lineTo(x * zoom, canvas.height);
+                    ctx.stroke();
+                }
+                
+                for (let y = 0; y <= tileset.height; y += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y * zoom);
+                    ctx.lineTo(canvas.width, y * zoom);
+                    ctx.stroke();
+                }
+            }
+            
+            // Highlight mapped tiles
+            const highlights = document.getElementById('highlights');
+            highlights.innerHTML = '';
+            
+            if (tileMapping && tileMapping.tiles) {
+                Object.entries(tileMapping.tiles).forEach(([name, tile]) => {
+                    const box = document.createElement('div');
+                    box.className = 'highlight-box';
+                    box.style.left = (tile.x * zoom) + 'px';
+                    box.style.top = (tile.y * zoom) + 'px';
+                    box.style.width = (tile.width * zoom - 4) + 'px';
+                    box.style.height = (tile.height * zoom - 4) + 'px';
+                    box.title = name;
+                    highlights.appendChild(box);
+                });
+            }
+        }
+
+        function displayMappedTiles() {
+            const container = document.getElementById('mappedTilesList');
+            container.innerHTML = '';
+            
+            if (!tileMapping || !tileMapping.tiles || Object.keys(tileMapping.tiles).length === 0) {
+                container.innerHTML = '<p style="color: #7f8c8d;">No tiles mapped yet</p>';
+                return;
+            }
+            
+            Object.entries(tileMapping.tiles).forEach(([name, tile]) => {
+                const entry = document.createElement('div');
+                entry.className = 'tile-entry';
+                
+                const previewContainer = document.createElement('div');
+                previewContainer.className = 'tile-preview-container';
+                
+                // Actual size (8x8)
+                const preview1x = createTilePreview(tile, 1, '8x8');
+                previewContainer.appendChild(preview1x);
+                
+                // Scaled 2x (16x16)
+                const preview2x = createTilePreview(tile, 2, '16x16');
+                previewContainer.appendChild(preview2x);
+                
+                entry.appendChild(previewContainer);
+                
+                // Info
+                const info = document.createElement('div');
+                info.className = 'tile-info';
+                info.innerHTML = `
+                    <div class="tile-name">${name}</div>
+                    <div class="tile-coords">
+                        Position: (${tile.x}, ${tile.y})<br>
+                        Size: ${tile.width}×${tile.height} → ${tile.width*2}×${tile.height*2}
+                    </div>
+                `;
+                entry.appendChild(info);
+                
+                container.appendChild(entry);
+            });
+        }
+
+        function createTilePreview(tile, scale, label) {
+            const container = document.createElement('div');
+            
+            const preview = document.createElement('div');
+            preview.className = 'tile-preview';
+            preview.style.width = (tile.width * scale) + 'px';
+            preview.style.height = (tile.height * scale) + 'px';
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = tile.width * scale;
+            canvas.height = tile.height * scale;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+            
+            if (tileset) {
+                ctx.drawImage(
+                    tileset,
+                    tile.x, tile.y, tile.width, tile.height,
+                    0, 0, canvas.width, canvas.height
+                );
+            }
+            
+            preview.appendChild(canvas);
+            container.appendChild(preview);
+            
+            const scaleLabel = document.createElement('div');
+            scaleLabel.className = 'scale-label';
+            scaleLabel.textContent = label;
+            container.appendChild(scaleLabel);
+            
+            return container;
+        }
+
+        function setZoom(newZoom) {
+            zoom = newZoom;
+            document.querySelectorAll('.controls button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            redraw();
+        }
+
+        function toggleGrid() {
+            showGrid = !showGrid;
+            redraw();
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.className = 'status ' + type;
+            status.textContent = message;
+        }
+
+        // Initialize
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

@@ -1,0 +1,366 @@
+{
+  "metadata": {
+    "source": "Game Boy Advance - Advance Wars 2 Black Hole Rising - Overworld Tileset Buildings.png",
+    "base_tile_size": 16,
+    "color_mode": "RGB",
+    "width": 1200,
+    "height": 604
+  },
+  "tiles": {
+    "road_h": {
+      "x": 0,
+      "y": 128,
+      "width": 16,
+      "height": 16,
+      "category": "roads"
+    },
+    "road_v": {
+      "x": 16,
+      "y": 128,
+      "width": 16,
+      "height": 16,
+      "category": "roads"
+    },
+    "road_ne": {
+      "x": 32,
+      "y": 128,
+      "width": 16,
+      "height": 16,
+      "category": "roads"
+    },
+    "road_se": {
+      "x": 32,
+      "y": 144,
+      "width": 16,
+      "height": 16,
+      "category": "roads"
+    },
+    "road_sw": {
+      "x": 48,
+      "y": 144,
+      "width": 16,
+      "height": 16,
+      "category": "roads"
+    },
+    "road_nw": {
+      "x": 48,
+      "y": 128,
+      "width": 16,
+      "height": 16,
+      "category": "roads"
+    },
+    "road_t_n": {
+      "x": 64,
+      "y": 128,
+      "width": 16,
+      "height": 16,
+      "category": "roads"
+    },
+    "road_t_s": {
+      "x": 64,
+      "y": 144,
+      "width": 16,
+      "height": 16,
+      "category": "roads"
+    },
+    "road_t_e": {
+      "x": 80,
+      "y": 128,
+      "width": 16,
+      "height": 16,
+      "category": "roads"
+    },
+    "road_t_w": {
+      "x": 80,
+      "y": 144,
+      "width": 16,
+      "height": 16,
+      "category": "roads"
+    },
+    "road_cross": {
+      "x": 96,
+      "y": 128,
+      "width": 16,
+      "height": 16,
+      "category": "roads"
+    },
+    "hq_red": {
+      "x": 480,
+      "y": 0,
+      "width": 32,
+      "height": 32,
+      "category": "buildings",
+      "army": "RED"
+    },
+    "city_red": {
+      "x": 480,
+      "y": 48,
+      "width": 16,
+      "height": 16,
+      "category": "buildings",
+      "army": "RED"
+    },
+    "base_red": {
+      "x": 496,
+      "y": 48,
+      "width": 16,
+      "height": 16,
+      "category": "buildings",
+      "army": "RED"
+    },
+    "airport_red": {
+      "x": 480,
+      "y": 64,
+      "width": 32,
+      "height": 16,
+      "category": "buildings",
+      "army": "RED"
+    },
+    "port_red": {
+      "x": 480,
+      "y": 80,
+      "width": 32,
+      "height": 16,
+      "category": "buildings",
+      "army": "RED"
+    },
+    "hq_blue": {
+      "x": 528,
+      "y": 0,
+      "width": 32,
+      "height": 32,
+      "category": "buildings",
+      "army": "BLUE"
+    },
+    "city_blue": {
+      "x": 528,
+      "y": 48,
+      "width": 16,
+      "height": 16,
+      "category": "buildings",
+      "army": "BLUE"
+    },
+    "base_blue": {
+      "x": 544,
+      "y": 48,
+      "width": 16,
+      "height": 16,
+      "category": "buildings",
+      "army": "BLUE"
+    },
+    "airport_blue": {
+      "x": 528,
+      "y": 64,
+      "width": 32,
+      "height": 16,
+      "category": "buildings",
+      "army": "BLUE"
+    },
+    "port_blue": {
+      "x": 528,
+      "y": 80,
+      "width": 32,
+      "height": 16,
+      "category": "buildings",
+      "army": "BLUE"
+    },
+    "hq_green": {
+      "x": 576,
+      "y": 0,
+      "width": 32,
+      "height": 32,
+      "category": "buildings",
+      "army": "GREEN"
+    },
+    "city_green": {
+      "x": 576,
+      "y": 48,
+      "width": 16,
+      "height": 16,
+      "category": "buildings",
+      "army": "GREEN"
+    },
+    "base_green": {
+      "x": 592,
+      "y": 48,
+      "width": 16,
+      "height": 16,
+      "category": "buildings",
+      "army": "GREEN"
+    },
+    "airport_green": {
+      "x": 576,
+      "y": 64,
+      "width": 32,
+      "height": 16,
+      "category": "buildings",
+      "army": "GREEN"
+    },
+    "port_green": {
+      "x": 576,
+      "y": 80,
+      "width": 32,
+      "height": 16,
+      "category": "buildings",
+      "army": "GREEN"
+    },
+    "hq_yellow": {
+      "x": 624,
+      "y": 0,
+      "width": 32,
+      "height": 32,
+      "category": "buildings",
+      "army": "YELLOW"
+    },
+    "city_yellow": {
+      "x": 624,
+      "y": 48,
+      "width": 16,
+      "height": 16,
+      "category": "buildings",
+      "army": "YELLOW"
+    },
+    "base_yellow": {
+      "x": 640,
+      "y": 48,
+      "width": 16,
+      "height": 16,
+      "category": "buildings",
+      "army": "YELLOW"
+    },
+    "airport_yellow": {
+      "x": 624,
+      "y": 64,
+      "width": 32,
+      "height": 16,
+      "category": "buildings",
+      "army": "YELLOW"
+    },
+    "port_yellow": {
+      "x": 624,
+      "y": 80,
+      "width": 32,
+      "height": 16,
+      "category": "buildings",
+      "army": "YELLOW"
+    },
+    "hq_grey": {
+      "x": 672,
+      "y": 0,
+      "width": 32,
+      "height": 32,
+      "category": "buildings",
+      "army": "GREY"
+    },
+    "city_grey": {
+      "x": 672,
+      "y": 48,
+      "width": 16,
+      "height": 16,
+      "category": "buildings",
+      "army": "GREY"
+    },
+    "base_grey": {
+      "x": 688,
+      "y": 48,
+      "width": 16,
+      "height": 16,
+      "category": "buildings",
+      "army": "GREY"
+    },
+    "airport_grey": {
+      "x": 672,
+      "y": 64,
+      "width": 32,
+      "height": 16,
+      "category": "buildings",
+      "army": "GREY"
+    },
+    "port_grey": {
+      "x": 672,
+      "y": 80,
+      "width": 32,
+      "height": 16,
+      "category": "buildings",
+      "army": "GREY"
+    },
+    "plain": {
+      "x": 0,
+      "y": 0,
+      "width": 16,
+      "height": 16,
+      "category": "terrain"
+    },
+    "forest": {
+      "x": 304,
+      "y": 32,
+      "width": 16,
+      "height": 16,
+      "category": "terrain"
+    },
+    "mountain": {
+      "x": 304,
+      "y": 16,
+      "width": 16,
+      "height": 16,
+      "category": "terrain"
+    },
+    "wasteland": {
+      "x": 320,
+      "y": 0,
+      "width": 16,
+      "height": 16,
+      "category": "terrain"
+    },
+    "sea": {
+      "x": 0,
+      "y": 320,
+      "width": 16,
+      "height": 16,
+      "category": "water"
+    },
+    "reef": {
+      "x": 128,
+      "y": 320,
+      "width": 16,
+      "height": 16,
+      "category": "water"
+    },
+    "shore_n": {
+      "x": 16,
+      "y": 320,
+      "width": 16,
+      "height": 16,
+      "category": "water"
+    },
+    "shore_s": {
+      "x": 32,
+      "y": 320,
+      "width": 16,
+      "height": 16,
+      "category": "water"
+    },
+    "shore_e": {
+      "x": 48,
+      "y": 320,
+      "width": 16,
+      "height": 16,
+      "category": "water"
+    },
+    "shore_w": {
+      "x": 64,
+      "y": 320,
+      "width": 16,
+      "height": 16,
+      "category": "water"
+    },
+    "explosion_large": {
+      "x": 816,
+      "y": 0,
+      "width": 48,
+      "height": 48,
+      "category": "animations",
+      "frames": 8
+    }
+  }
+}

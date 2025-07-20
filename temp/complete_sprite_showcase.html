@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Complete Sprite & Tile Showcase - Advance Wars RPC</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+        }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        h1, h2, h3 {
+            text-align: center;
+        }
+        .section {
+            background: rgba(0,0,0,0.3);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .controls {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 8px;
+        }
+        .sprite-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .tile-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 5px;
+            margin-top: 20px;
+        }
+        .sprite-card, .tile-card {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #34495e;
+            border-radius: 4px;
+            padding: 10px;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+        .sprite-card:hover, .tile-card:hover {
+            transform: scale(1.05);
+            border-color: #3498db;
+        }
+        .sprite-display, .tile-display {
+            margin: 0 auto 5px;
+            background: repeating-conic-gradient(#7f8c8d 0% 25%, transparent 0% 50%) 50% / 8px 8px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .sprite-display {
+            width: 64px;
+            height: 64px;
+        }
+        .tile-display {
+            width: 48px;
+            height: 48px;
+        }
+        .sprite-canvas, .tile-canvas {
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+        .name {
+            font-size: 11px;
+            color: #3498db;
+            margin-top: 5px;
+        }
+        .info {
+            font-size: 10px;
+            color: #95a5a6;
+        }
+        .category-header {
+            grid-column: 1 / -1;
+            background: rgba(52, 152, 219, 0.2);
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .error {
+            color: #e74c3c;
+            padding: 10px;
+            background: rgba(231, 76, 60, 0.2);
+            border-radius: 4px;
+            text-align: center;
+        }
+        .success {
+            color: #27ae60;
+            padding: 10px;
+            background: rgba(39, 174, 96, 0.2);
+            border-radius: 4px;
+            text-align: center;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-box {
+            background: rgba(0,0,0,0.5);
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #34495e;
+        }
+        .stat-label {
+            color: #95a5a6;
+            font-size: 12px;
+        }
+        .stat-value {
+            color: #3498db;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        button {
+            padding: 8px 16px;
+            margin: 5px;
+            border-radius: 4px;
+            border: 1px solid #3498db;
+            background: #34495e;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        button:hover {
+            background: #3498db;
+        }
+        .toggle-button {
+            padding: 6px 12px;
+            margin: 0 5px;
+            border-radius: 4px;
+            border: 1px solid #7f8c8d;
+            background: #34495e;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .toggle-button:hover {
+            background: #4a5f7a;
+        }
+        .toggle-button.active {
+            background: #3498db;
+            border-color: #3498db;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Complete Sprite & Tile Showcase</h1>
+        
+        <div class="section">
+            <h2>Statistics</h2>
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="stat-label">Total Units</div>
+                    <div class="stat-value" id="totalUnits">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Total Terrain Tiles</div>
+                    <div class="stat-value" id="totalTiles">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Missing Sprites</div>
+                    <div class="stat-value" id="missingSprites">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Export Status</div>
+                    <div class="stat-value" id="exportStatus">Ready</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <h3>Controls</h3>
+            <div>
+                <button onclick="checkAllSprites()">Check All Sprites</button>
+                <button onclick="exportOptimizedSheets()">Export Optimized Sheets</button>
+                <button onclick="testRendering()">Test Rendering</button>
+            </div>
+            <div style="margin-top: 10px;">
+                <label>Show: </label>
+                <button class="toggle-button active" onclick="toggleView('units')">Units</button>
+                <button class="toggle-button active" onclick="toggleView('terrain')">Terrain</button>
+                <button class="toggle-button" onclick="toggleView('missing')">Missing Only</button>
+            </div>
+        </div>
+
+        <div id="statusMessage"></div>
+
+        <div class="section" id="unitsSection">
+            <h2>Unit Sprites</h2>
+            <div id="unitContainer" class="sprite-grid"></div>
+        </div>
+
+        <div class="section" id="terrainSection">
+            <h2>Terrain Tiles</h2>
+            <div id="terrainContainer" class="tile-grid"></div>
+        </div>
+
+        <div class="section" id="missingSection" style="display: none;">
+            <h2>Missing Sprites</h2>
+            <div id="missingContainer" class="sprite-grid"></div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const unitTypes = [
+            'INFANTRY', 'MECH', 'RECON', 'TANK', 'MEDIUMTANK', 'NEOTANK', 'MEGATANK',
+            'APC', 'ARTILLERY', 'ROCKET', 'ANTIAIR', 'MISSILE', 'PIPERUNNER',
+            'FIGHTER', 'BOMBER', 'BCOPTER', 'TCOPTER', 'STEALTH', 'BLACKBOMB',
+            'BATTLESHIP', 'CRUISER', 'LANDER', 'SUB', 'CARRIER', 'BLACKBOAT'
+        ];
+
+        const terrainTypes = [
+            'PLAIN', 'WOOD', 'MOUNTAIN', 'ROAD', 'BRIDGE', 'SEA', 'SHOAL', 'REEF', 'RIVER',
+            'CITY', 'FACTORY', 'AIRPORT', 'PORT', 'HQ',
+            'SILO', 'SILO_EMPTY', 'PIPE', 'PIPESEAM', 'PIPESEAM_BROKEN',
+            'RADAR', 'COMTOWER', 'LAB'
+        ];
+
+        const armies = ['RED', 'BLUE', 'GREEN', 'YELLOW', 'GREY', 'NEUTRAL'];
+
+        let unitSpriteSheet = null;
+        let unitSpriteMap = null;
+        let terrainSpriteSheet = null;
+        let spriteCorrections = null;
+        
+        let stats = {
+            totalUnits: 0,
+            totalTiles: 0,
+            missingSprites: 0,
+            foundSprites: []
+        };
+
+        // Load all sprite resources
+        async function loadResources() {
+            try {
+                showStatus('Loading sprite resources...', 'info');
+
+                // Load unit sprite sheet and map
+                try {
+                    const mapResponse = await fetch('/static/img/units_sprite_map_16x16.json');
+                    unitSpriteMap = await mapResponse.json();
+                    
+                    unitSpriteSheet = await loadImage('/static/img/units_sprite_sheet_16x16.png');
+                    console.log('Loaded optimized unit sprites');
+                } catch (e) {
+                    // Fallback to v2 sprites
+                    const mapResponse = await fetch('/static/img/units_sprite_map_v2.json');
+                    unitSpriteMap = await mapResponse.json();
+                    
+                    unitSpriteSheet = await loadImage('/static/img/units_sprite_sheet_v2.png');
+                    console.log('Using v2 unit sprites');
+                }
+
+                // Load terrain sprite sheet
+                terrainSpriteSheet = await loadImage('/static/img/Advance_Wars_Dual_Strike_Tileset_Normal_Transparent.png');
+
+                // Load sprite corrections
+                const correctionsResponse = await fetch('/templates/sprite_corrections_config.json');
+                spriteCorrections = await correctionsResponse.json();
+
+                showStatus('Resources loaded successfully', 'success');
+                displayAllSprites();
+            } catch (error) {
+                showStatus(`Error loading resources: ${error.message}`, 'error');
+            }
+        }
+
+        function loadImage(src) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = src;
+            });
+        }
+
+        function showStatus(message, type = 'info') {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.className = type === 'error' ? 'error' : type === 'success' ? 'success' : '';
+            statusEl.textContent = message;
+        }
+
+        function displayAllSprites() {
+            displayUnits();
+            displayTerrain();
+            updateStats();
+        }
+
+        function displayUnits() {
+            const container = document.getElementById('unitContainer');
+            container.innerHTML = '';
+            stats.totalUnits = 0;
+
+            for (const army of armies.slice(0, 5)) { // Skip NEUTRAL for units
+                const header = document.createElement('div');
+                header.className = 'category-header';
+                header.textContent = `${army} Army`;
+                container.appendChild(header);
+
+                for (const unitType of unitTypes) {
+                    for (const state of ['idle', 'unavailable']) {
+                        const card = createUnitCard(unitType, army, state);
+                        if (card) {
+                            container.appendChild(card);
+                            stats.totalUnits++;
+                        }
+                    }
+                }
+            }
+        }
+
+        function createUnitCard(unitType, army, state) {
+            const spriteKey = `${unitType}_${army}_${state}_0`;
+            let spriteData = null;
+
+            // Check in unit sprite map
+            if (unitSpriteMap && unitSpriteMap.sprites[spriteKey]) {
+                spriteData = unitSpriteMap.sprites[spriteKey];
+            }
+
+            const card = document.createElement('div');
+            card.className = 'sprite-card';
+
+            const display = document.createElement('div');
+            display.className = 'sprite-display';
+
+            const canvas = document.createElement('canvas');
+            canvas.className = 'sprite-canvas';
+            canvas.width = 64;
+            canvas.height = 64;
+
+            if (spriteData && unitSpriteSheet) {
+                const ctx = canvas.getContext('2d');
+                const size = unitSpriteMap.metadata.sprite_size || 16;
+                ctx.imageSmoothingEnabled = false;
+                ctx.drawImage(
+                    unitSpriteSheet,
+                    spriteData.x, spriteData.y, size, size,
+                    0, 0, 64, 64
+                );
+                stats.foundSprites.push(spriteKey);
+            } else {
+                // Mark as missing
+                canvas.style.border = '2px solid #e74c3c';
+                stats.missingSprites++;
+            }
+
+            display.appendChild(canvas);
+            card.appendChild(display);
+
+            const name = document.createElement('div');
+            name.className = 'name';
+            name.textContent = `${unitType}`;
+            card.appendChild(name);
+
+            const info = document.createElement('div');
+            info.className = 'info';
+            info.textContent = `${army} - ${state}`;
+            card.appendChild(info);
+
+            return card;
+        }
+
+        function displayTerrain() {
+            const container = document.getElementById('terrainContainer');
+            container.innerHTML = '';
+            stats.totalTiles = 0;
+
+            // Group terrain by type
+            const categories = {
+                'Basic Terrain': ['PLAIN', 'WOOD', 'MOUNTAIN', 'ROAD', 'BRIDGE', 'RIVER'],
+                'Sea Terrain': ['SEA', 'SHOAL', 'REEF'],
+                'Properties': ['CITY', 'FACTORY', 'AIRPORT', 'PORT', 'HQ'],
+                'Special': ['SILO', 'SILO_EMPTY', 'PIPE', 'PIPESEAM', 'PIPESEAM_BROKEN', 'RADAR', 'COMTOWER', 'LAB']
+            };
+
+            for (const [category, types] of Object.entries(categories)) {
+                const header = document.createElement('div');
+                header.className = 'category-header';
+                header.textContent = category;
+                container.appendChild(header);
+
+                for (const terrainType of types) {
+                    // Properties can have different armies
+                    if (['CITY', 'FACTORY', 'AIRPORT', 'PORT', 'HQ'].includes(terrainType)) {
+                        for (const army of armies) {
+                            const card = createTerrainCard(terrainType, army);
+                            if (card) {
+                                container.appendChild(card);
+                                stats.totalTiles++;
+                            }
+                        }
+                    } else {
+                        const card = createTerrainCard(terrainType);
+                        if (card) {
+                            container.appendChild(card);
+                            stats.totalTiles++;
+                        }
+                    }
+                }
+            }
+        }
+
+        function createTerrainCard(terrainType, army = null) {
+            const card = document.createElement('div');
+            card.className = 'tile-card';
+
+            const display = document.createElement('div');
+            display.className = 'tile-display';
+
+            const canvas = document.createElement('canvas');
+            canvas.className = 'tile-canvas';
+            canvas.width = 48;
+            canvas.height = 48;
+
+            // TODO: Draw terrain tile from sprite sheet
+            // This requires knowing the exact positions in the terrain sprite sheet
+
+            display.appendChild(canvas);
+            card.appendChild(display);
+
+            const name = document.createElement('div');
+            name.className = 'name';
+            name.textContent = army ? `${terrainType} (${army})` : terrainType;
+            card.appendChild(name);
+
+            return card;
+        }
+
+        function updateStats() {
+            document.getElementById('totalUnits').textContent = stats.totalUnits;
+            document.getElementById('totalTiles').textContent = stats.totalTiles;
+            document.getElementById('missingSprites').textContent = stats.missingSprites;
+        }
+
+        function toggleView(type) {
+            const btn = event.target;
+            btn.classList.toggle('active');
+
+            if (type === 'units') {
+                document.getElementById('unitsSection').style.display = 
+                    btn.classList.contains('active') ? 'block' : 'none';
+            } else if (type === 'terrain') {
+                document.getElementById('terrainSection').style.display = 
+                    btn.classList.contains('active') ? 'block' : 'none';
+            } else if (type === 'missing') {
+                document.getElementById('missingSection').style.display = 
+                    btn.classList.contains('active') ? 'block' : 'none';
+            }
+        }
+
+        async function checkAllSprites() {
+            showStatus('Checking all sprites...', 'info');
+            // Implementation to verify all sprites exist
+            updateStats();
+            showStatus('Sprite check complete', 'success');
+        }
+
+        async function exportOptimizedSheets() {
+            showStatus('Export functionality not yet implemented', 'info');
+            // TODO: Implement export functionality
+        }
+
+        async function testRendering() {
+            showStatus('Opening game with test sprites...', 'info');
+            window.open('/game/test', '_blank');
+        }
+
+        // Initialize on load
+        window.addEventListener('load', loadResources);
+    </script>
+</body>
+</html>

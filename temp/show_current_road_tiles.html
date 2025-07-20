@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Current Game Road Tiles</title>
+    <style>
+        body { background: #333; color: white; font-family: Arial; padding: 20px; }
+        .tile-grid { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
+        .tile-item { 
+            text-align: center; 
+            background: #222; 
+            padding: 10px; 
+            border-radius: 4px;
+            border: 1px solid #555;
+        }
+        canvas { 
+            image-rendering: pixelated; 
+            display: block;
+            margin: 0 auto 5px;
+        }
+        .tile-label { 
+            font-size: 12px; 
+            color: #aaa; 
+            margin-top: 5px;
+        }
+        h1 { text-align: center; }
+    </style>
+</head>
+<body>
+    <h1>Current Game Road Tiles</h1>
+    <div id="tileGrid" class="tile-grid"></div>
+
+    <script>
+        // From map_system.py and tile_sprite_map.json
+        const roadTiles = [
+            { name: 'ROAD_HORT', desc: 'Horizontal' },
+            { name: 'ROAD_VERT', desc: 'Vertical' },
+            { name: 'ROAD_NW', desc: 'Northwest corner' },
+            { name: 'ROAD_NE', desc: 'Northeast corner' },
+            { name: 'ROAD_SE', desc: 'Southeast corner' },
+            { name: 'ROAD_SW', desc: 'Southwest corner' },
+            { name: 'SWNRoad', desc: 'T-junction (S,W,N open)' },
+            { name: 'NESRoad', desc: 'T-junction (N,E,S open)' },
+            { name: 'WNERoad', desc: 'T-junction (W,N,E open)' },
+            { name: 'ESWRoad', desc: 'T-junction (E,S,W open)' },
+            { name: 'CRoad', desc: 'Cross (4-way)' },
+            { name: 'HBridge', desc: 'Horizontal bridge' },
+            { name: 'VBridge', desc: 'Vertical bridge' }
+        ];
+        
+        // Tile positions from tile_sprite_map.json (converted to absolute)
+        const tilePositions = {
+            'ROAD_HORT': { x: 238, y: 87 },
+            'ROAD_VERT': { x: 255, y: 86 },
+            'ROAD_NW': { x: 239, y: 104 },
+            'ROAD_NE': { x: 256, y: 104 },
+            'ROAD_SE': { x: 256, y: 121 },
+            'ROAD_SW': { x: 239, y: 121 },
+            'SWNRoad': { x: 291, y: 104 },
+            'NESRoad': { x: 274, y: 104 },
+            'WNERoad': { x: 290, y: 86 },
+            'ESWRoad': { x: 273, y: 86 },
+            'CRoad': { x: 307, y: 120 },
+            'HBridge': { x: 205, y: 464 },
+            'VBridge': { x: 156, y: 464 }
+        };
+        
+        const tileset = new Image();
+        tileset.onload = function() {
+            const grid = document.getElementById('tileGrid');
+            
+            roadTiles.forEach(tile => {
+                const pos = tilePositions[tile.name];
+                if (!pos) return;
+                
+                const item = document.createElement('div');
+                item.className = 'tile-item';
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = 64;
+                canvas.height = 64;
+                const ctx = canvas.getContext('2d');
+                ctx.imageSmoothingEnabled = false;
+                
+                // The tile_sprite_map uses a centered coordinate system
+                // Center is at (222.5, 581.5) according to the file
+                const centerX = 222.5;
+                const centerY = 581.5;
+                
+                // Calculate actual position
+                const actualX = pos.x;
+                const actualY = pos.y;
+                
+                // Draw the tile
+                ctx.drawImage(tileset, actualX, actualY, 16, 16, 0, 0, 64, 64);
+                
+                const label = document.createElement('div');
+                label.className = 'tile-label';
+                label.innerHTML = `<strong>${tile.name}</strong><br>${tile.desc}`;
+                
+                item.appendChild(canvas);
+                item.appendChild(label);
+                grid.appendChild(item);
+            });
+        };
+        
+        // Use the current tileset that the game is using
+        tileset.src = '/static/img/tileset_optimized.png';
+    </script>
+</body>
+</html>

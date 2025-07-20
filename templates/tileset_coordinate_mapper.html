@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AW2 Tileset Coordinate Mapper</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #eee;
+        }
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #3498db;
+        }
+        .main-layout {
+            display: flex;
+            gap: 20px;
+        }
+        .tileset-section {
+            flex: 1;
+            background: rgba(0,0,0,0.5);
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .mapping-section {
+            width: 400px;
+            background: rgba(0,0,0,0.5);
+            padding: 20px;
+            border-radius: 8px;
+            max-height: 800px;
+            overflow-y: auto;
+        }
+        #tilesetCanvas {
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+            border: 2px solid #34495e;
+            cursor: crosshair;
+            max-width: 100%;
+        }
+        #coordInfo {
+            background: rgba(0,0,0,0.8);
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        button {
+            padding: 8px 16px;
+            margin: 0 5px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        .tile-entry {
+            background: rgba(52, 152, 219, 0.2);
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .tile-preview {
+            width: 48px;
+            height: 48px;
+            image-rendering: pixelated;
+            border: 1px solid #3498db;
+        }
+        .tile-details {
+            flex: 1;
+        }
+        .tile-name {
+            font-weight: bold;
+            color: #3498db;
+        }
+        .tile-coords {
+            font-size: 12px;
+            color: #7f8c8d;
+            font-family: monospace;
+        }
+        input, select {
+            padding: 5px;
+            margin: 5px;
+            background: #2c3e50;
+            color: white;
+            border: 1px solid #34495e;
+            border-radius: 3px;
+        }
+        .selection-box {
+            position: absolute;
+            border: 2px solid #e74c3c;
+            background: rgba(231, 76, 60, 0.2);
+            pointer-events: none;
+        }
+        #gridOverlay {
+            position: absolute;
+            pointer-events: none;
+        }
+        .quick-tiles {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .quick-tile-btn {
+            padding: 10px;
+            background: #2c3e50;
+            border: 1px solid #34495e;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+        }
+        .quick-tile-btn:hover {
+            background: #34495e;
+            border-color: #3498db;
+        }
+        .mapped-tiles {
+            margin-top: 20px;
+        }
+        .category-group {
+            margin: 15px 0;
+        }
+        .category-header {
+            background: rgba(52, 152, 219, 0.3);
+            padding: 8px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AW2 Tileset Coordinate Mapper</h1>
+        
+        <div class="main-layout">
+            <div class="tileset-section">
+                <div class="controls">
+                    <button onclick="setZoom(1)">1x</button>
+                    <button onclick="setZoom(2)">2x</button>
+                    <button onclick="setZoom(3)">3x</button>
+                    <label>
+                        <input type="checkbox" id="showGrid" checked onchange="drawTileset()"> Show Grid
+                    </label>
+                    <label>
+                        Grid Size: <input type="number" id="gridSize" value="8" min="8" max="64" onchange="drawTileset()">
+                    </label>
+                </div>
+                
+                <div style="position: relative; display: inline-block;">
+                    <canvas id="tilesetCanvas"></canvas>
+                    <canvas id="gridOverlay"></canvas>
+                    <div id="selectionBox" class="selection-box" style="display: none;"></div>
+                </div>
+                
+                <div id="coordInfo">
+                    Hover over the tileset to see coordinates
+                </div>
+            </div>
+            
+            <div class="mapping-section">
+                <h2>Quick Map Tools</h2>
+                
+                <div>
+                    <label>Tile Name: 
+                        <input type="text" id="tileName" placeholder="e.g., city_red">
+                    </label>
+                </div>
+                
+                <div>
+                    <label>Category: 
+                        <select id="category">
+                            <option value="buildings">Buildings</option>
+                            <option value="terrain">Terrain</option>
+                            <option value="roads">Roads</option>
+                            <option value="pipes">Pipes</option>
+                            <option value="water">Water</option>
+                            <option value="rivers">Rivers</option>
+                            <option value="bridges">Bridges</option>
+                            <option value="misc">Misc</option>
+                        </select>
+                    </label>
+                </div>
+                
+                <div style="margin: 10px 0;">
+                    <label>Manual Size: 
+                        Width: <input type="number" id="manualWidth" value="16" min="1" max="128" style="width: 60px;">
+                        Height: <input type="number" id="manualHeight" value="16" min="1" max="128" style="width: 60px;">
+                    </label>
+                    <button onclick="applyManualSize()">Apply Size</button>
+                </div>
+                
+                <div style="margin: 10px 0; text-align: center; background: rgba(52, 152, 219, 0.2); padding: 10px; border-radius: 5px;">
+                    <p style="margin: 5px 0; font-weight: bold;">Move Selection (or use arrow keys):</p>
+                    <div>
+                        <button onclick="moveSelection(0, -1)" style="margin: 2px;">↑</button>
+                    </div>
+                    <div>
+                        <button onclick="moveSelection(-1, 0)" style="margin: 2px;">←</button>
+                        <button onclick="moveSelection(1, 0)" style="margin: 2px;">→</button>
+                    </div>
+                    <div>
+                        <button onclick="moveSelection(0, 1)" style="margin: 2px;">↓</button>
+                    </div>
+                    <label style="display: block; margin-top: 10px;">
+                        Move by: <input type="number" id="moveStep" value="1" min="1" max="16" style="width: 50px;"> pixels
+                    </label>
+                </div>
+                
+                <div class="quick-tiles">
+                    <button class="quick-tile-btn" onclick="startMapping('hq_red', 'buildings')">HQ Red</button>
+                    <button class="quick-tile-btn" onclick="startMapping('city_red', 'buildings')">City Red</button>
+                    <button class="quick-tile-btn" onclick="startMapping('base_red', 'buildings')">Base Red</button>
+                    <button class="quick-tile-btn" onclick="startMapping('plain', 'terrain')">Plain</button>
+                    <button class="quick-tile-btn" onclick="startMapping('forest', 'terrain')">Forest</button>
+                    <button class="quick-tile-btn" onclick="startMapping('mountain', 'terrain')">Mountain</button>
+                    <button class="quick-tile-btn" onclick="startMapping('road_h', 'roads')">Road H</button>
+                    <button class="quick-tile-btn" onclick="startMapping('road_v', 'roads')">Road V</button>
+                    <button class="quick-tile-btn" onclick="startMapping('sea', 'water')">Sea</button>
+                </div>
+                
+                <div style="margin: 10px 0;">
+                    <button onclick="saveTile()" style="width: 100%; padding: 15px; background: #2ecc71; font-size: 16px;">
+                        💾 Save Current Selection
+                    </button>
+                </div>
+                
+                <button onclick="exportMapping()" style="width: 100%; margin: 10px 0;">Export Mapping JSON</button>
+                <button onclick="clearMapping()" style="width: 100%; margin: 10px 0; background: #e74c3c;">Clear All</button>
+                
+                <div class="mapped-tiles">
+                    <h3>Mapped Tiles</h3>
+                    <div id="mappedList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let tileset = null;
+        let canvas = document.getElementById('tilesetCanvas');
+        let ctx = canvas.getContext('2d');
+        let gridCanvas = document.getElementById('gridOverlay');
+        let gridCtx = gridCanvas.getContext('2d');
+        let zoom = 2;
+        let selection = null;
+        let mappedTiles = {};
+        let isSelecting = false;
+        let selectionStart = null;
+
+        // Load tileset
+        const img = new Image();
+        img.onload = function() {
+            tileset = img;
+            drawTileset();
+        };
+        img.src = '../static/img/Game Boy Advance - Advance Wars 2 Black Hole Rising - Overworld Tileset Buildings.png';
+
+        function setZoom(newZoom) {
+            zoom = newZoom;
+            drawTileset();
+        }
+
+        function drawTileset() {
+            if (!tileset) return;
+            
+            canvas.width = tileset.width * zoom;
+            canvas.height = tileset.height * zoom;
+            gridCanvas.width = canvas.width;
+            gridCanvas.height = canvas.height;
+            
+            // Position grid overlay
+            gridCanvas.style.position = 'absolute';
+            gridCanvas.style.left = '0';
+            gridCanvas.style.top = '0';
+            gridCanvas.style.pointerEvents = 'none';
+            
+            ctx.imageSmoothingEnabled = false;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(tileset, 0, 0, canvas.width, canvas.height);
+            
+            // Draw grid
+            if (document.getElementById('showGrid').checked) {
+                const gridSize = parseInt(document.getElementById('gridSize').value);
+                gridCtx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
+                gridCtx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                gridCtx.lineWidth = 1;
+                
+                for (let x = 0; x <= tileset.width; x += gridSize) {
+                    gridCtx.beginPath();
+                    gridCtx.moveTo(x * zoom, 0);
+                    gridCtx.lineTo(x * zoom, gridCanvas.height);
+                    gridCtx.stroke();
+                }
+                
+                for (let y = 0; y <= tileset.height; y += gridSize) {
+                    gridCtx.beginPath();
+                    gridCtx.moveTo(0, y * zoom);
+                    gridCtx.lineTo(gridCanvas.width, y * zoom);
+                    gridCtx.stroke();
+                }
+            }
+            
+            // Draw mapped tiles
+            ctx.strokeStyle = '#3498db';
+            ctx.lineWidth = 2;
+            for (const tile of Object.values(mappedTiles)) {
+                ctx.strokeRect(
+                    tile.x * zoom,
+                    tile.y * zoom,
+                    tile.width * zoom,
+                    tile.height * zoom
+                );
+            }
+        }
+
+        // Mouse events
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.floor((e.clientX - rect.left) / zoom);
+            const y = Math.floor((e.clientY - rect.top) / zoom);
+            
+            isSelecting = true;
+            selectionStart = { x, y };
+            updateSelection(x, y);
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.floor((e.clientX - rect.left) / zoom);
+            const y = Math.floor((e.clientY - rect.top) / zoom);
+            
+            // Update coordinate info
+            const gridSize = parseInt(document.getElementById('gridSize').value);
+            const gridX = Math.floor(x / gridSize);
+            const gridY = Math.floor(y / gridSize);
+            
+            document.getElementById('coordInfo').innerHTML = `
+                Pixel: (${x}, ${y}) | Grid [${gridX}, ${gridY}] | 
+                Tile Start: (${gridX * gridSize}, ${gridY * gridSize})
+            `;
+            
+            if (isSelecting && selectionStart) {
+                updateSelection(x, y);
+            }
+        });
+
+        canvas.addEventListener('mouseup', (e) => {
+            isSelecting = false;
+        });
+
+        function updateSelection(mouseX, mouseY) {
+            if (!selectionStart) return;
+            
+            const gridSize = parseInt(document.getElementById('gridSize').value);
+            
+            // Snap to grid
+            const x1 = Math.floor(selectionStart.x / gridSize) * gridSize;
+            const y1 = Math.floor(selectionStart.y / gridSize) * gridSize;
+            const x2 = Math.floor(mouseX / gridSize) * gridSize + gridSize;
+            const y2 = Math.floor(mouseY / gridSize) * gridSize + gridSize;
+            
+            selection = {
+                x: Math.min(x1, x2 - gridSize),
+                y: Math.min(y1, y2 - gridSize),
+                width: Math.abs(x2 - x1),
+                height: Math.abs(y2 - y1)
+            };
+            
+            // Update manual size inputs with current selection
+            document.getElementById('manualWidth').value = selection.width;
+            document.getElementById('manualHeight').value = selection.height;
+            
+            // Update selection box
+            const box = document.getElementById('selectionBox');
+            box.style.display = 'block';
+            box.style.left = (selection.x * zoom) + 'px';
+            box.style.top = (selection.y * zoom) + 'px';
+            box.style.width = (selection.width * zoom) + 'px';
+            box.style.height = (selection.height * zoom) + 'px';
+        }
+
+        function applyManualSize() {
+            if (!selection) {
+                alert('Please select a tile first by clicking on the tileset');
+                return;
+            }
+            
+            const width = parseInt(document.getElementById('manualWidth').value);
+            const height = parseInt(document.getElementById('manualHeight').value);
+            
+            selection.width = width;
+            selection.height = height;
+            
+            // Update selection box
+            updateSelectionBox();
+            
+            // Redraw to show updated mapped tiles
+            drawTileset();
+        }
+        
+        function moveSelection(dx, dy) {
+            if (!selection) {
+                alert('Please select a tile first by clicking on the tileset');
+                return;
+            }
+            
+            const step = parseInt(document.getElementById('moveStep').value) || 1;
+            selection.x += dx * step;
+            selection.y += dy * step;
+            
+            // Keep within bounds
+            selection.x = Math.max(0, Math.min(selection.x, tileset.width - selection.width));
+            selection.y = Math.max(0, Math.min(selection.y, tileset.height - selection.height));
+            
+            updateSelectionBox();
+        }
+        
+        function updateSelectionBox() {
+            const box = document.getElementById('selectionBox');
+            box.style.display = 'block';
+            box.style.left = (selection.x * zoom) + 'px';
+            box.style.top = (selection.y * zoom) + 'px';
+            box.style.width = (selection.width * zoom) + 'px';
+            box.style.height = (selection.height * zoom) + 'px';
+        }
+        
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (!selection) return;
+            
+            switch(e.key) {
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    moveSelection(-1, 0);
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    moveSelection(1, 0);
+                    break;
+                case 'ArrowUp':
+                    e.preventDefault();
+                    moveSelection(0, -1);
+                    break;
+                case 'ArrowDown':
+                    e.preventDefault();
+                    moveSelection(0, 1);
+                    break;
+                case 'Enter':
+                    e.preventDefault();
+                    const name = document.getElementById('tileName').value.trim();
+                    if (name) {
+                        addTile(name);
+                    }
+                    break;
+            }
+        });
+
+        function startMapping(name, category) {
+            document.getElementById('tileName').value = name;
+            document.getElementById('category').value = category;
+        }
+        
+        function saveTile() {
+            const name = document.getElementById('tileName').value.trim();
+            if (!name) {
+                alert('Please enter a tile name');
+                return;
+            }
+            if (!selection) {
+                alert('Please select a tile area first');
+                return;
+            }
+            addTile(name);
+        }
+
+        function addTile(name) {
+            if (!selection || !name) return;
+            
+            const category = document.getElementById('category').value;
+            
+            mappedTiles[name] = {
+                x: selection.x,
+                y: selection.y,
+                width: selection.width,
+                height: selection.height,
+                category: category
+            };
+            
+            document.getElementById('tileName').value = '';
+            
+            drawTileset();
+            updateMappedList();
+        }
+
+        function updateMappedList() {
+            const list = document.getElementById('mappedList');
+            list.innerHTML = '';
+            
+            // Group by category
+            const categories = {};
+            for (const [name, tile] of Object.entries(mappedTiles)) {
+                if (!categories[tile.category]) {
+                    categories[tile.category] = [];
+                }
+                categories[tile.category].push({ name, ...tile });
+            }
+            
+            for (const [category, tiles] of Object.entries(categories)) {
+                const group = document.createElement('div');
+                group.className = 'category-group';
+                
+                const header = document.createElement('div');
+                header.className = 'category-header';
+                header.textContent = category;
+                group.appendChild(header);
+                
+                tiles.forEach(tile => {
+                    const entry = document.createElement('div');
+                    entry.className = 'tile-entry';
+                    
+                    // Preview
+                    const preview = document.createElement('canvas');
+                    preview.className = 'tile-preview';
+                    // Set canvas size to maintain aspect ratio
+                    const scale = Math.min(48 / tile.width, 48 / tile.height);
+                    preview.width = tile.width * scale;
+                    preview.height = tile.height * scale;
+                    preview.style.width = preview.width + 'px';
+                    preview.style.height = preview.height + 'px';
+                    
+                    const pctx = preview.getContext('2d');
+                    pctx.imageSmoothingEnabled = false;
+                    
+                    // Fill with background color first
+                    pctx.fillStyle = '#444';
+                    pctx.fillRect(0, 0, preview.width, preview.height);
+                    
+                    if (tileset) {
+                        try {
+                            pctx.drawImage(
+                                tileset,
+                                tile.x, tile.y, tile.width, tile.height,
+                                0, 0, preview.width, preview.height
+                            );
+                        } catch (e) {
+                            console.error('Error drawing preview:', e, tile);
+                        }
+                    }
+                    entry.appendChild(preview);
+                    
+                    // Details
+                    const details = document.createElement('div');
+                    details.className = 'tile-details';
+                    details.innerHTML = `
+                        <div class="tile-name">${tile.name}</div>
+                        <div class="tile-coords">
+                            (${tile.x}, ${tile.y}) ${tile.width}×${tile.height}
+                        </div>
+                    `;
+                    entry.appendChild(details);
+                    
+                    // Edit button
+                    const editBtn = document.createElement('button');
+                    editBtn.textContent = '✏️';
+                    editBtn.style.background = '#f39c12';
+                    editBtn.style.marginRight = '5px';
+                    editBtn.onclick = () => {
+                        // Load this tile into selection
+                        selection = {
+                            x: tile.x,
+                            y: tile.y,
+                            width: tile.width,
+                            height: tile.height
+                        };
+                        document.getElementById('tileName').value = tile.name;
+                        document.getElementById('category').value = tile.category;
+                        document.getElementById('manualWidth').value = tile.width;
+                        document.getElementById('manualHeight').value = tile.height;
+                        updateSelectionBox();
+                        drawTileset();
+                    };
+                    entry.appendChild(editBtn);
+                    
+                    // Delete button
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.textContent = '×';
+                    deleteBtn.style.background = '#e74c3c';
+                    deleteBtn.onclick = () => {
+                        delete mappedTiles[tile.name];
+                        drawTileset();
+                        updateMappedList();
+                    };
+                    entry.appendChild(deleteBtn);
+                    
+                    group.appendChild(entry);
+                });
+                
+                list.appendChild(group);
+            }
+        }
+
+        function exportMapping() {
+            const mapping = {
+                metadata: {
+                    source: "Game Boy Advance - Advance Wars 2 Black Hole Rising - Overworld Tileset Buildings.png",
+                    base_tile_size: parseInt(document.getElementById('gridSize').value),
+                    created: new Date().toISOString()
+                },
+                tiles: mappedTiles
+            };
+            
+            const blob = new Blob([JSON.stringify(mapping, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'aw2_tileset_corrected_mapping.json';
+            a.click();
+        }
+
+        function clearMapping() {
+            if (confirm('Clear all mapped tiles?')) {
+                mappedTiles = {};
+                drawTileset();
+                updateMappedList();
+            }
+        }
+    </script>
+</body>
+</html>

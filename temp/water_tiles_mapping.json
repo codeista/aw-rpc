@@ -1,0 +1,82 @@
+{
+  "water_tiles": {
+    "description": "Water tiles with red border and 1px gap",
+    "tile_grid": "9x9 (8px tile + 1px separator)",
+    "content_offset": 2,
+    "content_size": "6x8",
+    "tiles": [
+      {
+        "name": "WATER_NW",
+        "original_x": 490,
+        "content_x": 492,
+        "y": 10,
+        "width": 6,
+        "height": 8,
+        "description": "Water tile - NW"
+      },
+      {
+        "name": "WATER_N",
+        "original_x": 499,
+        "content_x": 501,
+        "y": 10,
+        "width": 6,
+        "height": 8,
+        "description": "Water tile - N"
+      },
+      {
+        "name": "WATER_NE",
+        "original_x": 508,
+        "content_x": 510,
+        "y": 10,
+        "width": 6,
+        "height": 8,
+        "description": "Water tile - NE"
+      },
+      {
+        "name": "WATER_W",
+        "original_x": 517,
+        "content_x": 519,
+        "y": 10,
+        "width": 6,
+        "height": 8,
+        "description": "Water tile - W"
+      },
+      {
+        "name": "WATER_CENTER",
+        "original_x": 526,
+        "content_x": 528,
+        "y": 10,
+        "width": 6,
+        "height": 8,
+        "description": "Water tile - CENTER"
+      },
+      {
+        "name": "WATER_E",
+        "original_x": 535,
+        "content_x": 537,
+        "y": 10,
+        "width": 6,
+        "height": 8,
+        "description": "Water tile - E"
+      },
+      {
+        "name": "WATER_SW",
+        "original_x": 544,
+        "content_x": 546,
+        "y": 10,
+        "width": 6,
+        "height": 8,
+        "description": "Water tile - SW"
+      },
+      {
+        "name": "WATER_S",
+        "original_x": 553,
+        "content_x": 555,
+        "y": 10,
+        "width": 6,
+        "height": 8,
+        "description": "Water tile - S"
+      }
+    ]
+  }
+}

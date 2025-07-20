@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Plain Tile Comparison - Correct Tiles Found</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #2c3e50;
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        .comparison {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin: 40px 0;
+            align-items: center;
+        }
+        .tile-box {
+            background: rgba(0,0,0,0.5);
+            padding: 30px;
+            border-radius: 8px;
+            border: 2px solid #34495e;
+        }
+        .tile-box h2 {
+            color: #3498db;
+            margin-bottom: 20px;
+        }
+        .preview {
+            background: repeating-conic-gradient(#444 0% 25%, #333 0% 50%) 50% / 8px 8px;
+            margin: 10px auto;
+            display: inline-block;
+            border: 2px solid #555;
+            padding: 10px;
+        }
+        canvas {
+            display: block;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+        .info {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+        .scale-options {
+            margin: 20px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 0 5px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        button.active {
+            background: #2ecc71;
+        }
+        .arrow {
+            font-size: 48px;
+            color: #3498db;
+        }
+        .error-msg {
+            background: rgba(231, 76, 60, 0.2);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px auto;
+            max-width: 800px;
+            border: 1px solid #e74c3c;
+        }
+        .success-msg {
+            background: rgba(46, 204, 113, 0.2);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px auto;
+            max-width: 800px;
+            border: 1px solid #2ecc71;
+        }
+    </style>
+</head>
+<body>
+    <h1>🌱 Plain Tile Comparison - Repository Tiles</h1>
+    <p>Showing the actual plain tiles from the game</p>
+    
+    <div class="error-msg">
+        <h3>⚠️ Issue Found</h3>
+        <p>The PLAIN tile offset in render_legacy.js points to position (206, 509), which is actually a purple road tile!</p>
+        <p>The real grass/plain tiles are located at the bottom of the tileset around position (48, 1104).</p>
+    </div>
+    
+    <div class="scale-options">
+        <label>Display size: </label>
+        <button onclick="setScale(4)">4x (64px)</button>
+        <button onclick="setScale(6)" class="active">6x (96px)</button>
+        <button onclick="setScale(8)">8x (128px)</button>
+    </div>
+    
+    <div class="comparison">
+        <div class="tile-box">
+            <h2>Current Code Points To</h2>
+            <p style="color: #e74c3c;">Wrong tile (road)</p>
+            <div class="preview">
+                <canvas id="wrongCanvas"></canvas>
+            </div>
+            <div class="info">
+                <p>Position: (206, 509)</p>
+                <p>Type: Purple road tile</p>
+                <p>From: render_legacy.js PLAIN offset</p>
+            </div>
+        </div>
+        
+        <div class="arrow">→</div>
+        
+        <div class="tile-box">
+            <h2>Actual Plain Tile</h2>
+            <p style="color: #2ecc71;">Correct grass tile</p>
+            <div class="preview">
+                <canvas id="correctCanvas"></canvas>
+            </div>
+            <div class="info">
+                <p>Position: (48, 1104)</p>
+                <p>Type: Light green grass</p>
+                <p>96.4% green pixels</p>
+            </div>
+        </div>
+        
+        <div class="arrow">→</div>
+        
+        <div class="tile-box">
+            <h2>New Tileset Plain</h2>
+            <p style="color: #7f8c8d;">From AW2 RGB tileset</p>
+            <div class="preview">
+                <canvas id="newCanvas"></canvas>
+            </div>
+            <div class="info">
+                <p>Position: (225, 27)</p>
+                <p>Size: 8×8 (needs 2x scale)</p>
+                <p>From labeled "Grass" section</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="success-msg">
+        <h3>✅ Solution</h3>
+        <p>The PLAIN tile offset in render_legacy.js needs to be updated:</p>
+        <pre style="text-align: left; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 5px;">
+// Current (wrong):
+case 'PLAIN':
+    x = x - 8;    // Results in position (206, 509) - purple road
+    y = y - 64;
+    break;
+
+// Should be:
+case 'PLAIN':
+    x = 48;       // Direct position of grass tile
+    y = 1104;
+    break;</pre>
+        <p>For the new AW2 tileset, use position (225, 27) and scale from 8×8 to 16×16.</p>
+    </div>
+
+    <script>
+        let oldTileset = null;
+        let newTileset = null;
+        let currentScale = 6;
+        const SPRITESIZE = 16;
+
+        async function init() {
+            try {
+                // Load the old tileset
+                oldTileset = await loadImage('static/img/backup_tilesets_20250718_142606/Advance_Wars_Dual_Strike_Tileset_Normal_Transparent.png');
+                
+                // Load new tileset
+                newTileset = await loadImage('static/img/Game Boy Advance - Advance Wars 2 Black Hole Rising - Overworld Tileset Buildings.png');
+                
+                drawTiles();
+                
+            } catch (error) {
+                console.error('Error loading tilesets:', error);
+            }
+        }
+
+        function loadImage(src) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = () => reject(new Error('Failed to load: ' + src));
+                img.src = src;
+            });
+        }
+
+        function drawTiles() {
+            drawWrongTile();
+            drawCorrectTile();
+            drawNewTile();
+        }
+
+        function drawWrongTile() {
+            const canvas = document.getElementById('wrongCanvas');
+            const size = SPRITESIZE * currentScale;
+            canvas.width = size;
+            canvas.height = size;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+            
+            if (oldTileset) {
+                // Current wrong position from render_legacy.js
+                ctx.drawImage(
+                    oldTileset,
+                    206, 509, SPRITESIZE, SPRITESIZE,
+                    0, 0, size, size
+                );
+            }
+        }
+        
+        function drawCorrectTile() {
+            const canvas = document.getElementById('correctCanvas');
+            const size = SPRITESIZE * currentScale;
+            canvas.width = size;
+            canvas.height = size;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+            
+            if (oldTileset) {
+                // Actual grass tile position
+                ctx.drawImage(
+                    oldTileset,
+                    48, 1104, SPRITESIZE, SPRITESIZE,
+                    0, 0, size, size
+                );
+            }
+        }
+
+        function drawNewTile() {
+            const canvas = document.getElementById('newCanvas');
+            const size = SPRITESIZE * currentScale;
+            canvas.width = size;
+            canvas.height = size;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+            
+            if (newTileset) {
+                // New tileset grass tile from labeled section
+                ctx.drawImage(
+                    newTileset,
+                    225, 27, 8, 8,  // source: 8x8 tile
+                    0, 0, size, size  // destination: scaled to display size
+                );
+            }
+        }
+
+        function setScale(scale) {
+            currentScale = scale;
+            document.querySelectorAll('.scale-options button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            drawTiles();
+        }
+
+        // Initialize on load
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

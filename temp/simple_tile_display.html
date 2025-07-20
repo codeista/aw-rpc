@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Tile Display</title>
+    <style>
+        body { background: #333; color: white; font-family: Arial; }
+        .section { margin: 20px; }
+        canvas { image-rendering: pixelated; margin: 5px; background: #555; }
+    </style>
+</head>
+<body>
+    <h1>Direct Tile Display</h1>
+    
+    <div class="section">
+        <h2>Terrain (16x16)</h2>
+        <canvas id="plain"></canvas>
+        <canvas id="wood"></canvas>
+        <canvas id="mountain"></canvas>
+    </div>
+    
+    <div class="section">
+        <h2>Roads (8x8)</h2>
+        <canvas id="road1"></canvas>
+        <canvas id="road2"></canvas>
+        <canvas id="road3"></canvas>
+    </div>
+    
+    <div class="section">
+        <h2>Water (8x8)</h2>
+        <canvas id="water1"></canvas>
+        <canvas id="water2"></canvas>
+    </div>
+    
+    <div class="section">
+        <h2>Pipes (15x15)</h2>
+        <canvas id="pipe1"></canvas>
+        <canvas id="pipe2"></canvas>
+    </div>
+    
+    <div class="section">
+        <h2>Buildings (8x16)</h2>
+        <canvas id="building1"></canvas>
+        <canvas id="building2"></canvas>
+    </div>
+
+    <script>
+        const img = new Image();
+        img.onload = function() {
+            // Terrain 16x16
+            drawTile('plain', 238, 18, 16, 16);
+            drawTile('wood', 238, 35, 16, 16);
+            drawTile('mountain', 255, 18, 16, 16);
+            
+            // Roads 8x8
+            drawTile('road1', 0, 0, 8, 8);
+            drawTile('road2', 9, 0, 8, 8);
+            drawTile('road3', 18, 0, 8, 8);
+            
+            // Water 8x8
+            drawTile('water1', 42, 142, 8, 8);
+            drawTile('water2', 51, 142, 8, 8);
+            
+            // Pipes 15x15
+            drawTile('pipe1', 167, 166, 15, 15);
+            drawTile('pipe2', 184, 166, 15, 15);
+            
+            // Buildings 8x16
+            drawTile('building1', 480, 0, 8, 16);
+            drawTile('building2', 488, 0, 8, 16);
+        };
+        img.src = '/static/img/Game Boy Advance - Advance Wars 2 Black Hole Rising - Overworld Tileset Buildings.png';
+        
+        function drawTile(canvasId, sx, sy, sw, sh) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            const scale = 4;
+            
+            canvas.width = sw * scale;
+            canvas.height = sh * scale;
+            ctx.imageSmoothingEnabled = false;
+            
+            ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,148 @@
+{
+  "water_tileset": {
+    "description": "Water tileset with pink border only on first column of each type",
+    "tile_size": 8,
+    "grid_size": 9,
+    "pink_border_info": {
+      "description": "Pink/magenta border appears only on the first column of each tile type section",
+      "width": 1,
+      "purpose": "Visual separator between tile type sections"
+    },
+    "sections": {
+      "water": [
+        {
+          "name": "Water/Sea",
+          "box_bounds": {
+            "top_left": [
+              38,
+              131
+            ],
+            "bottom_right": [
+              57,
+              337
+            ]
+          },
+          "pink_border_x": 38,
+          "tiles_start": {
+            "x": 39,
+            "y": 131
+          },
+          "tile_grid": "2x22",
+          "animation_frames": 4,
+          "tiles_per_frame": 5
+        }
+      ],
+      "edge": [
+        {
+          "name": "Edge/Beach 1",
+          "box_bounds": {
+            "top_left": [
+              63,
+              131
+            ],
+            "bottom_right": [
+              82,
+              337
+            ]
+          },
+          "pink_border_x": 63,
+          "tiles_start": {
+            "x": 64,
+            "y": 131
+          },
+          "tile_grid": "2x22",
+          "animation_frames": 4,
+          "tiles_per_frame": 5
+        },
+        {
+          "name": "Edge/Beach 2",
+          "box_bounds": {
+            "top_left": [
+              88,
+              131
+            ],
+            "bottom_right": [
+              107,
+              337
+            ]
+          },
+          "pink_border_x": 88,
+          "tiles_start": {
+            "x": 89,
+            "y": 131
+          },
+          "tile_grid": "2x22",
+          "animation_frames": 4,
+          "tiles_per_frame": 5
+        },
+        {
+          "name": "Edge/Beach 3",
+          "box_bounds": {
+            "top_left": [
+              113,
+              131
+            ],
+            "bottom_right": [
+              132,
+              337
+            ]
+          },
+          "pink_border_x": 113,
+          "tiles_start": {
+            "x": 114,
+            "y": 131
+          },
+          "tile_grid": "2x22",
+          "animation_frames": 4,
+          "tiles_per_frame": 5
+        }
+      ],
+      "river": [
+        {
+          "name": "Rivers",
+          "box_bounds": {
+            "top_left": [
+              16,
+              143
+            ],
+            "bottom_right": [
+              42,
+              371
+            ]
+          },
+          "pink_border_x": 16,
+          "tiles_start": {
+            "x": 17,
+            "y": 143
+          },
+          "tile_grid": "2x25",
+          "animation_frames": 4,
+          "tiles_per_frame": 6
+        }
+      ],
+      "reef": [
+        {
+          "name": "Reef",
+          "box_bounds": {
+            "top_left": [
+              15,
+              339
+            ],
+            "bottom_right": [
+              34,
+              358
+            ]
+          },
+          "pink_border_x": 15,
+          "tiles_start": {
+            "x": 16,
+            "y": 339
+          },
+          "tile_grid": "2x2",
+          "animation_frames": 1,
+          "tiles_per_frame": 2
+        }
+      ]
+    }
+  }
+}

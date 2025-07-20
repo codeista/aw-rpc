@@ -1,0 +1,25 @@
+{
+  "metadata": {
+    "source": "Game Boy Advance - Advance Wars 2 Black Hole Rising - Overworld Tileset Buildings.png",
+    "base_tile_size": 16,
+    "original_tile_size": 8,
+    "scale_factor": 2,
+    "created": "2025-07-18T02:51:50.129Z",
+    "description": "Scaled 2x from 8x8 to 16x16 for standard tile rendering"
+  },
+  "tiles": {
+    "plain": {
+      "x": 258,
+      "y": 20,
+      "width": 16,
+      "height": 16,
+      "category": "terrain",
+      "original_8x8": {
+        "x": 129,
+        "y": 10,
+        "width": 8,
+        "height": 8
+      }
+    }
+  }
+}

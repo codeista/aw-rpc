@@ -1,0 +1,51 @@
+{
+  "metadata": {
+    "source": "Game Boy Advance - Advance Wars 2 Black Hole Rising - Overworld Tileset Buildings.png",
+    "base_tile_size": 8,
+    "grid_step": 9,
+    "render_size": 16,
+    "created": "2025-07-18"
+  },
+  "tiles": {
+    "PLAIN": {
+      "x": 225,
+      "y": 27,
+      "note": "Need to verify - looking for yellow/tan plain tile"
+    },
+    "WOOD": {
+      "x": 234,
+      "y": 27,
+      "note": "Forest/woods tiles"
+    },
+    "MOUNTAIN": {
+      "x": 243,
+      "y": 27,
+      "note": "Mountain tiles"
+    },
+    "ROAD_HORT": {
+      "x": 0,
+      "y": 27,
+      "note": "Horizontal road"
+    },
+    "ROAD_VERT": {
+      "x": 9,
+      "y": 27,
+      "note": "Vertical road"
+    },
+    "SEA": {
+      "x": 0,
+      "y": 140,
+      "note": "Sea/water tile"
+    },
+    "CITY": {
+      "x": 495,
+      "y": 0,
+      "note": "Neutral city"
+    },
+    "FACTORY": {
+      "x": 504,
+      "y": 0,
+      "note": "Neutral factory"
+    }
+  }
+}

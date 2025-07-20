@@ -1,0 +1,214 @@
+{
+  "metadata": {
+    "source": "Game Boy Advance - Advance Wars 2 Black Hole Rising - Overworld Tileset Buildings.png",
+    "tile_size": 16,
+    "color_mode": "RGB",
+    "total_columns": 75,
+    "total_rows": 37
+  },
+  "tiles": {
+    "road_horizontal": {
+      "x": 0,
+      "y": 32,
+      "width": 16,
+      "height": 16,
+      "category": "roads"
+    },
+    "road_vertical": {
+      "x": 16,
+      "y": 32,
+      "width": 16,
+      "height": 16,
+      "category": "roads"
+    },
+    "road_corner_tl": {
+      "x": 32,
+      "y": 32,
+      "width": 16,
+      "height": 16,
+      "category": "roads"
+    },
+    "road_corner_tr": {
+      "x": 48,
+      "y": 32,
+      "width": 16,
+      "height": 16,
+      "category": "roads"
+    },
+    "road_corner_bl": {
+      "x": 32,
+      "y": 48,
+      "width": 16,
+      "height": 16,
+      "category": "roads"
+    },
+    "road_corner_br": {
+      "x": 48,
+      "y": 48,
+      "width": 16,
+      "height": 16,
+      "category": "roads"
+    },
+    "road_t_up": {
+      "x": 64,
+      "y": 32,
+      "width": 16,
+      "height": 16,
+      "category": "roads"
+    },
+    "road_t_down": {
+      "x": 64,
+      "y": 48,
+      "width": 16,
+      "height": 16,
+      "category": "roads"
+    },
+    "road_t_left": {
+      "x": 80,
+      "y": 32,
+      "width": 16,
+      "height": 16,
+      "category": "roads"
+    },
+    "road_t_right": {
+      "x": 80,
+      "y": 48,
+      "width": 16,
+      "height": 16,
+      "category": "roads"
+    },
+    "road_cross": {
+      "x": 96,
+      "y": 32,
+      "width": 16,
+      "height": 16,
+      "category": "roads"
+    },
+    "pipe_horizontal": {
+      "x": 160,
+      "y": 0,
+      "width": 16,
+      "height": 16,
+      "category": "pipes"
+    },
+    "pipe_vertical": {
+      "x": 176,
+      "y": 0,
+      "width": 16,
+      "height": 16,
+      "category": "pipes"
+    },
+    "pipe_corner_tl": {
+      "x": 192,
+      "y": 0,
+      "width": 16,
+      "height": 16,
+      "category": "pipes"
+    },
+    "pipe_corner_tr": {
+      "x": 208,
+      "y": 0,
+      "width": 16,
+      "height": 16,
+      "category": "pipes"
+    },
+    "pipe_corner_bl": {
+      "x": 192,
+      "y": 16,
+      "width": 16,
+      "height": 16,
+      "category": "pipes"
+    },
+    "pipe_corner_br": {
+      "x": 208,
+      "y": 16,
+      "width": 16,
+      "height": 16,
+      "category": "pipes"
+    },
+    "pipe_end_up": {
+      "x": 224,
+      "y": 0,
+      "width": 16,
+      "height": 16,
+      "category": "pipes"
+    },
+    "pipe_end_down": {
+      "x": 224,
+      "y": 16,
+      "width": 16,
+      "height": 16,
+      "category": "pipes"
+    },
+    "pipe_end_left": {
+      "x": 240,
+      "y": 0,
+      "width": 16,
+      "height": 16,
+      "category": "pipes"
+    },
+    "pipe_end_right": {
+      "x": 240,
+      "y": 16,
+      "width": 16,
+      "height": 16,
+      "category": "pipes"
+    },
+    "grass": {
+      "x": 0,
+      "y": 0,
+      "width": 16,
+      "height": 16,
+      "category": "terrain"
+    },
+    "forest": {
+      "x": 16,
+      "y": 0,
+      "width": 16,
+      "height": 16,
+      "category": "terrain"
+    },
+    "mountain": {
+      "x": 32,
+      "y": 0,
+      "width": 16,
+      "height": 16,
+      "category": "terrain"
+    },
+    "water": {
+      "x": 0,
+      "y": 160,
+      "width": 16,
+      "height": 16,
+      "category": "terrain"
+    },
+    "shore_n": {
+      "x": 16,
+      "y": 160,
+      "width": 16,
+      "height": 16,
+      "category": "terrain"
+    },
+    "shore_s": {
+      "x": 32,
+      "y": 160,
+      "width": 16,
+      "height": 16,
+      "category": "terrain"
+    },
+    "shore_e": {
+      "x": 48,
+      "y": 160,
+      "width": 16,
+      "height": 16,
+      "category": "terrain"
+    },
+    "shore_w": {
+      "x": 64,
+      "y": 160,
+      "width": 16,
+      "height": 16,
+      "category": "terrain"
+    }
+  }
+}

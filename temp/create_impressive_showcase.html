@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advance Wars 2 - Complete Tileset Showcase</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 40px 20px;
+            background: rgba(0,0,0,0.3);
+            border-bottom: 3px solid #3498db;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(52,152,219,0.1) 0%, transparent 70%);
+            animation: pulse 4s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .subtitle {
+            font-size: 1.2em;
+            color: #3498db;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        /* Section Styles */
+        .section {
+            background: rgba(0,0,0,0.4);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(52,152,219,0.3);
+            backdrop-filter: blur(5px);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #3498db, transparent);
+            animation: scan 3s linear infinite;
+        }
+        
+        @keyframes scan {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        .section-title {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            color: #3498db;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-weight: 600;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .section-icon {
+            font-size: 1.4em;
+            filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.5));
+        }
+        
+        /* Tile Grid */
+        .tile-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .tile-card {
+            background: rgba(0,0,0,0.6);
+            border: 2px solid rgba(52,152,219,0.2);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .tile-card:hover {
+            transform: translateY(-5px);
+            border-color: #3498db;
+            box-shadow: 0 10px 30px rgba(52,152,219,0.3);
+        }
+        
+        .tile-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, rgba(52,152,219,0.2), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .tile-card:hover::after {
+            opacity: 1;
+        }
+        
+        .tile-preview {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 10px;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+            background: repeating-conic-gradient(#222 0% 25%, #333 0% 50%) 50% / 8px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #444;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .tile-name {
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 5px;
+            font-size: 0.8em;
+            line-height: 1.2;
+            word-break: break-word;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+        
+        .tile-info {
+            font-size: 0.7em;
+            color: #9CA3AF;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+        
+        .animated-badge {
+            background: #e74c3c;
+            color: white;
+            font-size: 0.65em;
+            padding: 3px 8px;
+            border-radius: 3px;
+            margin-top: 5px;
+            display: inline-block;
+            font-weight: 600;
+            text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
+        }
+        
+        /* Special Sections */
+        .army-variants {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        
+        .army-badge {
+            width: 32px;
+            height: 32px;
+            image-rendering: pixelated;
+            border: 2px solid;
+            border-radius: 5px;
+            padding: 2px;
+            background: rgba(0,0,0,0.5);
+        }
+        
+        .army-badge.red { border-color: #e74c3c; }
+        .army-badge.blue { border-color: #3498db; }
+        .army-badge.yellow { border-color: #f1c40f; }
+        .army-badge.green { border-color: #2ecc71; }
+        
+        /* Map Preview */
+        .map-preview {
+            background: rgba(0,0,0,0.6);
+            border: 2px solid rgba(52,152,219,0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        
+        #mapCanvas {
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+            margin: 20px auto;
+            display: block;
+            border: 2px solid #444;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .stat-card {
+            background: rgba(52,152,219,0.1);
+            border: 1px solid rgba(52,152,219,0.3);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2.2em;
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            font-family: 'Courier New', monospace;
+        }
+        
+        .stat-label {
+            color: #94A3B8;
+            font-size: 0.85em;
+            font-weight: 500;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+        
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2em;
+            color: #3498db;
+        }
+        
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s steps(3, end) infinite;
+        }
+        
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+        
+        /* Controls */
+        .controls {
+            background: rgba(0,0,0,0.5);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        button:hover {
+            background: #2980b9;
+            transform: scale(1.05);
+        }
+        
+        button:active {
+            transform: scale(0.95);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 { font-size: 2em; }
+            .tile-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>⚔ Advance Wars 2: Black Hole Rising ⚔</h1>
+        <p class="subtitle">Complete RGB Tileset Showcase - All Tiles Mapped</p>
+    </div>
+    
+    <div class="container">
+        <div class="loading" id="loading">Loading tileset data</div>
+        
+        <div id="content" style="display: none;">
+            <!-- Stats Section -->
+            <div class="section">
+                <h2 class="section-title">
+                    <span class="section-icon">[Stats]</span>
+                    Tileset Statistics
+                </h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalTiles">0</div>
+                        <div class="stat-label">Total Tile Types</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="animatedTiles">0</div>
+                        <div class="stat-label">Animated Tiles</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">16×16</div>
+                        <div class="stat-label">Standard Tile Size</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">RGB</div>
+                        <div class="stat-label">Color Mode</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Map Preview -->
+            <div class="section">
+                <h2 class="section-title">
+                    <span class="section-icon">[Map]</span>
+                    Interactive Map Preview
+                </h2>
+                <div class="controls">
+                    <button onclick="generateRandomMap()">[Random] Generate Random Map</button>
+                    <button onclick="generateBattleMap()">[Battle] Battle Scene</button>
+                    <button onclick="generateRiverMap()">[River] River Valley</button>
+                    <button onclick="generateCoastMap()">[Coast] Coastal Map</button>
+                </div>
+                <div class="map-preview">
+                    <canvas id="mapCanvas" width="640" height="480"></canvas>
+                </div>
+            </div>
+            
+            <!-- Terrain Tiles -->
+            <div class="section">
+                <h2 class="section-title">
+                    <span class="section-icon">[Terrain]</span>
+                    Terrain Tiles
+                </h2>
+                <div class="tile-grid" id="terrainTiles"></div>
+            </div>
+            
+            <!-- Road Tiles -->
+            <div class="section">
+                <h2 class="section-title">
+                    <span class="section-icon">[Roads]</span>
+                    Road Tiles
+                </h2>
+                <div class="tile-grid" id="roadTiles"></div>
+            </div>
+            
+            <!-- Pipe Tiles -->
+            <div class="section">
+                <h2 class="section-title">
+                    <span class="section-icon">[Pipes]</span>
+                    Pipe Tiles
+                </h2>
+                <div class="tile-grid" id="pipeTiles"></div>
+            </div>
+            
+            <!-- Building Tiles -->
+            <div class="section">
+                <h2 class="section-title">
+                    <span class="section-icon">[Buildings]</span>
+                    Building Tiles
+                </h2>
+                <div class="tile-grid" id="buildingTiles"></div>
+            </div>
+            
+            <!-- Water Tiles -->
+            <div class="section">
+                <h2 class="section-title">
+                    <span class="section-icon">[Water]</span>
+                    Water & Beach Tiles (Animated)
+                </h2>
+                <div class="tile-grid" id="waterTiles"></div>
+            </div>
+            
+            <!-- River Tiles -->
+            <div class="section">
+                <h2 class="section-title">
+                    <span class="section-icon">[Rivers]</span>
+                    River Tiles (Animated)
+                </h2>
+                <div class="tile-grid" id="riverTiles"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let tilesetImage = null;
+        let tileMapping = null;
+        let animationFrame = 0;
+        let animationInterval = null;
+        let currentMapData = null;
+        let currentMapType = 'random';
+        
+        // Load tileset and mapping data
+        async function loadAssets() {
+            try {
+                // Load tileset image
+                tilesetImage = new Image();
+                await new Promise((resolve, reject) => {
+                    tilesetImage.onload = resolve;
+                    tilesetImage.onerror = reject;
+                    tilesetImage.src = 'static/img/Game Boy Advance - Advance Wars 2 Black Hole Rising - Overworld Tileset Buildings.png';
+                });
+                
+                // Load tile mapping
+                const response = await fetch('aw2_mixed_tile_mapping.json');
+                tileMapping = await response.json();
+                
+                // Hide loading, show content
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+                
+                // Initialize showcase
+                initializeShowcase();
+                
+                // No animation needed
+                
+            } catch (error) {
+                console.error('Error loading assets:', error);
+                document.getElementById('loading').textContent = 'Error loading tileset!';
+            }
+        }
+        
+        function initializeShowcase() {
+            // Update stats
+            const tileCount = Object.keys(tileMapping.tiles).length;
+            const animatedCount = Object.values(tileMapping.tiles).filter(t => t.animation_frames).length;
+            document.getElementById('totalTiles').textContent = tileCount;
+            document.getElementById('animatedTiles').textContent = animatedCount;
+            
+            // Categorize tiles
+            const categories = {
+                terrain: [],
+                road: [],
+                pipe: [],
+                building: [],
+                water: [],
+                river: []
+            };
+            
+            for (const [tileName, tileData] of Object.entries(tileMapping.tiles)) {
+                if (tileName.includes('PLAIN') || tileName.includes('WOOD') || tileName.includes('MOUNTAIN')) {
+                    categories.terrain.push([tileName, tileData]);
+                } else if (tileName.startsWith('ROAD_')) {
+                    categories.road.push([tileName, tileData]);
+                } else if (tileName.startsWith('PIPE_')) {
+                    categories.pipe.push([tileName, tileData]);
+                } else if (tileName.includes('CITY') || tileName.includes('FACTORY') || tileName.includes('AIRPORT') || tileName.includes('PORT') || tileName.includes('HQ')) {
+                    categories.building.push([tileName, tileData]);
+                } else if (tileName.startsWith('WATER_') || tileName === 'SEA' || tileName === 'REEF' || tileName === 'SHOAL') {
+                    categories.water.push([tileName, tileData]);
+                } else if (tileName.startsWith('RIVER_')) {
+                    categories.river.push([tileName, tileData]);
+                }
+            }
+            
+            // Display tiles by category
+            displayTileCategory('terrainTiles', categories.terrain);
+            displayTileCategory('roadTiles', categories.road);
+            displayTileCategory('pipeTiles', categories.pipe);
+            displayTileCategory('buildingTiles', categories.building);
+            displayTileCategory('waterTiles', categories.water);
+            displayTileCategory('riverTiles', categories.river);
+            
+            // Initialize map
+            generateRandomMap();
+        }
+        
+        function displayTileCategory(containerId, tiles) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            tiles.forEach(([tileName, tileData]) => {
+                const card = createTileCard(tileName, tileData);
+                container.appendChild(card);
+            });
+        }
+        
+        function createTileCard(tileName, tileData) {
+            const card = document.createElement('div');
+            card.className = 'tile-card';
+            
+            const preview = document.createElement('div');
+            preview.className = 'tile-preview';
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            canvas.setAttribute('data-tile', tileName);
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+            
+            // Draw tile
+            drawTilePreview(ctx, tileName, tileData, 64);
+            
+            preview.appendChild(canvas);
+            card.appendChild(preview);
+            
+            const name = document.createElement('div');
+            name.className = 'tile-name';
+            name.textContent = tileName.replace(/_/g, ' ');
+            card.appendChild(name);
+            
+            const info = document.createElement('div');
+            info.className = 'tile-info';
+            info.textContent = `${tileData.width}×${tileData.height}`;
+            card.appendChild(info);
+            
+            if (tileData.animation_frames) {
+                const badge = document.createElement('div');
+                badge.className = 'animated-badge';
+                badge.textContent = `${tileData.animation_frames} frames`;
+                card.appendChild(badge);
+            }
+            
+            // Add army variants if available
+            if (tileData.army_variants) {
+                const variants = document.createElement('div');
+                variants.className = 'army-variants';
+                
+                ['RED', 'BLUE', 'YELLOW', 'GREEN'].forEach(army => {
+                    if (tileData.army_variants[army]) {
+                        const badge = document.createElement('canvas');
+                        badge.className = `army-badge ${army.toLowerCase()}`;
+                        badge.width = 32;
+                        badge.height = 32;
+                        const bctx = badge.getContext('2d');
+                        bctx.imageSmoothingEnabled = false;
+                        
+                        const variant = tileData.army_variants[army];
+                        bctx.drawImage(
+                            tilesetImage,
+                            variant.x, variant.y, tileData.width, tileData.height,
+                            0, 0, 32, 32
+                        );
+                        
+                        variants.appendChild(badge);
+                    }
+                });
+                
+                card.appendChild(variants);
+            }
+            
+            return card;
+        }
+        
+        function drawTilePreview(ctx, tileName, tileData, size) {
+            // Clear with transparency checker pattern
+            ctx.fillStyle = '#333';
+            ctx.fillRect(0, 0, size, size);
+            ctx.fillStyle = '#444';
+            for (let y = 0; y < size; y += 8) {
+                for (let x = 0; x < size; x += 8) {
+                    if ((x/8 + y/8) % 2 === 0) {
+                        ctx.fillRect(x, y, 8, 8);
+                    }
+                }
+            }
+            
+            const scale = size / Math.max(tileData.width, tileData.height);
+            const offsetX = (size - tileData.width * scale) / 2;
+            const offsetY = (size - tileData.height * scale) / 2;
+            
+            // Create temp canvas to handle pink transparency
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = tileData.width;
+            tempCanvas.height = tileData.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            // Always use first frame, no animation
+            tempCtx.drawImage(
+                tilesetImage,
+                tileData.x, tileData.y, tileData.width, tileData.height,
+                0, 0, tileData.width, tileData.height
+            );
+            
+            // Replace pink with transparency for pipes
+            if (tileName.startsWith('PIPE_')) {
+                const imageData = tempCtx.getImageData(0, 0, tileData.width, tileData.height);
+                const data = imageData.data;
+                for (let i = 0; i < data.length; i += 4) {
+                    // Check for pink/magenta (R>200, G<150, B>200)
+                    if (data[i] > 200 && data[i+1] < 150 && data[i+2] > 200) {
+                        data[i+3] = 0; // Make transparent
+                    }
+                }
+                tempCtx.putImageData(imageData, 0, 0);
+            }
+            
+            // Draw the processed tile
+            ctx.drawImage(
+                tempCanvas,
+                0, 0, tileData.width, tileData.height,
+                offsetX, offsetY,
+                tileData.width * scale, tileData.height * scale
+            );
+        }
+        
+        // Map generation functions
+        function generateRandomMap() {
+            const canvas = document.getElementById('mapCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+            
+            const mapWidth = 40;
+            const mapHeight = 30;
+            const tileSize = 16;
+            
+            // Create map data
+            const mapData = [];
+            for (let y = 0; y < mapHeight; y++) {
+                mapData[y] = [];
+                for (let x = 0; x < mapWidth; x++) {
+                    const rand = Math.random();
+                    if (rand < 0.6) {
+                        mapData[y][x] = 'PLAIN';
+                    } else if (rand < 0.75) {
+                        mapData[y][x] = 'WOOD';
+                    } else if (rand < 0.85) {
+                        mapData[y][x] = 'MOUNTAIN';
+                    } else if (rand < 0.9) {
+                        mapData[y][x] = 'ROAD_HORT';
+                    } else {
+                        mapData[y][x] = 'CITY';
+                    }
+                }
+            }
+            
+            currentMapData = mapData;
+            drawMap(ctx, mapData, tileSize);
+        }
+        
+        function generateBattleMap() {
+            const canvas = document.getElementById('mapCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+            
+            const mapWidth = 40;
+            const mapHeight = 30;
+            const tileSize = 16;
+            
+            // Create strategic battle map
+            const mapData = [];
+            for (let y = 0; y < mapHeight; y++) {
+                mapData[y] = [];
+                for (let x = 0; x < mapWidth; x++) {
+                    mapData[y][x] = 'PLAIN';
+                }
+            }
+            
+            // Add roads
+            for (let x = 0; x < mapWidth; x++) {
+                mapData[15][x] = 'ROAD_HORT';
+            }
+            for (let y = 0; y < mapHeight; y++) {
+                mapData[y][20] = 'ROAD_VERT';
+            }
+            mapData[15][20] = 'ROAD_CROSS';
+            
+            // Add strategic forests
+            for (let y = 10; y < 13; y++) {
+                for (let x = 15; x < 18; x++) {
+                    mapData[y][x] = 'WOOD';
+                }
+            }
+            for (let y = 18; y < 21; y++) {
+                for (let x = 23; x < 26; x++) {
+                    mapData[y][x] = 'WOOD';
+                }
+            }
+            
+            // Add mountains
+            mapData[8][10] = 'MOUNTAIN';
+            mapData[22][30] = 'MOUNTAIN';
+            
+            // Add pipes
+            for (let x = 5; x < 10; x++) {
+                mapData[25][x] = 'PIPE_HORT';
+            }
+            
+            currentMapData = mapData;
+            drawMap(ctx, mapData, tileSize);
+        }
+        
+        function generateRiverMap() {
+            const canvas = document.getElementById('mapCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+            
+            const mapWidth = 40;
+            const mapHeight = 30;
+            const tileSize = 16;
+            
+            // Create river valley map
+            const mapData = [];
+            for (let y = 0; y < mapHeight; y++) {
+                mapData[y] = [];
+                for (let x = 0; x < mapWidth; x++) {
+                    mapData[y][x] = 'PLAIN';
+                }
+            }
+            
+            // Add winding river
+            let riverX = 20;
+            for (let y = 0; y < mapHeight; y++) {
+                // River meanders
+                riverX += Math.random() < 0.5 ? -1 : 1;
+                riverX = Math.max(10, Math.min(30, riverX));
+                
+                mapData[y][riverX] = 'RIVER_VERT';
+                
+                // Add forests near river
+                if (Math.random() < 0.3) {
+                    if (riverX > 1) mapData[y][riverX - 1] = 'WOOD';
+                    if (riverX < mapWidth - 2) mapData[y][riverX + 1] = 'WOOD';
+                }
+            }
+            
+            currentMapData = mapData;
+            drawMap(ctx, mapData, tileSize);
+        }
+        
+        function generateCoastMap() {
+            const canvas = document.getElementById('mapCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+            
+            const mapWidth = 40;
+            const mapHeight = 30;
+            const tileSize = 16;
+            
+            // Create coastal map
+            const mapData = [];
+            for (let y = 0; y < mapHeight; y++) {
+                mapData[y] = [];
+                for (let x = 0; x < mapWidth; x++) {
+                    if (x < 15) {
+                        mapData[y][x] = 'WATER_COAST';
+                    } else if (x < 18) {
+                        mapData[y][x] = 'WATER_BEACH';
+                    } else {
+                        mapData[y][x] = 'PLAIN';
+                    }
+                }
+            }
+            
+            // Add some variety to land
+            for (let y = 0; y < mapHeight; y++) {
+                for (let x = 20; x < mapWidth; x++) {
+                    if (Math.random() < 0.1) {
+                        mapData[y][x] = 'WOOD';
+                    } else if (Math.random() < 0.05) {
+                        mapData[y][x] = 'MOUNTAIN';
+                    }
+                }
+            }
+            
+            currentMapData = mapData;
+            drawMap(ctx, mapData, tileSize);
+        }
+        
+        function drawMap(ctx, mapData, tileSize) {
+            const mapHeight = mapData.length;
+            const mapWidth = mapData[0].length;
+            
+            // Clear canvas with water color
+            ctx.fillStyle = '#5090C0';
+            ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+            
+            // Draw tiles
+            for (let y = 0; y < mapHeight; y++) {
+                for (let x = 0; x < mapWidth; x++) {
+                    const tileName = mapData[y][x];
+                    const tile = tileMapping.tiles[tileName];
+                    
+                    if (tile) {
+                        // Create temp canvas for pink transparency
+                        const tempCanvas = document.createElement('canvas');
+                        tempCanvas.width = tile.width;
+                        tempCanvas.height = tile.height;
+                        const tempCtx = tempCanvas.getContext('2d');
+                        
+                        // Always use first frame, no animation
+                        tempCtx.drawImage(
+                            tilesetImage,
+                            tile.x, tile.y, tile.width, tile.height,
+                            0, 0, tile.width, tile.height
+                        );
+                        
+                        // Remove pink for pipes
+                        if (tileName.startsWith('PIPE_')) {
+                            const imageData = tempCtx.getImageData(0, 0, tile.width, tile.height);
+                            const data = imageData.data;
+                            for (let i = 0; i < data.length; i += 4) {
+                                if (data[i] > 200 && data[i+1] < 150 && data[i+2] > 200) {
+                                    data[i+3] = 0;
+                                }
+                            }
+                            tempCtx.putImageData(imageData, 0, 0);
+                        }
+                        
+                        // Draw to map
+                        ctx.drawImage(
+                            tempCanvas,
+                            0, 0, tile.width, tile.height,
+                            x * tileSize, y * tileSize, tileSize, tileSize
+                        );
+                    }
+                }
+            }
+        }
+        
+        function updateAnimation() {
+            animationFrame++;
+            
+            // Update animated tile previews
+            document.querySelectorAll('canvas[data-tile]').forEach(canvas => {
+                const tileName = canvas.getAttribute('data-tile');
+                const tile = tileMapping.tiles[tileName];
+                
+                if (tile && tile.animation_frames) {
+                    const ctx = canvas.getContext('2d');
+                    ctx.imageSmoothingEnabled = false;
+                    ctx.clearRect(0, 0, 64, 64);
+                    drawTilePreview(ctx, tileName, tile, 64);
+                }
+            });
+            
+            // Redraw current map with existing data
+            if (currentMapData) {
+                const canvas = document.getElementById('mapCanvas');
+                const ctx = canvas.getContext('2d');
+                drawMap(ctx, currentMapData, 16);
+            }
+        }
+        
+        // Initialize on load
+        window.addEventListener('load', loadAssets);
+    </script>
+</body>
+</html>

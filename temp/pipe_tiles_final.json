@@ -1,0 +1,272 @@
+{
+  "pipe_tiles": {
+    "description": "Pipe tiles - 15x15 pixels on 17x17 grid",
+    "first_tile_corners": {
+      "top_left": [
+        167,
+        166
+      ],
+      "top_right": [
+        182,
+        166
+      ],
+      "bottom_left": [
+        167,
+        181
+      ],
+      "bottom_right": [
+        182,
+        181
+      ]
+    },
+    "tile_size": {
+      "width": 15,
+      "height": 15
+    },
+    "grid_size": 17,
+    "grid_layout": "4x4",
+    "special_notes": "Pink/magenta areas should be transparent",
+    "tiles": [
+      {
+        "name": "PIPE_HORT",
+        "index": 0,
+        "grid_position": {
+          "row": 0,
+          "col": 0
+        },
+        "x": 167,
+        "y": 166,
+        "width": 15,
+        "height": 15,
+        "has_pink": false,
+        "pink_pixels": 0,
+        "grey_pixels": 0
+      },
+      {
+        "name": "PIPE_VERT",
+        "index": 1,
+        "grid_position": {
+          "row": 0,
+          "col": 1
+        },
+        "x": 184,
+        "y": 166,
+        "width": 15,
+        "height": 15,
+        "has_pink": false,
+        "pink_pixels": 0,
+        "grey_pixels": 0
+      },
+      {
+        "name": "PIPE_NE",
+        "index": 2,
+        "grid_position": {
+          "row": 0,
+          "col": 2
+        },
+        "x": 201,
+        "y": 166,
+        "width": 15,
+        "height": 15,
+        "has_pink": false,
+        "pink_pixels": 0,
+        "grey_pixels": 0
+      },
+      {
+        "name": "PIPE_SE",
+        "index": 3,
+        "grid_position": {
+          "row": 0,
+          "col": 3
+        },
+        "x": 218,
+        "y": 166,
+        "width": 15,
+        "height": 15,
+        "has_pink": false,
+        "pink_pixels": 0,
+        "grey_pixels": 0
+      },
+      {
+        "name": "PIPE_SW",
+        "index": 4,
+        "grid_position": {
+          "row": 1,
+          "col": 0
+        },
+        "x": 167,
+        "y": 183,
+        "width": 15,
+        "height": 15,
+        "has_pink": false,
+        "pink_pixels": 0,
+        "grey_pixels": 0
+      },
+      {
+        "name": "PIPE_NW",
+        "index": 5,
+        "grid_position": {
+          "row": 1,
+          "col": 1
+        },
+        "x": 184,
+        "y": 183,
+        "width": 15,
+        "height": 15,
+        "has_pink": false,
+        "pink_pixels": 0,
+        "grey_pixels": 0
+      },
+      {
+        "name": "PIPE_CROSS",
+        "index": 6,
+        "grid_position": {
+          "row": 1,
+          "col": 2
+        },
+        "x": 201,
+        "y": 183,
+        "width": 15,
+        "height": 15,
+        "has_pink": false,
+        "pink_pixels": 0,
+        "grey_pixels": 0
+      },
+      {
+        "name": "PIPE_T_N",
+        "index": 7,
+        "grid_position": {
+          "row": 1,
+          "col": 3
+        },
+        "x": 218,
+        "y": 183,
+        "width": 15,
+        "height": 15,
+        "has_pink": false,
+        "pink_pixels": 0,
+        "grey_pixels": 0
+      },
+      {
+        "name": "PIPE_T_E",
+        "index": 8,
+        "grid_position": {
+          "row": 2,
+          "col": 0
+        },
+        "x": 167,
+        "y": 200,
+        "width": 15,
+        "height": 15,
+        "has_pink": false,
+        "pink_pixels": 0,
+        "grey_pixels": 0
+      },
+      {
+        "name": "PIPE_T_S",
+        "index": 9,
+        "grid_position": {
+          "row": 2,
+          "col": 1
+        },
+        "x": 184,
+        "y": 200,
+        "width": 15,
+        "height": 15,
+        "has_pink": false,
+        "pink_pixels": 0,
+        "grey_pixels": 0
+      },
+      {
+        "name": "PIPE_T_W",
+        "index": 10,
+        "grid_position": {
+          "row": 2,
+          "col": 2
+        },
+        "x": 201,
+        "y": 200,
+        "width": 15,
+        "height": 15,
+        "has_pink": false,
+        "pink_pixels": 0,
+        "grey_pixels": 0
+      },
+      {
+        "name": "PIPE_END_N",
+        "index": 11,
+        "grid_position": {
+          "row": 2,
+          "col": 3
+        },
+        "x": 218,
+        "y": 200,
+        "width": 15,
+        "height": 15,
+        "has_pink": false,
+        "pink_pixels": 0,
+        "grey_pixels": 0
+      },
+      {
+        "name": "PIPE_END_E",
+        "index": 12,
+        "grid_position": {
+          "row": 3,
+          "col": 0
+        },
+        "x": 167,
+        "y": 217,
+        "width": 15,
+        "height": 15,
+        "has_pink": false,
+        "pink_pixels": 0,
+        "grey_pixels": 0
+      },
+      {
+        "name": "PIPE_END_S",
+        "index": 13,
+        "grid_position": {
+          "row": 3,
+          "col": 1
+        },
+        "x": 184,
+        "y": 217,
+        "width": 15,
+        "height": 15,
+        "has_pink": false,
+        "pink_pixels": 0,
+        "grey_pixels": 0
+      },
+      {
+        "name": "PIPE_END_W",
+        "index": 14,
+        "grid_position": {
+          "row": 3,
+          "col": 2
+        },
+        "x": 201,
+        "y": 217,
+        "width": 15,
+        "height": 15,
+        "has_pink": false,
+        "pink_pixels": 0,
+        "grey_pixels": 0
+      },
+      {
+        "name": "PIPE_SEAM",
+        "index": 15,
+        "grid_position": {
+          "row": 3,
+          "col": 3
+        },
+        "x": 218,
+        "y": 217,
+        "width": 15,
+        "height": 15,
+        "has_pink": false,
+        "pink_pixels": 0,
+        "grey_pixels": 0
+      }
+    ]
+  }
+}

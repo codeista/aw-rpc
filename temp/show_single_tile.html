@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Show Single Tile</title>
+    <style>
+        body { background: #333; color: white; font-family: Arial; padding: 50px; text-align: center; }
+        canvas { 
+            image-rendering: pixelated; 
+            background: repeating-conic-gradient(#555 0% 25%, #666 0% 50%) 50% / 16px 16px;
+            margin: 20px;
+            border: 2px solid #fff;
+        }
+    </style>
+</head>
+<body>
+    <h1>First Road Tile</h1>
+    <p>Coordinates: (12, 19) - Size: 15x15</p>
+    <canvas id="tile"></canvas>
+
+    <script>
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.getElementById('tile');
+            const ctx = canvas.getContext('2d');
+            const scale = 8; // Make it big so we can see clearly
+            
+            canvas.width = 15 * scale;
+            canvas.height = 15 * scale;
+            ctx.imageSmoothingEnabled = false;
+            
+            // Draw the tile from (12,19) with size 15x15
+            ctx.drawImage(img, 12, 19, 15, 15, 0, 0, canvas.width, canvas.height);
+        };
+        img.src = '/static/img/Game Boy Advance - Advance Wars 2 Black Hole Rising - Overworld Tileset Buildings.png';
+    </script>
+</body>
+</html>

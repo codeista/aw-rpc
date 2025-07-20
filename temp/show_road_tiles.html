@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Road Tiles Grid</title>
+    <style>
+        body { background: #333; color: white; font-family: Arial; padding: 20px; }
+        .container { text-align: center; }
+        .tile-grid { display: inline-block; margin: 20px; }
+        .tile-row { display: flex; }
+        .tile-item { 
+            margin: 2px; 
+            text-align: center;
+            border: 1px solid #666;
+        }
+        canvas { 
+            image-rendering: pixelated; 
+            background: repeating-conic-gradient(#555 0% 25%, #666 0% 50%) 50% / 8px 8px;
+            display: block;
+        }
+        .tile-label {
+            font-size: 11px;
+            color: #aaa;
+            padding: 2px;
+            background: #222;
+        }
+        h1 { text-align: center; }
+        .info { text-align: center; margin: 10px; color: #888; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Road Tiles Map</h1>
+        <p class="info">First road at (12, 19) - Tiles are 15x15 pixels</p>
+        <div id="tileGrid" class="tile-grid"></div>
+    </div>
+
+    <script>
+        const img = new Image();
+        img.onload = function() {
+            const grid = document.getElementById('tileGrid');
+            const tileSize = 15;
+            const gap = 2; // Gap between tiles in the tileset
+            const startX = 12;
+            const startY = 19;
+            const scale = 4;
+            
+            // Road tile names in typical order
+            const roadNames = [
+                ['ROAD_HORT', 'ROAD_VERT', 'ROAD_NE', 'ROAD_SE'],
+                ['ROAD_SW', 'ROAD_NW', 'ROAD_T_E', 'ROAD_T_W'],
+                ['ROAD_T_N', 'ROAD_T_S', 'ROAD_CROSS', 'ROAD_END_N'],
+                ['ROAD_END_E', 'ROAD_END_S', 'ROAD_END_W', 'ROAD_PLAIN']
+            ];
+            
+            // Create a 4x4 grid of road tiles
+            for (let row = 0; row < 4; row++) {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'tile-row';
+                
+                for (let col = 0; col < 4; col++) {
+                    const tileDiv = document.createElement('div');
+                    tileDiv.className = 'tile-item';
+                    
+                    const canvas = document.createElement('canvas');
+                    canvas.width = tileSize * scale;
+                    canvas.height = tileSize * scale;
+                    
+                    const ctx = canvas.getContext('2d');
+                    ctx.imageSmoothingEnabled = false;
+                    
+                    // Calculate position for this tile
+                    // Assuming tiles are arranged in a grid with 17x17 spacing (15 tile + 2 gap)
+                    const x = startX + (col * 17);
+                    const y = startY + (row * 17);
+                    
+                    // Draw the tile
+                    ctx.drawImage(img, x, y, tileSize, tileSize, 0, 0, canvas.width, canvas.height);
+                    
+                    const label = document.createElement('div');
+                    label.className = 'tile-label';
+                    label.textContent = roadNames[row][col];
+                    
+                    const coords = document.createElement('div');
+                    coords.className = 'tile-label';
+                    coords.style.fontSize = '10px';
+                    coords.textContent = `(${x}, ${y})`;
+                    
+                    tileDiv.appendChild(canvas);
+                    tileDiv.appendChild(label);
+                    tileDiv.appendChild(coords);
+                    rowDiv.appendChild(tileDiv);
+                }
+                
+                grid.appendChild(rowDiv);
+            }
+        };
+        img.src = '/static/img/Game Boy Advance - Advance Wars 2 Black Hole Rising - Overworld Tileset Buildings.png';
+    </script>
+</body>
+</html>

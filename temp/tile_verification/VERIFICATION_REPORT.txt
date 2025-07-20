@@ -1,0 +1,75 @@
+TILE MAPPING VERIFICATION REPORT
+==================================================
+
+
+Terrain (3 tiles)
+----------------------------------------
+MOUNTAIN             (255,  18) 16x16
+PLAIN                (238,  18) 16x16
+WOOD                 (238,  35) 16x16
+
+Roads (15 tiles)
+----------------------------------------
+ROAD_CROSS           ( 17,  34) 16x16
+ROAD_END_E           ( 17,  51) 16x16
+ROAD_END_N           (  0,  51) 16x16
+ROAD_END_S           ( 34,  51) 16x16
+ROAD_END_W           ( 51,  51) 16x16
+ROAD_HORT            ( 34,  17) 16x16
+ROAD_NE              (  0,  17) 16x16
+ROAD_NW              ( 51,  17) 16x16
+ROAD_SE              ( 17,  17) 16x16
+ROAD_SW              ( 68,  17) 16x16
+ROAD_T_E             ( 51,  34) 16x16
+ROAD_T_N             ( 34,  34) 16x16
+ROAD_T_S             ( 68,  34) 16x16
+ROAD_T_W             ( 85,  34) 16x16
+ROAD_VERT            (  0,  34) 16x16
+
+Pipes (10 tiles)
+----------------------------------------
+PIPE_CROSS           (204,  34) 16x16
+PIPE_END_N           (187,  68) 16x16
+PIPE_END_S           (204,  68) 16x16
+PIPE_HORT            (170,  17) 16x16
+PIPE_NE              (170,  34) 16x16
+PIPE_NW              (170,  51) 16x16
+PIPE_SE              (187,  34) 16x16
+PIPE_SEAM            (204,  51) 16x16
+PIPE_SW              (187,  51) 16x16
+PIPE_VERT            (187,  17) 16x16
+
+Buildings (5 tiles)
+----------------------------------------
+AIRPORT              (513,  81)  8x 8 [Has army variants]
+CITY                 (495,  81)  8x 8 [Has army variants]
+FACTORY              (504,  81)  8x 8 [Has army variants]
+HQ                   (531,   9)  8x 8 [Has army variants]
+PORT                 (522,  81)  8x 8 [Has army variants]
+
+Water/Beach (6 tiles)
+----------------------------------------
+REEF                 ( 81, 149)  8x 8
+SEA                  (  0, 149)  8x 8
+SHOAL                ( 90, 149)  8x 8
+WATER_BEACH          (204, 161) 16x16 [Animated: 4 frames]
+WATER_COAST          (136, 144) 16x16 [Animated: 4 frames]
+WATER_SHORE          ( 68, 178) 16x16 [Animated: 4 frames]
+
+Rivers (10 tiles)
+----------------------------------------
+RIVER_ALT_CROSS      (  0, 195) 16x16 [Animated: 4 frames]
+RIVER_ALT_STYLE      (340, 195) 16x16 [Animated: 4 frames]
+RIVER_HORT           (204, 331) 16x16 [Animated: 4 frames]
+RIVER_MOUTH_E        (306, 212) 16x16 [Animated: 4 frames]
+RIVER_MOUTH_W        (221, 331) 16x16 [Animated: 4 frames]
+RIVER_NE             (238, 297) 16x16 [Animated: 4 frames]
+RIVER_NW             (289, 348) 16x16 [Animated: 4 frames]
+RIVER_SE             ( 51, 348) 16x16 [Animated: 4 frames]
+RIVER_SW             (221, 195) 16x16 [Animated: 4 frames]
+RIVER_VERT           (238, 195) 16x16 [Animated: 4 frames]
+
+Special (2 tiles)
+----------------------------------------
+RIVER                (315, 149)  8x 8
+VOLCANO              (360,  26) 48x48

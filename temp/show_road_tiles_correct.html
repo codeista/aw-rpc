@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Road Tiles - Correct Grid</title>
+    <style>
+        body { background: #333; color: white; font-family: Arial; padding: 20px; }
+        .container { text-align: center; }
+        .tile-grid { display: inline-block; margin: 20px; }
+        .tile-row { display: flex; }
+        .tile-item { 
+            margin: 2px; 
+            text-align: center;
+            border: 1px solid #666;
+        }
+        canvas { 
+            image-rendering: pixelated; 
+            background: repeating-conic-gradient(#555 0% 25%, #666 0% 50%) 50% / 8px 8px;
+            display: block;
+        }
+        .tile-label {
+            font-size: 11px;
+            color: #aaa;
+            padding: 2px;
+            background: #222;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Road Tiles (8x4 grid as mapped)</h1>
+        <p>Roads are 8x8 on 9x9 grid, but displayed at 15x15 for visibility</p>
+        <div id="tileGrid" class="tile-grid"></div>
+    </div>
+
+    <script>
+        const img = new Image();
+        img.onload = function() {
+            const grid = document.getElementById('tileGrid');
+            
+            // From our original mapping - roads are 8x8 on 9x9 grid
+            const originalTileSize = 8;
+            const originalGridSize = 9;
+            const displaySize = 15; // Display at 15x15 as requested
+            const scale = 4;
+            
+            // Starting position from original road mapping
+            const startX = 0;
+            const startY = 0;
+            
+            // Road tile names in 8x4 grid order
+            const roadNames = [
+                ['ROAD_HORT', 'ROAD_VERT', 'ROAD_NE', 'ROAD_SE', 'ROAD_SW', 'ROAD_NW', 'ROAD_T_N', 'ROAD_T_E'],
+                ['ROAD_CROSS', 'ROAD_T_S', 'ROAD_T_W', 'ROAD_END_N', 'ROAD_END_E', 'ROAD_END_S', 'ROAD_END_W', 'ROAD_BRIDGE_H'],
+                ['ROAD_BRIDGE_V', 'ROAD_17', 'ROAD_18', 'ROAD_19', 'ROAD_20', 'ROAD_21', 'ROAD_22', 'ROAD_23'],
+                ['ROAD_24', 'ROAD_25', 'ROAD_26', 'ROAD_27', 'ROAD_28', 'ROAD_29', 'ROAD_30', 'ROAD_31']
+            ];
+            
+            // Create the 8x4 grid
+            for (let row = 0; row < 4; row++) {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'tile-row';
+                
+                for (let col = 0; col < 8; col++) {
+                    const tileDiv = document.createElement('div');
+                    tileDiv.className = 'tile-item';
+                    
+                    const canvas = document.createElement('canvas');
+                    canvas.width = displaySize * scale;
+                    canvas.height = displaySize * scale;
+                    
+                    const ctx = canvas.getContext('2d');
+                    ctx.imageSmoothingEnabled = false;
+                    
+                    // Calculate position using original 9x9 grid
+                    const x = startX + (col * originalGridSize);
+                    const y = startY + (row * originalGridSize);
+                    
+                    // Extract 8x8 tile and scale to 15x15 display
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = originalTileSize;
+                    tempCanvas.height = originalTileSize;
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCtx.drawImage(img, x, y, originalTileSize, originalTileSize, 0, 0, originalTileSize, originalTileSize);
+                    
+                    // Scale up to display size
+                    ctx.drawImage(tempCanvas, 0, 0, originalTileSize, originalTileSize, 0, 0, canvas.width, canvas.height);
+                    
+                    const label = document.createElement('div');
+                    label.className = 'tile-label';
+                    label.textContent = roadNames[row][col];
+                    
+                    const coords = document.createElement('div');
+                    coords.className = 'tile-label';
+                    coords.style.fontSize = '10px';
+                    coords.textContent = `(${x}, ${y})`;
+                    
+                    tileDiv.appendChild(canvas);
+                    tileDiv.appendChild(label);
+                    tileDiv.appendChild(coords);
+                    rowDiv.appendChild(tileDiv);
+                }
+                
+                grid.appendChild(rowDiv);
+            }
+        };
+        img.src = '/static/img/Game Boy Advance - Advance Wars 2 Black Hole Rising - Overworld Tileset Buildings.png';
+    </script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+{
+  "tileset": "/static/img/Game Boy Advance - Advance Wars 2 Black Hole Rising - Overworld Tileset Buildings.png",
+  "coordinate_system": "direct",
+  "tiles": {
+    "roads": {
+      "grid_start": {"x": 12, "y": 19},
+      "tile_size": 16,
+      "grid_spacing": 17,
+      "tiles": {
+        "ROAD_SE": {"grid": [0, 0], "x": 12, "y": 19},
+        "ROAD_HORT": {"grid": [0, 1], "x": 29, "y": 19},
+        "ROAD_SW": {"grid": [0, 2], "x": 46, "y": 19},
+        "WNERoad": {"grid": [0, 3], "x": 63, "y": 19},
+        "ROAD_VERT": {"grid": [0, 4], "x": 80, "y": 19},
+        "ROAD_NE": {"grid": [0, 5], "x": 97, "y": 19},
+        "ESWRoad": {"grid": [0, 6], "x": 114, "y": 19},
+        "SWNRoad": {"grid": [0, 7], "x": 131, "y": 19},
+        
+        "ROAD_NW": {"grid": [1, 0], "x": 12, "y": 36},
+        "NESRoad": {"grid": [1, 1], "x": 29, "y": 36},
+        "CRoad": {"grid": [1, 2], "x": 46, "y": 36},
+        "HBridge": {"grid": [1, 3], "x": 63, "y": 36},
+        "VBridge": {"grid": [1, 4], "x": 80, "y": 36}
+      }
+    },
+    "terrain": {
+      "comment": "15x15 tiles on 17x17 grid - needs conversion to 16x16",
+      "grid_start": {"x": 174, "y": 2},
+      "tile_size": 15,
+      "grid_spacing": 17,
+      "tiles": {
+        "PLAIN": {"grid": [0, 0], "x": 174, "y": 2},
+        "WOOD": {"grid": [0, 1], "x": 191, "y": 2},
+        "MOUNTAIN": {"grid": [0, 2], "x": 208, "y": 2}
+      }
+    },
+    "water": {
+      "comment": "8x8 tiles - needs conversion to 16x16",
+      "sections": [
+        {
+          "name": "sea_tiles",
+          "box": {"x": 3, "y": 113, "width": 73, "height": 25},
+          "tile_size": 8,
+          "grid_spacing": 8
+        },
+        {
+          "name": "beach_tiles", 
+          "box": {"x": 3, "y": 164, "width": 73, "height": 33},
+          "tile_size": 8,
+          "grid_spacing": 8
+        }
+      ]
+    },
+    "buildings": {
+      "comment": "8x16 tiles with army variants",
+      "grid_start": {"x": 174, "y": 70},
+      "tile_size": {"width": 8, "height": 16},
+      "grid_spacing": {"x": 9, "y": 17},
+      "armies": ["ORANGE_STAR", "BLUE_MOON", "GREEN_EARTH", "YELLOW_COMET", "BLACK_HOLE", "NEUTRAL"],
+      "tiles": {
+        "HQ": {"grid": [0, 0]},
+        "CITY": {"grid": [0, 1]},
+        "FACTORY": {"grid": [0, 2]},
+        "AIRPORT": {"grid": [0, 3]},
+        "PORT": {"grid": [0, 4]}
+      }
+    }
+  }
+}

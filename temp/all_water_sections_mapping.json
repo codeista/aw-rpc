@@ -1,0 +1,122 @@
+{
+  "water_sections": {
+    "description": "Multiple water/edge/beach sections with pink column borders",
+    "sections": [
+      {
+        "border_x": 33,
+        "border_y": 139,
+        "description": "Third section",
+        "pink_height": 0,
+        "tiles_start": {
+          "x": 35,
+          "y": 141
+        },
+        "tile_count": 10,
+        "tile_types": [
+          "WATER",
+          "WATER",
+          "WATER",
+          "WATER",
+          "WATER",
+          "OTHER",
+          "WATER",
+          "OTHER",
+          "WATER",
+          "OTHER"
+        ]
+      },
+      {
+        "border_x": 40,
+        "border_y": 140,
+        "description": "First water section",
+        "pink_height": 0,
+        "tiles_start": {
+          "x": 42,
+          "y": 142
+        },
+        "tile_count": 10,
+        "tile_types": [
+          "WATER",
+          "WATER",
+          "WATER",
+          "WATER",
+          "WATER",
+          "WATER",
+          "OTHER",
+          "OTHER",
+          "OTHER",
+          "OTHER"
+        ]
+      },
+      {
+        "border_x": 55,
+        "border_y": 141,
+        "description": "Second section",
+        "pink_height": 0,
+        "tiles_start": {
+          "x": 57,
+          "y": 143
+        },
+        "tile_count": 10,
+        "tile_types": [
+          "WATER",
+          "WATER",
+          "WATER",
+          "OTHER",
+          "WATER",
+          "OTHER",
+          "WATER",
+          "OTHER",
+          "WATER",
+          "OTHER"
+        ]
+      },
+      {
+        "border_x": 80,
+        "border_y": 138,
+        "description": "Fifth section",
+        "pink_height": 0,
+        "tiles_start": {
+          "x": 82,
+          "y": 140
+        },
+        "tile_count": 10,
+        "tile_types": [
+          "OTHER",
+          "WATER",
+          "OTHER",
+          "WATER",
+          "BEACH",
+          "WATER",
+          "BEACH",
+          "WATER",
+          "BEACH",
+          "WATER"
+        ]
+      },
+      {
+        "border_x": 110,
+        "border_y": 139,
+        "description": "Fourth section",
+        "pink_height": 0,
+        "tiles_start": {
+          "x": 112,
+          "y": 141
+        },
+        "tile_count": 10,
+        "tile_types": [
+          "WATER",
+          "OTHER",
+          "OTHER",
+          "OTHER",
+          "OTHER",
+          "OTHER",
+          "WATER",
+          "WATER",
+          "WATER",
+          "WATER"
+        ]
+      }
+    ]
+  }
+}

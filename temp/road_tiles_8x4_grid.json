@@ -1,0 +1,369 @@
+{
+  "road_tiles": {
+    "description": "Road tiles in 8x4 grid",
+    "grid_dimensions": {
+      "columns": 8,
+      "rows": 4
+    },
+    "tile_size": 8,
+    "grid_spacing": 9,
+    "start_position": {
+      "x": 0,
+      "y": 0
+    },
+    "tiles": [
+      {
+        "grid_position": {
+          "row": 0,
+          "col": 0
+        },
+        "index": 0,
+        "x": 0,
+        "y": 0,
+        "name": "ROAD_HORT",
+        "status": "full"
+      },
+      {
+        "grid_position": {
+          "row": 0,
+          "col": 1
+        },
+        "index": 1,
+        "x": 9,
+        "y": 0,
+        "name": "ROAD_VERT",
+        "status": "partial"
+      },
+      {
+        "grid_position": {
+          "row": 0,
+          "col": 2
+        },
+        "index": 2,
+        "x": 18,
+        "y": 0,
+        "name": "ROAD_NE",
+        "status": "partial"
+      },
+      {
+        "grid_position": {
+          "row": 0,
+          "col": 3
+        },
+        "index": 3,
+        "x": 27,
+        "y": 0,
+        "name": "ROAD_SE",
+        "status": "partial"
+      },
+      {
+        "grid_position": {
+          "row": 0,
+          "col": 4
+        },
+        "index": 4,
+        "x": 36,
+        "y": 0,
+        "name": "ROAD_SW",
+        "status": "partial"
+      },
+      {
+        "grid_position": {
+          "row": 0,
+          "col": 5
+        },
+        "index": 5,
+        "x": 45,
+        "y": 0,
+        "name": "ROAD_NW",
+        "status": "partial"
+      },
+      {
+        "grid_position": {
+          "row": 0,
+          "col": 6
+        },
+        "index": 6,
+        "x": 54,
+        "y": 0,
+        "name": "ROAD_CROSS",
+        "status": "partial"
+      },
+      {
+        "grid_position": {
+          "row": 0,
+          "col": 7
+        },
+        "index": 7,
+        "x": 63,
+        "y": 0,
+        "name": "ROAD_T_N",
+        "status": "partial"
+      },
+      {
+        "grid_position": {
+          "row": 1,
+          "col": 0
+        },
+        "index": 8,
+        "x": 0,
+        "y": 9,
+        "name": "ROAD_T_E",
+        "status": "partial"
+      },
+      {
+        "grid_position": {
+          "row": 1,
+          "col": 1
+        },
+        "index": 9,
+        "x": 9,
+        "y": 9,
+        "name": "ROAD_T_S",
+        "status": "partial"
+      },
+      {
+        "grid_position": {
+          "row": 1,
+          "col": 2
+        },
+        "index": 10,
+        "x": 18,
+        "y": 9,
+        "name": "ROAD_T_W",
+        "status": "partial"
+      },
+      {
+        "grid_position": {
+          "row": 1,
+          "col": 3
+        },
+        "index": 11,
+        "x": 27,
+        "y": 9,
+        "name": "ROAD_END_N",
+        "status": "partial"
+      },
+      {
+        "grid_position": {
+          "row": 1,
+          "col": 4
+        },
+        "index": 12,
+        "x": 36,
+        "y": 9,
+        "name": "EMPTY",
+        "status": "empty"
+      },
+      {
+        "grid_position": {
+          "row": 1,
+          "col": 5
+        },
+        "index": 13,
+        "x": 45,
+        "y": 9,
+        "name": "EMPTY",
+        "status": "empty"
+      },
+      {
+        "grid_position": {
+          "row": 1,
+          "col": 6
+        },
+        "index": 14,
+        "x": 54,
+        "y": 9,
+        "name": "EMPTY",
+        "status": "empty"
+      },
+      {
+        "grid_position": {
+          "row": 1,
+          "col": 7
+        },
+        "index": 15,
+        "x": 63,
+        "y": 9,
+        "name": "EMPTY",
+        "status": "empty"
+      },
+      {
+        "grid_position": {
+          "row": 2,
+          "col": 0
+        },
+        "index": 16,
+        "x": 0,
+        "y": 18,
+        "name": "EMPTY",
+        "status": "partial"
+      },
+      {
+        "grid_position": {
+          "row": 2,
+          "col": 1
+        },
+        "index": 17,
+        "x": 9,
+        "y": 18,
+        "name": "EMPTY",
+        "status": "partial"
+      },
+      {
+        "grid_position": {
+          "row": 2,
+          "col": 2
+        },
+        "index": 18,
+        "x": 18,
+        "y": 18,
+        "name": "EMPTY",
+        "status": "partial"
+      },
+      {
+        "grid_position": {
+          "row": 2,
+          "col": 3
+        },
+        "index": 19,
+        "x": 27,
+        "y": 18,
+        "name": "EMPTY",
+        "status": "partial"
+      },
+      {
+        "grid_position": {
+          "row": 2,
+          "col": 4
+        },
+        "index": 20,
+        "x": 36,
+        "y": 18,
+        "name": "EMPTY",
+        "status": "partial"
+      },
+      {
+        "grid_position": {
+          "row": 2,
+          "col": 5
+        },
+        "index": 21,
+        "x": 45,
+        "y": 18,
+        "name": "EMPTY",
+        "status": "partial"
+      },
+      {
+        "grid_position": {
+          "row": 2,
+          "col": 6
+        },
+        "index": 22,
+        "x": 54,
+        "y": 18,
+        "name": "EMPTY",
+        "status": "partial"
+      },
+      {
+        "grid_position": {
+          "row": 2,
+          "col": 7
+        },
+        "index": 23,
+        "x": 63,
+        "y": 18,
+        "name": "EMPTY",
+        "status": "partial"
+      },
+      {
+        "grid_position": {
+          "row": 3,
+          "col": 0
+        },
+        "index": 24,
+        "x": 0,
+        "y": 27,
+        "name": "EMPTY",
+        "status": "partial"
+      },
+      {
+        "grid_position": {
+          "row": 3,
+          "col": 1
+        },
+        "index": 25,
+        "x": 9,
+        "y": 27,
+        "name": "EMPTY",
+        "status": "partial"
+      },
+      {
+        "grid_position": {
+          "row": 3,
+          "col": 2
+        },
+        "index": 26,
+        "x": 18,
+        "y": 27,
+        "name": "EMPTY",
+        "status": "partial"
+      },
+      {
+        "grid_position": {
+          "row": 3,
+          "col": 3
+        },
+        "index": 27,
+        "x": 27,
+        "y": 27,
+        "name": "EMPTY",
+        "status": "partial"
+      },
+      {
+        "grid_position": {
+          "row": 3,
+          "col": 4
+        },
+        "index": 28,
+        "x": 36,
+        "y": 27,
+        "name": "EMPTY",
+        "status": "partial"
+      },
+      {
+        "grid_position": {
+          "row": 3,
+          "col": 5
+        },
+        "index": 29,
+        "x": 45,
+        "y": 27,
+        "name": "EMPTY",
+        "status": "empty"
+      },
+      {
+        "grid_position": {
+          "row": 3,
+          "col": 6
+        },
+        "index": 30,
+        "x": 54,
+        "y": 27,
+        "name": "EMPTY",
+        "status": "partial"
+      },
+      {
+        "grid_position": {
+          "row": 3,
+          "col": 7
+        },
+        "index": 31,
+        "x": 63,
+        "y": 27,
+        "name": "EMPTY",
+        "status": "partial"
+      }
+    ]
+  }
+}

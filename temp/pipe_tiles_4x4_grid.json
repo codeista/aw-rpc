@@ -1,0 +1,226 @@
+{
+  "pipe_tiles": {
+    "description": "Pipe tiles in 4x4 grid",
+    "grid_dimensions": {
+      "columns": 4,
+      "rows": 4
+    },
+    "tile_size": 8,
+    "grid_spacing": 9,
+    "start_position": {
+      "x": 72,
+      "y": 0
+    },
+    "special_notes": "Pipes have pink/magenta areas that should be transparent",
+    "tiles": [
+      {
+        "grid_position": {
+          "row": 0,
+          "col": 0
+        },
+        "index": 0,
+        "x": 72,
+        "y": 0,
+        "name": "UNKNOWN",
+        "status": "other",
+        "pink_pixels": 0,
+        "notes": ""
+      },
+      {
+        "grid_position": {
+          "row": 0,
+          "col": 1
+        },
+        "index": 1,
+        "x": 81,
+        "y": 0,
+        "name": "UNKNOWN",
+        "status": "other",
+        "pink_pixels": 0,
+        "notes": ""
+      },
+      {
+        "grid_position": {
+          "row": 0,
+          "col": 2
+        },
+        "index": 2,
+        "x": 90,
+        "y": 0,
+        "name": "UNKNOWN",
+        "status": "other",
+        "pink_pixels": 0,
+        "notes": ""
+      },
+      {
+        "grid_position": {
+          "row": 0,
+          "col": 3
+        },
+        "index": 3,
+        "x": 99,
+        "y": 0,
+        "name": "UNKNOWN",
+        "status": "other",
+        "pink_pixels": 0,
+        "notes": ""
+      },
+      {
+        "grid_position": {
+          "row": 1,
+          "col": 0
+        },
+        "index": 4,
+        "x": 72,
+        "y": 9,
+        "name": "EMPTY",
+        "status": "empty",
+        "pink_pixels": 0,
+        "notes": ""
+      },
+      {
+        "grid_position": {
+          "row": 1,
+          "col": 1
+        },
+        "index": 5,
+        "x": 81,
+        "y": 9,
+        "name": "EMPTY",
+        "status": "empty",
+        "pink_pixels": 0,
+        "notes": ""
+      },
+      {
+        "grid_position": {
+          "row": 1,
+          "col": 2
+        },
+        "index": 6,
+        "x": 90,
+        "y": 9,
+        "name": "EMPTY",
+        "status": "empty",
+        "pink_pixels": 0,
+        "notes": ""
+      },
+      {
+        "grid_position": {
+          "row": 1,
+          "col": 3
+        },
+        "index": 7,
+        "x": 99,
+        "y": 9,
+        "name": "EMPTY",
+        "status": "empty",
+        "pink_pixels": 0,
+        "notes": ""
+      },
+      {
+        "grid_position": {
+          "row": 2,
+          "col": 0
+        },
+        "index": 8,
+        "x": 72,
+        "y": 18,
+        "name": "UNKNOWN",
+        "status": "other",
+        "pink_pixels": 0,
+        "notes": ""
+      },
+      {
+        "grid_position": {
+          "row": 2,
+          "col": 1
+        },
+        "index": 9,
+        "x": 81,
+        "y": 18,
+        "name": "UNKNOWN",
+        "status": "other",
+        "pink_pixels": 0,
+        "notes": ""
+      },
+      {
+        "grid_position": {
+          "row": 2,
+          "col": 2
+        },
+        "index": 10,
+        "x": 90,
+        "y": 18,
+        "name": "UNKNOWN",
+        "status": "other",
+        "pink_pixels": 0,
+        "notes": ""
+      },
+      {
+        "grid_position": {
+          "row": 2,
+          "col": 3
+        },
+        "index": 11,
+        "x": 99,
+        "y": 18,
+        "name": "UNKNOWN",
+        "status": "other",
+        "pink_pixels": 14,
+        "notes": "Pink areas should be transparent"
+      },
+      {
+        "grid_position": {
+          "row": 3,
+          "col": 0
+        },
+        "index": 12,
+        "x": 72,
+        "y": 27,
+        "name": "UNKNOWN",
+        "status": "other",
+        "pink_pixels": 0,
+        "notes": ""
+      },
+      {
+        "grid_position": {
+          "row": 3,
+          "col": 1
+        },
+        "index": 13,
+        "x": 81,
+        "y": 27,
+        "name": "UNKNOWN",
+        "status": "other",
+        "pink_pixels": 0,
+        "notes": ""
+      },
+      {
+        "grid_position": {
+          "row": 3,
+          "col": 2
+        },
+        "index": 14,
+        "x": 90,
+        "y": 27,
+        "name": "UNKNOWN",
+        "status": "other",
+        "pink_pixels": 0,
+        "notes": ""
+      },
+      {
+        "grid_position": {
+          "row": 3,
+          "col": 3
+        },
+        "index": 15,
+        "x": 99,
+        "y": 27,
+        "name": "UNKNOWN",
+        "status": "other",
+        "pink_pixels": 16,
+        "notes": "Pink areas should be transparent"
+      }
+    ]
+  }
+}
