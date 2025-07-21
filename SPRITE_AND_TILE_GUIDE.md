@@ -34,8 +34,6 @@
    - **WOOD**: (352, 48, 16, 32) - Double height
    - **MOUNTAIN**: (25, 31, 16, 32) - Double height
    - **REEF**: (195, 145, 16, 16)
-   - **PORT**: (144, 64, 16, 32) - Double height
-   - **RUINS**: (280, 13, 16, 16)
 
 ### Road Tiles (Verified)
 1. Starting position: (42, 13) with 17px spacing
@@ -69,16 +67,16 @@
 4. **Animation**: Each tile has 4 frames vertically; we extract only the first
 5. **Note**: River position (3,3) is blank/empty
 
-### Building Tiles (16×32 - Verified)
-1. **Neutral buildings** at y=758:
-   - CITY: (0, 758)
-   - FACTORY: (17, 758)
-   - AIRPORT: (34, 758)
-   - PORT: (51, 758)
-   - HQ: (68, 758)
-   - Additional special buildings continue along row
-2. **Color variants**: Red, Blue, Yellow, Green, Black versions at different x positions
-3. **Fog buildings**: Same row (y=758) starting at x=222
+### Building Tiles (Mostly 16×32 - Verified)
+1. **Neutral buildings** at y=757:
+   - All buildings are 16×32 (double height)
+   - See VERIFIED_TILE_COORDINATES.md for exact coordinates
+2. **Army buildings** at different y-coordinates per army:
+   - RED: y=803, BLUE: y=836, GREEN: y=869, YELLOW: y=902, GREY: y=935
+   - Most buildings are 16×32 (double height)
+   - **EXCEPTION**: FACTORY buildings are 16×16 (bottom half only)
+   - FACTORY extracted from (x, y+16) coordinates
+3. **Fog buildings**: Same coordinates + 372 pixels in Y direction
 
 ### Fog Tiles (Verified)
 1. **Consistent offset**: All fog tiles are at non-fog position + 372 pixels in Y
@@ -105,7 +103,7 @@
 
 ### Common Extraction Issues (Fixed)
 1. **REEF position**: Was incorrectly at (144, 270), fixed to (195, 145)
-2. **Spurious tiles**: Removed standalone CITY/FACTORY/AIRPORT that don't exist
+2. **Spurious tiles**: PORT and RUINS are NOT terrain tiles (PORT is a building, RUINS don't exist)
 3. **Grid confusion**: Pipes are 4×5, not 5×4
 4. **Water gaps**: 3px gaps, not 1px
 5. **Blank tiles**: Position (3,2) in pipes and (3,3) in river are empty
@@ -151,6 +149,26 @@ if tile.mode == 'P':
 - **Fog tiles**: 134+ with consistent +372px Y offset
 - **Total unique tiles extracted**: 250+ tiles verified
 
+## Upscaling Status (2025-07-21)
+
+### ✅ Completed Upscaling (2x using Nearest Neighbor)
+- **Map Tiles**: 199 tiles upscaled from verified coordinates
+  - Location: `/temp/all_tiles_upscaled_2x/`
+  - Terrain: 16×16 → 32×32
+  - Buildings: 16×32 → 32×64 (except FACTORY: 16×16 → 32×32)
+  - Roads/Pipes/Water: 16×16 → 32×32
+
+- **Unit Sprites**: 250 sprites upscaled with proper labels
+  - Location: `/temp/units_upscaled_2x_labeled/`
+  - All units: 16×16 → 32×32
+  - Organized by type: infantry, tanks, vehicles, air, naval, special
+  - Label format: `UNITTYPE_ARMY_STATE_INDEX.png`
+
+### Upscaling Method
+- Algorithm: Nearest Neighbor (pixel-perfect scaling)
+- Preserves sharp pixel art aesthetic
+- No smoothing or interpolation artifacts
+
 ## Remaining Tasks
 - Label water tiles with descriptive names (SEA_NW, BEACH_CORNER_SE, etc.)
-- Additional fog tile categories if any remain
+- Integrate upscaled assets into game rendering
