@@ -1,0 +1,614 @@
+{
+  "ammo_warning": {
+    "h": 16,
+    "w": 16,
+    "x": 16,
+    "y": 96
+  },
+  "fuel_warning": {
+    "h": 16,
+    "w": 16,
+    "x": 0,
+    "y": 96
+  },
+  "hp_1": {
+    "h": 16,
+    "w": 16,
+    "x": 0,
+    "y": 0
+  },
+  "hp_2": {
+    "h": 16,
+    "w": 16,
+    "x": 16,
+    "y": 0
+  },
+  "hp_3": {
+    "h": 16,
+    "w": 16,
+    "x": 32,
+    "y": 0
+  },
+  "hp_4": {
+    "h": 16,
+    "w": 16,
+    "x": 48,
+    "y": 0
+  },
+  "hp_5": {
+    "h": 16,
+    "w": 16,
+    "x": 64,
+    "y": 0
+  },
+  "hp_6": {
+    "h": 16,
+    "w": 16,
+    "x": 80,
+    "y": 0
+  },
+  "hp_7": {
+    "h": 16,
+    "w": 16,
+    "x": 96,
+    "y": 0
+  },
+  "hp_8": {
+    "h": 16,
+    "w": 16,
+    "x": 112,
+    "y": 0
+  },
+  "hp_9": {
+    "h": 16,
+    "w": 16,
+    "x": 128,
+    "y": 0
+  },
+  "hp_blue_1": {
+    "h": 16,
+    "w": 16,
+    "x": 64,
+    "y": 32
+  },
+  "hp_blue_2": {
+    "h": 16,
+    "w": 16,
+    "x": 80,
+    "y": 32
+  },
+  "hp_blue_3": {
+    "h": 16,
+    "w": 16,
+    "x": 96,
+    "y": 32
+  },
+  "hp_blue_4": {
+    "h": 16,
+    "w": 16,
+    "x": 112,
+    "y": 32
+  },
+  "hp_blue_5": {
+    "h": 16,
+    "w": 16,
+    "x": 128,
+    "y": 32
+  },
+  "hp_blue_6": {
+    "h": 16,
+    "w": 16,
+    "x": 144,
+    "y": 32
+  },
+  "hp_blue_7": {
+    "h": 16,
+    "w": 16,
+    "x": 160,
+    "y": 32
+  },
+  "hp_blue_8": {
+    "h": 16,
+    "w": 16,
+    "x": 176,
+    "y": 32
+  },
+  "hp_blue_9": {
+    "h": 16,
+    "w": 16,
+    "x": 192,
+    "y": 32
+  },
+  "hp_blue_unknown": {
+    "h": 16,
+    "w": 16,
+    "x": 208,
+    "y": 32
+  },
+  "hp_green_1": {
+    "h": 16,
+    "w": 16,
+    "x": 64,
+    "y": 48
+  },
+  "hp_green_2": {
+    "h": 16,
+    "w": 16,
+    "x": 80,
+    "y": 48
+  },
+  "hp_green_3": {
+    "h": 16,
+    "w": 16,
+    "x": 96,
+    "y": 48
+  },
+  "hp_green_4": {
+    "h": 16,
+    "w": 16,
+    "x": 112,
+    "y": 48
+  },
+  "hp_green_5": {
+    "h": 16,
+    "w": 16,
+    "x": 128,
+    "y": 48
+  },
+  "hp_green_6": {
+    "h": 16,
+    "w": 16,
+    "x": 144,
+    "y": 48
+  },
+  "hp_green_7": {
+    "h": 16,
+    "w": 16,
+    "x": 160,
+    "y": 48
+  },
+  "hp_green_8": {
+    "h": 16,
+    "w": 16,
+    "x": 176,
+    "y": 48
+  },
+  "hp_green_9": {
+    "h": 16,
+    "w": 16,
+    "x": 192,
+    "y": 48
+  },
+  "hp_green_unknown": {
+    "h": 16,
+    "w": 16,
+    "x": 208,
+    "y": 48
+  },
+  "hp_grey_1": {
+    "h": 16,
+    "w": 16,
+    "x": 64,
+    "y": 80
+  },
+  "hp_grey_2": {
+    "h": 16,
+    "w": 16,
+    "x": 80,
+    "y": 80
+  },
+  "hp_grey_3": {
+    "h": 16,
+    "w": 16,
+    "x": 96,
+    "y": 80
+  },
+  "hp_grey_4": {
+    "h": 16,
+    "w": 16,
+    "x": 112,
+    "y": 80
+  },
+  "hp_grey_5": {
+    "h": 16,
+    "w": 16,
+    "x": 128,
+    "y": 80
+  },
+  "hp_grey_6": {
+    "h": 16,
+    "w": 16,
+    "x": 144,
+    "y": 80
+  },
+  "hp_grey_7": {
+    "h": 16,
+    "w": 16,
+    "x": 160,
+    "y": 80
+  },
+  "hp_grey_8": {
+    "h": 16,
+    "w": 16,
+    "x": 176,
+    "y": 80
+  },
+  "hp_grey_9": {
+    "h": 16,
+    "w": 16,
+    "x": 192,
+    "y": 80
+  },
+  "hp_grey_unknown": {
+    "h": 16,
+    "w": 16,
+    "x": 208,
+    "y": 80
+  },
+  "hp_red_1": {
+    "h": 16,
+    "w": 16,
+    "x": 64,
+    "y": 16
+  },
+  "hp_red_2": {
+    "h": 16,
+    "w": 16,
+    "x": 80,
+    "y": 16
+  },
+  "hp_red_3": {
+    "h": 16,
+    "w": 16,
+    "x": 96,
+    "y": 16
+  },
+  "hp_red_4": {
+    "h": 16,
+    "w": 16,
+    "x": 112,
+    "y": 16
+  },
+  "hp_red_5": {
+    "h": 16,
+    "w": 16,
+    "x": 128,
+    "y": 16
+  },
+  "hp_red_6": {
+    "h": 16,
+    "w": 16,
+    "x": 144,
+    "y": 16
+  },
+  "hp_red_7": {
+    "h": 16,
+    "w": 16,
+    "x": 160,
+    "y": 16
+  },
+  "hp_red_8": {
+    "h": 16,
+    "w": 16,
+    "x": 176,
+    "y": 16
+  },
+  "hp_red_9": {
+    "h": 16,
+    "w": 16,
+    "x": 192,
+    "y": 16
+  },
+  "hp_red_unknown": {
+    "h": 16,
+    "w": 16,
+    "x": 208,
+    "y": 16
+  },
+  "hp_unknown": {
+    "h": 16,
+    "w": 16,
+    "x": 144,
+    "y": 0
+  },
+  "hp_yellow_1": {
+    "h": 16,
+    "w": 16,
+    "x": 64,
+    "y": 64
+  },
+  "hp_yellow_2": {
+    "h": 16,
+    "w": 16,
+    "x": 80,
+    "y": 64
+  },
+  "hp_yellow_3": {
+    "h": 16,
+    "w": 16,
+    "x": 96,
+    "y": 64
+  },
+  "hp_yellow_4": {
+    "h": 16,
+    "w": 16,
+    "x": 112,
+    "y": 64
+  },
+  "hp_yellow_5": {
+    "h": 16,
+    "w": 16,
+    "x": 128,
+    "y": 64
+  },
+  "hp_yellow_6": {
+    "h": 16,
+    "w": 16,
+    "x": 144,
+    "y": 64
+  },
+  "hp_yellow_7": {
+    "h": 16,
+    "w": 16,
+    "x": 160,
+    "y": 64
+  },
+  "hp_yellow_8": {
+    "h": 16,
+    "w": 16,
+    "x": 176,
+    "y": 64
+  },
+  "hp_yellow_9": {
+    "h": 16,
+    "w": 16,
+    "x": 192,
+    "y": 64
+  },
+  "hp_yellow_unknown": {
+    "h": 16,
+    "w": 16,
+    "x": 208,
+    "y": 64
+  },
+  "status_blue_capture": {
+    "h": 16,
+    "w": 16,
+    "x": 240,
+    "y": 32
+  },
+  "status_blue_capture_unavailable": {
+    "h": 16,
+    "w": 16,
+    "x": 16,
+    "y": 32
+  },
+  "status_blue_load": {
+    "h": 16,
+    "w": 16,
+    "x": 224,
+    "y": 32
+  },
+  "status_blue_load_air_sea": {
+    "h": 16,
+    "w": 16,
+    "x": 272,
+    "y": 32
+  },
+  "status_blue_load_air_sea_unavailable": {
+    "h": 16,
+    "w": 16,
+    "x": 48,
+    "y": 32
+  },
+  "status_blue_load_unavailable": {
+    "h": 16,
+    "w": 16,
+    "x": 0,
+    "y": 32
+  },
+  "status_blue_submerged": {
+    "h": 16,
+    "w": 16,
+    "x": 256,
+    "y": 32
+  },
+  "status_blue_submerged_unavailable": {
+    "h": 16,
+    "w": 16,
+    "x": 32,
+    "y": 32
+  },
+  "status_green_capture": {
+    "h": 16,
+    "w": 16,
+    "x": 240,
+    "y": 48
+  },
+  "status_green_capture_unavailable": {
+    "h": 16,
+    "w": 16,
+    "x": 16,
+    "y": 48
+  },
+  "status_green_load": {
+    "h": 16,
+    "w": 16,
+    "x": 224,
+    "y": 48
+  },
+  "status_green_load_air_sea": {
+    "h": 16,
+    "w": 16,
+    "x": 272,
+    "y": 48
+  },
+  "status_green_load_air_sea_unavailable": {
+    "h": 16,
+    "w": 16,
+    "x": 48,
+    "y": 48
+  },
+  "status_green_load_unavailable": {
+    "h": 16,
+    "w": 16,
+    "x": 0,
+    "y": 48
+  },
+  "status_green_submerged": {
+    "h": 16,
+    "w": 16,
+    "x": 256,
+    "y": 48
+  },
+  "status_green_submerged_unavailable": {
+    "h": 16,
+    "w": 16,
+    "x": 32,
+    "y": 48
+  },
+  "status_grey_capture": {
+    "h": 16,
+    "w": 16,
+    "x": 240,
+    "y": 80
+  },
+  "status_grey_capture_unavailable": {
+    "h": 16,
+    "w": 16,
+    "x": 16,
+    "y": 80
+  },
+  "status_grey_load": {
+    "h": 16,
+    "w": 16,
+    "x": 224,
+    "y": 80
+  },
+  "status_grey_load_air_sea": {
+    "h": 16,
+    "w": 16,
+    "x": 272,
+    "y": 80
+  },
+  "status_grey_load_air_sea_unavailable": {
+    "h": 16,
+    "w": 16,
+    "x": 48,
+    "y": 80
+  },
+  "status_grey_load_unavailable": {
+    "h": 16,
+    "w": 16,
+    "x": 0,
+    "y": 80
+  },
+  "status_grey_submerged": {
+    "h": 16,
+    "w": 16,
+    "x": 256,
+    "y": 80
+  },
+  "status_grey_submerged_unavailable": {
+    "h": 16,
+    "w": 16,
+    "x": 32,
+    "y": 80
+  },
+  "status_red_capture": {
+    "h": 16,
+    "w": 16,
+    "x": 240,
+    "y": 16
+  },
+  "status_red_capture_unavailable": {
+    "h": 16,
+    "w": 16,
+    "x": 16,
+    "y": 16
+  },
+  "status_red_load": {
+    "h": 16,
+    "w": 16,
+    "x": 224,
+    "y": 16
+  },
+  "status_red_load_air_sea": {
+    "h": 16,
+    "w": 16,
+    "x": 272,
+    "y": 16
+  },
+  "status_red_load_air_sea_unavailable": {
+    "h": 16,
+    "w": 16,
+    "x": 48,
+    "y": 16
+  },
+  "status_red_load_unavailable": {
+    "h": 16,
+    "w": 16,
+    "x": 0,
+    "y": 16
+  },
+  "status_red_submerged": {
+    "h": 16,
+    "w": 16,
+    "x": 256,
+    "y": 16
+  },
+  "status_red_submerged_unavailable": {
+    "h": 16,
+    "w": 16,
+    "x": 32,
+    "y": 16
+  },
+  "status_yellow_capture": {
+    "h": 16,
+    "w": 16,
+    "x": 240,
+    "y": 64
+  },
+  "status_yellow_capture_unavailable": {
+    "h": 16,
+    "w": 16,
+    "x": 16,
+    "y": 64
+  },
+  "status_yellow_load": {
+    "h": 16,
+    "w": 16,
+    "x": 224,
+    "y": 64
+  },
+  "status_yellow_load_air_sea": {
+    "h": 16,
+    "w": 16,
+    "x": 272,
+    "y": 64
+  },
+  "status_yellow_load_air_sea_unavailable": {
+    "h": 16,
+    "w": 16,
+    "x": 48,
+    "y": 64
+  },
+  "status_yellow_load_unavailable": {
+    "h": 16,
+    "w": 16,
+    "x": 0,
+    "y": 64
+  },
+  "status_yellow_submerged": {
+    "h": 16,
+    "w": 16,
+    "x": 256,
+    "y": 64
+  },
+  "status_yellow_submerged_unavailable": {
+    "h": 16,
+    "w": 16,
+    "x": 32,
+    "y": 64
+  }
+}

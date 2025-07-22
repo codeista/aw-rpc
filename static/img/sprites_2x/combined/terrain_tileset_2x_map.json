@@ -1,0 +1,1409 @@
+{
+  "AIRPORT": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 352,
+    "y": 304
+  },
+  "BASE_TOWER_0": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 480,
+    "y": 304
+  },
+  "BASE_TOWER_1": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 512,
+    "y": 304
+  },
+  "BASE_TOWER_2": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 544,
+    "y": 304
+  },
+  "BASE_TOWER_3": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 576,
+    "y": 304
+  },
+  "BASE_TOWER_4": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 608,
+    "y": 304
+  },
+  "BEACH_0_3": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 256,
+    "y": 0
+  },
+  "BEACH_1_3": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 384,
+    "y": 0
+  },
+  "BEACH_2_1": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 448,
+    "y": 0
+  },
+  "BEACH_2_2": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 480,
+    "y": 0
+  },
+  "BEACH_2_3": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 512,
+    "y": 0
+  },
+  "BEACH_4_1": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 64,
+    "y": 48
+  },
+  "BEACH_4_2": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 96,
+    "y": 48
+  },
+  "BEACH_4_3": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 128,
+    "y": 48
+  },
+  "BEACH_5_0": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 160,
+    "y": 48
+  },
+  "BEACH_5_1": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 192,
+    "y": 48
+  },
+  "BEACH_5_2": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 224,
+    "y": 48
+  },
+  "BEACH_5_3": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 256,
+    "y": 48
+  },
+  "BEACH_6_0": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 288,
+    "y": 48
+  },
+  "BEACH_6_1": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 320,
+    "y": 48
+  },
+  "BEACH_6_2": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 352,
+    "y": 48
+  },
+  "BEACH_6_3": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 384,
+    "y": 48
+  },
+  "BEACH_7_0": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 416,
+    "y": 48
+  },
+  "BEACH_7_1": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 448,
+    "y": 48
+  },
+  "BEACH_7_2": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 480,
+    "y": 48
+  },
+  "BEACH_7_3": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 512,
+    "y": 48
+  },
+  "BEACH_8_0": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 544,
+    "y": 48
+  },
+  "BEACH_8_1": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 576,
+    "y": 48
+  },
+  "BEACH_8_2": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 608,
+    "y": 48
+  },
+  "BEACH_8_3": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 0,
+    "y": 96
+  },
+  "BEACH_E": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 288,
+    "y": 0
+  },
+  "BEACH_END_E": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 608,
+    "y": 0
+  },
+  "BEACH_END_N": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 576,
+    "y": 0
+  },
+  "BEACH_END_S": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 0,
+    "y": 48
+  },
+  "BEACH_END_W": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 32,
+    "y": 48
+  },
+  "BEACH_N": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 160,
+    "y": 0
+  },
+  "BEACH_NE": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 224,
+    "y": 0
+  },
+  "BEACH_NW": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 192,
+    "y": 0
+  },
+  "BEACH_S": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 416,
+    "y": 0
+  },
+  "BEACH_SE": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 320,
+    "y": 0
+  },
+  "BEACH_SW": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 352,
+    "y": 0
+  },
+  "BEACH_W": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 544,
+    "y": 0
+  },
+  "BLUE_AIRPORT": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 480,
+    "y": 352
+  },
+  "BLUE_BASE_TOWER_0": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 608,
+    "y": 352
+  },
+  "BLUE_BASE_TOWER_1": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 0,
+    "y": 400
+  },
+  "BLUE_BASE_TOWER_2": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 32,
+    "y": 400
+  },
+  "BLUE_BASE_TOWER_3": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 64,
+    "y": 400
+  },
+  "BLUE_BASE_TOWER_4": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 96,
+    "y": 400
+  },
+  "BLUE_CITY": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 512,
+    "y": 352
+  },
+  "BLUE_COM_TOWER": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 544,
+    "y": 352
+  },
+  "BLUE_FACTORY": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 576,
+    "y": 336
+  },
+  "BLUE_LAB": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 128,
+    "y": 400
+  },
+  "BLUE_PORT": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 160,
+    "y": 400
+  },
+  "CITY": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 384,
+    "y": 304
+  },
+  "COM_TOWER": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 416,
+    "y": 304
+  },
+  "CRoad": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 128,
+    "y": 240
+  },
+  "EMPTY_SILO": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 64,
+    "y": 352
+  },
+  "ESWRiver": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 384,
+    "y": 96
+  },
+  "ESWRoad": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 352,
+    "y": 240
+  },
+  "FACTORY": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 448,
+    "y": 304
+  },
+  "GREEN_AIRPORT": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 192,
+    "y": 400
+  },
+  "GREEN_BASE_TOWER_0": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 320,
+    "y": 400
+  },
+  "GREEN_BASE_TOWER_1": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 352,
+    "y": 400
+  },
+  "GREEN_BASE_TOWER_2": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 384,
+    "y": 400
+  },
+  "GREEN_BASE_TOWER_3": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 416,
+    "y": 400
+  },
+  "GREEN_BASE_TOWER_4": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 448,
+    "y": 400
+  },
+  "GREEN_CITY": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 224,
+    "y": 400
+  },
+  "GREEN_COM_TOWER": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 256,
+    "y": 400
+  },
+  "GREEN_FACTORY": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 288,
+    "y": 384
+  },
+  "GREEN_LAB": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 480,
+    "y": 400
+  },
+  "GREEN_PORT": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 512,
+    "y": 400
+  },
+  "GREY_AIRPORT": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 256,
+    "y": 448
+  },
+  "GREY_BASE_TOWER_0": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 384,
+    "y": 448
+  },
+  "GREY_BASE_TOWER_1": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 416,
+    "y": 448
+  },
+  "GREY_BASE_TOWER_2": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 448,
+    "y": 448
+  },
+  "GREY_BASE_TOWER_3": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 480,
+    "y": 448
+  },
+  "GREY_BASE_TOWER_4": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 512,
+    "y": 448
+  },
+  "GREY_CITY": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 288,
+    "y": 448
+  },
+  "GREY_COM_TOWER": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 320,
+    "y": 448
+  },
+  "GREY_FACTORY": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 352,
+    "y": 432
+  },
+  "GREY_LAB": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 544,
+    "y": 448
+  },
+  "GREY_PORT": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 576,
+    "y": 448
+  },
+  "HBridge": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 0,
+    "y": 432
+  },
+  "LAB": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 0,
+    "y": 352
+  },
+  "MISSILE_SILO": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 32,
+    "y": 352
+  },
+  "MOUNTAIN": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 0,
+    "y": 16
+  },
+  "NESRiver": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 320,
+    "y": 96
+  },
+  "NESRoad": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 448,
+    "y": 240
+  },
+  "PIPE_BROKEN_NS": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 512,
+    "y": 240
+  },
+  "PIPE_BROKEN_WE": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 544,
+    "y": 240
+  },
+  "PIPE_END_E": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 64,
+    "y": 288
+  },
+  "PIPE_END_N": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 96,
+    "y": 288
+  },
+  "PIPE_END_NE": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 32,
+    "y": 288
+  },
+  "PIPE_END_NW": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 0,
+    "y": 288
+  },
+  "PIPE_END_S": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 128,
+    "y": 288
+  },
+  "PIPE_END_SE": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 608,
+    "y": 240
+  },
+  "PIPE_END_SW": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 576,
+    "y": 240
+  },
+  "PIPE_END_W": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 160,
+    "y": 288
+  },
+  "PIPE_HORT": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 192,
+    "y": 288
+  },
+  "PIPE_SEAM_NS": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 224,
+    "y": 288
+  },
+  "PIPE_SEAM_WE": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 256,
+    "y": 288
+  },
+  "PIPE_SPECIAL": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 288,
+    "y": 288
+  },
+  "PIPE_VERT": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 320,
+    "y": 288
+  },
+  "PLAIN": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 32,
+    "y": 0
+  },
+  "PLAIN_var1": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 64,
+    "y": 0
+  },
+  "PORT": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 96,
+    "y": 352
+  },
+  "RED_AIRPORT": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 128,
+    "y": 352
+  },
+  "RED_BASE_TOWER_0": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 256,
+    "y": 352
+  },
+  "RED_BASE_TOWER_1": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 288,
+    "y": 352
+  },
+  "RED_BASE_TOWER_2": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 320,
+    "y": 352
+  },
+  "RED_BASE_TOWER_3": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 352,
+    "y": 352
+  },
+  "RED_BASE_TOWER_4": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 384,
+    "y": 352
+  },
+  "RED_CITY": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 160,
+    "y": 352
+  },
+  "RED_COM_TOWER": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 192,
+    "y": 352
+  },
+  "RED_FACTORY": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 224,
+    "y": 336
+  },
+  "RED_LAB": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 416,
+    "y": 352
+  },
+  "RED_PORT": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 448,
+    "y": 352
+  },
+  "REEF": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 96,
+    "y": 0
+  },
+  "RIVER_0_2": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 96,
+    "y": 96
+  },
+  "RIVER_0_3": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 128,
+    "y": 96
+  },
+  "RIVER_3_0": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 416,
+    "y": 96
+  },
+  "RIVER_3_1": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 448,
+    "y": 96
+  },
+  "RIVER_3_2": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 480,
+    "y": 96
+  },
+  "RIVER_HORT": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 64,
+    "y": 96
+  },
+  "RIVER_NE": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 192,
+    "y": 96
+  },
+  "RIVER_NW": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 160,
+    "y": 96
+  },
+  "RIVER_SE": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 224,
+    "y": 96
+  },
+  "RIVER_SW": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 256,
+    "y": 96
+  },
+  "RIVER_VERT": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 32,
+    "y": 96
+  },
+  "ROAD_HORT": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 160,
+    "y": 240
+  },
+  "ROAD_HORT_PLAIN2": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 192,
+    "y": 240
+  },
+  "ROAD_NE": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 224,
+    "y": 240
+  },
+  "ROAD_NW": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 256,
+    "y": 240
+  },
+  "ROAD_SE": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 288,
+    "y": 240
+  },
+  "ROAD_SW": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 320,
+    "y": 240
+  },
+  "ROAD_VERT": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 480,
+    "y": 240
+  },
+  "SEA": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 512,
+    "y": 96
+  },
+  "SEA_0_1": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 544,
+    "y": 96
+  },
+  "SEA_0_2": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 576,
+    "y": 96
+  },
+  "SEA_0_3": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 608,
+    "y": 96
+  },
+  "SEA_10_0": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 0,
+    "y": 144
+  },
+  "SEA_10_1": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 32,
+    "y": 144
+  },
+  "SEA_10_2": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 64,
+    "y": 144
+  },
+  "SEA_10_3": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 96,
+    "y": 144
+  },
+  "SEA_11_0": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 128,
+    "y": 144
+  },
+  "SEA_11_1": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 160,
+    "y": 144
+  },
+  "SEA_11_2": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 192,
+    "y": 144
+  },
+  "SEA_11_3": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 224,
+    "y": 144
+  },
+  "SEA_1_0": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 256,
+    "y": 144
+  },
+  "SEA_1_1": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 288,
+    "y": 144
+  },
+  "SEA_1_2": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 320,
+    "y": 144
+  },
+  "SEA_1_3": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 352,
+    "y": 144
+  },
+  "SEA_2_0": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 384,
+    "y": 144
+  },
+  "SEA_2_1": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 416,
+    "y": 144
+  },
+  "SEA_2_2": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 448,
+    "y": 144
+  },
+  "SEA_2_3": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 480,
+    "y": 144
+  },
+  "SEA_3_0": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 512,
+    "y": 144
+  },
+  "SEA_3_1": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 544,
+    "y": 144
+  },
+  "SEA_3_2": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 576,
+    "y": 144
+  },
+  "SEA_3_3": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 608,
+    "y": 144
+  },
+  "SEA_4_0": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 0,
+    "y": 192
+  },
+  "SEA_4_1": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 32,
+    "y": 192
+  },
+  "SEA_4_2": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 64,
+    "y": 192
+  },
+  "SEA_4_3": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 96,
+    "y": 192
+  },
+  "SEA_5_0": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 128,
+    "y": 192
+  },
+  "SEA_5_1": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 160,
+    "y": 192
+  },
+  "SEA_5_2": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 192,
+    "y": 192
+  },
+  "SEA_5_3": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 224,
+    "y": 192
+  },
+  "SEA_6_0": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 256,
+    "y": 192
+  },
+  "SEA_6_1": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 288,
+    "y": 192
+  },
+  "SEA_6_2": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 320,
+    "y": 192
+  },
+  "SEA_6_3": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 352,
+    "y": 192
+  },
+  "SEA_7_0": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 384,
+    "y": 192
+  },
+  "SEA_7_1": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 416,
+    "y": 192
+  },
+  "SEA_7_2": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 448,
+    "y": 192
+  },
+  "SEA_7_3": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 480,
+    "y": 192
+  },
+  "SEA_8_0": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 512,
+    "y": 192
+  },
+  "SEA_8_1": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 544,
+    "y": 192
+  },
+  "SEA_8_2": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 576,
+    "y": 192
+  },
+  "SEA_8_3": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 608,
+    "y": 192
+  },
+  "SEA_9_0": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 0,
+    "y": 240
+  },
+  "SEA_9_1": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 32,
+    "y": 240
+  },
+  "SEA_9_2": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 64,
+    "y": 240
+  },
+  "SEA_9_3": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 96,
+    "y": 240
+  },
+  "SWNRiver": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 288,
+    "y": 96
+  },
+  "SWNRoad": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 384,
+    "y": 240
+  },
+  "VBridge": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 32,
+    "y": 432
+  },
+  "WNERiver": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 352,
+    "y": 96
+  },
+  "WNERoad": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 416,
+    "y": 240
+  },
+  "WOOD": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 128,
+    "y": 16
+  },
+  "YELLOW_AIRPORT": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 544,
+    "y": 400
+  },
+  "YELLOW_BASE_TOWER_0": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 32,
+    "y": 448
+  },
+  "YELLOW_BASE_TOWER_1": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 64,
+    "y": 448
+  },
+  "YELLOW_BASE_TOWER_2": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 96,
+    "y": 448
+  },
+  "YELLOW_BASE_TOWER_3": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 128,
+    "y": 448
+  },
+  "YELLOW_BASE_TOWER_4": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 160,
+    "y": 448
+  },
+  "YELLOW_CITY": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 576,
+    "y": 400
+  },
+  "YELLOW_COM_TOWER": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 608,
+    "y": 400
+  },
+  "YELLOW_FACTORY": {
+    "full_height": 32,
+    "h": 32,
+    "w": 32,
+    "x": 0,
+    "y": 432
+  },
+  "YELLOW_LAB": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 192,
+    "y": 448
+  },
+  "YELLOW_PORT": {
+    "full_height": 64,
+    "h": 32,
+    "w": 32,
+    "x": 224,
+    "y": 448
+  }
+}

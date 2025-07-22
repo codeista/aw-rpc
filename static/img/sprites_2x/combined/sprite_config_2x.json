@@ -1,0 +1,15 @@
+{
+  "scale": 2,
+  "tile_size": 32,
+  "ui_size": 16,
+  "sprite_sheets": {
+    "terrain": "terrain_tileset_2x.png",
+    "units": "units_spritesheet_2x.png",
+    "ui": "ui_spritesheet_2x.png"
+  },
+  "maps": {
+    "terrain": "terrain_tileset_2x_map.json",
+    "units": "units_spritesheet_2x_map.json",
+    "ui": "ui_spritesheet_2x_map.json"
+  }
+}
