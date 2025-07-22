@@ -424,8 +424,12 @@ function initializeClickHandler() {
     // Replace the main canvas click handler
     const drawDiv = document.getElementById('draw');
     if (drawDiv) {
-        // Find the actual canvas element (Two.js creates it inside the div)
-        const actualCanvas = drawDiv.querySelector('canvas');
+        // Find the actual canvas element (either in drawDiv or globally)
+        let actualCanvas = drawDiv.querySelector('canvas');
+        if (!actualCanvas) {
+            // For 2x renderer, canvas might be globally available
+            actualCanvas = window.canvas;
+        }
         if (actualCanvas) {
             // Remove ALL old handlers
             actualCanvas.onclick = null;

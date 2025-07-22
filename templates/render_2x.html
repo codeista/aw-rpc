@@ -726,7 +726,7 @@
             
             <a href="/api/browse" target="_blank" class="api-link">📡 Browse API</a>
             
-            <!-- Hidden checkboxes for compatibility with render.js -->
+            <!-- Hidden checkboxes for game settings -->
             <input type="checkbox" id="inputshowmap" checked style="display: none;">
             <input type="checkbox" id="inputshowchat" checked style="display: none;">
             <input type="checkbox" id="inputshowjson" style="display: none;">
@@ -744,6 +744,7 @@
                 <!-- Board Container -->
                 <div class="board-container" id="board-container">
                     <div id="draw" x-token="{{token}}"></div>
+                    <div id="tile-info" style="margin-top: 10px; padding: 5px 10px; background: #2c3e50; color: white; font-size: 12px; min-height: 20px;"></div>
                 </div>
 
             </section>
@@ -765,7 +766,7 @@
                     </div>
                     <div class="status-item">
                         <span class="status-label">Day</span>
-                        <span class="status-value" id="current-day">-</span>
+                        <span class="status-value" id="day-number">-</span>
                     </div>
                     <div class="status-item">
                         <span class="status-label">RED Funds</span>
@@ -847,6 +848,12 @@
         </div>
     </div>
 
+    <!-- Production Menu -->
+    <div id="production-menu" style="display: none;"></div>
+    
+    <!-- Context Menu -->
+    <div id="context-menu" class="context-menu" style="display: none;"></div>
+    
     <!-- Loading Overlay -->
     <div class="loading-overlay" id="loadingOverlay" style="display: none;">
         <div>
@@ -857,7 +864,6 @@
 
     <!-- JavaScript -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.js"></script>
-    <script src="/static/js/two.min.js"></script>
     <script src="/static/js/logger.js"></script>
     <script src="/static/js/error-handler.js"></script>
     <script src="/static/js/validators.js"></script>
@@ -866,13 +872,7 @@
     <script src="/static/js/keyboard-shortcuts.js"></script>
     <script src="/static/js/animation-system.js"></script>
     
-    <!-- Optimized Sprite Renderer (93KB vs 370KB) -->
-    <script src="/static/js/optimized-sprite-renderer.js"></script>
-    
-    <!-- Optimized Tile Renderer (6KB vs 76KB, 92% smaller) -->
-    <script src="/static/js/optimized-tile-renderer.js"></script>
-    
-    <!-- TRANSITIONAL: Load legacy render.js first during Phase 1 -->
+    <!-- 2x Canvas Renderer -->
     <script src="/static/js/render_2x.js"></script>
     
     <!-- Simple Click Handler - DISABLED, using centralized handler instead -->
@@ -990,7 +990,7 @@
             if (jsonSection) jsonSection.style.display = 'none';
             if (chatSection) chatSection.style.display = 'block'; // Ensure chat is visible
             
-            // The original render.js handles chat functionality, so we don't override it
+            // Chat functionality is handled by centralized-click-handler.js
             
             // Set initial state of toggles based on checkboxes
             const inputshowmap = document.getElementById('inputshowmap');

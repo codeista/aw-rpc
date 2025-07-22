@@ -138,6 +138,43 @@ NEVER proactively create documentation files (*.md) or README files. Only create
   - Upscaling approach for pixel art
   - PNG palette mode handling
 
+## 2X Sprite System (NEW)
+- **UNITS**: `sprites_2x/combined/units_spritesheet_2x.png` with `units_spritesheet_2x_map.json`
+- **TERRAIN**: `sprites_2x/combined/terrain_tileset_2x.png` with `terrain_tileset_2x_map.json`
+  - Complete 640x480 tileset with 201 terrain sprites (100% MapType coverage)
+  - Includes: terrain, water/beaches/rivers, roads, pipes, bridges, and all army buildings
+  - Buildings use bottom-tile referencing for double-height sprites
+  - Extra row spacing (48px) preserves overlap areas for tall sprites
+  - Map includes 'full_height' property for rendering overlaps correctly
+- **UI ELEMENTS**: `sprites_2x/combined/ui_spritesheet_2x.png` with `ui_spritesheet_2x_map.json`
+  - Row 1: Generic HP icons (white) - 1-9 and ?
+  - Rows 2-6: For each army (red, blue, green, yellow, grey):
+    - 4 unavailable status icons (load, capture, submerged, air/sea load)
+    - 10 HP numbers (1-9 and ?)
+    - 4 available status icons (load, capture, submerged, air/sea load)
+  - Row 7: Fuel and ammo warning icons
+  - Total: 102 sprites (10 white HP + 40 status + 50 army HP + 2 warnings)
+
+### 2X Sprite Naming Conventions
+**IMPORTANT**: The game expects exact sprite names. The 2x system uses these naming rules:
+- **Simple terrain**: Direct names like `SEA`, `PLAIN`, `MOUNTAIN`, `REEF`, `WOOD`
+- **Roads**: `ROAD_HORT`, `ROAD_VERT`, and corner/junction variants
+- **Rivers**: `RIVER_HORT`, `RIVER_VERT`, `RIVER_NW`, `RIVER_NE`, etc.
+- **Beaches**: Direction-based like `BEACH_N`, `BEACH_E`, `BEACH_NW`, etc.
+- **Buildings**: Army prefix for owned buildings (e.g., `RED_CITY`, `BLUE_FACTORY`)
+- **HQ/Base**: Now called `BASE_TOWER_0` through `BASE_TOWER_4` (not HQ_VARIANT)
+- **Special**: Some tiles like `EMPTY_SILO` have been renamed from originals
+
+Total renamed sprites: 71 (including SEA variants, river directions, HQ→BASE_TOWER, road directions, etc.)
+
+When verifying sprite coverage, always check against the complete MapType enum in map_system.py (63 types total).
+
+## Important Rendering Notes
+- **Sprite Overlap**: Many sprites (buildings, mountains, woods) extend above their base tile
+- **Drawing Order**: Render tiles top-to-bottom so lower tiles can overlap upper ones
+- **Coordinate System**: Double-height buildings are referenced by their bottom tile
+- **Renderer**: Must check 'full_height' property in terrain map for proper overlap rendering
+
 ## Testing Documentation
 - **Run Tests**: `python3 run_tests.py` - Runs click handler and sprite extraction tests
 - **Regression Tests**: `python3 run_regression_tests.py` - Comprehensive mechanics validation

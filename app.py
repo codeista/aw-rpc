@@ -801,7 +801,12 @@ def create_game_api():
 @app.route('/game/<token>')
 def game(token: str):
     app_logger.info(f"Game page accessed: {token}")
-    return render_template('render.html', token=token)
+    return render_template('render_2x.html', token=token)
+
+@app.route('/game2x/<token>')
+def game_2x(token: str):
+    app_logger.info(f"Game 2x page accessed: {token}")
+    return render_template('render_2x.html', token=token)
 
 @app.route('/templates/<path:filename>')
 def serve_template_files(filename):
@@ -1053,6 +1058,7 @@ def test_interface():
     """Complete testing interface with all testing tools"""
     app_logger.info("Test interface accessed")
     return render_template('test_interface.html')
+
 
 @app.route('/test_game')
 def test_game():
