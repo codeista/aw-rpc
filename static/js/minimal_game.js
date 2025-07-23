@@ -286,13 +286,7 @@ class Game {
                     if (!tallTypes.includes(tile.mapTile.type)) {
                         let spriteName = tile.mapTile.type;
                         
-                        // Fix beach tile names (they're swapped in the sprite sheet)
-                        // TODO: BEACH_W and BEACH_E also need review - orientation seems off
-                        if (spriteName === 'BEACH_N') {
-                            spriteName = 'BEACH_W';
-                        } else if (spriteName === 'BEACH_W') {
-                            spriteName = 'BEACH_N';
-                        }
+                        // Beach tiles are now correctly mapped
                         
                         if (tile.mapTile.army && tile.mapTile.army !== 'NEUTRAL') {
                             const armySprite = `${tile.mapTile.army}_${tile.mapTile.type}`;

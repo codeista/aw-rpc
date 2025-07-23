@@ -191,6 +191,11 @@
             image-rendering: -moz-crisp-edges;
             image-rendering: crisp-edges;
             /* Canvas sized by JavaScript based on map dimensions */
+            /* Prevent CSS scaling */
+            max-width: none !important;
+            max-height: none !important;
+            width: auto !important;
+            height: auto !important;
         }
 
         .info-panel {
@@ -676,6 +681,31 @@
             background-color: #34495e !important;
             color: white !important;
         }
+        
+        /* Context Menu Styles */
+        .context-menu {
+            position: fixed;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            border: 2px solid #3498db;
+            border-radius: 6px;
+            padding: 4px;
+            min-width: 150px;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+        
+        .context-menu .menu-item {
+            padding: 8px 12px;
+            color: #ecf0f1;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.2s ease;
+            font-size: 14px;
+        }
+        
+        .context-menu .menu-item:hover {
+            background: rgba(52, 152, 219, 0.5);
+        }
     </style>
 </head>
 <body>
@@ -743,7 +773,7 @@
 
                 <!-- Board Container -->
                 <div class="board-container" id="board-container">
-                    <div id="draw" x-token="{{token}}"></div>
+                    <canvas id="draw" x-token="{{token}}"></canvas>
                     <div id="tile-info" style="margin-top: 10px; padding: 5px 10px; background: #2c3e50; color: white; font-size: 12px; min-height: 20px;"></div>
                 </div>
 
@@ -782,7 +812,7 @@
                 <div class="quick-actions">
                     <h3>Game Actions</h3>
                     <div class="quick-controls">
-                        <button class="quick-btn btn-success" onclick="armyEndTurn();">
+                        <button class="quick-btn btn-success" id="end-turn-btn">
                             ⏭️ End Turn
                         </button>
                         <button class="quick-btn btn-primary" onclick="rerender();">

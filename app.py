@@ -46,6 +46,9 @@ from routes.unified_test_route import unified_test_bp
 from routes.unified_test_api import unified_test_api_bp
 import api_docs_route  # Import the custom API documentation
 
+# Import the new clean API v2
+from api_v2 import GameAPIv2
+
 # Import our fixed logging system
 try:
     from logging_config import setup_application_logging, GameEventLogger, PerformanceLogger
@@ -67,6 +70,10 @@ except ImportError:
         game_logger.addHandler(event_handler)
     
     ENHANCED_LOGGING = False
+
+# Initialize the new clean API v2
+api_v2 = GameAPIv2(app, jsonrpc)
+app_logger.info("Clean API v2 initialized with 8 core methods")
 
 # Blueprint registration disabled - routes implemented directly in app.py
 # This avoids Flask's "can't register after first request" error in debug mode
@@ -798,10 +805,20 @@ def create_game_api():
         app_logger.error(f"Error creating game: {str(e)}")
         return {'success': False, 'error': str(e)}
 
+@app.route('/game/v2/<game_id>')
+def game_v2(game_id: str):
+    """New clean v2 game interface"""
+    return render_template('game_v2.html', game_id=game_id)
+
+@app.route('/game/v2')
+def game_v2_new():
+    """Create new v2 game"""
+    return render_template('game_v2.html')
+
 @app.route('/game/<token>')
 def game(token: str):
     app_logger.info(f"Game page accessed: {token}")
-    return render_template('render_2x.html', token=token)
+    return render_template('render_minimal.html', token=token)
 
 @app.route('/game2x/<token>')
 def game_2x(token: str):
@@ -4543,6 +4560,21 @@ def combat_preview_rpc(token: str, attacker_x: int, attacker_y: int,
     except Exception as e:
         app_logger.error(f"Combat preview failed: {token} - {str(e)}")
         return {"success": False, "error": str(e)}
+
+@jsonrpc.method('unit_attack')
+@log_rpc_performance
+def unit_attack_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
+    """
+    Standard unit attack method - maintains frontend compatibility
+    
+    Args:
+        token: Game token
+        x, y: Attacker coordinates  
+        x2, y2: Defender coordinates
+        
+    Note: This is an alias for unit_attack_enhanced with legacy parameter names
+    """
+    return unit_attack_enhanced_rpc(token, x, y, x2, y2)
 
 @jsonrpc.method('unit_attack_enhanced')
 @log_rpc_performance  
