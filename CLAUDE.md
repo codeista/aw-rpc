@@ -32,10 +32,35 @@ This is a complete implementation of Advance Wars as a web-based RPC game. Key s
 - `app.py` - RPC endpoints and server
 - `render.js` - Frontend game rendering
 
-### Tileset System  
-- **Current tileset**: AWDS tileset (reverted from AW2 RGB due to rendering issues)
-- **Working tileset**: `/static/img/Advance_Wars_Dual_Strike_Tileset_Normal_Transparent.png`
-- **Optimized tiles DISABLED**: Palette conversion corrupts terrain tiles (see TILE_OPTIMIZATION_ISSUES.md)
+### Sprite System (2025-07-24)
+- **Terrain sprites**: Individual 2x sprites in `/static/img/sprites_2x/terrain/`
+- **Combined sprite sheets**: `/static/img/sprites_2x/combined/`
+  - `terrain_tileset_2x.png` + `terrain_tileset_2x_map.json` (minimal_game.js)
+  - `terrain_tileset_2x_final.png` + `terrain_tileset_2x_final_map.json` (game_v2.js)
+  - `units_spritesheet_2x.png` + `units_spritesheet_2x_map.json`
+  - `ui_spritesheet_2x.png` + `ui_spritesheet_2x_map.json`
+- **Sprite naming**: HQ sprites renamed from HQ_VARIANT_X to BASE_TOWER_X
+- **Sprite spacing**: 4px between sprites to prevent overlap
+- **Coordinate system**: Y marks BOTTOM of sprite (important for tall buildings)
+
+## RECENT SPRITE SYSTEM FIXES (2025-07-24)
+
+### Changes Made
+1. **Created Combined Sprite Sheets**
+   - Previously game was looking for files in `/sprites_2x/combined/` but directory was empty
+   - Combined 199 terrain sprites from individual files with proper spacing
+   - Created unit spritesheet with 250 sprites
+   - Created placeholder UI spritesheet
+
+2. **Fixed Sprite Naming**
+   - Renamed HQ_VARIANT_X → BASE_TOWER_X in sprite maps
+   - Applied road mappings (ROAD_T_N → NESRoad, etc.)
+   - Fixed MISSILE_SILO_EMPTY → EMPTY_SILO
+
+3. **Known Issues to Fix**
+   - Beach/water tile mappings still use numbered format (need directional names)
+   - UI sprites are placeholders (need proper HP number graphics)
+   - Some sprites may need position adjustments
 
 ## RECENT FIXES (2025-07-20)
 
@@ -110,6 +135,12 @@ NEVER create files unless they're absolutely necessary for achieving your goal.
 ALWAYS prefer editing an existing file to creating a new one.
 NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
 
+## CRITICAL SAFETY RULES
+**NEVER use `rm` or delete files without explicit user permission** (see CLAUDE_HOOKS.md)
+- Always ask before deleting ANY file
+- Exception: Can clean up files just created if there was an error
+- Use backups/renames instead of deletion when possible
+
 ## Development Reminders
 - Always check current docs for info on game mechanics and API methods
 - Please test before committing and pushing
@@ -138,22 +169,18 @@ NEVER proactively create documentation files (*.md) or README files. Only create
   - Upscaling approach for pixel art
   - PNG palette mode handling
 
-## 2X Sprite System (NEW)
+## 2X Sprite System (CURRENT - 2025-07-24)
 - **UNITS**: `sprites_2x/combined/units_spritesheet_2x.png` with `units_spritesheet_2x_map.json`
+  - 250 unit sprites from all categories (infantry, vehicles, tanks, air, naval, special)
+  - Format: `UNITTYPE_ARMY_state_frame` (e.g., `TANK_RED_idle_0`)
 - **TERRAIN**: `sprites_2x/combined/terrain_tileset_2x.png` with `terrain_tileset_2x_map.json`
-  - Complete 640x480 tileset with 201 terrain sprites (100% MapType coverage)
-  - Includes: terrain, water/beaches/rivers, roads, pipes, bridges, and all army buildings
-  - Buildings use bottom-tile referencing for double-height sprites
-  - Extra row spacing (48px) preserves overlap areas for tall sprites
-  - Map includes 'full_height' property for rendering overlaps correctly
+  - 199 terrain sprites with proper 4px spacing
+  - Includes all terrain, buildings, roads, water, pipes
+  - HQ sprites renamed: HQ_VARIANT_X → BASE_TOWER_X
+  - Tall sprites use 'full_height' property for proper rendering
 - **UI ELEMENTS**: `sprites_2x/combined/ui_spritesheet_2x.png` with `ui_spritesheet_2x_map.json`
-  - Row 1: Generic HP icons (white) - 1-9 and ?
-  - Rows 2-6: For each army (red, blue, green, yellow, grey):
-    - 4 unavailable status icons (load, capture, submerged, air/sea load)
-    - 10 HP numbers (1-9 and ?)
-    - 4 available status icons (load, capture, submerged, air/sea load)
-  - Row 7: Fuel and ammo warning icons
-  - Total: 102 sprites (10 white HP + 40 status + 50 army HP + 2 warnings)
+  - Placeholder HP numbers (needs proper graphics)
+  - Format: `hp_N` for normal, `hp_ARMY_N` for team colors
 
 ### 2X Sprite Naming Conventions
 **IMPORTANT**: The game expects exact sprite names. The 2x system uses these naming rules:
