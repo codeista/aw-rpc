@@ -12,6 +12,9 @@ app = Flask(__name__)
 CORS(app)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# Configure JSON to handle mixed key types
+app.config['JSON_SORT_KEYS'] = False  # Prevent sorting that causes mixed key type errors
+
 # Create main JSONRPC instance with enhanced web browsable API
 jsonrpc = JSONRPC(app, '/api', enable_web_browsable_api=True)
 

@@ -21,11 +21,11 @@ from flask import redirect, render_template, abort, request
 from flask_socketio import Namespace, join_room, leave_room
 import jsons
 
-from tests.debug.optimized_test_map import (
-    get_optimized_test_game, 
-    create_quick_combat_scenario,
-    verify_optimized_map
-)
+# from tests.debug.optimized_test_map import (
+#     get_optimized_test_game, 
+#     create_quick_combat_scenario,
+#     verify_optimized_map
+# )
 import secrets
 
 from manager import GameManager
@@ -549,117 +549,14 @@ def game_delete(token):
     else:
         app_logger.warning(f"Attempted to delete non-existent game: {token}")
 
-def game_create(token):
-    '''Creates a new game with token specified'''
-    app_logger.info(f"Creating game: {token}")
-    
-    mngr = game_load(token)
-    game = Game(mngr.board, token)
-    db.session.add(game)
-    db.session.commit()
-    
-    if ENHANCED_LOGGING:
-        game_event_logger.log_game_created(token, len(mngr.board.turn_order))
-    app_logger.info(f"Game created successfully: {token}")
+# Legacy game_create function removed - use GameFactory or game_create_v2_rpc instead
 
 # =============================================================================
 # 🎮 GAME MANAGEMENT RPC METHODS
 # =============================================================================
 
-@game_management_api.method('game_create_with_setup')
-@log_rpc_performance
-def game_create_with_setup(token: str, game_setup: dict) -> str:
-    """Create a new game with custom setup parameters
-    
-    Args:
-        token: Unique game identifier
-        game_setup: Custom game configuration (funds, map, etc.)
-        
-    Returns:
-        str: Success status message
-        
-    Example:
-        rpc('game_create_with_setup', {
-            token: 'customgame',
-            game_setup: {funds: 25000, map: 'custom'}
-        })
-    """
-    app_logger.info(f"Creating game with setup: {token}")
-    
-    from map_system import MapTile
-    
-    # Get the selected map
-    map_id = game_setup['map_id']
-    selected_map = map_repository.get_map(map_id)
-    
-    if not selected_map:
-        raise ValueError(f"Map not found: {map_id}")
-    
-    # Create custom turn order based on player selections
-    custom_turn_order = []
-    players = game_setup['players']
-    
-    for player in players:
-        army_color = player['color']
-        try:
-            army_enum = Army[army_color]
-            custom_turn_order.append(army_enum)
-        except KeyError:
-            raise ValueError(f"Invalid army color: {army_color}")
-    
-    # Create army mapping: original map armies -> selected armies
-    original_armies = selected_map.turn_order
-    army_mapping = {}
-    
-    # Map original armies to selected armies based on position
-    for i, original_army in enumerate(original_armies):
-        if i < len(custom_turn_order):
-            army_mapping[original_army] = custom_turn_order[i]
-            app_logger.info(f"Army mapping: {original_army.name} -> {custom_turn_order[i].name}")
-    
-    # Convert tiles to use the new army assignments
-    converted_tiles = []
-    for tile in selected_map.tiles:
-        new_tile = MapTile(type=tile.type, army=tile.army)
-        
-        # Convert army ownership if this tile has an army
-        if tile.army and tile.army in army_mapping:
-            new_tile.army = army_mapping[tile.army]
-            
-        converted_tiles.append(new_tile)
-    
-    # Create a modified map with custom turn order and converted properties
-    custom_map = Map(
-        width=selected_map.width,
-        height=selected_map.height,
-        tiles=converted_tiles,           # Use converted tiles
-        turn_order=custom_turn_order,     # Use custom turn order
-        name=selected_map.name,
-        description=f"Custom game: {selected_map.description}"
-    )
-    
-    # Create GameManager with custom map
-    config_game = Config()
-    board = GameBoard.create(custom_map)
-    mngr = GameManager(config_game, board)
-    mngr.app_logger = app_logger  # Set logger for income processing
-    
-    # Store game setup data in the manager
-    mngr._game_setup = game_setup
-    
-    # Add to games dictionary
-    games[token] = mngr
-    
-    # Create database entry
-    game = Game(mngr.board, token)
-    db.session.add(game)
-    db.session.commit()
-    
-    if ENHANCED_LOGGING:
-        game_event_logger.log_game_created(token, len(mngr.board.turn_order))
-    
-    app_logger.info(f"Game created with custom setup: {token}, map: {map_id}, turn_order: {[army.name for army in custom_turn_order]}")
-    return "ok"
+# Legacy game_create_with_setup removed - use game_create_v2 instead
+# The v2 system handles custom player configurations and map selection
 
 def handle_rpc_error(func_name, token, ex):
     '''Enhanced error handling for RPC methods'''
@@ -798,8 +695,46 @@ def create_game_api():
             'players': players
         }
         
-        # Create the game with the selected map
-        game_create_with_setup(token, game_setup)
+        # Convert player data to v2 format
+        v2_players = []
+        for i, player in enumerate(players):
+            # Map old color names to sprite colors
+            color_map = {
+                'RED': 'RED',
+                'BLUE': 'BLUE',
+                'GREEN': 'GREEN',
+                'YELLOW': 'YELLOW',
+                'GREY': 'GREY'
+            }
+            
+            v2_players.append({
+                'name': player.get('name', f"Player {i+1}"),
+                'color': player['color'],  # Display color
+                'sprite_color': color_map.get(player['color'], 'GREY'),
+                'is_ai': player.get('is_ai', False)
+            })
+        
+        # Use v2 game creation if available
+        try:
+            from game_factory import GameFactory
+            app_logger.info(f"Creating v2 game with map: {data['map']}, players: {len(v2_players)}")
+            manager, _ = GameFactory.create_game_with_players(data['map'], v2_players)
+            
+            # Store in games dictionary
+            games[token] = manager
+            
+            # Create database entry
+            game = Game(manager.board, token)
+            db.session.add(game)
+            db.session.commit()
+            
+            app_logger.info(f"V2 Game created: {token}, map: {data['map']}, players: {len(v2_players)}")
+            
+        except ImportError:
+            # Fallback to v2 RPC
+            v2_result = game_create_v2_rpc(token, players=v2_players, map_name=data['map'])
+            if not v2_result.get('success'):
+                raise ValueError(v2_result.get('error', 'Failed to create game'))
         
         app_logger.info(f"Game created with setup: {token}, map: {data['map']}, players: {data['playerCount']}")
         
@@ -822,6 +757,21 @@ def game_v2_new():
 @app.route('/game/<token>')
 def game(token: str):
     app_logger.info(f"Game page accessed: {token}")
+    
+    # Simple approach: check if the board RPC returns v2 data
+    try:
+        # Call game_board_rpc directly
+        board_data = game_board_rpc(token)
+        
+        # Check if this has v2 markers
+        if isinstance(board_data, dict) and 'players' in board_data and 'sprite_mapping' in board_data:
+            app_logger.info(f"V2 game detected: {token}")
+            return render_template('render_v2.html', token=token)
+            
+    except Exception as e:
+        app_logger.error(f"Error checking game type: {e}")
+    
+    # Default to minimal renderer
     return render_template('render_minimal.html', token=token)
 
 @app.route('/game2x/<token>')
@@ -1098,8 +1048,9 @@ def test_game():
             mngr = get_comprehensive_test_game(token)
         elif test_type == 'movement':
             # Use optimized test for movement
-            from tests.debug.optimized_test_map import get_optimized_test_game
-            mngr = get_optimized_test_game(token)
+            # from tests.debug.optimized_test_map import get_optimized_test_game
+            # mngr = get_optimized_test_game(token)
+            mngr = get_predeployed_test_game(token)
         else:
             # Basic test game
             mngr = get_predeployed_test_game(token)
@@ -1172,9 +1123,21 @@ def test_create_custom_game():
             'players': data['players']
         }
         
-        # Create the game
-        app_logger.info(f"Test interface: Creating game with setup: {game_setup}")
-        game_create_with_setup(token, game_setup)
+        # Create the game using v2 system
+        app_logger.info(f"Test interface: Creating game with v2 system")
+        
+        # Convert game_setup to v2 format
+        v2_players = []
+        for player in game_setup['players']:
+            v2_players.append({
+                'color': player['color'],
+                'controller': player['controller'],
+                'team': player.get('team', 0)
+            })
+        
+        v2_result = game_create_v2_rpc(token, players=v2_players, map_name=game_setup['map_id'])
+        if not v2_result.get('success'):
+            raise ValueError(v2_result.get('error', 'Failed to create game'))
         
         app_logger.info(f"Test interface: Successfully created game: {token}")
         
@@ -1442,7 +1405,7 @@ def create_optimized_test_game():
         # Import everything we need explicitly
         from config import Config
         from manager import GameManager
-        from tests.debug.optimized_test_map import create_optimized_test_map
+        # from tests.debug.optimized_test_map import create_optimized_test_map
         
         # Create configuration
         config_game = Config()
@@ -2182,42 +2145,64 @@ def game_delete_rpc(token: str) -> str:
     except Exception as ex:
         return handle_rpc_error('game_delete', token, ex)
 
+# Legacy game_create - redirects to game_create_v2 for backwards compatibility
 @jsonrpc.method('game_create')
 @log_rpc_performance
 def game_create_rpc(token: str) -> str:
-    '''rpc-create game'''
+    '''DEPRECATED: Creates a new game - redirects to game_create_v2'''
+    app_logger.warning(f"DEPRECATED: game_create called for {token}, redirecting to game_create_v2")
+    
+    # Call v2 with default 2 players
     try:
-        game_create(token)
-        return 'ok'
-    except Exception as ex:
-        return handle_rpc_error('game_create', token, ex)
+        result = game_create_v2_rpc(token, players=None, map_name='test')
+        # v2 returns game info on success, not a success field
+        if result and 'token' in result:
+            return 'ok'
+        else:
+            raise ValueError('Failed to create game')
+    except Exception as e:
+        app_logger.error(f"Legacy redirect failed: {str(e)}")
+        raise ValueError(f'Failed to create game: {str(e)}')
 
 @jsonrpc.method('game_create_test')
 @log_rpc_performance
 def game_create_test_rpc(token: str, use_optimized: bool = True) -> str:
-    '''Create a test game with optimized map and settings'''
+    '''Create a test game with v2 system and high starting funds'''
     try:
+        from game_factory import GameFactory
+        
         if use_optimized:
-            # Use the optimized test map with 50k starting funds
-            mngr = get_optimized_test_game(token)
-            game = Game(mngr.board, token)
+            # Create v2 game with high starting funds
+            players = [
+                {"name": "Test Player 1", "color": "Red", "sprite_color": "RED"},
+                {"name": "Test Player 2", "color": "Blue", "sprite_color": "BLUE"}
+            ]
+            
+            manager, _ = GameFactory.create_game_with_players('test', players)
+            
+            # Set high starting funds for testing
+            manager.board.red_funds = 50000
+            manager.board.blue_funds = 50000
+            
+            # Store in games dict
+            games[token] = manager
+            
+            # Save to database
+            game = Game(manager.board, token)
             db.session.add(game)
             db.session.commit()
             
-            games[token] = mngr
-            
             if ENHANCED_LOGGING:
-                game_event_logger.log_game_created(token, len(mngr.board.turn_order))
+                game_event_logger.log_game_created(token, 2)
             
-            app_logger.info(f"Test game created with optimized map: {token}")
+            app_logger.info(f"Test v2 game created with high funds: {token}")
             return 'ok'
         else:
-            # Use regular test creation
-            game_create(token)
-            return 'ok'
+            # Use standard v2 creation
+            return game_create_v2_rpc(token)
     except Exception as ex:
         app_logger.error(f'game_create_test failed for {token}: {str(ex)}')
-        raise ex  # Let Flask-JSONRPC handle the error properly
+        raise ex
 
 @jsonrpc.method('game_create_v2')
 @log_rpc_performance
@@ -2292,11 +2277,52 @@ def game_board_rpc(token: str) -> dict:
         if isinstance(mngr, GameManagerV2):
             board_data['players'] = mngr.player_manager.to_dict()['players']
             board_data['sprite_mapping'] = mngr.player_manager.to_dict()['sprite_mapping']
-            board_data['player_funds'] = mngr.board_v2.player_funds
-            board_data['player_properties'] = mngr.board_v2.player_properties
-            board_data['player_troops'] = mngr.board_v2.player_troops
+            # Convert integer keys to strings for JSON serialization
+            board_data['player_funds'] = {str(k): v for k, v in mngr.board_v2.player_funds.items()}
+            board_data['player_properties'] = {str(k): v for k, v in mngr.board_v2.player_properties.items()}
+            board_data['player_troops'] = {str(k): v for k, v in mngr.board_v2.player_troops.items()}
             board_data['current_player'] = mngr.board_v2.current_player
+            
+            # CRITICAL: Include grid data from the v2 board
+            if hasattr(mngr.board_v2, 'grid') and not board_data.get('grid'):
+                board_data['grid'] = jsons.dump(mngr.board_v2.grid)
+                board_data['width'] = mngr.board_v2.width
+                board_data['height'] = mngr.board_v2.height
+                
+                # Add player_id to tiles and units for v2 games
+                if 'grid' in board_data and isinstance(board_data['grid'], list):
+                    for tile in board_data['grid']:
+                        if isinstance(tile, dict):
+                            # Add player_id to map tiles
+                            if 'mapTile' in tile and tile['mapTile'].get('army'):
+                                army = tile['mapTile']['army']
+                                from map_system import Army
+                                player_id = mngr.board_v2.army_to_player.get(Army[army])
+                                if player_id is not None:
+                                    tile['mapTile']['player_id'] = player_id
+                            
+                            # Add player_id to units
+                            if 'unit' in tile and tile['unit'] and tile['unit'].get('army'):
+                                army = tile['unit']['army']
+                                player_id = mngr.board_v2.army_to_player.get(Army[army])
+                                if player_id is not None:
+                                    tile['unit']['player_id'] = player_id
         
+        # Remove fields that might have mixed key types
+        if 'army_to_player' in board_data:
+            del board_data['army_to_player']
+        if 'player_to_army' in board_data:
+            del board_data['player_to_army']
+            
+        # Add selected coordinates if a unit is selected
+        if hasattr(mngr.board, 'selected') and mngr.board.selected:
+            board_data['selected'] = {
+                'x': mngr.board.selected.x,
+                'y': mngr.board.selected.y
+            }
+        else:
+            board_data['selected'] = None
+            
         return board_data  # Now guaranteed to be a dict
         
     except Exception as ex:
@@ -2315,24 +2341,53 @@ def army_end_turn_rpc(token: str) -> dict:
     '''rpc end current turn'''
     try:
         mngr = game_load(token)
-        current_army = mngr.check_turn()
-        winner = mngr.check_win_condition()
-        mngr.army_end_turn()
-        game_save(mngr, token)
-        ws_board_update(token)
         
-        new_turn = mngr.check_turn()
-        
-        # Enhanced logging
-        turn_number = getattr(mngr.board, 'days', 1)
-        funds = getattr(mngr.board, f'{current_army.name.lower()}_funds', 0)
-        
-        if ENHANCED_LOGGING:
-            game_event_logger.log_turn_ended(token, current_army.name, turn_number, funds)
-        
-        app_logger.info(f'Turn ended: {current_army.name} -> {new_turn.name} (Day {turn_number})')
-        
-        return {'current_turn': new_turn.name, 'status': 'success', 'day': turn_number}
+        # Handle v2 games
+        if isinstance(mngr, GameManagerV2):
+            # Get current player info
+            current_player = mngr.board_v2.current_player
+            current_player_name = mngr.player_manager.get_player(current_player).name
+            
+            # End turn
+            mngr.army_end_turn()
+            
+            # Get new player info
+            new_player = mngr.board_v2.current_player
+            new_player_name = mngr.player_manager.get_player(new_player).name
+            
+            game_save(mngr, token)
+            ws_board_update(token)
+            
+            turn_number = mngr.board_v2.days
+            
+            app_logger.info(f'V2 Turn ended: {current_player_name} -> {new_player_name} (Day {turn_number})')
+            
+            return {
+                'current_turn': mngr.board_v2.current_turn.name if mngr.board_v2.current_turn else str(new_player),
+                'current_player': new_player,
+                'status': 'success',
+                'day': turn_number
+            }
+        else:
+            # Legacy path
+            current_army = mngr.check_turn()
+            winner = mngr.check_win_condition()
+            mngr.army_end_turn()
+            game_save(mngr, token)
+            ws_board_update(token)
+            
+            new_turn = mngr.check_turn()
+            
+            # Enhanced logging
+            turn_number = getattr(mngr.board, 'days', 1)
+            funds = getattr(mngr.board, f'{current_army.name.lower()}_funds', 0)
+            
+            if ENHANCED_LOGGING:
+                game_event_logger.log_turn_ended(token, current_army.name, turn_number, funds)
+            
+            app_logger.info(f'Turn ended: {current_army.name} -> {new_turn.name} (Day {turn_number})')
+            
+            return {'current_turn': new_turn.name, 'status': 'success', 'day': turn_number}
     except Exception as ex:
         app_logger.error(f'army_end_turn error: {ex}')
         return handle_rpc_error('army_end_turn', token, ex)
@@ -2720,98 +2775,7 @@ def unit_select_rpc(token: str, x: int, y: int) -> dict:
 # ⚔️ COMBAT SYSTEM RPC METHODS
 # =============================================================================
 
-@combat_system_api.method('unit_attack')
-@log_rpc_performance
-def unit_attack_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
-    """Execute an attack from one unit to another
-    
-    Performs combat between attacking unit at (x,y) and defending unit at (x2,y2).
-    Includes damage calculation, counter-attacks, and automatic victory detection.
-    
-    Args:
-        token: Game identifier
-        x: X coordinate of attacking unit
-        y: Y coordinate of attacking unit
-        x2: X coordinate of target unit
-        y2: Y coordinate of target unit
-        
-    Returns:
-        dict: Combat result including damage dealt, victory status
-        
-    Example:
-        rpc('unit_attack', {token: 'mygame', x: 5, y: 3, x2: 6, y2: 3})
-    """
-    try:
-        from error_handling import ValidationError
-        
-        # Load game first to get actual board dimensions
-        mngr = game_load(token)
-        
-        # Dynamic coordinate validation using actual board size
-        board_width = mngr.board.width
-        board_height = mngr.board.height
-        
-        # Validate source coordinates
-        if not (0 <= x < board_width and 0 <= y < board_height):
-            raise ValidationError(
-                f"Attacker coordinates ({x}, {y}) are out of bounds. Board size: {board_width}x{board_height}",
-                details={"attacker_pos": {"x": x, "y": y}, "board_size": {"width": board_width, "height": board_height}}
-            )
-        
-        # Validate target coordinates
-        if not (0 <= x2 < board_width and 0 <= y2 < board_height):
-            raise ValidationError(
-                f"Target coordinates ({x2}, {y2}) are out of bounds. Board size: {board_width}x{board_height}",
-                details={"target_pos": {"x": x2, "y": y2}, "board_size": {"width": board_width, "height": board_height}}
-            )
-        
-        # Execute the attack
-        result = mngr.unit_attack(x, y, x2, y2)
-        
-        # Check victory BEFORE saving (MOVED UP)
-        victory_result = check_victory_conditions(mngr, token)
-        
-        if victory_result['victory']:
-            # SET BOARD STATE HERE (where it gets saved)
-            mngr.board.game_active = False
-            mngr.board.winner = victory_result['winner']
-            mngr.board.victory_type = victory_result['type']
-            app_logger.info(f"SETTING VICTORY STATE: {victory_result['winner']} wins!")
-        
-        # Save game state and update clients (AFTER setting victory state)
-        game_save(mngr, token)
-        ws_board_update(token)
-        
-        if victory_result['victory']:
-            app_logger.info(f"GAME OVER: {victory_result['winner']} wins!")
-            return {
-                **jsons.dump(result),
-                'game_over': True,
-                'winner': victory_result['winner'],
-                'victory_type': victory_result['type']
-            }
-        
-        # Normal return if no victory
-        return jsons.dump(result)
-        
-    except ValidationError as e:
-        # Return error as a dict instead of raising
-        app_logger.error(f"Validation error in unit_attack: {e.message}")
-        return {
-            "error": True,
-            "error_code": "VALIDATION_ERROR",
-            "message": e.message,
-            "details": getattr(e, 'details', {})
-        }
-        
-    except Exception as e:
-        app_logger.error(f'unit_attack failed for {token}: ({x},{y}) -> ({x2},{y2}): {str(e)}')
-        return {
-            "error": True,
-            "error_code": "COMBAT_ERROR",
-            "message": "Attack failed",
-            "details": {"attacker_pos": {"x": x, "y": y}, "target_pos": {"x": x2, "y": y2}}
-        }
+# Removed duplicate unit_attack method - using the one at line 4706 instead
 
 # Add this to your app.py file to fix the APC loading error
 # This creates an alias for the frontend's expected method name
@@ -3081,8 +3045,14 @@ def produce_unit_rpc(token: str, x: int, y: int, unit_type: str) -> dict:
                 "message": f"Coordinates ({x}, {y}) out of bounds"
             }
         
-        # Get current army
-        current_army = mngr.board.current_turn
+        # Get current army - handle v2 games
+        if isinstance(mngr, GameManagerV2):
+            # Get army from player
+            current_player = mngr.board_v2.current_player
+            current_army = mngr.board_v2.get_army_for_player(current_player)
+            app_logger.debug(f'V2 produce_unit: player {current_player} -> army {current_army}')
+        else:
+            current_army = mngr.board.current_turn
         
         # Attempt production
         result = mngr.produce_unit_at_facility(x, y, unit_type, current_army)
@@ -3140,8 +3110,14 @@ def get_production_options_rpc(token: str, x: int, y: int) -> dict:
                 "message": f"Coordinates ({x}, {y}) out of bounds"
             }
         
-        # Get current army
-        current_army = mngr.board.current_turn
+        # Get current army - handle v2 games
+        if isinstance(mngr, GameManagerV2):
+            # Get army from player
+            current_player = mngr.board_v2.current_player
+            current_army = mngr.board_v2.get_army_for_player(current_player)
+            app_logger.debug(f'V2 produce_unit: player {current_player} -> army {current_army}')
+        else:
+            current_army = mngr.board.current_turn
         
         # Get production options
         options = mngr.get_production_options(x, y, current_army)

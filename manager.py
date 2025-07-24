@@ -98,7 +98,7 @@ class GameManager:
     def _validate_unit_turn(self, unit: Unit) -> None:
         """Validate it's the unit's army's turn."""
         if unit.army != self.board.current_turn:
-            raise ValueError("Not this unit's turn")
+            raise ValueError(f"Not this unit's turn (unit army: {unit.army.name}, current turn: {self.board.current_turn.name})")
 
     def _validate_unit_can_act(self, unit: Unit, action: str) -> None:
         """Validate unit can perform the specified action."""
@@ -164,6 +164,9 @@ class GameManager:
         # Count all units on the board
         for tile in self.board.grid:
             if tile.unit:
+                # Initialize count for this army if not already present
+                if tile.unit.army not in army_unit_counts:
+                    army_unit_counts[tile.unit.army] = 0
                 army_unit_counts[tile.unit.army] += 1
         
         # Check for armies with units
@@ -765,6 +768,76 @@ class GameManager:
                 tile.can_be_attacked = self.unit_can_attack(unit, tile.x, tile.y)
             else:
                 tile.can_be_attacked = False
+    
+    def _unit_has_post_move_actions(self, unit: Unit, x: int, y: int) -> bool:
+        """Check if unit has any actions available after moving to position"""
+        
+        # Check if unit can attack
+        if unit.can_attack and not unit.is_indirect():
+            # Check if any enemies in range
+            for tile in self.board.grid:
+                if tile.unit and tile.unit.army != unit.army:
+                    if self.unit_can_attack(unit, tile.x, tile.y):
+                        return True
+        
+        # Check special position-based actions
+        tile = self.tile_at(x, y)
+        
+        # Infantry/Mech can capture
+        if unit.type in [UnitType.INFANTRY, UnitType.MECH]:
+            # Check for capturable property
+            capturable = {MapType.CITY, MapType.FACTORY, MapType.AIRPORT, 
+                         MapType.PORT, MapType.BASE_TOWER_0, MapType.BASE_TOWER_1,
+                         MapType.BASE_TOWER_2, MapType.BASE_TOWER_3, 
+                         MapType.BASE_TOWER_4, MapType.COM_TOWER, MapType.LAB}
+            if (tile.mapTile.type in capturable and 
+                tile.mapTile.army != unit.army):
+                # Debug logging
+                import logging
+                logger = logging.getLogger('GameManager')
+                logger.debug(f"Infantry/Mech at ({x},{y}) can capture: type={tile.mapTile.type}, army={tile.mapTile.army}")
+                return True
+                
+            # Check for missile silo
+            if (tile.mapTile.type == MapType.MISSILE_SILO and
+                tile.mapTile.army == unit.army):
+                return True
+        
+        # Transports can unload
+        if self.is_transport_unit(unit) and unit.status.cargo:
+            # Check if any adjacent tiles can receive units
+            for dx, dy in [(0,1), (0,-1), (1,0), (-1,0)]:
+                unload_x, unload_y = x + dx, y + dy
+                if self.coord_valid(unload_x, unload_y):
+                    # Simplified check - would need full validation
+                    target_tile = self.tile_at(unload_x, unload_y)
+                    if not target_tile.unit:
+                        return True
+        
+        # Check if unit can load into a transport
+        # Unit must be loadable type and there must be friendly transports nearby
+        if unit.type in [UnitType.INFANTRY, UnitType.MECH, UnitType.RECON, 
+                         UnitType.TANK, UnitType.MEDIUMTANK, UnitType.NEOTANK,
+                         UnitType.MEGATANK, UnitType.ARTILLERY, UnitType.ROCKET,
+                         UnitType.ANTIAIR, UnitType.MISSILE, UnitType.FIGHTER,
+                         UnitType.BOMBER, UnitType.BCOPTER, UnitType.TCOPTER]:
+            # Check adjacent tiles for friendly transports
+            for dx, dy in [(0,1), (0,-1), (1,0), (-1,0)]:
+                adj_x, adj_y = x + dx, y + dy
+                if self.coord_valid(adj_x, adj_y):
+                    adj_tile = self.tile_at(adj_x, adj_y)
+                    if adj_tile.unit and adj_tile.unit.army == unit.army:
+                        # Check if it's a transport that can carry this unit
+                        if self.is_transport_unit(adj_tile.unit):
+                            transport = adj_tile.unit
+                            # Check if transport can carry this unit type
+                            capability = self.get_transport_capability(transport)
+                            if capability and unit.type in capability.can_carry:
+                                # Check if transport has space
+                                if len(transport.status.cargo) < capability.capacity:
+                                    return True
+        
+        return False
                 
     def unit_move(self, x: int, y: int, x2: int, y2: int) -> Unit:
         """Move a unit from one position to another.
@@ -892,9 +965,23 @@ class GameManager:
         if unit.is_indirect():
             unit.can_attack = False
         
-        # Update selection
+        # Update selection based on remaining actions
         self.unit_deselect()
-        self.unit_select(x2, y2)
+        
+        # Only re-select if unit has actions available
+        has_actions = self._unit_has_post_move_actions(unit, x2, y2)
+        if has_actions:
+            self.unit_select(x2, y2)
+        # Otherwise leave deselected
+        
+        # Debug logging
+        try:
+            import logging
+            logger = logging.getLogger('GameManager')
+            logger.debug(f"Unit moved to ({x2},{y2}). Has post-move actions: {has_actions}")
+        except Exception as e:
+            # Ignore logging errors
+            pass
         
         return unit
 

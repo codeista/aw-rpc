@@ -81,8 +81,11 @@ class GameFactory:
         # Load map (try new format first, fall back to legacy)
         map_obj = None
         
-        # Try loading from maps_v2 directory first
-        if os.path.exists(f'maps_v2/{map_name}.txt'):
+        # First check if the map exists in the repository
+        map_obj = map_repository.get_map(map_name)
+        
+        # If not found, try loading from maps_v2 directory
+        if map_obj is None and os.path.exists(f'maps_v2/{map_name}.txt'):
             try:
                 parser = MapParserV2()
                 pm_from_map, tiles = parser.parse_file(f'maps_v2/{map_name}.txt')
@@ -125,12 +128,9 @@ class GameFactory:
             except Exception as e:
                 print(f"Failed to load from maps_v2: {e}")
                 
-        # Fall back to legacy map loading
+        # If still no map found, default to test map
         if map_obj is None:
-            map_obj = map_repository.get_map(map_name)
-            if map_obj is None:
-                # Default to test map
-                map_obj = map_repository.get_map('test')
+            map_obj = map_repository.get_map('test')
             
         # Create board
         board = GameBoard.create(map_obj)

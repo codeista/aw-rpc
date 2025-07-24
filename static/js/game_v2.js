@@ -32,39 +32,18 @@ class GameV2 {
     }
     
     async initGame() {
-        // Check if we have a game ID in URL
-        const urlPath = window.location.pathname;
-        const match = urlPath.match(/\/game\/v2\/(.+)/);
-        
-        if (match) {
-            // Join existing game
-            this.gameId = match[1];
+        // Use TOKEN from template
+        if (typeof TOKEN !== 'undefined' && TOKEN) {
+            this.gameId = TOKEN;
             await this.updateGameState();
         } else {
-            // Create new game
-            const config = {
-                players: [
-                    { name: 'Player 1', color: 'red' },
-                    { name: 'Player 2', color: 'blue' }
-                ],
-                map: 'test',
-                settings: { starting_funds: 5000 }
-            };
-            
-            const result = await this.rpc('v2.create_game', { config: config });
-            console.log('Create game result:', result);
-            this.gameId = result.game_id;
-            
-            // Update URL
-            window.history.pushState({}, '', `/game/v2/${this.gameId}`);
-            
-            await this.updateGameState();
+            console.error('No game token provided');
         }
     }
     
     async updateGameState() {
         console.log('Updating game state for gameId:', this.gameId);
-        const state = await this.rpc('v2.game_state', { game_id: this.gameId });
+        const state = await this.rpc('game_board', { token: this.gameId });
         this.gameState = state;
         
         // Update player color mapping
@@ -78,28 +57,24 @@ class GameV2 {
     
     async loadSprites() {
         try {
-            // Load sprite data
-            const [terrain, units, ui] = await Promise.all([
-                fetch('/static/img/sprites_2x/combined/terrain_tileset_2x_final_map.json').then(r => r.json()),
-                fetch('/static/img/sprites_2x/combined/units_spritesheet_2x_map.json').then(r => r.json()),
-                fetch('/static/img/sprites_2x/combined/ui_spritesheet_2x_map.json').then(r => r.json())
+            // Load sprite data using existing sprite system
+            const [terrainData, unitData] = await Promise.all([
+                fetch('/static/img/optimized_tileset_map.json').then(r => r.json()),
+                fetch('/static/img/units_sprite_map_complete.json').then(r => r.json())
             ]);
             
             // Load images
             const terrainImg = new Image();
             const unitsImg = new Image();
-            const uiImg = new Image();
             
             await Promise.all([
-                new Promise(r => { terrainImg.onload = r; terrainImg.src = '/static/img/sprites_2x/combined/terrain_tileset_2x_final.png'; }),
-                new Promise(r => { unitsImg.onload = r; unitsImg.src = '/static/img/sprites_2x/combined/units_spritesheet_2x.png'; }),
-                new Promise(r => { uiImg.onload = r; uiImg.src = '/static/img/sprites_2x/combined/ui_spritesheet_2x.png'; })
+                new Promise(r => { terrainImg.onload = r; terrainImg.src = '/static/img/Advance_Wars_Dual_Strike_Tileset_Normal_Transparent.png'; }),
+                new Promise(r => { unitsImg.onload = r; unitsImg.src = '/static/img/units_sprite_sheet_complete.png'; })
             ]);
             
             this.sprites = {
-                terrain: { data: terrain, img: terrainImg },
-                units: { data: units, img: unitsImg },
-                ui: { data: ui, img: uiImg }
+                terrain: { data: terrainData, img: terrainImg },
+                units: { data: unitData, img: unitsImg }
             };
             
             console.log('Sprites loaded');

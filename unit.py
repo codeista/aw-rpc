@@ -282,7 +282,11 @@ class Unit:
 
     def is_attackable(self, defender):
         '''Returns true if the unit is able to attack this type of unit.'''
-        return bool(DAMAGE_TABLE[self.type][defender.type.value])
+        try:
+            return bool(DAMAGE_TABLE[self.type][defender.type.value])
+        except (KeyError, IndexError) as e:
+            # Some unit types might not be in damage table
+            return False
 
     def is_sea_unit(self):
         '''Returns true if the unit is a sea unit.'''

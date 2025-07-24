@@ -160,7 +160,8 @@ class ProductionSystem:
         
         # Create the unit
         try:
-            unit = self.manager.unit_create(army, unit_type, facility_x, facility_y)
+            # unit_create expects strings, not enums
+            unit = self.manager.unit_create(army.name, unit_type.name, facility_x, facility_y)
             
             # Deduct cost from army funds
             self.manager._update_army_funds(army, -unit_cost)
