@@ -425,7 +425,20 @@ class GameV2 {
         
         // Add owner color prefix if owned
         if (tile.building.owner) {
-            const color = this.playerColors[tile.building.owner].toUpperCase();
+            // Get sprite color from mapping, fallback to player color or owner
+            let color;
+            if (this.gameState.sprite_mapping && tile.building.player_id !== undefined) {
+                // V2 game with sprite mapping
+                color = this.gameState.sprite_mapping[tile.building.player_id] || 'RED';
+            } else if (tile.building.owner !== undefined && this.playerColors[tile.building.owner]) {
+                // Legacy with owner field
+                color = this.playerColors[tile.building.owner].toUpperCase();
+            } else if (tile.building.army !== undefined) {
+                // Fallback to army field
+                color = tile.building.army;
+            } else {
+                color = 'NEUTRAL';
+            }
             spriteName = `${color}_${spriteName}`;
         }
         
@@ -433,8 +446,22 @@ class GameV2 {
     }
     
     drawUnitSprite(unit, x, y) {
-        // Get player color
-        const color = this.playerColors[unit.owner].toUpperCase();
+        // Get sprite color from mapping, fallback to player color or unit army
+        let color;
+        if (this.gameState.sprite_mapping && unit.player_id !== undefined) {
+            // V2 game with sprite mapping
+            color = this.gameState.sprite_mapping[unit.player_id] || 'RED';
+        } else if (unit.owner !== undefined && this.playerColors[unit.owner]) {
+            // Legacy with owner field
+            color = this.playerColors[unit.owner].toUpperCase();
+        } else if (unit.army !== undefined) {
+            // Fallback to army field
+            color = unit.army;
+        } else {
+            // Ultimate fallback
+            color = 'RED';
+        }
+        
         const state = unit.has_acted ? 'unavailable' : 'idle';
         const spriteName = `${unit.type.toUpperCase()}_${color}_${state}_0`;
         

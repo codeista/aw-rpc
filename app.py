@@ -30,6 +30,10 @@ import secrets
 
 from manager import GameManager
 from gameboard import GameBoard
+from game_factory import GameFactory
+from manager_v2 import GameManagerV2
+from game_board_v2 import GameBoardV2
+from player_system import PlayerManager
 from config import Config
 from app_core import (
     app, jsonrpc, db, socketio,
@@ -2215,6 +2219,59 @@ def game_create_test_rpc(token: str, use_optimized: bool = True) -> str:
         app_logger.error(f'game_create_test failed for {token}: {str(ex)}')
         raise ex  # Let Flask-JSONRPC handle the error properly
 
+@jsonrpc.method('game_create_v2')
+@log_rpc_performance
+def game_create_v2_rpc(token: str, players: list = None, map_name: str = 'test') -> dict:
+    '''Create a game with custom player configuration
+    
+    Args:
+        token: Unique game identifier
+        players: List of player configs, each with:
+            - name: Player display name
+            - color: Display color (any string)
+            - sprite_color: Which sprite set to use (RED, BLUE, GREEN, YELLOW, GREY)
+        map_name: Map to use (default: 'test')
+        
+    Returns:
+        dict: Game info including token and player configuration
+        
+    Example:
+        players = [
+            {"name": "Alice", "color": "Purple", "sprite_color": "RED"},
+            {"name": "Bob", "color": "Orange", "sprite_color": "BLUE"}
+        ]
+    '''
+    try:
+        # Create game with custom players or default 2-player
+        if players:
+            manager, _ = GameFactory.create_game_with_players(map_name, players)
+        else:
+            manager, _ = GameFactory.create_standard_game(map_name)
+            
+        # Store in games dict
+        games[token] = manager
+        
+        # Save to database
+        game = Game(manager.board, token)
+        db.session.add(game)
+        db.session.commit()
+        
+        if ENHANCED_LOGGING:
+            game_event_logger.log_game_created(token, manager.player_manager.get_player_count())
+            
+        app_logger.info(f"Game v2 created: {token} with {manager.player_manager.get_player_count()} players")
+        
+        # Return game info
+        return {
+            'token': token,
+            'players': manager.player_manager.to_dict()['players'],
+            'sprite_mapping': manager.player_manager.to_dict()['sprite_mapping'],
+            'map': map_name
+        }
+        
+    except Exception as ex:
+        return handle_rpc_error('game_create_v2', token, ex)
+
 @jsonrpc.method('game_board')
 @log_rpc_performance
 def game_board_rpc(token: str) -> dict:
@@ -2230,6 +2287,15 @@ def game_board_rpc(token: str) -> dict:
         if isinstance(board_data, str):
             import json
             board_data = json.loads(board_data)
+            
+        # Add player info if this is a v2 game
+        if isinstance(mngr, GameManagerV2):
+            board_data['players'] = mngr.player_manager.to_dict()['players']
+            board_data['sprite_mapping'] = mngr.player_manager.to_dict()['sprite_mapping']
+            board_data['player_funds'] = mngr.board_v2.player_funds
+            board_data['player_properties'] = mngr.board_v2.player_properties
+            board_data['player_troops'] = mngr.board_v2.player_troops
+            board_data['current_player'] = mngr.board_v2.current_player
         
         return board_data  # Now guaranteed to be a dict
         
@@ -2419,6 +2485,9 @@ def unit_create_rpc(token: str, army: str, unit_type: str, x: int, y: int) -> di
         })
     """
     
+    # Import validation functions at the top
+    from error_handling import validate_army, validate_unit_type, validate_coordinates, ValidationError
+    
     try:
         # CHECK GAME ACTIVE FIRST
         mngr = game_load(token)
@@ -2429,9 +2498,6 @@ def unit_create_rpc(token: str, army: str, unit_type: str, x: int, y: int) -> di
                 "message": f"Cannot create units - game has ended! {getattr(mngr.board, 'winner', 'Unknown')} wins!",
                 "details": {"winner": getattr(mngr.board, 'winner', 'Unknown')}
             }
-            
-        # Import validation functions
-        from error_handling import validate_army, validate_unit_type, validate_coordinates, ValidationError
         
         # Validate inputs
         army = validate_army(army)

@@ -27,6 +27,7 @@ class GameBoardV2:
     turn_order: List[int] = field(default_factory=list)  # Player indices
     current_player: int = 0
     days: int = 1
+    game_active: bool = True
     
     # Army mapping for backward compatibility
     army_to_player: Dict[Army, int] = field(default_factory=dict)
@@ -70,11 +71,27 @@ class GameBoardV2:
         player_id = self.army_to_player.get(Army.RED, -1)
         return self.player_properties.get(player_id, 0)
         
+    @total_red_properties.setter
+    def total_red_properties(self, value: int):
+        """Legacy setter for RED army properties"""
+        player_id = self.army_to_player.get(Army.RED, -1)
+        if player_id >= 0:
+            self.player_properties[player_id] = value
+            self.army_properties[Army.RED] = value
+        
     @property
     def total_blue_properties(self) -> int:
         """Legacy property for BLUE army properties"""
         player_id = self.army_to_player.get(Army.BLUE, -1)
         return self.player_properties.get(player_id, 0)
+        
+    @total_blue_properties.setter
+    def total_blue_properties(self, value: int):
+        """Legacy setter for BLUE army properties"""
+        player_id = self.army_to_player.get(Army.BLUE, -1)
+        if player_id >= 0:
+            self.player_properties[player_id] = value
+            self.army_properties[Army.BLUE] = value
         
     @property
     def total_red_troops(self) -> int:
@@ -82,16 +99,39 @@ class GameBoardV2:
         player_id = self.army_to_player.get(Army.RED, -1)
         return self.player_troops.get(player_id, 0)
         
+    @total_red_troops.setter
+    def total_red_troops(self, value: int):
+        """Legacy setter for RED army troops"""
+        player_id = self.army_to_player.get(Army.RED, -1)
+        if player_id >= 0:
+            self.player_troops[player_id] = value
+            self.army_troops[Army.RED] = value
+        
     @property
     def total_blue_troops(self) -> int:
         """Legacy property for BLUE army troops"""
         player_id = self.army_to_player.get(Army.BLUE, -1)
         return self.player_troops.get(player_id, 0)
         
+    @total_blue_troops.setter  
+    def total_blue_troops(self, value: int):
+        """Legacy setter for BLUE army troops"""
+        player_id = self.army_to_player.get(Army.BLUE, -1)
+        if player_id >= 0:
+            self.player_troops[player_id] = value
+            self.army_troops[Army.BLUE] = value
+        
     @property
     def current_turn(self) -> Optional[Army]:
         """Get current army (for backward compatibility)"""
         return self.player_to_army.get(self.current_player, None)
+        
+    @current_turn.setter
+    def current_turn(self, army: Army):
+        """Set current turn by army (for backward compatibility)"""
+        player_id = self.army_to_player.get(army, -1)
+        if player_id >= 0:
+            self.current_player = player_id
         
     def initialize_from_player_manager(self, player_manager: PlayerManager):
         """Initialize board with player configuration"""
