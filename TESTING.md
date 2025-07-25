@@ -112,18 +112,53 @@ curl http://localhost:5000
 
 ## Important Test Notes
 
+### V2 Player System (NEW - Updated 2025-07)
+The game now uses a player-based system instead of army colors:
+- Players are identified by numeric IDs (0, 1, 2, etc.)
+- Each player has a display color AND a sprite color
+- Units belong to players, not armies
+- Use `GameFactory` for creating test games
+
 ### HQ Tiles
 - HQ tiles are named `BASE_TOWER_0` through `BASE_TOWER_4`, not "HQ"
 - Use `tile.mapTile.is_hq()` method to check for HQ tiles
-- Each army color has its own BASE_TOWER variant
+- Each player's HQ uses their sprite color variant
 
-### Test Game Creation
-```javascript
-// Regular game (5000 starting funds)
-rpc('game_create', {token: 'mygame'})
+### Test Game Creation (V2 System)
+```python
+# Using GameFactory (recommended)
+from game_factory import GameFactory
 
-// Test game (50000 starting funds) - use for expensive units
-rpc('game_create_test', {token: 'testgame'})
+# Standard 2-player game
+manager, token = GameFactory.create_standard_game('test')
+
+# Custom players
+players = [
+    {"name": "Alice", "color": "Purple", "sprite_color": "RED"},
+    {"name": "Bob", "color": "Orange", "sprite_color": "BLUE"}
+]
+manager, token = GameFactory.create_game_with_players('test', players)
+
+# Via RPC (legacy compatibility)
+rpc('game_create_v2', {
+    token: 'mygame',
+    players: [
+        {"name": "Player 1", "color": "Red", "sprite_color": "RED"},
+        {"name": "Player 2", "color": "Blue", "sprite_color": "BLUE"}
+    ]
+})
+
+# Test game with high funds
+rpc('game_create_test', {token: 'testgame'})  # 50000 starting funds
+```
+
+### Creating Units (V2 System)
+```python
+# V2 method - specify player ID instead of army
+manager.unit_create_v2(x, y, UnitType.TANK, player_id=0)
+
+# Legacy method (still works but uses sprite mapping)
+manager.unit_create(x, y, UnitType.TANK, 'RED')  # Maps to player 0
 ```
 
 ### Common Test Patterns
@@ -139,12 +174,32 @@ self.manager.end_turn()  # End turn to enable movement
 tile = self.manager.tile_at(x, y)
 if tile.unit:
     print(f"Unit: {tile.unit.type.name}")
+    # V2 system - check player ID
+    if hasattr(tile.unit, 'player_id'):
+        print(f"Owner: Player {tile.unit.player_id}")
+    # Legacy system - check army
+    else:
+        print(f"Army: {tile.unit.army.name}")
 ```
 
 3. **Verify Transport Loading**
 ```python
 # Move unit INTO transport (not picked up)
 self.manager.unit_move(unit_x, unit_y, transport_x, transport_y)
+```
+
+4. **Access Player Information (V2)**
+```python
+# Get player manager
+pm = manager.player_manager
+
+# Get player info
+player = pm.get_player(0)
+print(f"Player 0: {player.name} ({player.color})")
+print(f"Sprite color: {player.sprite_color.value}")
+
+# Get sprite mapping for legacy compatibility
+sprite_color = pm.get_sprite_color(player_id=0)
 ```
 
 ## Click Handler Testing
@@ -226,28 +281,53 @@ pkill -f "python3 app.py"
 exit $TEST_RESULT
 ```
 
+## Testing Consolidated Transport API (NEW - 2025-07)
+
+The transport API has been consolidated from 20 methods to 5:
+
+### New Transport Methods
+1. **`transport_load`** - Load units into transports
+2. **`transport_unload`** - Unload units from transports
+3. **`transport_info`** - Get transport/cargo information
+4. **`transport_unload_positions`** - Get valid unload positions
+5. **`transport_loadable_units`** - Find loadable units/transports
+
+### Testing Transport API
+```python
+# Test the consolidated transport API
+python3 test_consolidated_transport_api_v2.py
+
+# Or test via RPC (requires server running)
+result = rpc('transport_info', {token: 'mygame', x: 2, y: 3})
+```
+
 ## Adding New Tests
 
 1. Create test file in appropriate directory
 2. Import test base classes and utilities
-3. Follow existing test patterns
+3. Follow existing test patterns (use V2 system)
 4. Add to test runner configuration
 5. Document any special setup requirements
 
-Example test structure:
+### Example V2 Test Structure
 ```python
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-from gameboard import GameBoard
-from manager import GameManager
-# ... other imports
+from game_factory import GameFactory
+from unit import UnitType
 
 def test_my_feature():
-    config = Config()
-    board = GameBoard.create(map_name='test_map')
-    manager = GameManager(config, board)
+    # Create V2 game with custom players
+    players = [
+        {"name": "Test 1", "color": "Red", "sprite_color": "RED"},
+        {"name": "Test 2", "color": "Blue", "sprite_color": "BLUE"}
+    ]
+    manager, token = GameFactory.create_game_with_players('test', players)
+    
+    # Create units using V2 method
+    manager.unit_create_v2(2, 2, UnitType.TANK, player_id=0)
     
     # Test implementation
     assert condition, "Error message"

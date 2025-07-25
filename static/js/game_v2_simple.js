@@ -637,6 +637,11 @@ class Game {
             return;
         }
         
+        // Debug HP sprites
+        if (type === 'ui' && name.startsWith('hp_')) {
+            console.log(`Drawing UI sprite: ${name} at image coords (${sprite.x}, ${sprite.y})`);
+        }
+        
         // For units and UI, don't adjust for tall sprites
         if (type === 'units' || type === 'ui') {
             this.ctx.drawImage(

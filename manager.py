@@ -832,9 +832,10 @@ class GameManager:
                             transport = adj_tile.unit
                             # Check if transport can carry this unit type
                             capability = self.get_transport_capability(transport)
-                            if capability and unit.type in capability.can_carry:
+                            if capability and unit.type.name in capability.compatible_units:
                                 # Check if transport has space
-                                if len(transport.status.cargo) < capability.capacity:
+                                cargo_count = self.transport_system.get_cargo_count(transport)
+                                if cargo_count < capability.max_capacity:
                                     return True
         
         return False
@@ -945,6 +946,44 @@ class GameManager:
         target_unit = self.unit_at(x2, y2)
         if target_unit and target_unit.army == unit.army and target_unit.type == unit.type:
             return self._handle_unit_join_fixed(x, y, x2, y2)
+        
+        # Check for transport auto-loading
+        if target_unit and target_unit.army == unit.army:
+            # Check if target is a transport that can load this unit
+            transport_system = CompleteTransportSystem(self)
+            if transport_system.is_transport_unit(target_unit):
+                can_load, message = transport_system.can_load_unit(
+                    target_unit, unit, x2, y2, x, y
+                )
+                if can_load:
+                    # Auto-load the unit into the transport
+                    result = transport_system.load_unit_enhanced(
+                        target_unit, unit, x2, y2, x, y
+                    )
+                    if result.success:
+                        # Unit is now loaded, mark as having moved
+                        unit.can_move = False
+                        unit.can_attack = False
+                        unit.can_capture = False
+                        self.unit_deselect()
+                        
+                        # Log the auto-load
+                        try:
+                            import logging
+                            logger = logging.getLogger('GameManager')
+                            logger.info(f"Unit {unit.type.name} auto-loaded into {target_unit.type.name} at ({x2},{y2})")
+                        except:
+                            pass
+                        
+                        return unit
+                    else:
+                        # Loading failed, can't move there
+                        from error_handling import MovementError
+                        raise MovementError(
+                            f"Cannot load into transport: {result.message}",
+                            from_pos=(x, y),
+                            to_pos=(x2, y2)
+                        )
         
         # Execute the movement
         self.unit_remove(x, y)

@@ -12,6 +12,7 @@ import time
 import json
 import traceback
 import math
+from typing import Optional
 
 import subprocess
 import threading
@@ -1015,6 +1016,12 @@ def test_interface():
     """Complete testing interface with all testing tools"""
     app_logger.info("Test interface accessed")
     return render_template('test_interface.html')
+
+@app.route('/ui_sprite_showcase')
+def ui_sprite_showcase():
+    """UI Sprite debugging showcase"""
+    app_logger.info("UI sprite showcase accessed")
+    return render_template('ui_sprite_showcase.html')
 
 
 @app.route('/test_game')
@@ -2590,7 +2597,7 @@ def unit_create_rpc(token: str, army: str, unit_type: str, x: int, y: int) -> di
 @jsonrpc.method('unit_move')
 @log_rpc_performance
 def unit_move_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
-    """Move unit with enhanced validation and error handling"""
+    """[DEPRECATED - Use movement_execute instead] Move unit with enhanced validation and error handling"""
     try:
         # CHECK GAME ACTIVE FIRST (ADD THIS)
         mngr = game_load(token)
@@ -2779,6 +2786,7 @@ def unit_select_rpc(token: str, x: int, y: int) -> dict:
 @log_rpc_performance
 def unit_load_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
     """
+    [DEPRECATED - Use transport_load instead]
     LEGACY ALIAS: Load a unit into transport
     Frontend logic: Select unit, then alt-click transport
     x,y = selected unit position (cargo)
@@ -2787,6 +2795,8 @@ def unit_load_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
     This is the method your frontend is calling based on the debug logs:
     rpc:: unit_load Object { x: 1, y: 3, x2: 2, y2: 3, token: "655z_K2c" }
     """
+    app_logger.warning(f"DEPRECATION: unit_load called by {token} - use transport_load instead")
+    
     try:
         # Add debug logging to track the call
         app_logger.info(f"UNIT_LOAD: Frontend called with cargo=({x},{y}), transport=({x2},{y2})")
@@ -2809,12 +2819,15 @@ def unit_load_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
 @log_rpc_performance
 def unit_unload_rpc(token: str, x: int, y: int, x2: int, y2: int, index: int = 0) -> dict:
     """
+    [DEPRECATED - Use transport_unload instead]
     LEGACY ALIAS: Unload a unit from transport
     Frontend logic: Select transport, then alt-click destination
     x,y = selected transport position
     x2,y2 = alt-clicked unload destination position
     index = cargo index (frontend sends 'index', not 'cargo_index')
     """
+    app_logger.warning(f"DEPRECATION: unit_unload called by {token} - use transport_unload instead")
+    
     try:
         # Parameter mapping:
         # x,y = transport position (selected transport)
@@ -2891,7 +2904,7 @@ def get_unload_positions_frontend_alias(token: str, x: int, y: int) -> dict:
 @jsonrpc.method('damage_estimate')
 @log_rpc_performance
 def damage_estimate_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
-    '''rpc estimates the damage for attacker and defender'''
+    '''[DEPRECATED - Use combat_preview instead] rpc estimates the damage for attacker and defender'''
     try:
         mngr = game_load(token)
         attacker_hp, defender_hp = mngr.damage_estimate(x, y, x2, y2)
@@ -2924,7 +2937,7 @@ def check_turn_rpc(token: str) -> dict:
 @jsonrpc.method('damage_preview')
 @log_rpc_performance
 def damage_preview_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
-    """Get damage preview before executing attack"""
+    """[DEPRECATED - Use combat_preview instead] Get damage preview before executing attack"""
     try:
         mngr = game_load(token)
         
@@ -2973,13 +2986,13 @@ def damage_preview_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
 # Enhanced movement RPC methods
 @jsonrpc.method('movement_preview')
 def movement_preview_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
-    """Get movement preview information"""
+    """[DEPRECATED - Use movement_validate instead] Get movement preview information"""
     mngr = game_load(token)
     return mngr.get_movement_preview(x, y, x2, y2)
 
 @jsonrpc.method('unit_valid_moves')
 def unit_valid_moves_rpc(token: str, x: int, y: int) -> dict:
-    """Get all valid moves for a unit"""
+    """[DEPRECATED - Use movement_range instead] Get all valid moves for a unit"""
     mngr = game_load(token)
     unit = mngr._validate_unit_exists(x, y)
     valid_moves = mngr.get_unit_valid_moves(unit)
@@ -2990,7 +3003,7 @@ def unit_valid_moves_rpc(token: str, x: int, y: int) -> dict:
 
 @jsonrpc.method('validate_movement')
 def validate_movement_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
-    """Validate movement and get detailed information"""
+    """[DEPRECATED - Use movement_validate instead] Validate movement and get detailed information"""
     mngr = game_load(token)
     result = mngr.validate_movement_detailed(x, y, x2, y2)
     return {
@@ -3517,6 +3530,7 @@ def can_cargo_exit_transport_rpc(token: str, transport_x: int, transport_y: int,
 @log_rpc_performance 
 def unit_move_enhanced_rpc(token: str, from_x: int, from_y: int, to_x: int, to_y: int) -> dict:
     """
+    [DEPRECATED - Use movement_execute instead]
     ADVANCE WARS STYLE: Enhanced unit movement that can handle transport boarding
     This automatically detects if the destination contains a friendly transport
     """
@@ -3968,7 +3982,12 @@ def get_loadable_units_rpc(token: str, x: int, y: int) -> dict:
 @log_rpc_performance
 def load_unit_rpc(token: str, transport_x: int, transport_y: int, 
                  cargo_x: int, cargo_y: int) -> dict:
-    """Load a unit into transport"""
+    """
+    [DEPRECATED - Use transport_load instead]
+    Load a unit into transport
+    """
+    app_logger.warning(f"DEPRECATION: load_unit called by {token} - use transport_load instead")
+    
     try:
         mngr = game_load(token)
         
@@ -4030,7 +4049,12 @@ def load_unit_rpc(token: str, transport_x: int, transport_y: int,
 @log_rpc_performance
 def unload_unit_rpc(token: str, transport_x: int, transport_y: int, 
                    unload_x: int, unload_y: int, cargo_index: int = 0) -> dict:
-    """Unload a unit from transport"""
+    """
+    [DEPRECATED - Use transport_unload instead]
+    Unload a unit from transport
+    """
+    app_logger.warning(f"DEPRECATION: unload_unit called by {token} - use transport_unload instead")
+    
     try:
         mngr = game_load(token)
         
@@ -4199,6 +4223,426 @@ def can_unload_unit_rpc(token: str, transport_x: int, transport_y: int,
     except Exception as e:
         app_logger.error(f"Can unload unit failed: {token} - {str(e)}")
         return {"success": False, "error": str(e)}
+
+# =============================================================================
+# 🚢 CONSOLIDATED TRANSPORT API METHODS (NEW)
+# =============================================================================
+
+@jsonrpc.method('transport_load')
+@log_rpc_performance
+def transport_load_rpc(token: str, transport_x: int, transport_y: int, 
+                      cargo_x: int, cargo_y: int) -> dict:
+    """
+    Consolidated transport loading method - handles manual loading from adjacent tile.
+    Unit must be adjacent to transport and have movement remaining.
+    Replaces: unit_load, load_unit, load_transport_unit, can_load_unit
+    """
+    try:
+        mngr = game_load(token)
+        
+        # Validate game state
+        if not mngr.board.game_active:
+            return {
+                "success": False,
+                "loaded": False,
+                "error": "Game has ended"
+            }
+        
+        # Get units
+        transport = mngr.unit_at(transport_x, transport_y)
+        cargo = mngr.unit_at(cargo_x, cargo_y)
+        
+        if not transport:
+            return {
+                "success": False,
+                "loaded": False,
+                "error": "No transport unit at specified position"
+            }
+            
+        if not cargo:
+            return {
+                "success": False,
+                "loaded": False,
+                "error": "No cargo unit at specified position"
+            }
+        
+        # Check turn ownership
+        if cargo.army != mngr.board.current_turn:
+            return {
+                "success": False,
+                "loaded": False,
+                "error": "Can only load your own units"
+            }
+        
+        # Check if cargo unit has already been loaded or joined
+        # Units can load even after moving, as long as they haven't performed another action
+        if hasattr(cargo, 'has_loaded') and cargo.has_loaded:
+            return {
+                "success": False,
+                "loaded": False,
+                "error": "Unit has already been loaded this turn"
+            }
+        
+        # Check adjacency - unit must be adjacent to transport
+        distance = abs(transport_x - cargo_x) + abs(transport_y - cargo_y)
+        if distance != 1:
+            return {
+                "success": False,
+                "loaded": False,
+                "error": "Unit must be adjacent to transport to load"
+            }
+        
+        # Execute loading
+        transport_system = CompleteTransportSystem(mngr)
+        result = transport_system.load_unit_enhanced(
+            transport, cargo, transport_x, transport_y, cargo_x, cargo_y
+        )
+        
+        if result.success:
+            # Mark the cargo unit as having performed an action
+            cargo.has_loaded = True
+            cargo.can_move = False
+            cargo.can_attack = False
+            cargo.can_capture = False
+            
+            # Log and save
+            log_game_event('UNIT_LOADED', token, {
+                'transport': f"{transport.army.name} {transport.type.name}",
+                'cargo': f"{cargo.army.name} {cargo.type.name}",
+                'position': f"({transport_x}, {transport_y})",
+                'cargo_index': result.cargo_index
+            })
+            
+            game_save(mngr, token)
+            ws_board_update(token)
+        
+        # Get transport info for response
+        transport_info = transport_system.get_cargo_info(transport) if result.success else None
+        
+        return {
+            "success": result.success,
+            "loaded": result.success,
+            "transport": {
+                "type": transport.type.name.lower(),
+                "cargo": [
+                    {"type": unit['type'], "hp": unit['hp']} 
+                    for unit in (transport_info.get('cargo_units', []) if transport_info else [])
+                ],
+                "capacity": transport_info.get('max_capacity', 0) if transport_info else 0,
+                "remaining_space": (transport_info.get('max_capacity', 0) - transport_info.get('current_cargo', 0)) if transport_info else 0
+            } if result.success else None,
+            "error": result.message if not result.success else None
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Transport load failed: {token} - {str(e)}")
+        return {
+            "success": False,
+            "loaded": False,
+            "error": str(e)
+        }
+
+@jsonrpc.method('transport_unload')
+@log_rpc_performance
+def transport_unload_rpc(token: str, transport_x: int, transport_y: int,
+                        unload_x: int, unload_y: int, cargo_index: int = 0) -> dict:
+    """
+    Consolidated transport unloading method.
+    Replaces: unit_unload, unload_unit, unload_transport_unit, cargo_exit_transport,
+              can_unload_unit, can_cargo_exit_transport
+    """
+    try:
+        mngr = game_load(token)
+        
+        # Validate game state
+        if not mngr.board.game_active:
+            return {
+                "success": False,
+                "unloaded": False,
+                "error": "Game has ended"
+            }
+        
+        # Get transport
+        transport = mngr.unit_at(transport_x, transport_y)
+        if not transport:
+            return {
+                "success": False,
+                "unloaded": False,
+                "error": "No transport unit at specified position"
+            }
+        
+        # Check turn ownership
+        if transport.army != mngr.board.current_turn:
+            return {
+                "success": False,
+                "unloaded": False,
+                "error": "Can only unload from your own transports"
+            }
+        
+        # Execute unloading
+        transport_system = CompleteTransportSystem(mngr)
+        result = transport_system.unload_unit_enhanced(
+            transport, cargo_index, transport_x, transport_y, unload_x, unload_y
+        )
+        
+        unloaded_unit = None
+        if result.success and result.unloaded_position:
+            unloaded_unit = mngr.unit_at(result.unloaded_position[0], result.unloaded_position[1])
+        
+        if result.success:
+            # Log and save
+            log_game_event('UNIT_UNLOADED', token, {
+                'transport': f"{transport.army.name} {transport.type.name}",
+                'position': f"({transport_x}, {transport_y})",
+                'unload_position': f"({unload_x}, {unload_y})",
+                'cargo_index': cargo_index
+            })
+            
+            game_save(mngr, token)
+            ws_board_update(token)
+        
+        # Get remaining cargo count
+        transport_info = transport_system.get_cargo_info(transport)
+        remaining_cargo = transport_info.get('current_cargo', 0)
+        
+        return {
+            "success": result.success,
+            "unloaded": result.success,
+            "unit": {
+                "type": unloaded_unit.type.name.lower() if unloaded_unit else None,
+                "hp": unloaded_unit.hp if unloaded_unit else None
+            } if result.success else None,
+            "transport_cargo_remaining": remaining_cargo,
+            "error": result.message if not result.success else None
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Transport unload failed: {token} - {str(e)}")
+        return {
+            "success": False,
+            "unloaded": False,
+            "error": str(e)
+        }
+
+@jsonrpc.method('transport_info')
+@log_rpc_performance
+def transport_info_rpc(token: str, x: int, y: int) -> dict:
+    """
+    Get comprehensive transport information for a position.
+    Replaces: get_transport_info, get_cargo_info, can_transport_move
+    """
+    try:
+        mngr = game_load(token)
+        unit = mngr.unit_at(x, y)
+        
+        if not unit:
+            return {
+                "is_transport": False,
+                "is_cargo": False
+            }
+        
+        transport_system = CompleteTransportSystem(mngr)
+        
+        # Check if unit is a transport
+        is_transport = transport_system.is_transport_unit(unit)
+        transport_data = None
+        
+        if is_transport:
+            cargo_info = transport_system.get_cargo_info(unit)
+            transport_data = {
+                "type": unit.type.name.lower(),
+                "cargo": [
+                    {
+                        "type": cargo_unit['type'],
+                        "hp": cargo_unit['hp'],
+                        "index": i
+                    }
+                    for i, cargo_unit in enumerate(cargo_info.get('cargo_units', []))
+                ],
+                "capacity": cargo_info.get('max_capacity', 0),
+                "can_move": not unit.has_moved,
+                "movement_remaining": unit.move if not unit.has_moved else 0
+            }
+        
+        # Check if unit is being carried
+        is_cargo = False
+        carried_by = None
+        
+        for y in range(mngr.board.height):
+            for x in range(mngr.board.width):
+                tile = mngr.tile_at(x, y)
+                if tile and tile.unit and transport_system.is_transport_unit(tile.unit):
+                    if hasattr(tile.unit.status, 'cargo') and tile.unit.status.cargo:
+                        for cargo_unit in tile.unit.status.cargo:
+                            if cargo_unit == unit:
+                                is_cargo = True
+                                carried_by = {
+                                    "x": x,
+                                    "y": y,
+                                    "type": tile.unit.type.name.lower()
+                                }
+                                break
+                if is_cargo:
+                    break
+        
+        return {
+            "is_transport": is_transport,
+            "transport": transport_data,
+            "is_cargo": is_cargo,
+            "carried_by": carried_by
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Transport info failed: {token} - {str(e)}")
+        return {
+            "is_transport": False,
+            "is_cargo": False,
+            "error": str(e)
+        }
+
+@jsonrpc.method('transport_unload_positions')
+@log_rpc_performance
+def transport_unload_positions_rpc(token: str, transport_x: int, transport_y: int) -> dict:
+    """
+    Get valid unload positions for a transport.
+    Replaces: get_unload_positions, get_unload_positions_internal, 
+              get_valid_unload_positions, get_exit_positions
+    """
+    try:
+        mngr = game_load(token)
+        transport = mngr.unit_at(transport_x, transport_y)
+        
+        if not transport:
+            return {
+                "positions": [],
+                "cargo_count": 0,
+                "error": "No transport at specified position"
+            }
+        
+        transport_system = CompleteTransportSystem(mngr)
+        
+        if not transport_system.is_transport_unit(transport):
+            return {
+                "positions": [],
+                "cargo_count": 0,
+                "error": "Unit is not a transport"
+            }
+        
+        # Get valid unload positions
+        valid_positions = transport_system.get_valid_unload_positions(
+            transport_x, transport_y
+        )
+        
+        # Format positions with terrain info
+        positions = []
+        for pos in valid_positions:
+            tile = mngr.tile_at(pos[0], pos[1])
+            positions.append({
+                "x": pos[0],
+                "y": pos[1],
+                "terrain": tile.mapTile.type.name.lower() if tile and tile.mapTile else "unknown",
+                "occupied": tile.unit is not None if tile else False
+            })
+        
+        # Get cargo count
+        cargo_info = transport_system.get_cargo_info(transport)
+        cargo_count = cargo_info.get('current_cargo', 0)
+        
+        return {
+            "positions": positions,
+            "cargo_count": cargo_count
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Transport unload positions failed: {token} - {str(e)}")
+        return {
+            "positions": [],
+            "cargo_count": 0,
+            "error": str(e)
+        }
+
+@jsonrpc.method('transport_loadable_units')
+@log_rpc_performance
+def transport_loadable_units_rpc(token: str, x: int, y: int) -> dict:
+    """
+    Get loadable units or available transports for a position.
+    Replaces: get_loadable_transports, get_loadable_units, 
+              get_transport_summary, get_transport_units
+    """
+    try:
+        mngr = game_load(token)
+        unit = mngr.unit_at(x, y)
+        transport_system = CompleteTransportSystem(mngr)
+        
+        response = {
+            "can_load": False,
+            "is_transport": False
+        }
+        
+        if unit and unit.army == mngr.board.current_turn:
+            # Check if unit can be loaded (Infantry/Mech for most transports)
+            loadable_types = ['INFANTRY', 'MECH', 'BCOPTER', 'TCOPTER', 'FIGHTER', 'BOMBER']
+            if unit.type.name in loadable_types:
+                response["can_load"] = True
+                
+                # Find nearby transports
+                nearby_transports = []
+                for dy in range(-1, 2):
+                    for dx in range(-1, 2):
+                        if dx == 0 and dy == 0:
+                            continue
+                        tx, ty = x + dx, y + dy
+                        if 0 <= tx < mngr.board.width and 0 <= ty < mngr.board.height:
+                            transport = mngr.unit_at(tx, ty)
+                            if (transport and transport_system.is_transport_unit(transport) and
+                                transport.army == unit.army):
+                                cargo_info = transport_system.get_cargo_info(transport)
+                                remaining_space = cargo_info['max_capacity'] - cargo_info['current_cargo']
+                                if remaining_space > 0:
+                                    nearby_transports.append({
+                                        "x": tx,
+                                        "y": ty,
+                                        "type": transport.type.name.lower(),
+                                        "space_available": remaining_space
+                                    })
+                
+                response["nearby_transports"] = nearby_transports
+            
+            # Check if unit is a transport
+            if transport_system.is_transport_unit(unit):
+                response["is_transport"] = True
+                
+                # Find loadable units
+                loadable_units = []
+                for ty in range(mngr.board.height):
+                    for tx in range(mngr.board.width):
+                        tile = mngr.tile_at(tx, ty)
+                        if (tile and tile.unit and tile.unit != unit and 
+                            tile.unit.army == unit.army and
+                            tile.unit.type.name in loadable_types and
+                            not tile.unit.has_moved):
+                            # Check if unit can reach transport
+                            distance = abs(tx - x) + abs(ty - y)
+                            can_reach = distance <= tile.unit.move
+                            
+                            loadable_units.append({
+                                "x": tx,
+                                "y": ty,
+                                "type": tile.unit.type.name.lower(),
+                                "can_reach": can_reach
+                            })
+                
+                response["loadable_units"] = loadable_units
+        
+        return response
+        
+    except Exception as e:
+        app_logger.error(f"Transport loadable units failed: {token} - {str(e)}")
+        return {
+            "can_load": False,
+            "is_transport": False,
+            "error": str(e)
+        }
 
 @jsonrpc.method('repair_unit')
 @log_rpc_performance
@@ -4492,12 +4936,1246 @@ def resupply_unit_rpc(token: str, resupply_x: int, resupply_y: int,
         return {"success": False, "error": str(e)}
 
 # =============================================================================
-# PHASE 2A: ENHANCED COMBAT RPC METHODS
+# ⚔️ CONSOLIDATED COMBAT API METHODS (NEW)
+# =============================================================================
+
+@jsonrpc.method('combat_preview')
+@log_rpc_performance
+def combat_preview_consolidated_rpc(token: str, attacker_x: int, attacker_y: int, 
+                                   defender_x: int, defender_y: int) -> dict:
+    """
+    Consolidated combat preview - comprehensive pre-attack information.
+    Replaces: damage_estimate, damage_preview, old combat_preview
+    """
+    try:
+        mngr = game_load(token)
+        
+        # Validate game state
+        if not mngr.board.game_active:
+            return {
+                "success": False,
+                "error": "Game has ended"
+            }
+        
+        # Validate coordinates
+        board_width = mngr.board.width
+        board_height = mngr.board.height
+        
+        if not (0 <= attacker_x < board_width and 0 <= attacker_y < board_height):
+            return {
+                "success": False,
+                "error": f"Invalid attacker position: ({attacker_x}, {attacker_y})"
+            }
+        
+        if not (0 <= defender_x < board_width and 0 <= defender_y < board_height):
+            return {
+                "success": False,
+                "error": f"Invalid defender position: ({defender_x}, {defender_y})"
+            }
+        
+        # Get units
+        attacker = mngr.unit_at(attacker_x, attacker_y)
+        defender = mngr.unit_at(defender_x, defender_y)
+        
+        if not attacker:
+            return {"success": False, "error": "No unit at attacker position"}
+        if not defender:
+            return {"success": False, "error": "No unit at defender position"}
+        
+        # Validate attack conditions
+        if attacker.army != mngr.board.current_turn:
+            return {"success": False, "error": "Not your turn to attack with this unit"}
+        
+        if attacker.army == defender.army:
+            return {"success": False, "error": "Cannot attack friendly units"}
+        
+        if not attacker.can_attack:
+            return {"success": False, "error": "Unit has already attacked this turn"}
+        
+        # Check range
+        if not mngr.unit_can_attack(attacker, defender_x, defender_y):
+            return {"success": False, "error": "Target is out of range"}
+        
+        # Get comprehensive preview
+        preview = mngr.get_damage_preview(attacker_x, attacker_y, defender_x, defender_y)
+        
+        if "error" in preview:
+            return {"success": False, "error": preview["error"]}
+        
+        # Get terrain defense bonus
+        defender_tile = mngr.tile_at(defender_x, defender_y)
+        terrain_defense = 0
+        if defender_tile and defender_tile.mapTile:
+            from map_system import TERRAIN_DEFENSE
+            terrain_defense = TERRAIN_DEFENSE.get(defender_tile.mapTile.type, 0)
+        
+        # Calculate damage ranges (±10% luck)
+        base_damage = preview.get("attacker_damage", 0)
+        min_damage = max(0, int(base_damage * 0.9))
+        max_damage = min(100, int(base_damage * 1.1))
+        
+        counter_base = preview.get("counter_damage", 0)
+        counter_min = max(0, int(counter_base * 0.9))
+        counter_max = min(100, int(counter_base * 1.1))
+        
+        return {
+            "success": True,
+            "attacker": {
+                "type": attacker.type.name,
+                "hp_current": attacker.status.hp,
+                "hp_after": preview.get("attacker_hp_after", attacker.status.hp),
+                "ammo_current": attacker.status.ammo,
+                "ammo_after": attacker.status.ammo - 1 if attacker.status.ammo > 0 else 0,
+                "will_be_destroyed": preview.get("attacker_destroyed", False)
+            },
+            "defender": {
+                "type": defender.type.name,
+                "hp_current": defender.status.hp,
+                "hp_after": preview.get("defender_hp_after", defender.status.hp),
+                "terrain_defense": terrain_defense,
+                "will_be_destroyed": preview.get("defender_destroyed", False)
+            },
+            "damage": {
+                "attacker_damage": base_damage,
+                "attacker_damage_range": {"min": min_damage, "max": max_damage},
+                "can_counter": preview.get("can_counter", False),
+                "counter_damage": counter_base if preview.get("can_counter", False) else 0,
+                "counter_damage_range": {"min": counter_min, "max": counter_max} if preview.get("can_counter", False) else {"min": 0, "max": 0}
+            },
+            "warnings": {
+                "low_ammo": attacker.status.ammo <= 1,
+                "no_ammo": attacker.status.ammo == 0
+            }
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Combat preview failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+
+@jsonrpc.method('combat_attack')
+@log_rpc_performance
+def combat_attack_rpc(token: str, attacker_x: int, attacker_y: int,
+                     defender_x: int, defender_y: int) -> dict:
+    """
+    Consolidated combat attack execution.
+    Replaces: unit_attack, unit_attack_enhanced
+    """
+    try:
+        mngr = game_load(token)
+        
+        # Validate game state
+        if not mngr.board.game_active:
+            return {
+                "success": False,
+                "error": "Game has ended"
+            }
+        
+        # Execute attack using enhanced system
+        result = mngr.unit_attack_enhanced(attacker_x, attacker_y, defender_x, defender_y)
+        
+        # Check for win condition
+        winner = mngr.check_win_condition()
+        if winner:
+            mngr.board.game_active = False
+            mngr.board.winner = winner
+            app_logger.info(f"Game ended: {winner.name} wins after combat in {token}")
+            
+            log_game_event('GAME_ENDED', token, {
+                'winner': winner.name,
+                'reason': 'Combat victory',
+                'final_day': mngr.board.days
+            })
+        
+        # Save game state
+        game_save(mngr, token)
+        ws_board_update(token)
+        
+        return {
+            "success": True,
+            "result": {
+                "attacker": {
+                    "damage_dealt": result.attacker_damage_dealt,
+                    "hp_before": result.attacker_hp_before,
+                    "hp_after": result.attacker_hp_after,
+                    "destroyed": result.attacker_destroyed
+                },
+                "defender": {
+                    "damage_dealt": result.defender_damage_dealt,
+                    "hp_before": result.defender_hp_before,
+                    "hp_after": result.defender_hp_after,
+                    "destroyed": result.defender_destroyed
+                },
+                "counter_attack": result.counter_attack_occurred,
+                "game_ended": winner is not None,
+                "winner": winner.name if winner else None
+            }
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Combat attack failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+
+@jsonrpc.method('combat_targets')
+@log_rpc_performance
+def combat_targets_rpc(token: str, unit_x: int, unit_y: int) -> dict:
+    """
+    Get all valid attack targets for a unit.
+    Keeps functionality from get_attack_targets but with cleaner response.
+    """
+    try:
+        mngr = game_load(token)
+        unit = mngr.unit_at(unit_x, unit_y)
+        
+        if not unit:
+            return {
+                "success": False,
+                "error": "No unit at specified position"
+            }
+        
+        if unit.army != mngr.board.current_turn:
+            return {
+                "success": False,
+                "error": "Not your turn"
+            }
+        
+        if not unit.can_attack:
+            return {
+                "success": False,
+                "error": "Unit cannot attack",
+                "reason": "already_attacked" if not unit.is_indirect() else "moved_indirect"
+            }
+        
+        # Find all valid targets
+        targets = []
+        for y in range(mngr.board.height):
+            for x in range(mngr.board.width):
+                tile = mngr.tile_at(x, y)
+                if tile and tile.unit and tile.unit.army != unit.army:
+                    if mngr.unit_can_attack(unit, x, y):
+                        # Get damage preview for this target
+                        preview = mngr.get_damage_preview(unit_x, unit_y, x, y)
+                        
+                        targets.append({
+                            "x": x,
+                            "y": y,
+                            "unit": {
+                                "type": tile.unit.type.name,
+                                "hp": tile.unit.status.hp,
+                                "army": tile.unit.army.name
+                            },
+                            "damage_percent": preview.get("attacker_damage", 0),
+                            "can_counter": preview.get("can_counter", False),
+                            "counter_damage_percent": preview.get("counter_damage", 0) if preview.get("can_counter", False) else 0
+                        })
+        
+        # Sort by expected damage (descending)
+        targets.sort(key=lambda t: t["damage_percent"], reverse=True)
+        
+        return {
+            "success": True,
+            "unit": {
+                "type": unit.type.name,
+                "attack_range": {"min": unit.status.rangemin, "max": unit.status.rangemax}
+            },
+            "targets": targets,
+            "target_count": len(targets)
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Get combat targets failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+
+@jsonrpc.method('combat_chart')
+@log_rpc_performance
+def combat_chart_rpc(token: str) -> dict:
+    """
+    Get damage matchup chart for all units.
+    Enhanced version of get_damage_chart with better structure.
+    """
+    try:
+        # Import damage tables directly from unit module
+        from unit import UnitType, DAMAGE_TABLE, SECONDARY_DAMAGE_TABLE
+        
+        # Build damage chart from the static tables
+        organized_chart = {}
+        
+        # Get all unit types
+        unit_types = [unit_type.name for unit_type in UnitType]
+        
+        # Build chart for each attacker type
+        for attacker_type in UnitType:
+            attacker_name = attacker_type.name
+            organized_chart[attacker_name] = {}
+            
+            # Get primary weapon damage for all targets
+            primary_damages = DAMAGE_TABLE.get(attacker_type, [0] * len(UnitType))
+            
+            # Get secondary weapon damage if exists
+            secondary_damages = SECONDARY_DAMAGE_TABLE.get(attacker_type, [0] * len(UnitType))
+            
+            # For each potential defender
+            for defender_type in UnitType:
+                defender_name = defender_type.name
+                defender_index = defender_type.value
+                
+                # Get the damage this attacker does to this defender
+                primary_dmg = primary_damages[defender_index] if defender_index < len(primary_damages) else 0
+                secondary_dmg = secondary_damages[defender_index] if defender_index < len(secondary_damages) else 0
+                
+                # Use whichever is higher (simplified logic)
+                damage = max(primary_dmg, secondary_dmg)
+                
+                organized_chart[attacker_name][defender_name] = damage
+        
+        return {
+            "success": True,
+            "chart": organized_chart,
+            "unit_types": unit_types
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Get combat chart failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+
+# =============================================================================
+# 🔄 V2 MIGRATION HELPERS
+# =============================================================================
+
+@jsonrpc.method('game_info')
+@log_rpc_performance
+def game_info_rpc(token: str) -> dict:
+    """
+    Get comprehensive game information including v2 player data.
+    Essential for v2 clients to understand player configuration.
+    """
+    try:
+        mngr = game_load(token)
+        
+        # Base game info
+        info = {
+            "success": True,
+            "token": token,
+            "active": mngr.board.game_active,
+            "day": mngr.board.days,
+            "map_size": {
+                "width": mngr.board.width,
+                "height": mngr.board.height
+            }
+        }
+        
+        # Add v2 player information if available
+        if isinstance(mngr, GameManagerV2):
+            info["is_v2"] = True
+            info["players"] = mngr.player_manager.to_dict()['players']
+            info["sprite_mapping"] = mngr.player_manager.to_dict()['sprite_mapping']
+            info["current_player"] = {
+                "id": mngr.board_v2.current_player,
+                "info": mngr.get_current_player_info()
+            }
+        else:
+            # Legacy game - provide compatibility info
+            info["is_v2"] = False
+            info["armies"] = [army.name for army in mngr.board.turn_order]
+            info["current_turn"] = mngr.board.current_turn.name
+            
+        # Add win state if game ended
+        if not mngr.board.game_active and hasattr(mngr.board, 'winner'):
+            info["winner"] = mngr.board.winner.name if mngr.board.winner else None
+            
+        return info
+        
+    except Exception as e:
+        app_logger.error(f"Get game info failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+
+@jsonrpc.method('player_stats')
+@log_rpc_performance
+def player_stats_rpc(token: str, player_id: Optional[int] = None) -> dict:
+    """
+    Get statistics for a specific player or all players.
+    V2-aware method that works with both systems.
+    """
+    try:
+        mngr = game_load(token)
+        
+        if isinstance(mngr, GameManagerV2):
+            # V2 game - use player system
+            if player_id is None:
+                # Get all player stats
+                stats = {}
+                for pid in range(mngr.player_manager.get_player_count()):
+                    player = mngr.player_manager.get_player(pid)
+                    if player:
+                        stats[str(pid)] = {
+                            "name": player.name,
+                            "color": player.color,
+                            "sprite_color": player.sprite_color.value,
+                            "funds": mngr.board_v2.player_funds.get(pid, 0),
+                            "properties": mngr.board_v2.player_properties.get(pid, 0),
+                            "troops": mngr.board_v2.player_troops.get(pid, 0),
+                            "income": mngr.board_v2.player_properties.get(pid, 0) * 1000
+                        }
+                return {"success": True, "stats": stats}
+            else:
+                # Get specific player stats
+                player = mngr.player_manager.get_player(player_id)
+                if not player:
+                    return {"success": False, "error": f"Player {player_id} not found"}
+                    
+                return {
+                    "success": True,
+                    "player": {
+                        "id": player_id,
+                        "name": player.name,
+                        "color": player.color,
+                        "sprite_color": player.sprite_color.value,
+                        "funds": mngr.board_v2.player_funds.get(player_id, 0),
+                        "properties": mngr.board_v2.player_properties.get(player_id, 0),
+                        "troops": mngr.board_v2.player_troops.get(player_id, 0),
+                        "income": mngr.board_v2.player_properties.get(player_id, 0) * 1000
+                    }
+                }
+        else:
+            # Legacy game - convert army to player-like format
+            armies = mngr.board.turn_order
+            stats = {}
+            for idx, army in enumerate(armies):
+                stats[str(idx)] = {
+                    "name": army.name,
+                    "color": army.name,
+                    "sprite_color": army.name,
+                    "funds": mngr.board.army_funds.get(army, 0),
+                    "properties": mngr.board.army_properties.get(army, 0),
+                    "troops": mngr.board.army_troops.get(army, 0),
+                    "income": mngr.board.army_properties.get(army, 0) * 1000
+                }
+            return {"success": True, "stats": stats, "legacy": True}
+            
+    except Exception as e:
+        app_logger.error(f"Get player stats failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+
+@jsonrpc.method('deprecation_status')
+@log_rpc_performance
+def deprecation_status_rpc(token: str) -> dict:
+    """
+    Get information about deprecated methods being used.
+    Helps clients migrate to new API.
+    """
+    deprecated_methods = {
+        "transport": {
+            "old": [
+                "unit_load", "load_unit", "load_transport_unit", "can_load_unit",
+                "unit_unload", "unload_unit", "unload_transport_unit", "cargo_exit_transport",
+                "can_unload_unit", "can_cargo_exit_transport", "get_transport_info",
+                "get_cargo_info", "can_transport_move", "get_unload_positions",
+                "get_unload_positions_internal", "get_valid_unload_positions",
+                "get_exit_positions", "get_loadable_transports", "get_loadable_units",
+                "get_transport_summary", "get_transport_units"
+            ],
+            "new": [
+                "transport_info", "transport_load", "transport_unload",
+                "transport_unload_positions", "transport_loadable_units"
+            ]
+        },
+        "combat": {
+            "old": [
+                "damage_estimate", "damage_preview", "combat_preview_old",
+                "unit_attack", "unit_attack_enhanced", "get_attack_targets"
+            ],
+            "new": [
+                "combat_preview", "combat_attack", "combat_targets", "combat_chart"
+            ]
+        },
+        "movement": {
+            "old": [
+                "unit_move", "unit_move_enhanced", "movement_preview",
+                "unit_valid_moves", "validate_movement", "get_movement_costs",
+                "get_movement_highlights"
+            ],
+            "new": [
+                "movement_execute", "movement_range", "movement_validate", "movement_info"
+            ]
+        }
+    }
+    
+    return {
+        "success": True,
+        "deprecated_methods": deprecated_methods,
+        "migration_guide": {
+            "transport": "Use consolidated transport_* methods",
+            "combat": "Use consolidated combat_* methods",
+            "movement": "Use consolidated movement_* methods",
+            "v2": "Use game_create_v2 for new games with custom players"
+        },
+        "removal_timeline": "Deprecated methods will be removed in next major version"
+    }
+
+# =============================================================================
+# 🎯 ACTION API METHODS (NEW UI FEATURES)
+# =============================================================================
+
+@jsonrpc.method('unit_capture')
+@log_rpc_performance
+def unit_capture_rpc(token: str, x: int, y: int) -> dict:
+    """
+    Execute property capture (legacy method name for UI compatibility).
+    Redirects to action_capture.
+    """
+    return action_capture_rpc(token, x, y)
+
+@jsonrpc.method('action_capture')
+@log_rpc_performance
+def action_capture_rpc(token: str, unit_x: int, unit_y: int) -> dict:
+    """
+    Execute property capture with Infantry/Mech units.
+    Handles capture progress and victory conditions.
+    """
+    try:
+        mngr = game_load(token)
+        
+        # Validate game state
+        if not mngr.board.game_active:
+            return {
+                "success": False,
+                "error": "Game has ended"
+            }
+        
+        # Use enhanced capture method
+        result = mngr.capture_tile_enhanced(unit_x, unit_y)
+        
+        if not result['success']:
+            return result
+        
+        # Check for HQ capture victory
+        if result.get('game_ended'):
+            winner = result.get('winner')
+            if winner:
+                mngr.board.game_active = False
+                mngr.board.winner = winner
+                
+                log_game_event('GAME_ENDED', token, {
+                    'winner': winner.name,
+                    'reason': 'HQ captured',
+                    'final_day': mngr.board.days
+                })
+        
+        # Save game state
+        game_save(mngr, token)
+        ws_board_update(token)
+        
+        return {
+            "success": True,
+            "capture": {
+                "property_type": result.get('property_type'),
+                "previous_owner": result.get('previous_owner'),
+                "new_owner": result.get('new_owner'),
+                "capture_complete": result.get('capture_complete', False),
+                "remaining_hp": result.get('remaining_capture_hp', 0),
+                "income_gained": result.get('income_change', 0)
+            },
+            "game_ended": result.get('game_ended', False),
+            "winner": result.get('winner').name if result.get('winner') else None
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Action capture failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+
+@jsonrpc.method('action_capture_preview')
+@log_rpc_performance
+def action_capture_preview_rpc(token: str, unit_x: int, unit_y: int) -> dict:
+    """
+    Preview capture information before executing.
+    Shows capture progress and requirements.
+    """
+    try:
+        mngr = game_load(token)
+        
+        # Get capture preview
+        preview = mngr.get_capture_preview(unit_x, unit_y)
+        
+        if not preview['can_capture']:
+            return {
+                "success": True,
+                "can_capture": False,
+                "reason": preview.get('reason', 'Cannot capture')
+            }
+        
+        # Calculate turns to capture
+        capture_hp = preview.get('property_capture_hp', 20)
+        unit_hp = preview.get('unit_hp', 100)
+        damage_per_turn = max(1, unit_hp // 10)  # 1-10 damage based on unit HP
+        turns_to_capture = -(-capture_hp // damage_per_turn)  # Ceiling division
+        
+        return {
+            "success": True,
+            "can_capture": True,
+            "property": {
+                "type": preview.get('property_type'),
+                "owner": preview.get('property_owner'),
+                "capture_hp": capture_hp,
+                "income_value": preview.get('income_value', 1000)
+            },
+            "unit": {
+                "type": preview.get('unit_type'),
+                "hp": unit_hp,
+                "damage_per_turn": damage_per_turn
+            },
+            "capture_info": {
+                "turns_to_capture": turns_to_capture,
+                "will_gain_income": preview.get('property_owner') != preview.get('unit_army'),
+                "is_hq": 'HQ' in preview.get('property_type', '') or 'BASE_TOWER' in preview.get('property_type', '')
+            }
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Capture preview failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+
+@jsonrpc.method('economy_properties')
+@log_rpc_performance
+def economy_properties_rpc(token: str) -> dict:
+    """
+    Get all income-generating properties and their status.
+    Useful for economic planning and capture priorities.
+    """
+    try:
+        mngr = game_load(token)
+        
+        properties = []
+        income_by_owner = {}
+        
+        # Property types that generate income
+        income_properties = {
+            'CITY': 1000,
+            'FACTORY': 1000,
+            'AIRPORT': 1000,
+            'PORT': 1000,
+            'BASE_TOWER_0': 1000,
+            'BASE_TOWER_1': 1000,
+            'BASE_TOWER_2': 1000,
+            'BASE_TOWER_3': 1000,
+            'BASE_TOWER_4': 1000,
+            'HQ': 1000
+        }
+        
+        # Scan all tiles for properties
+        for y in range(mngr.board.height):
+            for x in range(mngr.board.width):
+                tile = mngr.tile_at(x, y)
+                if tile and tile.mapTile:
+                    prop_type = tile.mapTile.type.name
+                    if any(income_type in prop_type for income_type in income_properties):
+                        owner = tile.mapTile.army.name if tile.mapTile.army else "Neutral"
+                        income = 1000  # Standard income per property
+                        
+                        # Track income by owner
+                        if owner not in income_by_owner:
+                            income_by_owner[owner] = 0
+                        income_by_owner[owner] += income
+                        
+                        # Check if being captured
+                        capture_hp = None
+                        capturing_unit = None
+                        if tile.unit and tile.unit.type.name in ['INFANTRY', 'MECH']:
+                            if tile.unit.army != tile.mapTile.army:
+                                capture_hp = getattr(tile.mapTile, 'capture_hp', 20)
+                                capturing_unit = {
+                                    "type": tile.unit.type.name,
+                                    "army": tile.unit.army.name,
+                                    "hp": tile.unit.status.hp
+                                }
+                        
+                        properties.append({
+                            "x": x,
+                            "y": y,
+                            "type": prop_type,
+                            "owner": owner,
+                            "income": income,
+                            "capture_status": {
+                                "being_captured": capture_hp is not None,
+                                "capture_hp": capture_hp,
+                                "capturing_unit": capturing_unit
+                            },
+                            "is_hq": 'HQ' in prop_type or 'BASE_TOWER' in prop_type
+                        })
+        
+        return {
+            "success": True,
+            "properties": properties,
+            "property_count": len(properties),
+            "income_summary": income_by_owner,
+            "total_map_income": sum(income_by_owner.values())
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Get economy properties failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+
+@jsonrpc.method('economy_income_preview')
+@log_rpc_performance
+def economy_income_preview_rpc(token: str, property_x: int, property_y: int) -> dict:
+    """
+    Preview how capturing a property would affect income.
+    Shows current and potential income changes.
+    """
+    try:
+        mngr = game_load(token)
+        current_army = mngr.board.current_turn
+        
+        # Get property info
+        tile = mngr.tile_at(property_x, property_y)
+        if not tile or not tile.mapTile:
+            return {
+                "success": False,
+                "error": "No property at specified position"
+            }
+        
+        # Check if it's an income property
+        income_properties = ['CITY', 'FACTORY', 'AIRPORT', 'PORT', 'HQ', 'BASE_TOWER']
+        prop_type = tile.mapTile.type.name
+        if not any(ip in prop_type for ip in income_properties):
+            return {
+                "success": False,
+                "error": "Not an income-generating property"
+            }
+        
+        current_owner = tile.mapTile.army
+        property_income = 1000  # Standard income
+        
+        # Calculate current income
+        current_income = mngr.get_army_economy(current_army).get('total_income', 0)
+        
+        # Calculate income change
+        income_change = 0
+        if current_owner != current_army:
+            income_change = property_income  # Gain income
+            if current_owner:
+                income_change += property_income  # Also deny enemy income
+        
+        return {
+            "success": True,
+            "property": {
+                "type": prop_type,
+                "current_owner": current_owner.name if current_owner else "Neutral",
+                "income_value": property_income
+            },
+            "income": {
+                "current_income": current_income,
+                "income_change": income_change,
+                "new_income": current_income + (property_income if current_owner != current_army else 0),
+                "enemy_income_denied": property_income if current_owner and current_owner != current_army else 0
+            },
+            "capture_value": {
+                "strategic": income_change,
+                "is_production": prop_type in ['FACTORY', 'AIRPORT', 'PORT'],
+                "is_hq": 'HQ' in prop_type or 'BASE_TOWER' in prop_type
+            }
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Income preview failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+
+@jsonrpc.method('action_resupply_targets')
+@log_rpc_performance
+def action_resupply_targets_rpc(token: str, supplier_x: int, supplier_y: int) -> dict:
+    """
+    Get units that can be resupplied by APC or Black Boat.
+    Shows what supplies are needed and costs.
+    """
+    try:
+        mngr = game_load(token)
+        
+        # Get supplier unit
+        supplier = mngr.unit_at(supplier_x, supplier_y)
+        if not supplier:
+            return {
+                "success": False,
+                "error": "No unit at specified position"
+            }
+        
+        # Check if unit can resupply
+        supplier_type = supplier.type.name
+        if supplier_type not in ['APC', 'BLACKBOAT', 'BLACK_BOAT']:
+            return {
+                "success": False,
+                "error": f"{supplier_type} cannot resupply other units"
+            }
+        
+        # Find adjacent units
+        targets = []
+        for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+            target_x = supplier_x + dx
+            target_y = supplier_y + dy
+            
+            if 0 <= target_x < mngr.board.width and 0 <= target_y < mngr.board.height:
+                target = mngr.unit_at(target_x, target_y)
+                if target and target.army == supplier.army:
+                    # Check what needs resupplying
+                    needs_fuel = target.status.fuel < target.max_fuel()
+                    needs_ammo = target.status.ammo < target.max_ammo()
+                    
+                    if needs_fuel or needs_ammo:
+                        targets.append({
+                            "x": target_x,
+                            "y": target_y,
+                            "unit": {
+                                "type": target.type.name,
+                                "hp": target.status.hp
+                            },
+                            "supplies_needed": {
+                                "fuel": {
+                                    "current": target.status.fuel,
+                                    "max": target.max_fuel(),
+                                    "needed": target.max_fuel() - target.status.fuel
+                                },
+                                "ammo": {
+                                    "current": target.status.ammo,
+                                    "max": target.max_ammo(),
+                                    "needed": target.max_ammo() - target.status.ammo
+                                }
+                            },
+                            "can_repair": supplier_type in ['BLACKBOAT', 'BLACK_BOAT'] and target.status.hp < 100
+                        })
+        
+        return {
+            "success": True,
+            "supplier": {
+                "type": supplier_type,
+                "can_repair": supplier_type in ['BLACKBOAT', 'BLACK_BOAT']
+            },
+            "targets": targets,
+            "target_count": len(targets)
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Get resupply targets failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+
+@jsonrpc.method('action_repair_info')
+@log_rpc_performance
+def action_repair_info_rpc(token: str, unit_x: int, unit_y: int) -> dict:
+    """
+    Get repair information for a unit on a property.
+    Shows repair cost and HP that will be restored.
+    """
+    try:
+        mngr = game_load(token)
+        
+        # Get unit and tile
+        unit = mngr.unit_at(unit_x, unit_y)
+        if not unit:
+            return {
+                "success": False,
+                "error": "No unit at specified position"
+            }
+        
+        tile = mngr.tile_at(unit_x, unit_y)
+        if not tile or not tile.mapTile:
+            return {
+                "success": False,
+                "error": "Invalid tile"
+            }
+        
+        # Check if on repairing property
+        repair_properties = {
+            'CITY': ['INFANTRY', 'MECH', 'RECON', 'TANK', 'MEDIUMTANK', 'NEOTANK', 'MEGATANK', 
+                    'APC', 'ARTILLERY', 'ROCKET', 'ANTIAIR', 'MISSILE'],
+            'FACTORY': ['INFANTRY', 'MECH', 'RECON', 'TANK', 'MEDIUMTANK', 'NEOTANK', 'MEGATANK',
+                       'APC', 'ARTILLERY', 'ROCKET', 'ANTIAIR', 'MISSILE'],
+            'AIRPORT': ['FIGHTER', 'BOMBER', 'BCOPTER', 'TCOPTER', 'STEALTH'],
+            'PORT': ['BATTLESHIP', 'CRUISER', 'SUBMARINE', 'LANDER', 'BLACKBOAT', 'BLACK_BOAT', 'CARRIER']
+        }
+        
+        prop_type = tile.mapTile.type.name
+        can_repair = False
+        for repair_prop, compatible_units in repair_properties.items():
+            if repair_prop in prop_type and unit.type.name in compatible_units:
+                if tile.mapTile.army == unit.army:
+                    can_repair = True
+                    break
+        
+        if not can_repair:
+            return {
+                "success": True,
+                "can_repair": False,
+                "reason": "Unit not on friendly repair property"
+            }
+        
+        # Calculate repair info
+        current_hp = unit.status.hp
+        max_hp = 100
+        hp_to_repair = min(20, max_hp - current_hp)  # 2 HP visual = 20 actual
+        
+        # Get unit cost for repair calculation
+        unit_config = mngr.config.units.get(unit.type.name)
+        unit_cost = unit_config.cost if unit_config else 10000
+        repair_cost = (unit_cost * hp_to_repair) // 100  # 1% of unit cost per HP
+        
+        # Check if can afford
+        current_funds = mngr._get_army_funds(unit.army)
+        can_afford = current_funds >= repair_cost
+        
+        return {
+            "success": True,
+            "can_repair": True,
+            "unit": {
+                "type": unit.type.name,
+                "current_hp": current_hp,
+                "max_hp": max_hp
+            },
+            "repair": {
+                "hp_to_repair": hp_to_repair,
+                "repair_cost": repair_cost,
+                "hp_after_repair": min(current_hp + hp_to_repair, max_hp),
+                "can_afford": can_afford,
+                "current_funds": current_funds
+            },
+            "property": {
+                "type": prop_type,
+                "is_automatic": True  # Repairs happen automatically at turn start
+            }
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Get repair info failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+
+# =============================================================================
+# 🚶 CONSOLIDATED MOVEMENT API METHODS (NEW)
+# =============================================================================
+
+@jsonrpc.method('movement_execute')
+@log_rpc_performance
+def movement_execute_rpc(token: str, from_x: int, from_y: int, to_x: int, to_y: int) -> dict:
+    """
+    Consolidated movement execution - handles all movement types.
+    Replaces: unit_move, unit_move_enhanced
+    Automatically handles transport boarding when moving onto friendly transport.
+    """
+    try:
+        mngr = game_load(token)
+        
+        # Validate game state
+        if not mngr.board.game_active:
+            return {
+                "success": False,
+                "error": "Game has ended"
+            }
+        
+        # Use the manager's unit_move which now includes auto-loading
+        initial_fuel = None
+        unit = mngr.unit_at(from_x, from_y)
+        if unit:
+            initial_fuel = unit.status.fuel
+            
+        # Execute movement (auto-loading is handled in manager.unit_move)
+        mngr.unit_move(from_x, from_y, to_x, to_y)
+        
+        # Determine what happened
+        moved_unit = mngr.unit_at(to_x, to_y)
+        loaded_into_transport = False
+        transport_info = None
+        
+        # Check if unit was loaded into a transport
+        if not moved_unit or (moved_unit and moved_unit != unit):
+            # Unit might have been loaded
+            transport_system = CompleteTransportSystem(mngr)
+            if moved_unit and transport_system.is_transport_unit(moved_unit):
+                # Check if our unit is in the transport's cargo
+                cargo_info = transport_system.get_cargo_info(moved_unit)
+                for cargo in cargo_info.get('cargo_units', []):
+                    if cargo.get('type') == unit.type.name:
+                        loaded_into_transport = True
+                        transport_info = {
+                            "type": moved_unit.type.name,
+                            "cargo_count": cargo_info.get('current_cargo', 0)
+                        }
+                        break
+        
+        # Calculate fuel used
+        fuel_used = 0
+        if unit and initial_fuel is not None:
+            if loaded_into_transport:
+                fuel_used = initial_fuel - unit.status.fuel if unit else 0
+            else:
+                fuel_used = initial_fuel - moved_unit.status.fuel if moved_unit else 0
+        
+        # Log and save
+        log_game_event('UNIT_MOVED', token, {
+            'from': f"({from_x},{from_y})",
+            'to': f"({to_x},{to_y})",
+            'fuel_used': fuel_used,
+            'loaded': loaded_into_transport
+        })
+        
+        game_save(mngr, token)
+        ws_board_update(token)
+        
+        return {
+            "success": True,
+            "from": {"x": from_x, "y": from_y},
+            "to": {"x": to_x, "y": to_y},
+            "fuel_used": fuel_used,
+            "loaded_into_transport": loaded_into_transport,
+            "transport": transport_info
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Movement execute failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+
+@jsonrpc.method('movement_range')
+@log_rpc_performance
+def movement_range_rpc(token: str, unit_x: int, unit_y: int) -> dict:
+    """
+    Get complete movement range and options for a unit.
+    Consolidates: unit_valid_moves, get_movement_highlights, movement_preview
+    """
+    try:
+        mngr = game_load(token)
+        unit = mngr.unit_at(unit_x, unit_y)
+        
+        if not unit:
+            return {
+                "success": False,
+                "error": "No unit at specified position"
+            }
+        
+        if unit.army != mngr.board.current_turn:
+            return {
+                "success": False,
+                "error": "Not your turn"
+            }
+        
+        if not unit.can_move:
+            return {
+                "success": False,
+                "error": "Unit has already moved",
+                "reason": "no_fuel" if unit.status.fuel <= 0 else "already_moved"
+            }
+        
+        # Get all valid moves
+        valid_positions = mngr.get_unit_valid_moves(unit)
+        
+        # Build detailed position info
+        positions = []
+        transport_system = CompleteTransportSystem(mngr)
+        
+        for pos in valid_positions:
+            x, y = pos
+            tile = mngr.tile_at(x, y)
+            position_info = {
+                "x": x,
+                "y": y,
+                "terrain": tile.mapTile.type.name if tile and tile.mapTile else "unknown",
+                "fuel_cost": mngr._calculate_fuel_cost(unit, unit_x, unit_y, x, y)
+            }
+            
+            # Check for special actions at this position
+            special_actions = []
+            
+            # Check if there's a friendly transport
+            dest_unit = mngr.unit_at(x, y)
+            if dest_unit and dest_unit.army == unit.army:
+                if transport_system.is_transport_unit(dest_unit):
+                    can_load, _ = transport_system.can_load_unit(
+                        dest_unit, unit, x, y, unit_x, unit_y
+                    )
+                    if can_load:
+                        special_actions.append({
+                            "type": "load_transport",
+                            "transport_type": dest_unit.type.name
+                        })
+            
+            # Check for capturable properties
+            if unit.type.name in ['INFANTRY', 'MECH']:
+                if tile and tile.mapTile and tile.mapTile.army != unit.army:
+                    capturable_types = ['CITY', 'FACTORY', 'AIRPORT', 'PORT', 'HQ', 
+                                       'BASE_TOWER_0', 'BASE_TOWER_1', 'BASE_TOWER_2',
+                                       'BASE_TOWER_3', 'BASE_TOWER_4']
+                    if any(t in tile.mapTile.type.name for t in capturable_types):
+                        special_actions.append({
+                            "type": "capture",
+                            "building": tile.mapTile.type.name
+                        })
+            
+            if special_actions:
+                position_info["special_actions"] = special_actions
+            
+            positions.append(position_info)
+        
+        return {
+            "success": True,
+            "unit": {
+                "type": unit.type.name,
+                "movement_points": unit.status.move,
+                "fuel": unit.status.fuel
+            },
+            "positions": positions,
+            "position_count": len(positions)
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Movement range failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+
+@jsonrpc.method('movement_validate')
+@log_rpc_performance
+def movement_validate_rpc(token: str, from_x: int, from_y: int, to_x: int, to_y: int) -> dict:
+    """
+    Validate if movement is possible and get detailed information.
+    Enhanced version of validate_movement that includes transport checks.
+    """
+    try:
+        mngr = game_load(token)
+        
+        # Basic validation
+        unit = mngr.unit_at(from_x, from_y)
+        if not unit:
+            return {
+                "success": True,
+                "valid": False,
+                "reason": "No unit at source position"
+            }
+        
+        # Use enhanced validation
+        result = mngr.validate_movement_detailed(from_x, from_y, to_x, to_y)
+        
+        # Check for special interactions
+        special_interaction = None
+        dest_unit = mngr.unit_at(to_x, to_y)
+        
+        if dest_unit and dest_unit.army == unit.army:
+            transport_system = CompleteTransportSystem(mngr)
+            
+            # Check transport loading
+            if transport_system.is_transport_unit(dest_unit):
+                can_load, msg = transport_system.can_load_unit(
+                    dest_unit, unit, to_x, to_y, from_x, from_y
+                )
+                if can_load:
+                    special_interaction = {
+                        "type": "auto_load",
+                        "transport_type": dest_unit.type.name,
+                        "message": "Unit will board transport"
+                    }
+            
+            # Check unit joining
+            elif dest_unit.type == unit.type:
+                if unit.status.hp + dest_unit.status.hp <= 100:
+                    special_interaction = {
+                        "type": "join",
+                        "combined_hp": unit.status.hp + dest_unit.status.hp,
+                        "message": "Units will merge"
+                    }
+        
+        return {
+            "success": True,
+            "valid": result.valid,
+            "reason": result.reason if not result.valid else None,
+            "movement_cost": result.MOVEMENT_COST if hasattr(result, 'MOVEMENT_COST') else None,
+            "fuel_required": result.fuel_required if hasattr(result, 'fuel_required') else None,
+            "path_found": result.path_found if hasattr(result, 'path_found') else None,
+            "blocked_by": result.blocked_by if hasattr(result, 'blocked_by') else None,
+            "special_interaction": special_interaction
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Movement validate failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+
+@jsonrpc.method('movement_info')
+@log_rpc_performance
+def movement_info_rpc(token: str, unit_type: str) -> dict:
+    """
+    Get movement mechanics information for a unit type.
+    Enhanced version of get_movement_costs with more details.
+    """
+    try:
+        mngr = game_load(token)
+        
+        # Validate unit type
+        from unit import UnitType
+        try:
+            unit_type_enum = UnitType[unit_type.upper()]
+        except KeyError:
+            return {
+                "success": False,
+                "error": f"Unknown unit type: {unit_type}"
+            }
+        
+        # Get movement costs
+        from map_system import MOVEMENT_COST, MapType, UnitClass, INF
+        
+        # Get unit class
+        unit_config = mngr.config.units.get(unit_type.upper())
+        if not unit_config:
+            return {
+                "success": False,
+                "error": f"No configuration for unit type: {unit_type}"
+            }
+        
+        # Get movement costs for all terrains
+        terrain_costs = {}
+        for terrain_type in MapType:
+            try:
+                cost = MOVEMENT_COST[terrain_type][unit_config.cls]
+                terrain_costs[terrain_type.name] = "impassable" if cost == INF else cost
+            except (KeyError, IndexError):
+                terrain_costs[terrain_type.name] = "impassable"
+        
+        # Determine movement type
+        movement_types = {
+            UnitClass.FOOT: "foot",
+            UnitClass.BOOTS: "boots", 
+            UnitClass.TREADS: "treads",
+            UnitClass.TYRES: "tyres",
+            UnitClass.AIR: "air",
+            UnitClass.SEA: "sea",
+            UnitClass.LANDER: "lander"
+        }
+        movement_type = movement_types.get(unit_config.cls, "unknown")
+        
+        # Get special abilities
+        special_abilities = []
+        if movement_type == "air":
+            special_abilities.append("Can fly over all terrain")
+            special_abilities.append("Must land on airport/carrier or crash")
+        elif movement_type == "sea":
+            special_abilities.append("Limited to sea tiles")
+            special_abilities.append("Can traverse reefs and ports")
+        elif unit_type.upper() == "INFANTRY" or unit_type.upper() == "MECH":
+            special_abilities.append("Can capture properties")
+            special_abilities.append("Can traverse mountains")
+        
+        return {
+            "success": True,
+            "unit_type": unit_type.upper(),
+            "movement": {
+                "type": movement_type,
+                "points": unit_config.move,
+                "fuel_capacity": unit_config.fuel,
+                "fuel_per_turn": unit_config.dailyFuel
+            },
+            "terrain_costs": terrain_costs,
+            "special_abilities": special_abilities
+        }
+        
+    except Exception as e:
+        app_logger.error(f"Movement info failed: {token} - {str(e)}")
+        return {"success": False, "error": str(e)}
+
+# =============================================================================
+# PHASE 2A: ENHANCED COMBAT RPC METHODS (DEPRECATED)
 # =============================================================================
 
 @jsonrpc.method('get_attack_targets')
 @log_rpc_performance
 def get_attack_targets_rpc(token: str, unit_x: int, unit_y: int) -> dict:
+    """[DEPRECATED - Use combat_targets instead] Get valid attack targets for a unit"""
     """Get all valid attack targets for a unit (simplified version)"""
     try:
         mngr = game_load(token)
@@ -4543,11 +6221,11 @@ def get_attack_targets_rpc(token: str, unit_x: int, unit_y: int) -> dict:
             "error": str(e)
         }
 
-@jsonrpc.method('combat_preview')
+@jsonrpc.method('combat_preview_old')
 @log_rpc_performance
-def combat_preview_rpc(token: str, attacker_x: int, attacker_y: int, 
+def combat_preview_old_rpc(token: str, attacker_x: int, attacker_y: int, 
                       defender_x: int, defender_y: int) -> dict:
-    """Get combat preview using existing damage calculation"""
+    """[DEPRECATED - Use combat_preview instead] Get combat preview using existing damage calculation"""
     try:
         mngr = game_load(token)
         
@@ -4602,6 +6280,7 @@ def combat_preview_rpc(token: str, attacker_x: int, attacker_y: int,
 @log_rpc_performance
 def unit_attack_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
     """
+    [DEPRECATED - Use combat_attack instead]
     Standard unit attack method - maintains frontend compatibility
     
     Args:
@@ -4609,15 +6288,15 @@ def unit_attack_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
         x, y: Attacker coordinates  
         x2, y2: Defender coordinates
         
-    Note: This is an alias for unit_attack_enhanced with legacy parameter names
+    Note: This is now an alias for combat_attack_rpc
     """
-    return unit_attack_enhanced_rpc(token, x, y, x2, y2)
+    return combat_attack_rpc(token, x, y, x2, y2)
 
 @jsonrpc.method('unit_attack_enhanced')
 @log_rpc_performance  
 def unit_attack_enhanced_rpc(token: str, attacker_x: int, attacker_y: int,
                             defender_x: int, defender_y: int) -> dict:
-    """Enhanced unit attack - uses existing attack system for now"""
+    """[DEPRECATED - Use combat_attack instead] Enhanced unit attack - uses existing attack system for now"""
     try:
         mngr = game_load(token)
         
@@ -4697,7 +6376,7 @@ def get_damage_chart_rpc(token: str) -> dict:
 
 @jsonrpc.method('get_movement_costs')
 def get_movement_costs(unit_type: str, token: str) -> dict:
-    """Get movement costs for a unit type across all terrain types"""
+    """[DEPRECATED - Use movement_info instead] Get movement costs for a unit type across all terrain types"""
     try:
         mngr = game_load(token)
         
@@ -4734,7 +6413,7 @@ def get_movement_costs(unit_type: str, token: str) -> dict:
 
 @jsonrpc.method('get_movement_highlights')
 def get_movement_highlights(token: str, x: int, y: int) -> dict:
-    """Get valid movement positions for highlighting using the same logic as actual movement"""
+    """[DEPRECATED - Use movement_range instead] Get valid movement positions for highlighting using the same logic as actual movement"""
     try:
         # Load the game
         mngr = game_load(token)

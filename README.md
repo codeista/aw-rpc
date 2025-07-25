@@ -215,10 +215,16 @@ See [SPRITE_STATUS.md](SPRITE_STATUS.md) for current sprite mapping progress and
 
 ## API Documentation
 
+### 📚 **NEW: Consolidated API v2.0**
+- **[API Best Practices Guide](API_BEST_PRACTICES.md)** - Comprehensive guide to the consolidated API
+- **[API Quick Reference](API_QUICK_REFERENCE.md)** - One-page cheat sheet for all methods
+- **60% Fewer Methods** - Reduced from 58 to 23 core methods while adding features
+- **Migration Guide** - Smooth transition from deprecated methods
+
 ### 🔗 **Enhanced API Browser** (NEW!)
 - **Categorized Methods**: http://localhost:5000/api/docs - Beautiful categorized API reference
 - **Interactive Testing**: http://localhost:5000/api/browse - Live RPC method testing
-- **60+ Methods** organized into 9 logical categories
+- **Consolidated Methods** organized into logical categories
 - **Complete Documentation** with examples and parameter descriptions
 
 ### API Categories
