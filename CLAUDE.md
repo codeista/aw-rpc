@@ -107,11 +107,16 @@ This is a complete implementation of Advance Wars as a web-based RPC game. Key s
 - ✅ Legacy tile renderer with AWDS tileset
 - ✅ Optimized unit sprites still work (93KB vs 370KB)
 
-### Recent Code Fixes (2025-07-24)
-1. **Combat System** - Fixed KeyError in check_win_condition when army not in dict
-2. **Game Creation** - Removed legacy game_create, all games use v2 system
-3. **Unit Tests** - Fixed unit deselection test to properly verify adjacent units
-4. **API Cleanup** - Deprecated game_create redirects to game_create_v2
+### Recent Code Fixes (2025-07-25)
+1. **API Consolidation** - Reduced 58 API methods to 23 core methods (60% reduction)
+   - Transport API: 20→5 methods with auto-loading support
+   - Combat API: 7→4 methods using enhanced versions
+   - Movement API: 8→4 methods with simplified interface
+   - Added 7 new UI features (repair, resupply, capture, etc.)
+2. **HP Sprite Display** - Fixed sprite mapping where HP indicators showed wrong icons
+   - Reordered sprite coordinates: status icons first, then numbers 1-9
+3. **V2 Migration** - Added GameFactory and SpriteMapper for v2 player system
+4. **Documentation** - Added API_BEST_PRACTICES.md and API_QUICK_REFERENCE.md
 
 ## STANDARD WORKFLOW
 1. First think through the problem, read the codebase for relevant files and write a plan to tasks/todo.md. 

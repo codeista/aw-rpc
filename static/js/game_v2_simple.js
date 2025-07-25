@@ -566,11 +566,8 @@ class Game {
                     
                     this.drawSprite('units', unitSprite, px, py);
                     
-                    // Draw HP - HP is in status object
-                    if (tile.unit.status && tile.unit.status.hp < 100) {
-                        const hp = Math.ceil(tile.unit.status.hp / 10);
-                        const hpNum = hp === 10 ? 9 : hp; // Max is 9 in sprite sheet
-                        
+                    // Draw HP or status icon
+                    if (tile.unit.status) {
                         let army = tile.unit.army;
                         // For v2 games, get army from sprite mapping
                         if (this.spriteMapper && tile.unit.player_id !== undefined) {
@@ -578,12 +575,41 @@ class Game {
                             army = spriteColor; // Use sprite color as army name
                         }
                         
-                        // Available units (can act) use neutral HP, unavailable use colored
+                        const armyLower = army.toLowerCase();
                         const unitIsAvailable = !tile.unit.has_moved && !tile.unit.done && tile.unit.can_move;
-                        const hpSprite = unitIsAvailable ? 
-                            `hp_${hpNum}` :                              // Available: neutral HP
-                            `hp_${army.toLowerCase()}_${hpNum}`;        // Unavailable: colored HP
-                        this.drawSprite('ui', hpSprite, px + 16, py + 2);
+                        let statusSprite = null;
+                        
+                        // Check for special status conditions
+                        // 1. Check if unit is capturing (tile has capture_hp < 20)
+                        if (tile.capture_hp !== undefined && tile.capture_hp < 20) {
+                            // Show capturing icon - use available or unavailable version
+                            statusSprite = unitIsAvailable ? 
+                                `status_${armyLower}_capturing` :
+                                `hp_${armyLower}_capturing`;
+                        }
+                        // 2. TODO: Check for submerged submarines
+                        // else if (tile.unit.type === 'SUB' && tile.unit.is_submerged) {
+                        //     statusSprite = unitIsAvailable ?
+                        //         `status_${armyLower}_submerged` :
+                        //         `hp_${armyLower}_submerged`;
+                        // }
+                        // 3. TODO: Check for loaded units (though they're usually off-map)
+                        
+                        // If unit has special status, show status icon
+                        if (statusSprite && this.sprites.ui.data[statusSprite]) {
+                            this.drawSprite('ui', statusSprite, px + 16, py + 2);
+                        } 
+                        // Otherwise show HP if damaged
+                        else if (tile.unit.status.hp < 100) {
+                            const hp = Math.ceil(tile.unit.status.hp / 10);
+                            const hpNum = hp === 10 ? 9 : hp; // Max is 9 in sprite sheet
+                            
+                            // Available units use white HP numbers, unavailable use colored
+                            const hpSprite = unitIsAvailable ? 
+                                `hp_${hpNum}` :
+                                `hp_${armyLower}_${hpNum}`;
+                            this.drawSprite('ui', hpSprite, px + 16, py + 2);
+                        }
                     }
                     
                     // Draw fuel/ammo warnings from spritesheet

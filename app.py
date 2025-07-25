@@ -1023,6 +1023,16 @@ def ui_sprite_showcase():
     app_logger.info("UI sprite showcase accessed")
     return render_template('ui_sprite_showcase.html')
 
+@app.route('/ui_sprite_showcase_corrected')
+def ui_sprite_showcase_corrected():
+    """UI sprite showcase with corrections"""
+    return render_template('ui_sprite_showcase_corrected.html')
+
+@app.route('/test_ui_sprites')
+def test_ui_sprites():
+    """Test UI sprite loading"""
+    return render_template('test_ui_sprites.html')
+
 
 @app.route('/test_game')
 def test_game():
