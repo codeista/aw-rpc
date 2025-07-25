@@ -231,7 +231,21 @@ class Game {
             if (tile) {
                 let text = `(${x},${y}) ${tile.mapTile?.type || ''}`;
                 if (tile.unit) {
-                    text += ` | ${tile.unit.type} HP:${tile.unit.hp}`;
+                    // HP is in status object
+                    const hp = tile.unit.status ? tile.unit.status.hp : 100;
+                    text += ` | ${tile.unit.type} HP:${hp}`;
+                    // Add fuel and ammo status
+                    if (tile.unit.status) {
+                        const fuel = tile.unit.status.fuel;
+                        const ammo = tile.unit.status.ammo;
+                        text += ` F:${fuel}`;
+                        if (ammo !== null && ammo !== undefined) {
+                            text += ` A:${ammo}`;
+                        }
+                        // Add warnings
+                        if (fuel < 20) text += ' ⚠️LOW FUEL';
+                        if (ammo !== null && ammo <= 1) text += ' ⚠️LOW AMMO';
+                    }
                 }
                 info.textContent = text;
             } else {
@@ -552,9 +566,9 @@ class Game {
                     
                     this.drawSprite('units', unitSprite, px, py);
                     
-                    // Draw HP
-                    if (tile.unit.hp < 100) {
-                        const hp = Math.ceil(tile.unit.hp / 10);
+                    // Draw HP - HP is in status object
+                    if (tile.unit.status && tile.unit.status.hp < 100) {
+                        const hp = Math.ceil(tile.unit.status.hp / 10);
                         const hpNum = hp === 10 ? 9 : hp; // Max is 9 in sprite sheet
                         
                         let army = tile.unit.army;
@@ -564,10 +578,28 @@ class Game {
                             army = spriteColor; // Use sprite color as army name
                         }
                         
-                        const hpSprite = tile.unit.has_moved || tile.unit.done ? 
-                            `hp_${army.toLowerCase()}_${hpNum}` : 
-                            `hp_${hpNum}`;
+                        // Available units (can act) use neutral HP, unavailable use colored
+                        const unitIsAvailable = !tile.unit.has_moved && !tile.unit.done && tile.unit.can_move;
+                        const hpSprite = unitIsAvailable ? 
+                            `hp_${hpNum}` :                              // Available: neutral HP
+                            `hp_${army.toLowerCase()}_${hpNum}`;        // Unavailable: colored HP
                         this.drawSprite('ui', hpSprite, px + 16, py + 2);
+                    }
+                    
+                    // Draw fuel/ammo warnings from spritesheet
+                    if (tile.unit.status) {
+                        const fuel = tile.unit.status.fuel;
+                        const ammo = tile.unit.status.ammo;
+                        
+                        // Low fuel warning (bottom left)
+                        if (fuel < 20) {
+                            this.drawSprite('ui', 'fuel_warning', px + 2, py + 14);
+                        }
+                        
+                        // Low ammo warning (bottom right)
+                        if (ammo !== null && ammo !== undefined && ammo <= 1) {
+                            this.drawSprite('ui', 'ammo_warning', px + 14, py + 14);
+                        }
                     }
                 }
             }

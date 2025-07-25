@@ -757,22 +757,8 @@ def game_v2_new():
 @app.route('/game/<token>')
 def game(token: str):
     app_logger.info(f"Game page accessed: {token}")
-    
-    # Simple approach: check if the board RPC returns v2 data
-    try:
-        # Call game_board_rpc directly
-        board_data = game_board_rpc(token)
-        
-        # Check if this has v2 markers
-        if isinstance(board_data, dict) and 'players' in board_data and 'sprite_mapping' in board_data:
-            app_logger.info(f"V2 game detected: {token}")
-            return render_template('render_v2.html', token=token)
-            
-    except Exception as e:
-        app_logger.error(f"Error checking game type: {e}")
-    
-    # Default to minimal renderer
-    return render_template('render_minimal.html', token=token)
+    # Always use v2 renderer - no more fallback
+    return render_template('render_v2.html', token=token)
 
 @app.route('/game2x/<token>')
 def game_2x(token: str):
@@ -4836,7 +4822,9 @@ def run_test():
             'test_transport_final.py',
             'test_repair_refuel_proper.py',
             'updated_test_phase1.py',
-            'test_multiplayer_armies.py'
+            'test_multiplayer_armies.py',
+            'test_click_handling.py',
+            'test_sprite_extraction.py'
         ]
         
         if script_name not in allowed_scripts:
@@ -4851,7 +4839,9 @@ def run_test():
             'test_transport_final.py': 'tests/unit/test_transport_features.py',
             'test_repair_refuel_proper.py': 'tests/unit/test_complete_repair_refuel.py',
             'updated_test_phase1.py': 'tests/system/updated_test_phase1.py',
-            'test_multiplayer_armies.py': 'tests/integration/test_multiplayer_armies.py'
+            'test_multiplayer_armies.py': 'tests/integration/test_multiplayer_armies.py',
+            'test_click_handling.py': 'test_click_handling.py',
+            'test_sprite_extraction.py': 'test_sprite_extraction.py'
         }
         
         # Get the correct path for the moved test file
