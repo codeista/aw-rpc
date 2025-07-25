@@ -46,10 +46,32 @@ def create_test_game() -> str:
     # Check initial state
     board = rpc_call("game_board", {"token": game_id})
     if board:
-        print(f"   Initial funds - RED: {board.get('red_funds', 0)}, BLUE: {board.get('blue_funds', 0)}")
+        red_funds = get_player_funds(board, "RED")
+        blue_funds = get_player_funds(board, "BLUE")
+        print(f"   Initial funds - RED: {red_funds}, BLUE: {blue_funds}")
         print(f"   Current turn: {board.get('current_turn', 'Unknown')}")
     
     return game_id
+
+def get_player_funds(board: dict, player: str = "RED") -> int:
+    """Get funds for a player, handling both v1 and v2 board formats"""
+    if player == "RED":
+        # Try red_funds first
+        funds = board.get("red_funds", 0)
+        if funds == 0 or funds is None:
+            # Try player_funds for v2 games
+            player_funds = board.get("player_funds", {})
+            funds = int(player_funds.get("0", 0))  # Player 0 is RED
+        return funds
+    elif player == "BLUE":
+        # Try blue_funds first
+        funds = board.get("blue_funds", 0)
+        if funds == 0 or funds is None:
+            # Try player_funds for v2 games
+            player_funds = board.get("player_funds", {})
+            funds = int(player_funds.get("1", 0))  # Player 1 is BLUE
+        return funds
+    return 0
 
 def ensure_correct_turn(game_id: str, expected_army: str = "RED") -> bool:
     """Ensure it's the correct army's turn"""
@@ -77,7 +99,7 @@ def test_factory_production():
     
     # Get initial funds
     board = rpc_call("game_board", {"token": game_id})
-    initial_funds = board.get("red_funds", 0)
+    initial_funds = get_player_funds(board, "RED")
     current_turn = board.get("current_turn", "")
     print(f"   📊 Initial state - Turn: {current_turn}, RED funds: {initial_funds}")
     
@@ -99,7 +121,7 @@ def test_factory_production():
         
         # Get funds before
         board = rpc_call("game_board", {"token": game_id})
-        funds_before = board.get("red_funds", 0)
+        funds_before = get_player_funds(board, "RED")
         
         # Create unit
         result = rpc_call("unit_create", {
@@ -118,14 +140,14 @@ def test_factory_production():
             print(f"   ❌ Failed to create {unit_type}: {error_msg}")
             # Debug info
             board = rpc_call("game_board", {"token": game_id})
-            print(f"      Current turn: {board.get('current_turn')}, RED funds: {board.get('red_funds')}")
+            print(f"      Current turn: {board.get('current_turn')}, RED funds: {get_player_funds(board, 'RED')}")
         else:
             # If we got a unit back (either as unit object or tile with unit), it was created
             if (result.get("unit") or result.get("type") == unit_type or 
                 (result.get("unit") and result["unit"].get("type") == unit_type)):
                 # Check funds after
                 board = rpc_call("game_board", {"token": game_id})
-                funds_after = board.get("red_funds", 0)
+                funds_after = get_player_funds(board, "RED")
                 actual_cost = funds_before - funds_after
                 
                 if actual_cost == expected_cost:
@@ -187,7 +209,7 @@ def test_airport_production():
         
         # Get funds before
         board = rpc_call("game_board", {"token": game_id})
-        funds_before = board.get("red_funds", 0)
+        funds_before = get_player_funds(board, "RED")
         
         # Create unit
         result = rpc_call("unit_create", {
@@ -206,14 +228,14 @@ def test_airport_production():
             print(f"   ❌ Failed to create {unit_type}: {error_msg}")
             # Debug info
             board = rpc_call("game_board", {"token": game_id})
-            print(f"      Current turn: {board.get('current_turn')}, RED funds: {board.get('red_funds')}")
+            print(f"      Current turn: {board.get('current_turn')}, RED funds: {get_player_funds(board, 'RED')}")
         else:
             # If we got a unit back (either as unit object or tile with unit), it was created
             if (result.get("unit") or result.get("type") == unit_type or 
                 (result.get("unit") and result["unit"].get("type") == unit_type)):
                 # Check funds after
                 board = rpc_call("game_board", {"token": game_id})
-                funds_after = board.get("red_funds", 0)
+                funds_after = get_player_funds(board, "RED")
                 actual_cost = funds_before - funds_after
                 
                 if actual_cost == expected_cost:
@@ -269,7 +291,7 @@ def test_port_production():
         
         # Get funds before
         board = rpc_call("game_board", {"token": game_id})
-        funds_before = board.get("red_funds", 0)
+        funds_before = get_player_funds(board, "RED")
         
         # Skip if not enough funds
         if funds_before < expected_cost:
@@ -293,14 +315,14 @@ def test_port_production():
             print(f"   ❌ Failed to create {unit_type}: {error_msg}")
             # Debug info
             board = rpc_call("game_board", {"token": game_id})
-            print(f"      Current turn: {board.get('current_turn')}, RED funds: {board.get('red_funds')}")
+            print(f"      Current turn: {board.get('current_turn')}, RED funds: {get_player_funds(board, 'RED')}")
         else:
             # If we got a unit back (either as unit object or tile with unit), it was created
             if (result.get("unit") or result.get("type") == unit_type or 
                 (result.get("unit") and result["unit"].get("type") == unit_type)):
                 # Check funds after
                 board = rpc_call("game_board", {"token": game_id})
-                funds_after = board.get("red_funds", 0)
+                funds_after = get_player_funds(board, "RED")
                 actual_cost = funds_before - funds_after
                 
                 if actual_cost == expected_cost:
@@ -426,7 +448,7 @@ def test_insufficient_funds():
     expensive_units = ["BATTLESHIP", "BOMBER", "FIGHTER", "MEDIUMTANK", "NEOTANK"]
     for unit_type in expensive_units:
         board = rpc_call("game_board", {"token": game_id})
-        funds = board.get("red_funds", 0)
+        funds = get_player_funds(board, "RED")
         
         if funds < 1000:  # Stop when funds are low
             break
@@ -454,7 +476,7 @@ def test_insufficient_funds():
     
     # Now try to create expensive unit with low funds
     board = rpc_call("game_board", {"token": game_id})
-    remaining_funds = board.get("red_funds", 0)
+    remaining_funds = get_player_funds(board, "RED")
     print(f"   ✅ Funds depleted to: {remaining_funds}")
     
     # Try to create a tank (7000 cost)

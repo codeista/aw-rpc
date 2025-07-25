@@ -2181,8 +2181,17 @@ def game_create_test_rpc(token: str, use_optimized: bool = True) -> str:
             manager, _ = GameFactory.create_game_with_players('test', players)
             
             # Set high starting funds for testing
-            manager.board.red_funds = 50000
-            manager.board.blue_funds = 50000
+            # For V2 games, set funds by player ID
+            if hasattr(manager, 'board_v2'):
+                manager.board_v2.player_funds[0] = 50000  # Player 0 (RED)
+                manager.board_v2.player_funds[1] = 50000  # Player 1 (BLUE)
+                # Also set via properties for backward compatibility
+                manager.board.red_funds = 50000
+                manager.board.blue_funds = 50000
+            else:
+                # Fallback for legacy boards
+                manager.board.red_funds = 50000
+                manager.board.blue_funds = 50000
             
             # Store in games dict
             games[token] = manager

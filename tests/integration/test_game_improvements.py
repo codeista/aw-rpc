@@ -19,7 +19,7 @@ print("Testing game creation methods:\n")
 # Test 1: Regular game_create
 print("1. Testing regular game_create...")
 game1 = 'regular_test'
-rpc('game_create', {'token': game1})
+rpc('game_create_test', {'token': game1})
 board1 = rpc('game_board', {'token': game1})
 print(f"   Regular game - Funds: RED={board1.get('red_funds')}, BLUE={board1.get('blue_funds')}")
 

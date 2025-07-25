@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{{token}} - Advance Wars RPC</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #1a1a1a;
+            color: #fff;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        
+        #game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            gap: 20px;
+        }
+        
+        #canvas-wrapper {
+            border: 2px solid #444;
+            background: #000;
+        }
+        
+        #game-canvas {
+            display: block;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        
+        #controls {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        #info {
+            display: flex;
+            gap: 30px;
+        }
+        
+        #info span {
+            color: #aaa;
+        }
+        
+        #end-turn {
+            padding: 10px 20px;
+            background: #c00;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        #end-turn:hover {
+            background: #e00;
+        }
+        
+        #tile-info {
+            height: 20px;
+            color: #888;
+        }
+        
+        /* Production modal */
+        #modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #modal-content {
+            background: #222;
+            padding: 20px;
+            border: 2px solid #444;
+            min-width: 300px;
+        }
+        
+        #modal h3 {
+            margin-bottom: 15px;
+        }
+        
+        #unit-select {
+            width: 100%;
+            padding: 5px;
+            margin-bottom: 15px;
+            background: #333;
+            color: white;
+            border: 1px solid #555;
+        }
+        
+        #modal button {
+            padding: 8px 16px;
+            margin-right: 10px;
+            background: #0a0;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        
+        #modal button:hover {
+            background: #0c0;
+        }
+        
+        #cancel {
+            background: #666;
+        }
+        
+        #cancel:hover {
+            background: #888;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="controls">
+            <div id="info">
+                <div>Turn: <span id="current-turn">-</span></div>
+                <div>Day: <span id="day">-</span></div>
+                <div>RED: <span id="red-funds">-</span></div>
+                <div>BLUE: <span id="blue-funds">-</span></div>
+            </div>
+            <button id="end-turn">End Turn</button>
+        </div>
+        
+        <div id="canvas-wrapper">
+            <canvas id="game-canvas"></canvas>
+        </div>
+        
+        <div id="tile-info"></div>
+    </div>
+    
+    <!-- Production Modal -->
+    <div id="modal">
+        <div id="modal-content">
+            <h3>Production</h3>
+            <select id="unit-select"></select>
+            <div>
+                <button id="create">Create</button>
+                <button id="cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.js"></script>
+    <script>
+        const TOKEN = '{{token}}';
+    </script>
+    <script src="/static/js/sprite_mapping.js"></script>
+    <script src="/static/js/game_v2_simple.js?v=7"></script>
+</body>
+</html>
