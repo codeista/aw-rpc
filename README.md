@@ -75,6 +75,7 @@ The game uses a unified coordinate system (`coordinate-system.js`) that automati
 - Counter-attack mechanics
 - HP-based damage reduction
 - Unit type advantages/disadvantages
+- Fixed KeyError in win condition checking
 
 ### ✅ Movement System (100% Complete)
 - Dijkstra pathfinding with terrain costs
@@ -82,6 +83,7 @@ The game uses a unified coordinate system (`coordinate-system.js`) that automati
 - Fuel consumption tracking
 - Valid move validation
 - Movement preview
+- Automatic unit deselection when no post-move actions available
 
 ### ✅ Transport System (100% Complete)
 - **APC**: Infantry/Mech transport with auto-resupply capability
@@ -120,6 +122,9 @@ All systems fully tested and operational:
 - Implemented unified coordinate system for dynamic map sizes
 - Resolved canvas click accuracy issues across all zoom levels
 - Cleaned up 31 debugging files, reducing codebase complexity
+- Fixed combat system KeyError in win condition checking
+- Removed legacy game_create system, all games now use v2
+- Fixed unit deselection tests and behavior
 
 ## Running Tests
 
@@ -137,13 +142,15 @@ python3 tests/run_tests.py
 ```bash
 # Run individual unit tests
 python3 tests/unit/test_combat_system.py
+python3 tests/unit/test_combat_system_fixed.py
 python3 tests/unit/test_movement_system.py
-python3 tests/unit/test_transport_final.py
-python3 test_repair_refuel_proper.py
+python3 tests/unit/test_transport_features.py
+python3 tests/unit/test_complete_repair_refuel.py
 python3 tests/unit/test_economic_system.py
 
 # Run integration tests
 python3 tests/integration/test_victory_conditions.py
+python3 tests/integration/test_unit_deselection.py
 
 # Run via web interface
 # Visit http://localhost:5000/test_interface for interactive testing
@@ -228,7 +235,8 @@ See [SPRITE_STATUS.md](SPRITE_STATUS.md) for current sprite mapping progress and
 ### Key RPC Methods
 ```javascript
 // Game Management
-rpc('game_create', {token})              // Regular game (5000 starting funds)
+rpc('game_create', {token})              // DEPRECATED - redirects to game_create_v2
+rpc('game_create_v2', {token, players, map_name})  // Primary game creation method
 rpc('game_create_test', {token})         // Test game (50000 starting funds)
 rpc('army_end_turn', {token})
 rpc('game_board', {token})

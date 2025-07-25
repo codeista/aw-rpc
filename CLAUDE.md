@@ -23,14 +23,20 @@ This is a complete implementation of Advance Wars as a web-based RPC game. Key s
 
 3. **Testing**
    - Use `game_create_test` RPC for high starting funds (50k)
-   - Regular `game_create` only gives 5k funds
-   - Check GAME_MECHANICS.md for detailed rules
+   - `game_create` is deprecated, redirects to `game_create_v2`
+   - `game_create_v2` is the primary method with player configuration
+   - Game mechanics docs in archive/documentation/GAME_MECHANICS.md
 
 ### Code Architecture
 - `manager.py` - Core game logic
 - `transport_system.py` - All transport mechanics
 - `app.py` - RPC endpoints and server
 - `render.js` - Frontend game rendering
+
+### Tileset System  
+- **Current tileset**: AWDS tileset (reverted from AW2 RGB due to rendering issues)
+- **Working tileset**: `/static/img/Advance_Wars_Dual_Strike_Tileset_Normal_Transparent.png`
+- **Optimized tiles DISABLED**: Palette conversion corrupts terrain tiles (see TILE_OPTIMIZATION_ISSUES.md)
 
 ### Sprite System (2025-07-24)
 - **Terrain sprites**: Individual 2x sprites in `/static/img/sprites_2x/terrain/`
@@ -101,24 +107,11 @@ This is a complete implementation of Advance Wars as a web-based RPC game. Key s
 - ✅ Legacy tile renderer with AWDS tileset
 - ✅ Optimized unit sprites still work (93KB vs 370KB)
 
-### Known Issues
-1. ~~**Logger Error on End Turn**~~ ✅ FIXED - Added null checks in manager.py
-2. ~~**Missing sprite files**~~ ✅ FIXED - Restored units_sprite_sheet_v2.png and aw2_blackhole_units_map_transparent.png from backup
-3. ~~**Circular JSON Error**~~ ✅ FIXED - Fixed JSON.stringify circular reference in render_legacy.js
-4. ~~**Mouse hover null errors**~~ ✅ FIXED - Added proper null checks in canvasMove function
-
-### How to Test Rendering
-```bash
-# Start server
-nohup python app.py > /tmp/game_server.log 2>&1 &
-
-# Run test
-python temp/test_rendering_fixes.py
-```
-Should show:
-- ✅ Board Dimensions (12x10, all rows visible)  
-- ✅ Unit Creation (units appear)
-- ❌ End Turn (logger error, not rendering issue)
+### Recent Code Fixes (2025-07-24)
+1. **Combat System** - Fixed KeyError in check_win_condition when army not in dict
+2. **Game Creation** - Removed legacy game_create, all games use v2 system
+3. **Unit Tests** - Fixed unit deselection test to properly verify adjacent units
+4. **API Cleanup** - Deprecated game_create redirects to game_create_v2
 
 ## STANDARD WORKFLOW
 1. First think through the problem, read the codebase for relevant files and write a plan to tasks/todo.md. 
@@ -151,6 +144,33 @@ NEVER proactively create documentation files (*.md) or README files. Only create
 ## Helper Documentation Locations
 - Core game logic and rules: `manager.py`
 - Transport mechanics: `transport_system.py`
+- RPC endpoints: `app.py`
+- Frontend rendering: `render.js`
+- Tile optimization issues: `TILE_OPTIMIZATION_ISSUES.md`
+- Game mechanics details: `archive/documentation/GAME_MECHANICS.md`
+
+## Key Documentation Files
+- **[README.md](README.md)** - Project overview, setup instructions, API reference
+- **[SPRITE_SHEET_CONFUSION.md](SPRITE_SHEET_CONFUSION.md)** - IMPORTANT: Which sprite sheets are actually used
+- **[TESTING.md](TESTING.md)** - Testing documentation
+- **[movement-fog.txt](movement-fog.txt)** - Movement and fog of war mechanics
+
+## Sprite System Documentation
+- **CRITICAL**: The game uses `units_sprite_sheet_complete.png` for units (NOT v2!)
+- **TERRAIN**: Uses `Advance_Wars_Dual_Strike_Tileset_Normal_Transparent.png`
+- **Unit Coordinates**: `units_sprite_map_complete.json` (was missing from static/img, now restored)
+- **Terrain Coordinates**: `optimized_tileset_map.json`
+- See SPRITE_SHEET_CONFUSION.md for full details on which files to use
+
+## Testing Documentation
+- **Run Tests**: `python3 run_tests.py` - Runs click handler and sprite extraction tests
+- **Regression Tests**: `python3 run_regression_tests.py` - Comprehensive mechanics validation
+- **Test Interface**: http://localhost:5000/test_interface - Interactive testing UI
+
+## API Documentation
+- **API Docs**: http://localhost:5000/api/docs - Categorized API reference
+- **API Browser**: http://localhost:5000/api/browse - Interactive RPC testing
+- **RPC Methods**: See README.md for complete list of 60+ RPC methods
 - RPC endpoints: `app.py`
 - Frontend rendering: `render.js`
 - **Sprite and tile guide: `SPRITE_AND_TILE_GUIDE.md`** (consolidated guide)

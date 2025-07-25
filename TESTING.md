@@ -32,8 +32,12 @@ python3 run_regression_tests.py
 
 # Run specific test file
 python3 tests/unit/test_combat_system.py
+python3 tests/unit/test_combat_system_fixed.py
 
-# Run click handler tests
+# Run integration tests
+python3 tests/integration/test_unit_deselection.py
+
+# Run click handler tests (in root directory)
 python3 test_click_handling.py
 
 # Access web-based test interface
@@ -61,12 +65,13 @@ curl http://localhost:5000
 
 **Note:** The flask-env virtual environment contains all required dependencies including Flask, flask-cors, and other packages. Always activate it before running the app or tests.
 
-## Test Results Summary (Last Run: 2025-07-20)
+## Test Results Summary (Last Updated: 2025-07-24)
 
 ### ✅ Passing Tests
 
-**Unit Tests (10/11 passing):**
+**Unit Tests (11/12 passing):**
 - `test_combat_system.py` - All combat mechanics
+- `test_combat_system_fixed.py` - Fixed combat test with win condition check
 - `test_movement_system.py` - Unit movement validation
 - `test_transport_features.py` - Transport load/unload/resupply
 - `test_economic_system.py` - Income and funds management
@@ -75,11 +80,11 @@ curl http://localhost:5000
 - `test_blackboat_repair_complete.py` - Black boat repair feature
 - `test_complete_repair_refuel.py` - Repair/refuel systems
 - `test_victory_conditions.py` - All victory conditions
-- `test_click_handling.py` - Click handler system ✨ NEW
 
 **Integration Tests:**
 - `test_multiplayer_armies.py` - 4-player army support
 - `test_game_improvements.py` - Game creation methods
+- `test_unit_deselection.py` - Unit auto-deselection behavior
 - `test_complete_victory_conditions.py` - 3/4 victory scenarios
 
 **Regression Tests:**
@@ -87,7 +92,7 @@ curl http://localhost:5000
 - 100% success rate on established functionality
 
 **UI/Frontend Tests:**
-- Click handler tests - Priority-based click processing
+- `test_click_handling.py` - Priority-based click processing (in root directory)
 - Interactive browser-based test suite
 - Test runner interface at `/test_interface`
 
