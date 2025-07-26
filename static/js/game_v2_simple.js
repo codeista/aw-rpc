@@ -671,12 +671,13 @@ class Game {
                             const nx = x + dx;
                             const ny = y + dy;
                             const tile = this.getTile(nx, ny);
-                            if (tile?.unit && ['APC', 'LANDER', 'CRUISER', 'T_COPTER', 'BLACK_BOAT'].includes(tile.unit.type)) {
+                            if (tile?.unit && ['APC', 'LANDER', 'CRUISER', 'TCOPTER', 'BLACKBOAT'].includes(tile.unit.type)) {
+                                console.log(`Loading unit at (${x},${y}) into transport at (${nx},${ny})`);
                                 await this.rpc('unit_load', {
-                                    unit_x: x,
-                                    unit_y: y,
-                                    transport_x: nx,
-                                    transport_y: ny
+                                    x: x,      // unit position
+                                    y: y,      // unit position  
+                                    x2: nx,    // transport position
+                                    y2: ny     // transport position
                                 });
                                 break;
                             }
