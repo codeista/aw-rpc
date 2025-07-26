@@ -189,7 +189,7 @@ class Game {
             this.showContextMenu(e.clientX, e.clientY, x, y);
         });
         
-        // Mouse move for tile info
+        // Mouse move for tile info and combat preview
         this.canvas.addEventListener('mousemove', (e) => {
             const rect = this.canvas.getBoundingClientRect();
             const x = Math.floor((e.clientX - rect.left) / this.tileSize);
@@ -216,10 +216,32 @@ class Game {
                         if (fuel < 20) text += ' ⚠️LOW FUEL';
                         if (ammo !== null && ammo <= 1) text += ' ⚠️LOW AMMO';
                     }
+                    
+                    // Show combat preview if hovering over enemy unit with selected unit
+                    if (this.board?.selected && tile.unit) {
+                        const selectedTile = this.getTile(this.board.selected.x, this.board.selected.y);
+                        if (selectedTile?.unit) {
+                            // Check if this is an enemy unit
+                            let isEnemy = false;
+                            if (this.board.current_player !== undefined) {
+                                isEnemy = tile.unit.player_id !== this.board.current_player;
+                            } else {
+                                isEnemy = tile.unit.army !== this.board.current_turn;
+                            }
+                            
+                            if (isEnemy && !selectedTile.unit.has_moved && !selectedTile.unit.done) {
+                                this.showCombatPreview(this.board.selected.x, this.board.selected.y, x, y);
+                            }
+                        }
+                    }
+                } else {
+                    // Hide combat preview when not hovering over units
+                    this.hideCombatPreview();
                 }
                 info.textContent = text;
             } else {
                 info.textContent = '';
+                this.hideCombatPreview();
             }
         });
         
@@ -376,6 +398,14 @@ class Game {
         // First check if there's a unit to select
         if (tile && tile.unit) {
             await this.rpc('unit_select', { x, y });
+            
+            // Show unit info and movement range for selected unit
+            this.updateUnitInfoPanel(tile.unit);
+            
+            // Show movement range if unit can move
+            if (!tile.unit.has_moved && !tile.unit.done) {
+                await this.showMovementRange(x, y);
+            }
         }
         // Then check if it's an empty production building
         else if (tile && tile.mapTile && ['FACTORY', 'AIRPORT', 'PORT'].includes(tile.mapTile.type)) {
@@ -393,13 +423,15 @@ class Game {
                 this.showProduction(x, y);
                 return;
             } else {
-                // Not owner or has unit, clear selection
+                // Not owner or has unit, clear selection and panels
                 console.log('Factory not available for production:', {owner: isOwner, hasUnit: !!tile.unit});
+                this.clearUIPanels();
                 await this.rpc('unit_select', { x, y });
             }
         }
-        // Otherwise clear selection
+        // Otherwise clear selection and panels
         else {
+            this.clearUIPanels();
             await this.rpc('unit_select', { x, y });
         }
     }
@@ -946,6 +978,170 @@ class Game {
             } else {
                 document.title = 'Advance Wars RPC - Game Over';
             }
+        }
+    }
+    
+    async showMovementRange(x, y) {
+        try {
+            const result = await this.rpc('movement_range', { x, y });
+            if (result.success) {
+                // Clear previous highlights
+                this.clearHighlights();
+                
+                // Highlight movement range
+                result.moves.forEach(move => {
+                    const tile = this.getTile(move.x, move.y);
+                    if (tile) {
+                        tile.can_be_moved_to = true;
+                    }
+                });
+                
+                // Update movement info panel
+                this.updateMovementInfoPanel(result);
+                
+                // Get attack targets for this unit
+                this.showAttackRange(x, y);
+                
+                this.render();
+            }
+        } catch (e) {
+            console.error('Failed to get movement range:', e);
+        }
+    }
+    
+    async showAttackRange(x, y) {
+        try {
+            const result = await this.rpc('combat_targets', { unit_x: x, unit_y: y });
+            if (result.success) {
+                // Highlight attack targets
+                result.targets.forEach(target => {
+                    const tile = this.getTile(target.x, target.y);
+                    if (tile) {
+                        tile.can_be_attacked = true;
+                    }
+                });
+                this.render();
+            }
+        } catch (e) {
+            console.error('Failed to get attack range:', e);
+        }
+    }
+    
+    clearHighlights() {
+        if (!this.board) return;
+        
+        for (let tile of this.board.grid) {
+            tile.can_be_moved_to = false;
+            tile.can_be_attacked = false;
+        }
+    }
+    
+    updateUnitInfoPanel(unit) {
+        const panel = document.getElementById('unit-info-panel');
+        if (!unit) {
+            panel.style.display = 'none';
+            return;
+        }
+        
+        panel.style.display = 'block';
+        
+        document.getElementById('unit-type').textContent = unit.type;
+        document.getElementById('unit-hp').textContent = unit.status?.hp || '100';
+        document.getElementById('unit-fuel').textContent = unit.status?.fuel || '0';
+        document.getElementById('unit-ammo').textContent = unit.status?.ammo || 'N/A';
+        document.getElementById('unit-move').textContent = unit.status?.move || '0';
+        
+        const rangeMin = unit.status?.rangemin || 1;
+        const rangeMax = unit.status?.rangemax || 1;
+        const rangeText = rangeMin === rangeMax ? rangeMin : `${rangeMin}-${rangeMax}`;
+        document.getElementById('unit-range').textContent = rangeText;
+        
+        document.getElementById('unit-vision').textContent = unit.status?.vision || '0';
+    }
+    
+    updateMovementInfoPanel(movementData) {
+        const panel = document.getElementById('movement-info-panel');
+        if (!movementData) {
+            panel.style.display = 'none';
+            return;
+        }
+        
+        panel.style.display = 'block';
+        
+        document.getElementById('movement-count').textContent = movementData.moves?.length || 0;
+        document.getElementById('movement-can-attack').textContent = movementData.can_attack ? 'Yes' : 'No';
+        
+        let status = 'Ready';
+        if (movementData.has_moved) status = 'Moved';
+        if (movementData.done) status = 'Done';
+        document.getElementById('movement-status').textContent = status;
+    }
+    
+    async showCombatPreview(attackerX, attackerY, defenderX, defenderY) {
+        try {
+            const result = await this.rpc('combat_preview', {
+                attacker_x: attackerX,
+                attacker_y: attackerY,
+                defender_x: defenderX,
+                defender_y: defenderY
+            });
+            
+            if (result.success) {
+                this.updateCombatPreviewPanel(result.preview);
+            }
+        } catch (e) {
+            console.error('Failed to get combat preview:', e);
+        }
+    }
+    
+    updateCombatPreviewPanel(preview) {
+        const panel = document.getElementById('combat-preview-panel');
+        if (!preview) {
+            panel.style.display = 'none';
+            return;
+        }
+        
+        panel.style.display = 'block';
+        
+        const targetUnit = preview.defender?.type || 'Unknown';
+        document.getElementById('combat-target').textContent = targetUnit;
+        
+        const damage = preview.attacker?.damage_percent || 0;
+        const damageRange = preview.attacker?.damage_range;
+        let damageText = `${damage}%`;
+        if (damageRange) {
+            damageText = `${damageRange.min}-${damageRange.max}%`;
+        }
+        document.getElementById('combat-damage').textContent = damageText;
+        
+        const counterDamage = preview.counter?.counter_damage || 0;
+        const counterRange = preview.counter?.counter_damage_range;
+        let counterText = preview.counter?.can_counter ? `${counterDamage}%` : 'None';
+        if (counterRange && preview.counter?.can_counter) {
+            counterText = `${counterRange.min}-${counterRange.max}%`;
+        }
+        document.getElementById('combat-counter').textContent = counterText;
+        
+        document.getElementById('combat-terrain').textContent = `${preview.terrain?.defense_stars || 0} stars`;
+        
+        let result = 'Even';
+        if (damage > counterDamage + 10) result = 'Favorable';
+        if (counterDamage > damage + 10) result = 'Unfavorable';
+        if (!preview.counter?.can_counter) result = 'Safe';
+        document.getElementById('combat-result').textContent = result;
+    }
+    
+    hideCombatPreview() {
+        document.getElementById('combat-preview-panel').style.display = 'none';
+    }
+    
+    clearUIPanels() {
+        document.getElementById('unit-info-panel').style.display = 'none';
+        document.getElementById('movement-info-panel').style.display = 'none';
+        document.getElementById('combat-preview-panel').style.display = 'none';
+        this.clearHighlights();
+        if (this.board) {
+            this.render();
         }
     }
     
