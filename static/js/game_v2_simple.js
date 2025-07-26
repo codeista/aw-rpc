@@ -285,9 +285,16 @@ class Game {
                                     isEnemy = tile.unit.army !== this.board.current_turn;
                                 }
                                 
-                                // Only show combat preview if this tile is highlighted as attackable
-                                if (isEnemy && !selectedTile.unit.has_moved && !selectedTile.unit.done && tile.can_be_attacked) {
+                                // Show combat preview for any enemy unit that can be attacked
+                                // This helps with planning even if the unit has already moved
+                                if (isEnemy && tile.can_be_attacked) {
                                     // Debounce the preview call
+                                    previewTimeout = setTimeout(() => {
+                                        this.showCombatPreview(this.board.selected.x, this.board.selected.y, x, y);
+                                    }, 150); // 150ms delay
+                                } else if (isEnemy) {
+                                    // Also show preview for any enemy when hovering, for planning
+                                    // This helps players see potential damage even before moving
                                     previewTimeout = setTimeout(() => {
                                         this.showCombatPreview(this.board.selected.x, this.board.selected.y, x, y);
                                     }, 150); // 150ms delay
@@ -1206,8 +1213,11 @@ class Game {
         // Create cache key
         const cacheKey = `${attackerX},${attackerY}->${defenderX},${defenderY}`;
         
+        console.log(`Combat preview requested: ${cacheKey}`);
+        
         // Check if we already have this preview cached
         if (this.combatPreviewCache && this.combatPreviewCache.key === cacheKey) {
+            console.log('Using cached preview');
             this.updateCombatPreviewPanel(this.combatPreviewCache.data);
             return;
         }
@@ -1220,14 +1230,18 @@ class Game {
                 defender_y: defenderY
             });
             
+            console.log('Combat preview result:', result);
+            
             if (result.success) {
                 // Cache the result
                 this.combatPreviewCache = { key: cacheKey, data: result };
                 this.updateCombatPreviewPanel(result);
             } else {
+                console.log('Combat preview failed:', result);
                 this.hideCombatPreview();
             }
         } catch (e) {
+            console.error('Combat preview error:', e);
             this.hideCombatPreview();
         }
     }
