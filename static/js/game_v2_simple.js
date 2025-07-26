@@ -229,7 +229,9 @@ class Game {
                                 isEnemy = tile.unit.army !== this.board.current_turn;
                             }
                             
-                            if (isEnemy && !selectedTile.unit.has_moved && !selectedTile.unit.done) {
+                            // Only show combat preview if this tile is highlighted as attackable
+                            if (isEnemy && !selectedTile.unit.has_moved && !selectedTile.unit.done && tile.can_be_attacked) {
+                                console.log(`Showing combat preview: (${this.board.selected.x},${this.board.selected.y}) vs (${x},${y})`);
                                 this.showCombatPreview(this.board.selected.x, this.board.selected.y, x, y);
                             }
                         }
@@ -1086,8 +1088,12 @@ class Game {
                 defender_y: defenderY
             });
             
+            console.log('Combat preview result:', result);
+            
             if (result.success) {
-                this.updateCombatPreviewPanel(result.preview);
+                this.updateCombatPreviewPanel(result);
+            } else {
+                console.warn('Combat preview failed:', result.error);
             }
         } catch (e) {
             console.error('Failed to get combat preview:', e);
@@ -1096,7 +1102,7 @@ class Game {
     
     updateCombatPreviewPanel(preview) {
         const panel = document.getElementById('combat-preview-panel');
-        if (!preview) {
+        if (!preview || !preview.success) {
             panel.style.display = 'none';
             return;
         }
@@ -1106,28 +1112,29 @@ class Game {
         const targetUnit = preview.defender?.type || 'Unknown';
         document.getElementById('combat-target').textContent = targetUnit;
         
-        const damage = preview.attacker?.damage_percent || 0;
-        const damageRange = preview.attacker?.damage_range;
+        const damage = preview.damage?.attacker_damage || 0;
+        const damageRange = preview.damage?.attacker_damage_range;
         let damageText = `${damage}%`;
         if (damageRange) {
             damageText = `${damageRange.min}-${damageRange.max}%`;
         }
         document.getElementById('combat-damage').textContent = damageText;
         
-        const counterDamage = preview.counter?.counter_damage || 0;
-        const counterRange = preview.counter?.counter_damage_range;
-        let counterText = preview.counter?.can_counter ? `${counterDamage}%` : 'None';
-        if (counterRange && preview.counter?.can_counter) {
+        const counterDamage = preview.damage?.counter_damage || 0;
+        const counterRange = preview.damage?.counter_damage_range;
+        let counterText = preview.damage?.can_counter ? `${counterDamage}%` : 'None';
+        if (counterRange && preview.damage?.can_counter) {
             counterText = `${counterRange.min}-${counterRange.max}%`;
         }
         document.getElementById('combat-counter').textContent = counterText;
         
-        document.getElementById('combat-terrain').textContent = `${preview.terrain?.defense_stars || 0} stars`;
+        const terrainDefense = preview.defender?.terrain_defense || 0;
+        document.getElementById('combat-terrain').textContent = `${terrainDefense} stars`;
         
         let result = 'Even';
         if (damage > counterDamage + 10) result = 'Favorable';
         if (counterDamage > damage + 10) result = 'Unfavorable';
-        if (!preview.counter?.can_counter) result = 'Safe';
+        if (!preview.damage?.can_counter) result = 'Safe';
         document.getElementById('combat-result').textContent = result;
     }
     
