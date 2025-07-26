@@ -46,17 +46,37 @@ def rpc_call(method: str, params: dict = None) -> dict:
 def get_test_game():
     """Create test game with units for combat testing"""
     try:
-        # Create a test game with high funds
+        # Try test_game route first
+        response = requests.get("http://localhost:5000/test_game", allow_redirects=False)
+        if response.status_code == 302:
+            location = response.headers.get('Location', '')
+            match = re.search(r'/game/([A-Za-z0-9_]+)', location)
+            if match:
+                game_id = match.group(1)
+                print(f"✅ Created test game: {game_id}")
+                
+                # Add units for combat testing
+                setup_combat_units(game_id)
+                
+                return game_id
+        
+        # If that fails, try creating via RPC with a generated token
         game_id = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
-        result = rpc_call("game_create_test", {"token": game_id})
         
-        if isinstance(result, dict) and "error" in result:
-            print(f"❌ Failed to create game: {result['error']}")
-            return None
-        elif result != "ok":
-            print(f"❌ Unexpected result: {result}")
-            return None
+        # Try game_create_v2 with the token
+        result = rpc_call("game_create_v2", {
+            "token": game_id,
+            "map_name": "test",
+            "players": [
+                {"name": "Player 1", "color": "Red", "sprite_color": "RED"},
+                {"name": "Player 2", "color": "Blue", "sprite_color": "BLUE"}
+            ]
+        })
         
+        if not isinstance(result, dict) or "error" in result:
+            print(f"❌ Failed to create game: {result}")
+            return None
+            
         print(f"✅ Created test game: {game_id}")
         
         # Add units for combat testing
@@ -86,11 +106,26 @@ class CombatTester:
     def reset_unit_states(self):
         """Reset all unit states by cycling turns to refresh can_attack/can_move flags"""
         try:
+            # Get current turn
+            board = rpc_call("game_board", {"token": self.game_id})
+            current_turn = board.get("current_turn", "RED")
+            
             # End turn multiple times to cycle through all armies and reset states
-            for i in range(4):  # Cycle through potential turns
+            # Need to cycle through at least 2 full rounds to ensure all units can act
+            for i in range(6):  # Cycle through potential turns (RED->BLUE->RED->BLUE etc)
+                turn_result = rpc_call("army_end_turn", {"token": self.game_id})
+                if "error" in turn_result:
+                    logger.debug(f"End turn error: {turn_result.get('error')}")
+                    break
+                    
+            # Get back to RED's turn if needed
+            board = rpc_call("game_board", {"token": self.game_id})
+            while board.get("current_turn") != "RED":
                 turn_result = rpc_call("army_end_turn", {"token": self.game_id})
                 if "error" in turn_result:
                     break
+                board = rpc_call("game_board", {"token": self.game_id})
+                
             print("✅ Unit states reset successfully")
         except Exception as e:
             print(f"⚠️ Could not fully reset unit states: {e}")
@@ -537,6 +572,13 @@ class CombatTester:
         # Find combat pairs using actual attack target information
         combat_pairs = []
         
+        # Debug output
+        logger.debug(f"Found {len(red_units)} RED units and {len(blue_units)} BLUE units")
+        if red_units:
+            logger.debug(f"RED units: {[(u['type'], u['x'], u['y']) for u in red_units[:3]]}")
+        if blue_units:
+            logger.debug(f"BLUE units: {[(u['type'], u['x'], u['y']) for u in blue_units[:3]]}")
+        
         for red_unit in red_units:
             # Get valid attack targets for this unit
             attack_targets_result = rpc_call("get_attack_targets", {
@@ -545,7 +587,11 @@ class CombatTester:
                 "unit_y": red_unit['y']
             })
             
-            if "error" not in attack_targets_result and attack_targets_result.get("success", False):
+            # Debug output
+            if attack_targets_result.get("error"):
+                logger.debug(f"Error getting attack targets for {red_unit['type']} at ({red_unit['x']},{red_unit['y']}): {attack_targets_result.get('error')}")
+            
+            if attack_targets_result.get("success", True) and "targets" in attack_targets_result:
                 targets = attack_targets_result.get("targets", [])
                 
                 for target in targets:
