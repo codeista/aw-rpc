@@ -6503,7 +6503,9 @@ def run_test():
             return "No script specified", 400
         
         # Security check - only allow specific test scripts
+        # Handle both old names and new paths
         allowed_scripts = [
+            # Old names (for backward compatibility)
             'test_combat_system.py',
             'test_economic_system.py', 
             'test_movement_system.py',
@@ -6513,14 +6515,26 @@ def run_test():
             'updated_test_phase1.py',
             'test_multiplayer_armies.py',
             'test_click_handling.py',
-            'test_sprite_extraction.py'
+            'test_sprite_extraction.py',
+            # New paths from test interface
+            'tests/unit/test_combat_system.py',
+            'tests/unit/test_economic_system.py',
+            'tests/unit/test_movement_system.py',
+            'tests/unit/test_victory_conditions.py',
+            'tests/unit/test_transport_features.py',
+            'tests/unit/test_complete_repair_refuel.py',
+            'tests/system/updated_test_phase1.py',
+            'tests/integration/test_multiplayer_armies.py',
+            'run_regression_tests.py',
+            'tests/ui/run_ui_tests.py'
         ]
         
         if script_name not in allowed_scripts:
             return f"Script {script_name} not allowed", 403
         
-        # Map script names to their new locations in tests/ directory
+        # Map script names to their actual locations
         script_locations = {
+            # Old names map to new locations
             'test_combat_system.py': 'tests/unit/test_combat_system.py',
             'test_economic_system.py': 'tests/unit/test_economic_system.py',
             'test_movement_system.py': 'tests/unit/test_movement_system.py',
@@ -6529,14 +6543,18 @@ def run_test():
             'test_repair_refuel_proper.py': 'tests/unit/test_complete_repair_refuel.py',
             'updated_test_phase1.py': 'tests/system/updated_test_phase1.py',
             'test_multiplayer_armies.py': 'tests/integration/test_multiplayer_armies.py',
-            'test_click_handling.py': 'test_click_handling.py',
-            'test_sprite_extraction.py': 'test_sprite_extraction.py'
+            'test_click_handling.py': 'backup_before_cleanup/test_click_handling.py',
+            'test_sprite_extraction.py': 'backup_before_cleanup/test_sprite_extraction.py'
         }
         
-        # Get the correct path for the moved test file
-        relative_script_path = script_locations.get(script_name)
-        if not relative_script_path:
-            return f"Script {script_name} location not mapped", 404
+        # If script_name is already a path, use it directly
+        if script_name.startswith('tests/') or script_name == 'run_regression_tests.py':
+            relative_script_path = script_name
+        else:
+            # Get the correct path for old names
+            relative_script_path = script_locations.get(script_name)
+            if not relative_script_path:
+                return f"Script {script_name} location not mapped", 404
             
         script_path = f"/home/box/Documents/aw-rpc/{relative_script_path}"
         

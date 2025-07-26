@@ -277,54 +277,54 @@
         <div class="control-panel">
             <h2>Test Controls</h2>
             
-            <button class="test-button" onclick="runTest('combat', 'test_combat_system.py')">
+            <button class="test-button" onclick="runTest('combat', 'tests/unit/test_combat_system.py')">
                 <span class="button-icon">⚔️</span>
                 <span>Combat System</span>
             </button>
             
-            <button class="test-button" onclick="runTest('economic', 'test_economic_system.py')">
+            <button class="test-button" onclick="runTest('economic', 'tests/unit/test_economic_system.py')">
                 <span class="button-icon">💰</span>
                 <span>Economic System</span>
             </button>
             
-            <button class="test-button" onclick="runTest('movement', 'test_movement_system.py')">
+            <button class="test-button" onclick="runTest('movement', 'tests/unit/test_movement_system.py')">
                 <span class="button-icon">🚶</span>
                 <span>Movement System</span>
             </button>
             
-            <button class="test-button" onclick="runTest('victory', 'test_victory_conditions.py')">
+            <button class="test-button" onclick="runTest('victory', 'tests/unit/test_victory_conditions.py')">
                 <span class="button-icon">🏆</span>
                 <span>Victory Conditions</span>
             </button>
             
-            <button class="test-button" onclick="runTest('transport', 'test_transport_final.py')">
+            <button class="test-button" onclick="runTest('transport', 'tests/unit/test_transport_features.py')">
                 <span class="button-icon">🚢</span>
                 <span>Transport System</span>
             </button>
             
-            <button class="test-button" onclick="runTest('repair_refuel', 'test_repair_refuel_proper.py')">
+            <button class="test-button" onclick="runTest('repair_refuel', 'tests/unit/test_complete_repair_refuel.py')">
                 <span class="button-icon">🔧</span>
                 <span>Repair & Refuel</span>
             </button>
             
-            <button class="test-button" onclick="runTest('integration', 'updated_test_phase1.py')">
-                <span class="button-icon">🔧</span>
+            <button class="test-button" onclick="runTest('integration', 'tests/system/updated_test_phase1.py')">
+                <span class="button-icon">🔗</span>
                 <span>Integration Tests</span>
             </button>
             
-            <button class="test-button" onclick="runTest('multiplayer', 'test_multiplayer_armies.py')">
+            <button class="test-button" onclick="runTest('multiplayer', 'tests/integration/test_multiplayer_armies.py')">
                 <span class="button-icon">👥</span>
                 <span>Multiplayer Armies</span>
             </button>
             
-            <button class="test-button" onclick="runTest('click_handler', 'test_click_handling.py')">
-                <span class="button-icon">🖱️</span>
-                <span>Click Handler</span>
+            <button class="test-button" onclick="runTest('regression', 'run_regression_tests.py')">
+                <span class="button-icon">🔁</span>
+                <span>Regression Tests</span>
             </button>
             
-            <button class="test-button" onclick="runTest('sprite_extraction', 'test_sprite_extraction.py')">
-                <span class="button-icon">🎨</span>
-                <span>Sprite Extraction</span>
+            <button class="test-button" onclick="runTest('ui', 'tests/ui/run_ui_tests.py')">
+                <span class="button-icon">🖥️</span>
+                <span>UI Tests</span>
             </button>
             
             <div class="divider"></div>
@@ -444,12 +444,12 @@
                     <span class="status-indicator ready" id="status-multiplayer"></span>
                 </div>
                 <div class="status-item">
-                    <span>🖱️ Click Handler</span>
-                    <span class="status-indicator ready" id="status-click_handler"></span>
+                    <span>🔁 Regression Tests</span>
+                    <span class="status-indicator ready" id="status-regression"></span>
                 </div>
                 <div class="status-item">
-                    <span>🎨 Sprite Extraction</span>
-                    <span class="status-indicator ready" id="status-sprite_extraction"></span>
+                    <span>🖥️ UI Tests</span>
+                    <span class="status-indicator ready" id="status-ui"></span>
                 </div>
             </div>
         </div>
@@ -531,7 +531,7 @@
             `;
             
             // Reset all status indicators
-            ['combat', 'economic', 'movement', 'victory', 'transport', 'repair_refuel', 'integration', 'multiplayer', 'click_handler', 'sprite_extraction'].forEach(test => {
+            ['combat', 'economic', 'movement', 'victory', 'transport', 'repair_refuel', 'integration', 'multiplayer', 'regression', 'ui'].forEach(test => {
                 setTestStatus(test, 'ready');
             });
             
@@ -627,16 +627,16 @@
             addResult('🚀 Starting all tests...');
             
             const tests = [
-                { name: 'combat', script: 'test_combat_system.py' },
-                { name: 'economic', script: 'test_economic_system.py' },
-                { name: 'movement', script: 'test_movement_system.py' },
-                { name: 'victory', script: 'test_victory_conditions.py' },
-                { name: 'transport', script: 'test_transport_final.py' },
-                { name: 'repair_refuel', script: 'test_repair_refuel_proper.py' },
-                { name: 'integration', script: 'updated_test_phase1.py' },
-                { name: 'multiplayer', script: 'test_multiplayer_armies.py' },
-                { name: 'click_handler', script: 'test_click_handling.py' },
-                { name: 'sprite_extraction', script: 'test_sprite_extraction.py' }
+                { name: 'combat', script: 'tests/unit/test_combat_system.py' },
+                { name: 'economic', script: 'tests/unit/test_economic_system.py' },
+                { name: 'movement', script: 'tests/unit/test_movement_system.py' },
+                { name: 'victory', script: 'tests/unit/test_victory_conditions.py' },
+                { name: 'transport', script: 'tests/unit/test_transport_features.py' },
+                { name: 'repair_refuel', script: 'tests/unit/test_complete_repair_refuel.py' },
+                { name: 'integration', script: 'tests/system/updated_test_phase1.py' },
+                { name: 'multiplayer', script: 'tests/integration/test_multiplayer_armies.py' },
+                { name: 'regression', script: 'run_regression_tests.py' },
+                { name: 'ui', script: 'tests/ui/run_ui_tests.py' }
             ];
             
             // Disable all buttons
