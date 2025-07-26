@@ -40,3 +40,8 @@ verify_*.json
 verify_*.txt
 extracted_*.json
 sprite_index_*.json
+
+# Test virtual environments
+test-env/
+venv/
+env/
