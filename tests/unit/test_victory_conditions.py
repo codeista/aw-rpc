@@ -42,7 +42,17 @@ def rpc_call(method: str, params: dict = None) -> dict:
 def get_test_game():
     """Create optimized test game for victory testing"""
     try:
-        # Use optimized test game with strategic positioning
+        # Try test_game route first
+        response = requests.get("http://localhost:5000/test_game", allow_redirects=False)
+        if response.status_code == 302:
+            location = response.headers.get('Location', '')
+            match = re.search(r'/game/([A-Za-z0-9_]+)', location)
+            if match:
+                game_id = match.group(1)
+                print(f"✅ Created test game: {game_id}")
+                return game_id
+        
+        # Fallback to test_optimized if available
         response = requests.get("http://localhost:5000/test_optimized", allow_redirects=False)
         if response.status_code == 302:
             location = response.headers.get('Location', '')
@@ -53,7 +63,7 @@ def get_test_game():
                 return game_id
         return None
     except Exception as e:
-        print(f"❌ Error creating optimized game: {e}")
+        print(f"❌ Error creating game: {e}")
         return None
 
 class VictoryTester:
@@ -173,6 +183,18 @@ class VictoryTester:
             print("   ⚠️  No capturable buildings found")
             return False
         
+        # Cycle turns to enable existing units to move
+        print("   ⏳ Cycling turns to enable unit movement...")
+        try:
+            rpc_call("army_end_turn", {"token": self.game_id})  # RED -> BLUE
+            rpc_call("army_end_turn", {"token": self.game_id})  # BLUE -> RED
+            print("   ✅ Units can now move")
+            
+            # Refresh board data after cycling turns
+            board = rpc_call("game_board", {"token": self.game_id})
+        except:
+            pass
+        
         if not capture_units:
             print("   ⚠️  No capture units found - creating infantry for testing")
             # Create infantry near a capturable building for testing
@@ -201,25 +223,30 @@ class VictoryTester:
                 # Still return True as this is not a critical failure
                 return True
         
-        # Cycle turns to enable capture units
-        try:
-            rpc_call("army_end_turn", {"token": self.game_id})  # RED -> BLUE
-            rpc_call("army_end_turn", {"token": self.game_id})  # BLUE -> RED
-        except:
-            pass
-        
         # Find a capture scenario: infantry/mech unit near a capturable building
-        for unit in capture_units[:3]:
+        for unit in capture_units:
             current_turn = board.get("current_turn", "")
             if unit["army"] != current_turn:
                 continue
                 
             for building in capturable_buildings:
+                # Skip buildings already owned by the same army
+                if building["army"] == unit["army"]:
+                    continue
+                    
                 # Check if unit is on or adjacent to the building
                 distance = abs(unit["x"] - building["x"]) + abs(unit["y"] - building["y"])
                 
                 if distance <= 1:  # On or adjacent to building
-                    print(f"   🎯 Testing capture: {unit['type']} ({unit['army']}) at building {building['type']} ({building['army']})")
+                    # If distance is 0, unit is on the building - perfect for capture test
+                    # If distance is 1, check if building is occupied by another unit
+                    if distance == 0:
+                        print(f"   🎯 Testing capture: {unit['type']} ({unit['army']}) on building {building['type']} ({building['army']})")
+                    elif distance == 1 and building.get("occupied", False):
+                        # Building is occupied by another unit, skip
+                        continue
+                    else:
+                        print(f"   🎯 Testing capture: {unit['type']} ({unit['army']}) adjacent to building {building['type']} ({building['army']})")
                     
                     # Move unit to building if not already there
                     if distance == 1:
@@ -231,11 +258,19 @@ class VictoryTester:
                             "y2": building["y"]
                         })
                         
-                        if "error" in move_result:
-                            print(f"      ⚠️  Could not move unit to building: {move_result.get('error', 'Unknown')}")
-                            continue
-                        
-                        print(f"      ✅ Moved {unit['type']} to building")
+                        # Check move result - if it returns tile data, move succeeded
+                        if isinstance(move_result, dict):
+                            if "error" in move_result:
+                                error_msg = move_result.get('message', move_result.get('details', 'Unknown error'))
+                                print(f"      ⚠️  Could not move unit to building: {error_msg}")
+                                continue
+                            elif "unit" in move_result or "mapTile" in move_result:
+                                # Move succeeded - returned tile data
+                                print(f"      ✅ Moved {unit['type']} to building")
+                            else:
+                                print(f"      ✅ Moved {unit['type']} to building")
+                    elif distance == 0:
+                        print(f"      📍 Unit already on building")
                     
                     # Attempt to capture the building
                     capture_result = rpc_call("capture_tile", {

@@ -233,9 +233,10 @@ class CombatTester:
                         else:
                             print(f"   ❌ Inaccurate: {actual_damage} vs {estimated_damage}")
                         
-                        return True
+                        # Continue testing more pairs instead of returning immediately
+                        break
         
-        return False
+        return len(self.test_results["damage_calculation"]) > 0
     
     def test_terrain_modifiers(self):
         """Test terrain defense bonuses using actual combat pairs"""

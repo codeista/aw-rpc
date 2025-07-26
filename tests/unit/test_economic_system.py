@@ -39,7 +39,17 @@ def rpc_call(method: str, params: dict = None) -> dict:
 def get_test_game():
     """Create optimized test game for economic testing"""
     try:
-        # Use optimized test game with pre-positioned units and properties
+        # Try test_game route first
+        response = requests.get("http://localhost:5000/test_game", allow_redirects=False)
+        if response.status_code == 302:
+            location = response.headers.get('Location', '')
+            match = re.search(r'/game/([A-Za-z0-9_]+)', location)
+            if match:
+                game_id = match.group(1)
+                print(f"✅ Created test game: {game_id}")
+                return game_id
+        
+        # Fallback to test_optimized if available
         response = requests.get("http://localhost:5000/test_optimized", allow_redirects=False)
         if response.status_code == 302:
             location = response.headers.get('Location', '')
@@ -50,7 +60,7 @@ def get_test_game():
                 return game_id
         return None
     except Exception as e:
-        print(f"❌ Error creating optimized game: {e}")
+        print(f"❌ Error creating game: {e}")
         return None
 
 class EconomicTester:
