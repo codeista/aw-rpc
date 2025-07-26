@@ -179,44 +179,14 @@ class Game {
             }
         });
         
-        // Right click for production
+        // Right click for context menu
         this.canvas.addEventListener('contextmenu', async (e) => {
             e.preventDefault();
             const rect = this.canvas.getBoundingClientRect();
             const x = Math.floor((e.clientX - rect.left) / this.tileSize);
             const y = Math.floor((e.clientY - rect.top) / this.tileSize);
             
-            // Check if it's a production building
-            const tile = this.getTile(x, y);
-            if (tile && tile.mapTile && ['FACTORY', 'AIRPORT', 'PORT'].includes(tile.mapTile.type)) {
-                console.log('Production building clicked:', {
-                    type: tile.mapTile.type,
-                    army: tile.mapTile.army,
-                    player_id: tile.mapTile.player_id,
-                    current_player: this.board.current_player,
-                    current_turn: this.board.current_turn,
-                    has_unit: !!tile.unit
-                });
-                
-                // For v2 games, check player ownership differently
-                let isOwner = false;
-                
-                if (this.board.current_player !== undefined) {
-                    // V2 game - check if building's player_id matches current player
-                    isOwner = tile.mapTile.player_id === this.board.current_player;
-                    console.log('V2 ownership check:', isOwner);
-                } else {
-                    // Legacy game - check army
-                    isOwner = tile.mapTile.army === this.board.current_turn;
-                    console.log('Legacy ownership check:', isOwner);
-                }
-                
-                if (isOwner && !tile.unit) {
-                    this.showProduction(x, y);
-                } else {
-                    console.log('Cannot produce:', isOwner ? 'Unit present' : 'Not owner');
-                }
-            }
+            this.showContextMenu(e.clientX, e.clientY, x, y);
         });
         
         // Mouse move for tile info
@@ -275,6 +245,58 @@ class Game {
         
         document.getElementById('cancel').addEventListener('click', () => {
             document.getElementById('modal').style.display = 'none';
+        });
+        
+        // Help panel toggle
+        const helpToggle = document.getElementById('help-toggle');
+        const helpPanel = document.getElementById('help-panel');
+        
+        helpToggle.addEventListener('click', () => {
+            helpPanel.classList.toggle('hidden');
+            helpToggle.textContent = helpPanel.classList.contains('hidden') ? '? Help' : '✕ Close';
+        });
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', async (e) => {
+            // Ignore if typing in an input
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
+                return;
+            }
+            
+            switch(e.key) {
+                case ' ':  // Space - End turn
+                    e.preventDefault();
+                    await this.rpc('army_end_turn');
+                    break;
+                    
+                case 'Escape':  // Escape - Cancel action/close modal
+                    e.preventDefault();
+                    // Close production modal if open
+                    const modal = document.getElementById('modal');
+                    if (modal.style.display === 'flex') {
+                        modal.style.display = 'none';
+                    }
+                    // Deselect unit if selected
+                    else if (this.board && this.board.selected) {
+                        await this.rpc('unit_select', { 
+                            x: this.board.selected.x, 
+                            y: this.board.selected.y 
+                        });
+                    }
+                    break;
+                    
+                case 'Tab':  // Tab - Cycle through units
+                    e.preventDefault();
+                    await this.cycleUnits();
+                    break;
+                    
+                case 'h':  // H - Toggle help
+                case 'H':
+                    e.preventDefault();
+                    helpPanel.classList.toggle('hidden');
+                    helpToggle.textContent = helpPanel.classList.contains('hidden') ? '? Help' : '✕ Close';
+                    break;
+            }
         });
     }
     
@@ -430,6 +452,260 @@ class Game {
         } catch (e) {
             console.error('Failed to get production options:', e);
         }
+    }
+    
+    async cycleUnits() {
+        if (!this.board) return;
+        
+        // Find all units that belong to current player and can still act
+        const availableUnits = [];
+        for (let y = 0; y < this.board.height; y++) {
+            for (let x = 0; x < this.board.width; x++) {
+                const tile = this.getTile(x, y);
+                if (tile?.unit) {
+                    // Check if unit belongs to current player
+                    let isCurrentPlayer = false;
+                    if (this.board.current_player !== undefined) {
+                        isCurrentPlayer = tile.unit.player_id === this.board.current_player;
+                    } else {
+                        isCurrentPlayer = tile.unit.army === this.board.current_turn;
+                    }
+                    
+                    // Check if unit can still act
+                    if (isCurrentPlayer && !tile.unit.has_moved && !tile.unit.done) {
+                        availableUnits.push({ x, y, unit: tile.unit });
+                    }
+                }
+            }
+        }
+        
+        if (availableUnits.length === 0) {
+            console.log('No available units to cycle through');
+            return;
+        }
+        
+        // Find current selection index
+        let currentIndex = -1;
+        if (this.board.selected) {
+            currentIndex = availableUnits.findIndex(
+                u => u.x === this.board.selected.x && u.y === this.board.selected.y
+            );
+        }
+        
+        // Select next unit
+        const nextIndex = (currentIndex + 1) % availableUnits.length;
+        const nextUnit = availableUnits[nextIndex];
+        
+        console.log(`Cycling to unit at (${nextUnit.x}, ${nextUnit.y})`);
+        await this.rpc('unit_select', { x: nextUnit.x, y: nextUnit.y });
+    }
+    
+    showContextMenu(screenX, screenY, tileX, tileY) {
+        const menu = document.getElementById('context-menu');
+        const tile = this.getTile(tileX, tileY);
+        
+        // Hide menu if clicking on empty tile
+        if (!tile || !tile.unit) {
+            // Check if it's a production building
+            if (tile && tile.mapTile && ['FACTORY', 'AIRPORT', 'PORT'].includes(tile.mapTile.type)) {
+                // Check ownership
+                let isOwner = false;
+                if (this.board.current_player !== undefined) {
+                    isOwner = tile.mapTile.player_id === this.board.current_player;
+                } else {
+                    isOwner = tile.mapTile.army === this.board.current_turn;
+                }
+                
+                if (isOwner && !tile.unit) {
+                    this.showProduction(tileX, tileY);
+                }
+            }
+            menu.style.display = 'none';
+            return;
+        }
+        
+        // Store context menu target
+        this.contextMenuTarget = { x: tileX, y: tileY };
+        
+        // Check if unit belongs to current player
+        let isOwnUnit = false;
+        if (this.board.current_player !== undefined) {
+            isOwnUnit = tile.unit.player_id === this.board.current_player;
+        } else {
+            isOwnUnit = tile.unit.army === this.board.current_turn;
+        }
+        
+        if (!isOwnUnit) {
+            menu.style.display = 'none';
+            return;
+        }
+        
+        // Configure menu items based on unit state and context
+        const menuItems = menu.querySelectorAll('.menu-item');
+        menuItems.forEach(item => {
+            const action = item.dataset.action;
+            item.disabled = false;
+            item.style.display = 'block';
+            
+            switch(action) {
+                case 'wait':
+                    // Wait is always available if unit hasn't moved
+                    item.disabled = tile.unit.has_moved || tile.unit.done;
+                    break;
+                    
+                case 'capture':
+                    // Only for infantry/mech on capturable buildings
+                    if (!['INFANTRY', 'MECH'].includes(tile.unit.type)) {
+                        item.style.display = 'none';
+                    } else if (!tile.mapTile || !['CITY', 'FACTORY', 'AIRPORT', 'PORT', 'HQ', 'BASE_TOWER_0', 'BASE_TOWER_1', 'BASE_TOWER_2', 'BASE_TOWER_3', 'BASE_TOWER_4'].includes(tile.mapTile.type)) {
+                        item.disabled = true;
+                    } else {
+                        // Check if building belongs to enemy
+                        let canCapture = false;
+                        if (this.board.current_player !== undefined) {
+                            canCapture = tile.mapTile.player_id !== this.board.current_player;
+                        } else {
+                            canCapture = tile.mapTile.army !== this.board.current_turn;
+                        }
+                        item.disabled = !canCapture || tile.unit.has_moved || tile.unit.done;
+                    }
+                    break;
+                    
+                case 'load':
+                    // Check if there's a transport adjacent
+                    const hasAdjacentTransport = this.checkAdjacentTransport(tileX, tileY);
+                    item.disabled = !hasAdjacentTransport || tile.unit.has_moved || tile.unit.done;
+                    // Hide for transports themselves
+                    if (['APC', 'LANDER', 'CRUISER', 'T_COPTER', 'BLACK_BOAT'].includes(tile.unit.type)) {
+                        item.style.display = 'none';
+                    }
+                    break;
+                    
+                case 'unload':
+                    // Only for transports with units
+                    const transportTypes = ['APC', 'LANDER', 'CRUISER', 'T_COPTER', 'BLACK_BOAT'];
+                    if (!transportTypes.includes(tile.unit.type)) {
+                        item.style.display = 'none';
+                    } else {
+                        // Check if transport has units (would need API call to verify)
+                        item.disabled = tile.unit.has_moved || tile.unit.done;
+                    }
+                    break;
+                    
+                case 'repair':
+                    // Only for APC/Black Boat
+                    if (!['APC', 'BLACK_BOAT'].includes(tile.unit.type)) {
+                        item.style.display = 'none';
+                    } else {
+                        item.disabled = tile.unit.has_moved || tile.unit.done;
+                    }
+                    break;
+            }
+        });
+        
+        // Position menu
+        menu.style.left = `${screenX}px`;
+        menu.style.top = `${screenY}px`;
+        menu.style.display = 'block';
+        
+        // Add click handlers
+        this.setupContextMenuHandlers();
+    }
+    
+    checkAdjacentTransport(x, y) {
+        const offsets = [[0,-1], [1,0], [0,1], [-1,0]];
+        for (const [dx, dy] of offsets) {
+            const nx = x + dx;
+            const ny = y + dy;
+            const tile = this.getTile(nx, ny);
+            if (tile?.unit) {
+                // Check if it's a friendly transport
+                let isFriendly = false;
+                if (this.board.current_player !== undefined) {
+                    isFriendly = tile.unit.player_id === this.board.current_player;
+                } else {
+                    isFriendly = tile.unit.army === this.board.current_turn;
+                }
+                
+                if (isFriendly && ['APC', 'LANDER', 'CRUISER', 'T_COPTER', 'BLACK_BOAT'].includes(tile.unit.type)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    
+    setupContextMenuHandlers() {
+        const menu = document.getElementById('context-menu');
+        const menuItems = menu.querySelectorAll('.menu-item');
+        
+        // Remove old handlers
+        menuItems.forEach(item => {
+            item.replaceWith(item.cloneNode(true));
+        });
+        
+        // Add new handlers
+        menu.querySelectorAll('.menu-item').forEach(item => {
+            item.addEventListener('click', async () => {
+                const action = item.dataset.action;
+                menu.style.display = 'none';
+                
+                if (!this.contextMenuTarget) return;
+                
+                const x = this.contextMenuTarget.x;
+                const y = this.contextMenuTarget.y;
+                
+                switch(action) {
+                    case 'wait':
+                        await this.rpc('unit_wait', { x, y });
+                        break;
+                        
+                    case 'capture':
+                        await this.rpc('unit_capture', { x, y });
+                        break;
+                        
+                    case 'load':
+                        // Find adjacent transport
+                        const offsets = [[0,-1], [1,0], [0,1], [-1,0]];
+                        for (const [dx, dy] of offsets) {
+                            const nx = x + dx;
+                            const ny = y + dy;
+                            const tile = this.getTile(nx, ny);
+                            if (tile?.unit && ['APC', 'LANDER', 'CRUISER', 'T_COPTER', 'BLACK_BOAT'].includes(tile.unit.type)) {
+                                await this.rpc('unit_load', {
+                                    unit_x: x,
+                                    unit_y: y,
+                                    transport_x: nx,
+                                    transport_y: ny
+                                });
+                                break;
+                            }
+                        }
+                        break;
+                        
+                    case 'unload':
+                        // For now, just mark unit as done
+                        // Full unload UI would need direction selection
+                        await this.rpc('unit_wait', { x, y });
+                        break;
+                        
+                    case 'repair':
+                        await this.rpc('unit_resupply', { x, y });
+                        break;
+                        
+                    case 'cancel':
+                        // Just close menu
+                        break;
+                }
+            });
+        });
+        
+        // Hide menu when clicking elsewhere
+        document.addEventListener('click', (e) => {
+            if (!menu.contains(e.target) && e.target !== menu) {
+                menu.style.display = 'none';
+            }
+        }, { once: true });
     }
     
     render() {
@@ -642,7 +918,9 @@ class Game {
         
         // Update UI
         document.getElementById('current-turn').textContent = this.board.current_turn || '-';
-        document.getElementById('day').textContent = this.board.days || '-';
+        // Days can be 0 at game start, display as 1
+        const displayDay = this.board.days === 0 ? 1 : (this.board.days || 1);
+        document.getElementById('day').textContent = displayDay;
         
         // For v2 games with player funds
         if (this.board.player_funds) {
@@ -653,6 +931,20 @@ class Game {
             // Legacy
             document.getElementById('red-funds').textContent = this.board.red_funds || '-';
             document.getElementById('blue-funds').textContent = this.board.blue_funds || '-';
+        }
+        
+        // Update browser title
+        const turn = this.board.current_turn || 'Loading';
+        const titleDay = this.board.days === 0 ? 1 : (this.board.days || 1);
+        if (this.board.game_active) {
+            document.title = `Advance Wars RPC - Day ${titleDay} - ${turn}'s Turn`;
+        } else {
+            // Check for winner
+            if (this.board.winner) {
+                document.title = `Advance Wars RPC - ${this.board.winner} Victory!`;
+            } else {
+                document.title = 'Advance Wars RPC - Game Over';
+            }
         }
     }
     

@@ -283,7 +283,8 @@ class Unit:
     def is_attackable(self, defender):
         '''Returns true if the unit is able to attack this type of unit.'''
         try:
-            return bool(DAMAGE_TABLE[self.type][defender.type.value])
+            # Check if unit can damage with either primary or secondary weapon
+            return self._select_weapon_damage(defender) > 0
         except (KeyError, IndexError) as e:
             # Some unit types might not be in damage table
             return False

@@ -660,8 +660,17 @@ def create_game_api():
     try:
         data = request.get_json()
         
-        # Generate game token
-        token = secrets.token_urlsafe(4)
+        # Generate unique game token
+        max_attempts = 10
+        for _ in range(max_attempts):
+            token = secrets.token_urlsafe(4)
+            # Check if token already exists in memory or database
+            if token not in games and not Game.from_token(db.session, token):
+                break
+        else:
+            # If we couldn't find a unique token after max_attempts
+            app_logger.error(f"Failed to generate unique token after {max_attempts} attempts")
+            return {'success': False, 'error': 'Failed to generate unique game token'}
         
         # Validate required fields
         required_fields = ['map', 'playerCount', 'turnLimit', 'players']
@@ -722,14 +731,20 @@ def create_game_api():
             manager, _ = GameFactory.create_game_with_players(data['map'], v2_players)
             
             # Store in games dictionary
+            if token in games:
+                app_logger.warning(f"WARNING: Overwriting existing game in memory: {token}")
             games[token] = manager
             
             # Create database entry
+            existing_db_game = Game.from_token(db.session, token)
+            if existing_db_game:
+                app_logger.warning(f"WARNING: Overwriting existing game in database: {token}")
+            
             game = Game(manager.board, token)
             db.session.add(game)
             db.session.commit()
             
-            app_logger.info(f"V2 Game created: {token}, map: {data['map']}, players: {len(v2_players)}")
+            app_logger.info(f"V2 Game created and stored: {token}, map: {data['map']}, players: {len(v2_players)}")
             
         except ImportError:
             # Fallback to v2 RPC

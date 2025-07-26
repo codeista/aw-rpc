@@ -697,10 +697,14 @@ class GameManager:
             
             # Log fuel consumption results
             if fuel_results["units_destroyed"] > 0:
-                print(f"Day {self.board.days}: {fuel_results['units_destroyed']} units destroyed due to fuel depletion")
+                if self.app_logger:
+                    self.app_logger.info(f"FUEL_DEPLETION Day {self.board.days}: {fuel_results['units_destroyed']} units destroyed due to fuel depletion")
+                    self.log_event("FUEL_DEPLETION", f"{fuel_results['units_destroyed']} units destroyed")
             
             if fuel_results["units_immobilized"] > 0:
-                print(f"Day {self.board.days}: {fuel_results['units_immobilized']} land units immobilized due to fuel depletion")
+                if self.app_logger:
+                    self.app_logger.info(f"FUEL_DEPLETION Day {self.board.days}: {fuel_results['units_immobilized']} land units immobilized due to fuel depletion")
+                    self.log_event("FUEL_IMMOBILIZED", f"{fuel_results['units_immobilized']} units immobilized")
 
     # Duplicate method removed - consolidated into final version at end of file
 

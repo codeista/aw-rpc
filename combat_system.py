@@ -45,6 +45,10 @@ class CombatSystem:
         # Import here to avoid circular imports
         from unit import DAMAGE_TABLE, UnitType
         
+        # Indirect units cannot counter-attack (Advance Wars rule)
+        if defender.is_indirect():
+            return False
+        
         # Defender must be alive
         if defender.status.hp <= 0:
             return False
@@ -102,6 +106,8 @@ class CombatSystem:
         counter_attack_occurred = False
         
         if self.can_counter_attack(attacker, defender, attacker_pos, defender_pos):
+            # IMPORTANT: Counter-attack damage is calculated AFTER defender takes damage
+            # The defender's reduced HP affects their counter-attack strength
             counter_damage = self.calculate_damage(defender, attacker, attacker_tile)
             attacker.status.hp = max(0, attacker.status.hp - counter_damage)
             counter_attack_occurred = True
