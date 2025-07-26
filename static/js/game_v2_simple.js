@@ -18,6 +18,13 @@ class Game {
         this.init();
     }
     
+    updateActionPrompt(message) {
+        const promptElement = document.getElementById('action-prompt');
+        if (promptElement) {
+            promptElement.textContent = message;
+        }
+    }
+    
     async init() {
         // Load sprites first
         await this.loadSprites();
@@ -113,6 +120,21 @@ class Game {
                             y2: y
                         });
                         console.log('Move result:', moveResult);
+                        
+                        // After moving, check if unit can still attack
+                        const movedTile = this.getTile(x, y);
+                        if (movedTile && movedTile.unit && movedTile.unit.can_attack && !movedTile.unit.done) {
+                            // For direct fire units that can attack after moving
+                            if (!movedTile.unit.is_indirect || movedTile.unit.is_indirect === false) {
+                                console.log('Unit can attack after move, showing attack range');
+                                await this.showAttackRange(x, y);
+                                this.updateActionPrompt('Select target to attack');
+                            } else {
+                                this.updateActionPrompt('Select action from menu');
+                            }
+                        } else {
+                            this.updateActionPrompt('Unit moved');
+                        }
                         
                         // Check if we need to show automatic context menu for multi-action scenarios
                         await this.checkForAutoContextMenu(x, y);
@@ -291,22 +313,15 @@ class Game {
                                     isEnemy = tile.unit.army !== this.board.current_turn;
                                 }
                                 
-                                console.log(`Enemy check: isEnemy=${isEnemy}, can_be_attacked=${tile.can_be_attacked}`);
+                                console.log(`Enemy check: isEnemy=${isEnemy}`);
                                 
-                                // Show combat preview for any enemy unit that can be attacked
-                                // This helps with planning even if the unit has already moved
-                                if (isEnemy && tile.can_be_attacked) {
-                                    console.log('Showing preview for attackable enemy');
+                                // Always show combat preview for enemy units
+                                // This helps with planning attacks
+                                if (isEnemy) {
+                                    console.log('Showing preview for enemy unit');
                                     // Debounce the preview call
                                     previewTimeout = setTimeout(() => {
                                         console.log('Timeout fired, calling showCombatPreview');
-                                        this.showCombatPreview(this.board.selected.x, this.board.selected.y, x, y);
-                                    }, 150); // 150ms delay
-                                } else if (isEnemy) {
-                                    console.log('Showing preview for any enemy');
-                                    // Also show preview for any enemy when hovering, for planning
-                                    // This helps players see potential damage even before moving
-                                    previewTimeout = setTimeout(() => {
                                         this.showCombatPreview(this.board.selected.x, this.board.selected.y, x, y);
                                     }, 150); // 150ms delay
                                 } else {
@@ -506,6 +521,17 @@ class Game {
             
             // Show unit info and movement range for selected unit
             this.updateUnitInfoPanel(tile.unit);
+            
+            // Update action prompt based on unit state
+            if (tile.unit.done) {
+                this.updateActionPrompt('Unit has completed action');
+            } else if (!tile.unit.has_moved) {
+                this.updateActionPrompt('Select destination or action');
+            } else if (tile.unit.can_attack && (!tile.unit.is_indirect || tile.unit.is_indirect === false)) {
+                this.updateActionPrompt('Select target or action');
+            } else {
+                this.updateActionPrompt('Select action from menu');
+            }
             
             // Show movement range if unit can move
             if (!tile.unit.has_moved && !tile.unit.done) {
@@ -712,20 +738,57 @@ class Game {
                     break;
                     
                 case 'attack':
-                    // Check if there are adjacent attackable targets
+                    // Check if unit can attack and has valid targets
+                    if (!tile.unit.can_attack || tile.unit.done) {
+                        item.style.display = 'none';
+                        break;
+                    }
+                    
                     let hasAttackTargets = false;
-                    const offsets = [[0,-1], [1,0], [0,1], [-1,0]];
-                    for (const [dx, dy] of offsets) {
-                        const adjTile = this.getTile(tileX + dx, tileY + dy);
-                        if (adjTile && adjTile.can_be_attacked) {
-                            hasAttackTargets = true;
-                            break;
+                    
+                    // For direct fire units, check adjacent tiles
+                    if (!tile.unit.is_indirect || tile.unit.is_indirect === false) {
+                        const offsets = [[0,-1], [1,0], [0,1], [-1,0]];
+                        for (const [dx, dy] of offsets) {
+                            const adjTile = this.getTile(tileX + dx, tileY + dy);
+                            if (adjTile && adjTile.unit) {
+                                // Check if it's an enemy
+                                let isEnemy = false;
+                                if (this.board.current_player !== undefined) {
+                                    isEnemy = adjTile.unit.player_id !== this.board.current_player;
+                                } else {
+                                    isEnemy = adjTile.unit.army !== this.board.current_turn;
+                                }
+                                if (isEnemy) {
+                                    hasAttackTargets = true;
+                                    break;
+                                }
+                            }
+                        }
+                    } else {
+                        // For indirect units, they can only attack if they haven't moved
+                        if (!tile.unit.has_moved) {
+                            // Quick check - just see if there are any enemies on the board
+                            // The actual range check will be done when attack is selected
+                            for (let gridTile of this.board.grid) {
+                                if (gridTile.unit) {
+                                    let isEnemy = false;
+                                    if (this.board.current_player !== undefined) {
+                                        isEnemy = gridTile.unit.player_id !== this.board.current_player;
+                                    } else {
+                                        isEnemy = gridTile.unit.army !== this.board.current_turn;
+                                    }
+                                    if (isEnemy) {
+                                        hasAttackTargets = true;
+                                        break;
+                                    }
+                                }
+                            }
                         }
                     }
+                    
                     if (!hasAttackTargets) {
                         item.style.display = 'none';
-                    } else {
-                        item.disabled = tile.unit.has_moved || tile.unit.done;
                     }
                     break;
                     
@@ -1185,6 +1248,9 @@ class Game {
             tile.can_be_moved_to = false;
             tile.can_be_attacked = false;
         }
+        
+        // Update action prompt when clearing highlights
+        this.updateActionPrompt('Select a unit');
         this.hasHighlights = hadHighlights;
     }
     
@@ -1376,17 +1442,60 @@ class Game {
             }
         }
         
-        // Check if can attack (any adjacent enemies highlighted)
+        // Check if can attack - dynamically check for enemies in range
         let hasAttackTargets = false;
-        const offsets = [[0,-1], [1,0], [0,1], [-1,0]];
-        for (const [dx, dy] of offsets) {
-            const adjTile = this.getTile(x + dx, y + dy);
-            if (adjTile && adjTile.can_be_attacked) {
-                hasAttackTargets = true;
-                break;
+        if (tile.unit.can_attack && !tile.unit.done) {
+            // For direct fire units, check adjacent tiles
+            if (!tile.unit.is_indirect || tile.unit.is_indirect === false) {
+                const offsets = [[0,-1], [1,0], [0,1], [-1,0]];
+                for (const [dx, dy] of offsets) {
+                    const adjTile = this.getTile(x + dx, y + dy);
+                    if (adjTile && adjTile.unit) {
+                        // Check if it's an enemy
+                        let isEnemy = false;
+                        if (this.board.current_player !== undefined) {
+                            isEnemy = adjTile.unit.player_id !== this.board.current_player;
+                        } else {
+                            isEnemy = adjTile.unit.army !== this.board.current_turn;
+                        }
+                        if (isEnemy) {
+                            hasAttackTargets = true;
+                            break;
+                        }
+                    }
+                }
+            } else {
+                // For indirect units, they can only attack if they haven't moved
+                if (!tile.unit.has_moved) {
+                    // Check for enemies within range
+                    const rangeMin = tile.unit.status?.rangemin || 2;
+                    const rangeMax = tile.unit.status?.rangemax || 3;
+                    
+                    for (let dy = -rangeMax; dy <= rangeMax; dy++) {
+                        for (let dx = -rangeMax; dx <= rangeMax; dx++) {
+                            const dist = Math.abs(dx) + Math.abs(dy);
+                            if (dist >= rangeMin && dist <= rangeMax) {
+                                const targetTile = this.getTile(x + dx, y + dy);
+                                if (targetTile && targetTile.unit) {
+                                    let isEnemy = false;
+                                    if (this.board.current_player !== undefined) {
+                                        isEnemy = targetTile.unit.player_id !== this.board.current_player;
+                                    } else {
+                                        isEnemy = targetTile.unit.army !== this.board.current_turn;
+                                    }
+                                    if (isEnemy) {
+                                        hasAttackTargets = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if (hasAttackTargets) break;
+                    }
+                }
             }
         }
-        if (hasAttackTargets && !tile.unit.has_moved && !tile.unit.done) {
+        if (hasAttackTargets) {
             availableActions.push('attack');
         }
         
@@ -1452,6 +1561,7 @@ class Game {
         } else {
             // Multiple targets - show selection
             console.log(`Multiple attack targets available: ${attackTargets.length}`);
+            this.updateActionPrompt('Select target to attack');
             this.showAttackTargetSelection(x, y, attackTargets);
         }
     }

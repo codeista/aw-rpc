@@ -141,10 +141,39 @@ NEVER proactively create documentation files (*.md) or README files. Only create
 
 ## Development Reminders
 - Always check current docs for info on game mechanics and API methods
-- Please test before committing and pushing
+- **MANDATORY: Test ALL changes before committing** (see TESTING_CHECKLIST.md)
 - **Use temp/ folder for temporary analysis files**
 - **Clean up test/verification files after use**
 - **Current tileset work**: Replacing old center-based coordinate system with new direct coordinates
+
+## Testing Requirements (CRITICAL)
+**NEVER commit changes without testing them first!**
+
+### Quick Testing via Test Interface
+1. Open http://localhost:5000/test_interface
+2. Select appropriate test type from dropdown:
+   - **Combat Test** - For testing attack mechanics
+   - **Movement Test** - For testing unit movement
+   - **Comprehensive** - For general gameplay testing
+3. Click "🚀 Launch Test Game" to open the game
+4. Test your specific changes thoroughly
+5. Document any issues found
+
+### Combat Flow Testing
+When making combat-related changes, ALWAYS test:
+1. **Unit Selection** → Action prompt shows correctly
+2. **Unit Movement** → Can move to valid tiles
+3. **Post-Move Actions** → Direct units can attack after moving
+4. **Combat Preview** → Shows when hovering over enemies
+5. **Attack Execution** → Via context menu or direct click
+6. **Visual Feedback** → Highlights, prompts, and previews work
+
+### Before ANY Commit
+1. Run regression tests: `python3 run_regression_tests.py`
+2. Test the specific feature you changed
+3. Check for console errors in browser (F12)
+4. Verify no visual glitches or UI issues
+5. Only commit after ALL tests pass
 
 ## Helper Documentation Locations
 - Core game logic and rules: `manager.py`
