@@ -37,11 +37,17 @@ class BaseUITest:
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('--disable-dev-shm-usage')
         chrome_options.add_argument('--disable-gpu')
+        chrome_options.add_argument('--headless')  # Run headless to avoid window spam
+        chrome_options.add_argument('--window-size=1280,800')
         
         # Initialize WebDriver
-        self.driver = webdriver.Chrome(options=chrome_options)
-        self.driver.set_window_size(1280, 800)
-        self.wait = WebDriverWait(self.driver, 10)
+        try:
+            self.driver = webdriver.Chrome(options=chrome_options)
+            self.driver.set_window_size(1280, 800)
+            self.wait = WebDriverWait(self.driver, 10)
+        except Exception as e:
+            print(f"Failed to create WebDriver: {e}")
+            raise
         
         # Test metadata
         self.test_name = method.__name__
@@ -49,15 +55,22 @@ class BaseUITest:
     
     def teardown_method(self, method):
         """Clean up after each test"""
-        # Check for JavaScript errors
-        self.check_js_errors()
-        
-        # Take final screenshot if test failed
-        if hasattr(self, '_outcome') and self._outcome.errors:
-            self.take_screenshot("test_failed")
-        
-        # Close browser
-        self.driver.quit()
+        try:
+            # Check for JavaScript errors
+            self.check_js_errors()
+            
+            # Take final screenshot if test failed
+            if hasattr(self, '_outcome') and self._outcome.errors:
+                self.take_screenshot("test_failed")
+        except Exception as e:
+            print(f"Error during teardown: {e}")
+        finally:
+            # Always try to close browser
+            try:
+                if hasattr(self, 'driver') and self.driver:
+                    self.driver.quit()
+            except Exception as e:
+                print(f"Error closing driver: {e}")
     
     # === RPC Methods ===
     

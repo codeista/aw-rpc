@@ -322,16 +322,16 @@
                 <span>Regression Tests</span>
             </button>
             
-            <button class="test-button" onclick="runTest('ui', 'tests/ui/run_ui_tests.py')">
+            <button class="test-button" onclick="runTest('ui', 'tests/ui/run_ui_tests.py')" title="Runs in headless mode - no browser windows">
                 <span class="button-icon">🖥️</span>
-                <span>UI Tests</span>
+                <span>UI Tests (Headless)</span>
             </button>
             
             <div class="divider"></div>
             
-            <button class="test-button" onclick="runAllTests()" style="background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.5);">
+            <button class="test-button" onclick="runAllTests()" style="background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.5);" title="Excludes UI tests - run those separately">
                 <span class="button-icon">🚀</span>
-                <span>Run All Tests</span>
+                <span>Run All Tests (No UI)</span>
             </button>
             
             <div class="divider"></div>
@@ -635,8 +635,8 @@
                 { name: 'repair_refuel', script: 'tests/unit/test_complete_repair_refuel.py' },
                 { name: 'integration', script: 'tests/system/updated_test_phase1.py' },
                 { name: 'multiplayer', script: 'tests/integration/test_multiplayer_armies.py' },
-                { name: 'regression', script: 'run_regression_tests.py' },
-                { name: 'ui', script: 'tests/ui/run_ui_tests.py' }
+                { name: 'regression', script: 'run_regression_tests.py' }
+                // UI tests excluded from "Run All" - they should be run separately
             ];
             
             // Disable all buttons

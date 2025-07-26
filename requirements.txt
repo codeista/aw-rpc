@@ -7,3 +7,4 @@ Werkzeug==2.3.7
 python-socketio==5.9.0
 jsons==1.6.3
 psycopg2-binary==2.9.5
+psutil==5.9.5
