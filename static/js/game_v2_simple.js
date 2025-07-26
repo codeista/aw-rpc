@@ -299,6 +299,7 @@ class Game {
                                     console.log('Showing preview for attackable enemy');
                                     // Debounce the preview call
                                     previewTimeout = setTimeout(() => {
+                                        console.log('Timeout fired, calling showCombatPreview');
                                         this.showCombatPreview(this.board.selected.x, this.board.selected.y, x, y);
                                     }, 150); // 150ms delay
                                 } else if (isEnemy) {
@@ -1255,6 +1256,10 @@ class Game {
                 // Cache the result
                 this.combatPreviewCache = { key: cacheKey, data: result };
                 this.updateCombatPreviewPanel(result);
+            } else if (result.error === "Target is out of range") {
+                // Show a simplified preview for out-of-range targets
+                console.log('Target out of range, showing info preview');
+                this.showOutOfRangePreview(defenderX, defenderY);
             } else {
                 console.log('Combat preview failed:', result);
                 this.hideCombatPreview();
@@ -1314,6 +1319,27 @@ class Game {
     
     hideCombatPreview() {
         document.getElementById('combat-preview-panel').style.display = 'none';
+    }
+    
+    showOutOfRangePreview(targetX, targetY) {
+        const panel = document.getElementById('combat-preview-panel');
+        if (!panel) return;
+        
+        const tile = this.getTile(targetX, targetY);
+        if (!tile || !tile.unit) return;
+        
+        panel.style.display = 'block';
+        
+        // Show target info
+        document.getElementById('combat-target').textContent = tile.unit.type;
+        document.getElementById('combat-damage').textContent = 'Out of range';
+        document.getElementById('combat-counter').textContent = 'N/A';
+        
+        // Show terrain defense
+        const terrainDefense = tile.mapTile?.defense || 0;
+        document.getElementById('combat-terrain').textContent = `${terrainDefense} stars`;
+        
+        document.getElementById('combat-result').textContent = 'Cannot attack';
     }
     
     async checkForAutoContextMenu(x, y) {
