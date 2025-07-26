@@ -294,12 +294,6 @@ class Game {
             const tile = this.getTile(x, y);
             const info = document.getElementById('tile-info');
             
-            // Clear previous timeout
-            if (previewTimeout) {
-                clearTimeout(previewTimeout);
-                previewTimeout = null;
-            }
-            
             if (tile) {
                 let text = `(${x},${y}) ${tile.mapTile?.type || ''}`;
                 if (tile.unit) {
@@ -322,6 +316,11 @@ class Game {
                     // Check if this is a new tile to avoid repeated calls
                     const currentTileKey = `${x},${y}`;
                     if (lastHoverTile !== currentTileKey) {
+                        // Clear previous timeout only when changing tiles
+                        if (previewTimeout) {
+                            clearTimeout(previewTimeout);
+                            previewTimeout = null;
+                        }
                         lastHoverTile = currentTileKey;
                         
                         // Show combat preview if hovering over enemy unit with selected unit
@@ -338,11 +337,11 @@ class Game {
                                 let isEnemy = false;
                                 if (this.board.current_player !== undefined) {
                                     isEnemy = tile.unit.player_id !== this.board.current_player;
+                                    console.log(`Enemy check (v2): unit.player_id=${tile.unit.player_id}, current_player=${this.board.current_player}, isEnemy=${isEnemy}`);
                                 } else {
                                     isEnemy = tile.unit.army !== this.board.current_turn;
+                                    console.log(`Enemy check (v1): unit.army=${tile.unit.army}, current_turn=${this.board.current_turn}, isEnemy=${isEnemy}`);
                                 }
-                                
-                                console.log(`Enemy check: isEnemy=${isEnemy}`);
                                 
                                 // Always show combat preview for enemy units
                                 // This helps with planning attacks
