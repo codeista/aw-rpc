@@ -12,6 +12,8 @@ class Game {
         this.sprites = null;
         this.socket = null;
         this.combatPreviewCache = null;
+        this.hasHighlights = false;
+        this.canvasInitialized = false;
         
         this.init();
     }
@@ -111,6 +113,9 @@ class Game {
                             y2: y
                         });
                         console.log('Move result:', moveResult);
+                        
+                        // Check if we need to show automatic context menu for multi-action scenarios
+                        await this.checkForAutoContextMenu(x, y);
                         return; // Movement handled
                     } catch (moveError) {
                         console.log('Move failed:', moveError);
@@ -179,6 +184,40 @@ class Game {
                 await this.handleFreshClick(x, y);
             } else {
                 await this.handleFreshClick(x, y);
+            }
+        });
+        
+        // Canvas double-click for capture
+        this.canvas.addEventListener('dblclick', async (e) => {
+            const rect = this.canvas.getBoundingClientRect();
+            const x = Math.floor((e.clientX - rect.left) / this.tileSize);
+            const y = Math.floor((e.clientY - rect.top) / this.tileSize);
+            
+            const tile = this.getTile(x, y);
+            
+            // Check if there's a unit that can capture
+            if (tile && tile.unit) {
+                // Check if unit can capture (infantry/mech on capturable building)
+                if ((tile.unit.type === 'INFANTRY' || tile.unit.type === 'MECH') &&
+                    tile.mapTile && ['CITY', 'FACTORY', 'AIRPORT', 'PORT', 'HQ'].includes(tile.mapTile.type)) {
+                    
+                    // Check if building is enemy or neutral (not owned by current player)
+                    let canCapture = false;
+                    if (this.board.current_player !== undefined) {
+                        canCapture = tile.mapTile.player_id !== this.board.current_player;
+                    } else {
+                        canCapture = tile.mapTile.army !== this.board.current_turn;
+                    }
+                    
+                    if (canCapture) {
+                        try {
+                            console.log(`Double-click capture at (${x},${y})`);
+                            await this.rpc('unit_capture', { x, y });
+                        } catch (error) {
+                            console.error('Capture failed:', error);
+                        }
+                    }
+                }
             }
         });
         
@@ -425,8 +464,17 @@ class Game {
     async handleFreshClick(x, y) {
         const tile = this.getTile(x, y);
         
+        console.log(`handleFreshClick at (${x},${y}):`, {
+            hasTile: !!tile,
+            hasUnit: !!tile?.unit,
+            unitType: tile?.unit?.type,
+            hasMoved: tile?.unit?.has_moved,
+            isDone: tile?.unit?.done
+        });
+        
         // First check if there's a unit to select
         if (tile && tile.unit) {
+            console.log(`Selecting unit: ${tile.unit.type} at (${x},${y})`);
             await this.rpc('unit_select', { x, y });
             
             // Show unit info and movement range for selected unit
@@ -434,7 +482,10 @@ class Game {
             
             // Show movement range if unit can move
             if (!tile.unit.has_moved && !tile.unit.done) {
+                console.log(`Unit can move, showing movement range...`);
                 await this.showMovementRange(x, y);
+            } else {
+                console.log(`Unit cannot move: has_moved=${tile.unit.has_moved}, done=${tile.unit.done}`);
             }
         }
         // Then check if it's an empty production building
@@ -633,6 +684,24 @@ class Game {
                     }
                     break;
                     
+                case 'attack':
+                    // Check if there are adjacent attackable targets
+                    let hasAttackTargets = false;
+                    const offsets = [[0,-1], [1,0], [0,1], [-1,0]];
+                    for (const [dx, dy] of offsets) {
+                        const adjTile = this.getTile(tileX + dx, tileY + dy);
+                        if (adjTile && adjTile.can_be_attacked) {
+                            hasAttackTargets = true;
+                            break;
+                        }
+                    }
+                    if (!hasAttackTargets) {
+                        item.style.display = 'none';
+                    } else {
+                        item.disabled = tile.unit.has_moved || tile.unit.done;
+                    }
+                    break;
+                    
                 case 'load':
                     // Check if there's a transport adjacent
                     const hasAdjacentTransport = this.checkAdjacentTransport(tileX, tileY);
@@ -726,6 +795,10 @@ class Game {
                         await this.rpc('unit_capture', { x, y });
                         break;
                         
+                    case 'attack':
+                        await this.handleAttackFromContextMenu(x, y);
+                        break;
+                        
                     case 'load':
                         // Find adjacent transport
                         const offsets = [[0,-1], [1,0], [0,1], [-1,0]];
@@ -779,14 +852,17 @@ class Game {
         // Count units in different passes
         let unitsInPass3 = 0;
         
-        // Set canvas size once
+        // Set canvas size only when necessary and cache dimensions
         const width = this.board.width * this.tileSize;
         const height = this.board.height * this.tileSize;
         
-        if (this.canvas.width !== width || this.canvas.height !== height) {
+        // Only resize canvas if dimensions actually changed (not on every render)
+        if (!this.canvasInitialized || this.canvas.width !== width || this.canvas.height !== height) {
             this.canvas.width = width;
             this.canvas.height = height;
             this.ctx.imageSmoothingEnabled = false;
+            this.canvasInitialized = true;
+            console.log(`Canvas resized to ${width}x${height}`);
         }
         
         // Clear and fill with plains color (more efficient than drawing tiles)
@@ -1023,6 +1099,7 @@ class Game {
                     const tile = this.getTile(move.x, move.y);
                     if (tile) {
                         tile.can_be_moved_to = true;
+                        this.hasHighlights = true;
                     }
                 });
                 
@@ -1041,13 +1118,26 @@ class Game {
     
     async showAttackRange(x, y) {
         try {
+            console.log(`showAttackRange called for unit at (${x},${y})`);
             const result = await this.rpc('combat_targets', { unit_x: x, unit_y: y });
+            console.log(`combat_targets result:`, result);
+            
             if (result.success) {
+                // Clear previous attack highlights first
+                if (this.board && this.board.grid) {
+                    this.board.grid.forEach(tile => {
+                        tile.can_be_attacked = false;
+                    });
+                }
+                
                 // Highlight attack targets
+                console.log(`Setting ${result.targets.length} attack targets:`);
                 result.targets.forEach(target => {
                     const tile = this.getTile(target.x, target.y);
                     if (tile) {
+                        console.log(`  - Target at (${target.x},${target.y}): ${tile.unit?.type || 'no unit'}`);
                         tile.can_be_attacked = true;
+                        this.hasHighlights = true;
                     }
                 });
                 this.render();
@@ -1060,10 +1150,15 @@ class Game {
     clearHighlights() {
         if (!this.board) return;
         
+        let hadHighlights = false;
         for (let tile of this.board.grid) {
+            if (tile.can_be_moved_to || tile.can_be_attacked) {
+                hadHighlights = true;
+            }
             tile.can_be_moved_to = false;
             tile.can_be_attacked = false;
         }
+        this.hasHighlights = hadHighlights;
     }
     
     updateUnitInfoPanel(unit) {
@@ -1179,12 +1274,260 @@ class Game {
         document.getElementById('combat-preview-panel').style.display = 'none';
     }
     
+    async checkForAutoContextMenu(x, y) {
+        const tile = this.getTile(x, y);
+        if (!tile || !tile.unit) return;
+        
+        // Check if unit belongs to current player
+        let isOwnUnit = false;
+        if (this.board.current_player !== undefined) {
+            isOwnUnit = tile.unit.player_id === this.board.current_player;
+        } else {
+            isOwnUnit = tile.unit.army === this.board.current_turn;
+        }
+        
+        if (!isOwnUnit) return;
+        
+        // Count available high-priority actions
+        let availableActions = [];
+        
+        // Check if can capture
+        if (['INFANTRY', 'MECH'].includes(tile.unit.type) &&
+            tile.mapTile && ['CITY', 'FACTORY', 'AIRPORT', 'PORT', 'HQ', 'BASE_TOWER_0', 'BASE_TOWER_1', 'BASE_TOWER_2', 'BASE_TOWER_3', 'BASE_TOWER_4'].includes(tile.mapTile.type)) {
+            
+            // Check if building belongs to enemy or neutral
+            let canCapture = false;
+            if (this.board.current_player !== undefined) {
+                canCapture = tile.mapTile.player_id !== this.board.current_player;
+            } else {
+                canCapture = tile.mapTile.army !== this.board.current_turn;
+            }
+            
+            if (canCapture && !tile.unit.has_moved && !tile.unit.done) {
+                availableActions.push('capture');
+            }
+        }
+        
+        // Check if can attack (any adjacent enemies highlighted)
+        let hasAttackTargets = false;
+        const offsets = [[0,-1], [1,0], [0,1], [-1,0]];
+        for (const [dx, dy] of offsets) {
+            const adjTile = this.getTile(x + dx, y + dy);
+            if (adjTile && adjTile.can_be_attacked) {
+                hasAttackTargets = true;
+                break;
+            }
+        }
+        if (hasAttackTargets && !tile.unit.has_moved && !tile.unit.done) {
+            availableActions.push('attack');
+        }
+        
+        // Check if can load into transport
+        const hasAdjacentTransport = this.checkAdjacentTransport(x, y);
+        if (hasAdjacentTransport && !tile.unit.has_moved && !tile.unit.done &&
+            !['APC', 'LANDER', 'CRUISER', 'T_COPTER', 'BLACK_BOAT'].includes(tile.unit.type)) {
+            availableActions.push('load');
+        }
+        
+        // Show automatic context menu if multiple high-priority actions available
+        if (availableActions.length >= 2) {
+            console.log(`Auto-showing context menu for actions: ${availableActions.join(', ')}`);
+            
+            // Calculate screen position for context menu (center of tile)
+            const rect = this.canvas.getBoundingClientRect();
+            const screenX = rect.left + (x * this.tileSize) + (this.tileSize / 2);
+            const screenY = rect.top + (y * this.tileSize) + (this.tileSize / 2);
+            
+            // Small delay to ensure board state is updated
+            setTimeout(() => {
+                this.showContextMenu(screenX, screenY, x, y);
+            }, 100);
+        }
+    }
+    
+    async handleAttackFromContextMenu(x, y) {
+        // First, quickly check client-side for any attackable tiles
+        const attackTargets = [];
+        
+        // Check all tiles marked as can_be_attacked (these were set by showAttackRange)
+        for (let tile of this.board.grid) {
+            if (tile.can_be_attacked && tile.unit) {
+                attackTargets.push({
+                    x: tile.x,
+                    y: tile.y,
+                    unit: tile.unit
+                });
+            }
+        }
+        
+        console.log(`Found ${attackTargets.length} attack targets from highlighted tiles`);
+        
+        if (attackTargets.length === 0) {
+            console.log('No valid attack targets found');
+            return;
+        }
+        
+        if (attackTargets.length === 1) {
+            // Only one target, attack it directly
+            const target = attackTargets[0];
+            console.log(`Attacking ${target.unit.type} at (${target.x},${target.y})`);
+            try {
+                await this.rpc('unit_attack_enhanced', {
+                    attacker_x: x,
+                    attacker_y: y,
+                    defender_x: target.x,
+                    defender_y: target.y
+                });
+            } catch (error) {
+                console.error('Attack failed:', error);
+            }
+        } else {
+            // Multiple targets - show selection
+            console.log(`Multiple attack targets available: ${attackTargets.length}`);
+            this.showAttackTargetSelection(x, y, attackTargets);
+        }
+    }
+    
+    showAttackTargetSelection(attackerX, attackerY, targets) {
+        // Store attack data for event delegation
+        this.pendingAttackData = {
+            attackerX: attackerX,
+            attackerY: attackerY,
+            targets: targets
+        };
+        
+        // Create a dynamic submenu showing all attack targets
+        const menu = document.getElementById('context-menu');
+        
+        // Clear existing menu items
+        menu.innerHTML = '';
+        
+        // Add header
+        const header = document.createElement('div');
+        header.className = 'menu-header';
+        header.textContent = 'Select Target:';
+        header.style.padding = '8px 20px';
+        header.style.color = '#3498db';
+        header.style.fontWeight = 'bold';
+        header.style.borderBottom = '1px solid rgba(255,255,255,0.1)';
+        header.style.marginBottom = '4px';
+        menu.appendChild(header);
+        
+        // Add target options with data attributes
+        targets.forEach((target, index) => {
+            const button = document.createElement('button');
+            button.className = 'menu-item attack-target';
+            button.textContent = `${target.unit.type} (${target.x},${target.y})`;
+            button.style.display = 'block';
+            button.style.width = '100%';
+            button.disabled = false;
+            
+            // Store target data in data attributes
+            button.dataset.targetIndex = index;
+            button.dataset.targetX = target.x;
+            button.dataset.targetY = target.y;
+            button.dataset.unitType = target.unit.type;
+            
+            menu.appendChild(button);
+        });
+        
+        // Add divider and cancel option
+        const divider = document.createElement('div');
+        divider.className = 'menu-divider';
+        menu.appendChild(divider);
+        
+        const cancelButton = document.createElement('button');
+        cancelButton.className = 'menu-item menu-cancel';
+        cancelButton.textContent = 'Cancel';
+        menu.appendChild(cancelButton);
+        
+        // Set up single event delegation handler for the menu
+        this.setupAttackTargetHandler();
+        
+        console.log(`Showing target selection for ${targets.length} targets`);
+    }
+    
+    setupAttackTargetHandler() {
+        const menu = document.getElementById('context-menu');
+        
+        // Remove any existing handlers
+        menu.removeEventListener('click', this.attackTargetClickHandler);
+        
+        // Create new handler
+        this.attackTargetClickHandler = async (e) => {
+            const target = e.target;
+            
+            if (target.classList.contains('attack-target')) {
+                console.log('Attack target clicked!', target.textContent);
+                
+                // Get target data
+                const targetX = parseInt(target.dataset.targetX);
+                const targetY = parseInt(target.dataset.targetY);
+                const unitType = target.dataset.unitType;
+                
+                // Hide menu
+                menu.style.display = 'none';
+                
+                console.log(`Selected target: ${unitType} at (${targetX},${targetY})`);
+                console.log(`Attack parameters:`, {
+                    attacker_x: this.pendingAttackData.attackerX,
+                    attacker_y: this.pendingAttackData.attackerY,
+                    defender_x: targetX,
+                    defender_y: targetY
+                });
+                
+                try {
+                    const result = await this.rpc('unit_attack_enhanced', {
+                        attacker_x: this.pendingAttackData.attackerX,
+                        attacker_y: this.pendingAttackData.attackerY,
+                        defender_x: targetX,
+                        defender_y: targetY
+                    });
+                    console.log('Attack result:', result);
+                } catch (error) {
+                    console.error('Attack failed:', error);
+                    console.error('Error details:', error.message);
+                }
+                
+                // Clean up
+                this.pendingAttackData = null;
+            } else if (target.classList.contains('menu-cancel')) {
+                console.log('Attack cancelled');
+                menu.style.display = 'none';
+                this.restoreOriginalContextMenu();
+                this.pendingAttackData = null;
+            }
+        };
+        
+        // Add handler
+        menu.addEventListener('click', this.attackTargetClickHandler);
+    }
+    
+    restoreOriginalContextMenu() {
+        // Restore the original context menu HTML structure
+        const menu = document.getElementById('context-menu');
+        menu.innerHTML = `
+            <button class="menu-item" data-action="wait">Wait</button>
+            <button class="menu-item" data-action="capture">Capture</button>
+            <button class="menu-item" data-action="attack">Attack</button>
+            <button class="menu-item" data-action="load">Load</button>
+            <button class="menu-item" data-action="unload">Unload</button>
+            <button class="menu-item" data-action="repair">Supply/Repair</button>
+            <div class="menu-divider"></div>
+            <button class="menu-item" data-action="cancel">Cancel</button>
+        `;
+        // Re-setup handlers for the restored menu
+        this.setupContextMenuHandlers();
+    }
+    
     clearUIPanels() {
         document.getElementById('unit-info-panel').style.display = 'none';
         document.getElementById('movement-info-panel').style.display = 'none';
         document.getElementById('combat-preview-panel').style.display = 'none';
         this.clearHighlights();
-        if (this.board) {
+        // Only render if highlights were actually cleared to avoid unnecessary renders
+        if (this.board && this.hasHighlights) {
+            this.hasHighlights = false;
             this.render();
         }
     }
