@@ -274,7 +274,13 @@ class Game {
                         lastHoverTile = currentTileKey;
                         
                         // Show combat preview if hovering over enemy unit with selected unit
+                        if (tile.unit) {
+                            console.log('Hover over unit, board.selected:', this.board?.selected);
+                        }
+                        
                         if (this.board?.selected && tile.unit) {
+                            console.log(`Hover check: selected=(${this.board.selected.x},${this.board.selected.y}), hover=(${x},${y}), has unit:`, !!tile.unit);
+                            
                             const selectedTile = this.getTile(this.board.selected.x, this.board.selected.y);
                             if (selectedTile?.unit) {
                                 // Check if this is an enemy unit
@@ -285,20 +291,25 @@ class Game {
                                     isEnemy = tile.unit.army !== this.board.current_turn;
                                 }
                                 
+                                console.log(`Enemy check: isEnemy=${isEnemy}, can_be_attacked=${tile.can_be_attacked}`);
+                                
                                 // Show combat preview for any enemy unit that can be attacked
                                 // This helps with planning even if the unit has already moved
                                 if (isEnemy && tile.can_be_attacked) {
+                                    console.log('Showing preview for attackable enemy');
                                     // Debounce the preview call
                                     previewTimeout = setTimeout(() => {
                                         this.showCombatPreview(this.board.selected.x, this.board.selected.y, x, y);
                                     }, 150); // 150ms delay
                                 } else if (isEnemy) {
+                                    console.log('Showing preview for any enemy');
                                     // Also show preview for any enemy when hovering, for planning
                                     // This helps players see potential damage even before moving
                                     previewTimeout = setTimeout(() => {
                                         this.showCombatPreview(this.board.selected.x, this.board.selected.y, x, y);
                                     }, 150); // 150ms delay
                                 } else {
+                                    console.log('Not enemy, hiding preview');
                                     this.hideCombatPreview();
                                 }
                             } else {
@@ -447,6 +458,11 @@ class Game {
         if (data.result) {
             this.board = data.result;
             
+            // Debug log for selected unit
+            if (this.board.selected) {
+                console.log('Board updated with selected unit:', this.board.selected);
+            }
+            
             // Handle v2 games with player data
             if (this.board.players && this.board.sprite_mapping) {
                 console.log('V2 game detected with players:', this.board.players);
@@ -483,6 +499,9 @@ class Game {
         if (tile && tile.unit) {
             console.log(`Selecting unit: ${tile.unit.type} at (${x},${y})`);
             await this.rpc('unit_select', { x, y });
+            
+            // Check if selection was successful
+            console.log('After unit_select, board.selected:', this.board?.selected);
             
             // Show unit info and movement range for selected unit
             this.updateUnitInfoPanel(tile.unit);
@@ -1248,11 +1267,20 @@ class Game {
     
     updateCombatPreviewPanel(preview) {
         const panel = document.getElementById('combat-preview-panel');
+        console.log('updateCombatPreviewPanel called, panel exists:', !!panel);
+        
         if (!preview || !preview.success) {
-            panel.style.display = 'none';
+            console.log('Preview invalid or unsuccessful:', preview);
+            if (panel) panel.style.display = 'none';
             return;
         }
         
+        if (!panel) {
+            console.error('Combat preview panel element not found!');
+            return;
+        }
+        
+        console.log('Setting panel to visible');
         panel.style.display = 'block';
         
         const targetUnit = preview.defender?.type || 'Unknown';
