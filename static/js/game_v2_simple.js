@@ -145,25 +145,7 @@ class Game {
                     }
                 }
                 
-                // PRIORITY 2: Check if clicking on empty production building (not a move target)
-                if (clickedTile && !clickedTile.unit && clickedTile.mapTile && 
-                    ['FACTORY', 'AIRPORT', 'PORT'].includes(clickedTile.mapTile.type)) {
-                    // Check ownership
-                    let isOwner = false;
-                    if (this.board.current_player !== undefined) {
-                        isOwner = clickedTile.mapTile.player_id === this.board.current_player;
-                    } else {
-                        isOwner = clickedTile.mapTile.army === this.board.current_turn;
-                    }
-                    
-                    if (isOwner) {
-                        console.log('Showing production for empty factory at', x, y);
-                        this.showProduction(x, y);
-                        return;
-                    }
-                }
-                
-                // PRIORITY 3: Check if unit has already moved/acted
+                // PRIORITY 2: Check if unit has already moved/acted
                 const selectedTile = this.getTile(this.board.selected.x, this.board.selected.y);
                 if (selectedTile?.unit) {
                     console.log('Selected unit state:', {
@@ -180,6 +162,25 @@ class Game {
                         selectedTile.unit.done === 1) {
                         console.log('Selected unit has already acted, handling as new click');
                         await this.handleFreshClick(x, y);
+                        return;
+                    }
+                }
+                
+                // PRIORITY 3: Check if clicking on empty production building (ONLY if not a move target)
+                if (clickedTile && !clickedTile.unit && clickedTile.mapTile && 
+                    ['FACTORY', 'AIRPORT', 'PORT'].includes(clickedTile.mapTile.type) &&
+                    !clickedTile.can_be_moved_to) {  // Only show production if NOT a valid move destination
+                    // Check ownership
+                    let isOwner = false;
+                    if (this.board.current_player !== undefined) {
+                        isOwner = clickedTile.mapTile.player_id === this.board.current_player;
+                    } else {
+                        isOwner = clickedTile.mapTile.army === this.board.current_turn;
+                    }
+                    
+                    if (isOwner) {
+                        console.log('Showing production for empty factory at', x, y);
+                        this.showProduction(x, y);
                         return;
                     }
                 }
@@ -1523,46 +1524,49 @@ class Game {
     }
     
     async handleAttackFromContextMenu(x, y) {
-        // First, quickly check client-side for any attackable tiles
-        const attackTargets = [];
+        // Fetch valid attack targets from server to ensure we have fresh data
+        console.log(`Fetching attack targets for unit at (${x},${y})`);
         
-        // Check all tiles marked as can_be_attacked (these were set by showAttackRange)
-        for (let tile of this.board.grid) {
-            if (tile.can_be_attacked && tile.unit) {
-                attackTargets.push({
-                    x: tile.x,
-                    y: tile.y,
-                    unit: tile.unit
-                });
+        try {
+            const result = await this.rpc('combat_targets', { unit_x: x, unit_y: y });
+            
+            if (!result.success || !result.targets || result.targets.length === 0) {
+                console.log('No valid attack targets found');
+                return;
             }
-        }
-        
-        console.log(`Found ${attackTargets.length} attack targets from highlighted tiles`);
-        
-        if (attackTargets.length === 0) {
-            console.log('No valid attack targets found');
+            
+            // Convert server response to our attack target format
+            const attackTargets = result.targets.map(target => ({
+                x: target.x,
+                y: target.y,
+                unit: target.unit
+            }));
+            
+            console.log(`Found ${attackTargets.length} attack targets from server`);
+            
+            if (attackTargets.length === 1) {
+                // Only one target, attack it directly
+                const target = attackTargets[0];
+                console.log(`Attacking ${target.unit.type} at (${target.x},${target.y})`);
+                try {
+                    await this.rpc('unit_attack_enhanced', {
+                        attacker_x: x,
+                        attacker_y: y,
+                        defender_x: target.x,
+                        defender_y: target.y
+                    });
+                } catch (error) {
+                    console.error('Attack failed:', error);
+                }
+            } else {
+                // Multiple targets - show selection
+                console.log(`Multiple attack targets available: ${attackTargets.length}`);
+                this.updateActionPrompt('Select target to attack');
+                this.showAttackTargetSelection(x, y, attackTargets);
+            }
+        } catch (error) {
+            console.error('Failed to fetch attack targets:', error);
             return;
-        }
-        
-        if (attackTargets.length === 1) {
-            // Only one target, attack it directly
-            const target = attackTargets[0];
-            console.log(`Attacking ${target.unit.type} at (${target.x},${target.y})`);
-            try {
-                await this.rpc('unit_attack_enhanced', {
-                    attacker_x: x,
-                    attacker_y: y,
-                    defender_x: target.x,
-                    defender_y: target.y
-                });
-            } catch (error) {
-                console.error('Attack failed:', error);
-            }
-        } else {
-            // Multiple targets - show selection
-            console.log(`Multiple attack targets available: ${attackTargets.length}`);
-            this.updateActionPrompt('Select target to attack');
-            this.showAttackTargetSelection(x, y, attackTargets);
         }
     }
     
