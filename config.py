@@ -13,14 +13,13 @@ class Config:
         for unit_type in UnitType:
             name = unit_type.name
             self.units[name] = UnitConfig(
-                UnitClass[cfg.get(name, 'class')],
-                int(cfg.get(name, 'cost')),
-                int(cfg.get(name, 'move')),
-                int(cfg.get(name, 'rangemin')),
-                int(cfg.get(name, 'rangemax')),
-                int(cfg.get(name, 'fuel')),
-                int(cfg.get(name, 'vision')),
-                int(cfg.get(name, 'hp')),
-                int(cfg.get(name, 'ammo')),
-                []
+                cls=UnitClass[cfg.get(name, 'class')],
+                cost=int(cfg.get(name, 'cost')),
+                move=int(cfg.get(name, 'move')),
+                rangemin=int(cfg.get(name, 'rangemin')),
+                rangemax=int(cfg.get(name, 'rangemax')),
+                max_fuel=int(cfg.get(name, 'fuel')),
+                vision=int(cfg.get(name, 'vision')),
+                max_hp=int(cfg.get(name, 'hp')),
+                max_ammo=int(cfg.get(name, 'ammo'))
             )

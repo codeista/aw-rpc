@@ -1,7 +1,7 @@
 import random
 import math
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 import uuid
 from map_system import TERRAIN_DEFENSE
@@ -135,18 +135,65 @@ class UnitClass(Enum):
 
 @dataclass
 class UnitConfig:
-    '''Attributes of a unit.'''
+    '''Static attributes of a unit type - these don't change during gameplay.'''
     cls: UnitClass
     cost: int
     move: int
     rangemin: int
     rangemax: int
-    fuel: int
+    max_fuel: int  # Maximum fuel capacity
     vision: int
+    max_hp: int    # Maximum HP (always 100 in Advance Wars)
+    max_ammo: int  # Maximum ammo capacity
+    
+    # For backward compatibility during migration
+    @property
+    def fuel(self):
+        return self.max_fuel
+    
+    @property
+    def hp(self):
+        return self.max_hp
+        
+    @property
+    def ammo(self):
+        return self.max_ammo
+
+
+@dataclass
+class UnitStatus:
+    '''Dynamic status of a unit - these change during gameplay.'''
     hp: int
+    fuel: int
     ammo: int
-    cargo: List['Unit']
+    cargo: List['Unit'] = field(default_factory=list)
     has_moved_this_turn: bool = False
+    
+    # Copy all the static attributes from config for easy access
+    cls: UnitClass = None
+    cost: int = 0
+    move: int = 0
+    rangemin: int = 0
+    rangemax: int = 0
+    vision: int = 0
+    
+    @classmethod
+    def from_config(cls, config: UnitConfig) -> 'UnitStatus':
+        '''Create a new UnitStatus from a UnitConfig with full HP/fuel/ammo.'''
+        return cls(
+            hp=config.max_hp,
+            fuel=config.max_fuel,
+            ammo=config.max_ammo,
+            cargo=[],
+            has_moved_this_turn=False,
+            # Copy static attributes
+            cls=config.cls,
+            cost=config.cost,
+            move=config.move,
+            rangemin=config.rangemin,
+            rangemax=config.rangemax,
+            vision=config.vision
+        )
 
 
 @dataclass
@@ -154,7 +201,8 @@ class Unit:
     '''Type and status of a unit.'''
     army: Army
     type: UnitType
-    status: UnitConfig
+    status: UnitStatus  # Now uses UnitStatus instead of UnitConfig
+    config: UnitConfig  # Keep reference to static config
     id: str
     can_move: bool
     can_attack: bool
@@ -420,6 +468,16 @@ class Unit:
 
     @classmethod
     def create(cls, army: Army, unit_type: UnitType, unit_config: UnitConfig):
-        '''Creates the unit.'''
-        return Unit(army, unit_type, unit_config,
-                    uuid.uuid4(), False, False ,True)
+        '''Creates the unit with proper separation of config and status.'''
+        # Create a new status from the config
+        unit_status = UnitStatus.from_config(unit_config)
+        return Unit(
+            army=army,
+            type=unit_type,
+            status=unit_status,
+            config=unit_config,  # Keep reference to static config
+            id=uuid.uuid4(),
+            can_move=False,
+            can_attack=False,
+            can_capture=True
+        )
