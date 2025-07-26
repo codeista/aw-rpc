@@ -185,20 +185,48 @@ class Game {
                     }
                 }
                 
-                // PRIORITY 4: Try attack if not a movement target
-                if (clickedTile && clickedTile.can_be_attacked) {
-                    console.log('Tile is highlighted for attack, attempting attack');
-                    try {
-                        const attackResult = await this.rpc('unit_attack_enhanced', {
-                            attacker_x: this.board.selected.x,
-                            attacker_y: this.board.selected.y,
-                            defender_x: x,
-                            defender_y: y
-                        });
-                        console.log('Attack result:', attackResult);
-                        return;
-                    } catch (attackError) {
-                        console.log('Attack failed:', attackError);
+                // PRIORITY 4: Try attack if clicking on enemy unit
+                if (clickedTile && clickedTile.unit) {
+                    // Check if it's an enemy unit
+                    let isEnemy = false;
+                    if (this.board.current_player !== undefined) {
+                        isEnemy = clickedTile.unit.player_id !== this.board.current_player;
+                    } else {
+                        isEnemy = clickedTile.unit.army !== this.board.current_turn;
+                    }
+                    
+                    if (isEnemy) {
+                        console.log('Clicked on enemy unit, attempting direct attack');
+                        try {
+                            // First check if this is a valid target
+                            const targetsResult = await this.rpc('combat_targets', { 
+                                unit_x: this.board.selected.x, 
+                                unit_y: this.board.selected.y 
+                            });
+                            
+                            if (targetsResult.success && targetsResult.targets) {
+                                const isValidTarget = targetsResult.targets.some(
+                                    t => t.x === x && t.y === y
+                                );
+                                
+                                if (isValidTarget) {
+                                    console.log('Valid target confirmed, executing attack');
+                                    const attackResult = await this.rpc('unit_attack_enhanced', {
+                                        attacker_x: this.board.selected.x,
+                                        attacker_y: this.board.selected.y,
+                                        defender_x: x,
+                                        defender_y: y
+                                    });
+                                    console.log('Attack result:', attackResult);
+                                    return;
+                                } else {
+                                    console.log('Enemy is out of range');
+                                    this.updateActionPrompt('Target out of range');
+                                }
+                            }
+                        } catch (attackError) {
+                            console.log('Attack failed:', attackError);
+                        }
                     }
                 }
                 
