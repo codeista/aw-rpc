@@ -542,7 +542,19 @@
         
         function launchTestGame() {
             const testType = document.getElementById('testTypeSelect').value;
-            window.open(`/test_game?type=${testType}`, '_blank');
+            
+            // Map test types to their specific endpoints
+            const endpoints = {
+                'combat': '/test_combat',
+                'transport': '/test_transport', 
+                'capture': '/test_capture',
+                'movement': '/test_movement',
+                'comprehensive': '/test_comprehensive'
+            };
+            
+            // Use specific endpoint if available, otherwise use generic
+            const url = endpoints[testType] || `/test_game?type=${testType}`;
+            window.open(url, '_blank');
         }
         
         function runTest(testName, scriptName) {
