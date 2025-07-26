@@ -11,6 +11,7 @@ class Game {
         this.board = null;
         this.sprites = null;
         this.socket = null;
+        this.combatPreviewCache = null;
         
         this.init();
     }
@@ -72,6 +73,8 @@ class Game {
         this.socket.on('update', (msg) => {
             if (msg && msg.board) {
                 this.board = msg.board;
+                // Clear combat preview cache when board updates
+                this.combatPreviewCache = null;
                 this.render();
             }
         });
@@ -189,7 +192,10 @@ class Game {
             this.showContextMenu(e.clientX, e.clientY, x, y);
         });
         
-        // Mouse move for tile info and combat preview
+        // Mouse move for tile info and combat preview (with debouncing)
+        let lastHoverTile = null;
+        let previewTimeout = null;
+        
         this.canvas.addEventListener('mousemove', (e) => {
             const rect = this.canvas.getBoundingClientRect();
             const x = Math.floor((e.clientX - rect.left) / this.tileSize);
@@ -197,6 +203,12 @@ class Game {
             
             const tile = this.getTile(x, y);
             const info = document.getElementById('tile-info');
+            
+            // Clear previous timeout
+            if (previewTimeout) {
+                clearTimeout(previewTimeout);
+                previewTimeout = null;
+            }
             
             if (tile) {
                 let text = `(${x},${y}) ${tile.mapTile?.type || ''}`;
@@ -217,31 +229,47 @@ class Game {
                         if (ammo !== null && ammo <= 1) text += ' ⚠️LOW AMMO';
                     }
                     
-                    // Show combat preview if hovering over enemy unit with selected unit
-                    if (this.board?.selected && tile.unit) {
-                        const selectedTile = this.getTile(this.board.selected.x, this.board.selected.y);
-                        if (selectedTile?.unit) {
-                            // Check if this is an enemy unit
-                            let isEnemy = false;
-                            if (this.board.current_player !== undefined) {
-                                isEnemy = tile.unit.player_id !== this.board.current_player;
+                    // Check if this is a new tile to avoid repeated calls
+                    const currentTileKey = `${x},${y}`;
+                    if (lastHoverTile !== currentTileKey) {
+                        lastHoverTile = currentTileKey;
+                        
+                        // Show combat preview if hovering over enemy unit with selected unit
+                        if (this.board?.selected && tile.unit) {
+                            const selectedTile = this.getTile(this.board.selected.x, this.board.selected.y);
+                            if (selectedTile?.unit) {
+                                // Check if this is an enemy unit
+                                let isEnemy = false;
+                                if (this.board.current_player !== undefined) {
+                                    isEnemy = tile.unit.player_id !== this.board.current_player;
+                                } else {
+                                    isEnemy = tile.unit.army !== this.board.current_turn;
+                                }
+                                
+                                // Only show combat preview if this tile is highlighted as attackable
+                                if (isEnemy && !selectedTile.unit.has_moved && !selectedTile.unit.done && tile.can_be_attacked) {
+                                    // Debounce the preview call
+                                    previewTimeout = setTimeout(() => {
+                                        this.showCombatPreview(this.board.selected.x, this.board.selected.y, x, y);
+                                    }, 150); // 150ms delay
+                                } else {
+                                    this.hideCombatPreview();
+                                }
                             } else {
-                                isEnemy = tile.unit.army !== this.board.current_turn;
+                                this.hideCombatPreview();
                             }
-                            
-                            // Only show combat preview if this tile is highlighted as attackable
-                            if (isEnemy && !selectedTile.unit.has_moved && !selectedTile.unit.done && tile.can_be_attacked) {
-                                console.log(`Showing combat preview: (${this.board.selected.x},${this.board.selected.y}) vs (${x},${y})`);
-                                this.showCombatPreview(this.board.selected.x, this.board.selected.y, x, y);
-                            }
+                        } else {
+                            this.hideCombatPreview();
                         }
                     }
                 } else {
+                    lastHoverTile = null;
                     // Hide combat preview when not hovering over units
                     this.hideCombatPreview();
                 }
                 info.textContent = text;
             } else {
+                lastHoverTile = null;
                 info.textContent = '';
                 this.hideCombatPreview();
             }
@@ -1080,6 +1108,15 @@ class Game {
     }
     
     async showCombatPreview(attackerX, attackerY, defenderX, defenderY) {
+        // Create cache key
+        const cacheKey = `${attackerX},${attackerY}->${defenderX},${defenderY}`;
+        
+        // Check if we already have this preview cached
+        if (this.combatPreviewCache && this.combatPreviewCache.key === cacheKey) {
+            this.updateCombatPreviewPanel(this.combatPreviewCache.data);
+            return;
+        }
+        
         try {
             const result = await this.rpc('combat_preview', {
                 attacker_x: attackerX,
@@ -1088,15 +1125,15 @@ class Game {
                 defender_y: defenderY
             });
             
-            console.log('Combat preview result:', result);
-            
             if (result.success) {
+                // Cache the result
+                this.combatPreviewCache = { key: cacheKey, data: result };
                 this.updateCombatPreviewPanel(result);
             } else {
-                console.warn('Combat preview failed:', result.error);
+                this.hideCombatPreview();
             }
         } catch (e) {
-            console.error('Failed to get combat preview:', e);
+            this.hideCombatPreview();
         }
     }
     
