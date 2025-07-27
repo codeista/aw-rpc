@@ -309,7 +309,9 @@ class Game {
                         }
                         // Add warnings
                         if (fuel < 20) text += ' ⚠️LOW FUEL';
-                        if (ammo !== null && ammo <= 1) text += ' ⚠️LOW AMMO';
+                        // Only show ammo warning for units that can attack (have range > 0)
+                        const canAttack = tile.unit.rangemax > 0 || (tile.unit.status.rangemax && tile.unit.status.rangemax > 0);
+                        if (canAttack && ammo !== null && ammo <= 1) text += ' ⚠️LOW AMMO';
                     }
                     
                     // Check if this is a new tile to avoid repeated calls
@@ -1174,8 +1176,9 @@ class Game {
                             this.drawSprite('ui', 'fuel_warning', px + 2, py + 14);
                         }
                         
-                        // Low ammo warning (bottom right)
-                        if (ammo !== null && ammo !== undefined && ammo <= 1) {
+                        // Low ammo warning (bottom right) - only for units that can attack
+                        const canAttack = tile.unit.rangemax > 0 || (tile.unit.status.rangemax && tile.unit.status.rangemax > 0);
+                        if (canAttack && ammo !== null && ammo !== undefined && ammo <= 1) {
                             this.drawSprite('ui', 'ammo_warning', px + 14, py + 14);
                         }
                     }
