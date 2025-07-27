@@ -322,6 +322,11 @@
                 <span>Regression Tests</span>
             </button>
             
+            <button class="test-button" onclick="runTest('recent_features', 'tests/regression/test_recent_features.py')">
+                <span class="button-icon">🆕</span>
+                <span>Recent Features Tests</span>
+            </button>
+            
             <button class="test-button" onclick="runTest('ui', 'tests/ui/run_ui_tests.py')" title="Runs in headless mode - no browser windows">
                 <span class="button-icon">🖥️</span>
                 <span>UI Tests (Headless)</span>
@@ -448,6 +453,10 @@
                     <span class="status-indicator ready" id="status-regression"></span>
                 </div>
                 <div class="status-item">
+                    <span>🆕 Recent Features Tests</span>
+                    <span class="status-indicator ready" id="status-recent_features"></span>
+                </div>
+                <div class="status-item">
                     <span>🖥️ UI Tests</span>
                     <span class="status-indicator ready" id="status-ui"></span>
                 </div>
@@ -531,7 +540,7 @@
             `;
             
             // Reset all status indicators
-            ['combat', 'economic', 'movement', 'victory', 'transport', 'repair_refuel', 'integration', 'multiplayer', 'regression', 'ui'].forEach(test => {
+            ['combat', 'economic', 'movement', 'victory', 'transport', 'repair_refuel', 'integration', 'multiplayer', 'regression', 'recent_features', 'ui'].forEach(test => {
                 setTestStatus(test, 'ready');
             });
             
@@ -647,7 +656,8 @@
                 { name: 'repair_refuel', script: 'tests/unit/test_complete_repair_refuel.py' },
                 { name: 'integration', script: 'tests/system/updated_test_phase1.py' },
                 { name: 'multiplayer', script: 'tests/integration/test_multiplayer_armies.py' },
-                { name: 'regression', script: 'run_regression_tests.py' }
+                { name: 'regression', script: 'run_regression_tests.py' },
+                { name: 'recent_features', script: 'tests/regression/test_recent_features.py' }
                 // UI tests excluded from "Run All" - they should be run separately
             ];
             

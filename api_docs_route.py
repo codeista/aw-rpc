@@ -202,6 +202,11 @@ def api_documentation():
                     'name': 'unit_valid_moves',
                     'description': 'Get all valid movement positions for a unit',
                     'example': "rpc('unit_valid_moves', {token: 'mygame', x: 5, y: 3})"
+                },
+                {
+                    'name': 'unit_delete',
+                    'description': 'Delete own unit from the battlefield',
+                    'example': "rpc('unit_delete', {token: 'mygame', x: 5, y: 3})"
                 }
             ]
         },
@@ -216,8 +221,8 @@ def api_documentation():
                 },
                 {
                     'name': 'combat_preview',
-                    'description': 'Get damage preview before executing attack',
-                    'example': "rpc('combat_preview', {token: 'mygame', attacker_x: 5, attacker_y: 3, defender_x: 6, defender_y: 3})"
+                    'description': 'Get damage preview before executing attack. Use skip_range_check=true for hypothetical attacks',
+                    'example': "rpc('combat_preview', {token: 'mygame', attacker_x: 5, attacker_y: 3, defender_x: 6, defender_y: 3, skip_range_check: false})"
                 },
                 {
                     'name': 'get_attack_targets',

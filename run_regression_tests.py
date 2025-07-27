@@ -48,10 +48,10 @@ def main():
     print("=" * 60)
     
     try:
-        # Run the regression test suite
+        # Run the complete regression test suite (including recent features)
         result = subprocess.run([
             sys.executable, 
-            'tests/regression/test_complete_game_mechanics.py'
+            'tests/regression/test_complete_with_recent.py'
         ], timeout=300)  # 5 minute timeout
         
         # Return success/failure based on exit code

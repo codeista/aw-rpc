@@ -201,6 +201,13 @@ See [SPRITE_STATUS.md](SPRITE_STATUS.md) for current sprite mapping progress and
 - [x] Black Boat manual repair command (up to 2 HP per action, max 10 visual HP / 90 actual HP)
 - [x] Comprehensive repair and refuel testing suite
 - [x] Test interface integration for repair/refuel tests
+- [x] Enhanced context menu with Move/Wait/Load/Delete options
+- [x] Unit locking mechanics (acting with different unit locks previous unit)
+- [x] Transport exceptions (can continue loading/unloading after moving)
+- [x] Combat preview for units within movement + attack range
+- [x] Fixed indirect units showing counter damage
+- [x] Unit delete functionality with ownership verification
+- [x] Transport units no longer show ammo warnings
 
 ### In Progress
 - [ ] COM_TOWER damage bonus (+10% per tower)
