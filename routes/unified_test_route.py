@@ -44,9 +44,15 @@ TEST_CONFIGS = {
     },
     'transport': {
         'map': 'test',
-        'description': 'Transport operations test',
+        'description': 'Basic transport operations test',
         'add_units': True,
         'unit_focus': 'transport'
+    },
+    'transport_comprehensive': {
+        'map': 'transport_test',
+        'description': 'Comprehensive transport mechanics test',
+        'add_units': True,
+        'unit_focus': 'transport_comprehensive'
     },
     'capture': {
         'map': 'test',
@@ -93,6 +99,24 @@ TEST_CONFIGS = {
     'elimination': {
         'map': 'elimination_test',
         'description': 'Small elimination test'
+    },
+    'naval': {
+        'map': 'naval_test',
+        'description': 'Naval units comprehensive test',
+        'add_units': True,
+        'unit_focus': 'naval'
+    },
+    'air': {
+        'map': 'air_test',
+        'description': 'Air units comprehensive test',
+        'add_units': True,
+        'unit_focus': 'air'
+    },
+    'land': {
+        'map': 'land_test',
+        'description': 'Land units comprehensive test',
+        'add_units': True,
+        'unit_focus': 'land'
     }
 }
 
@@ -170,84 +194,330 @@ def unified_test_game():
 
 
 def _add_test_units(game: GameManager, focus: str = None):
+    """Legacy unit addition for old GameManager - use _add_test_units_v2 instead"""
     """Add pre-deployed units based on focus area."""
     
     if focus == 'movement':
         # Add movement-focused units
         units = [
-            {"type": "INFANTRY", "army": "RED", "x": 1, "y": 4},
-            {"type": "MECH", "army": "RED", "x": 2, "y": 5},
-            {"type": "RECON", "army": "BLUE", "x": 6, "y": 5},
-            {"type": "TANK", "army": "BLUE", "x": 7, "y": 6},
-            {"type": "FIGHTER", "army": "RED", "x": 1, "y": 7},
-            {"type": "TCOPTER", "army": "BLUE", "x": 8, "y": 8},
+            {"type": "INFANTRY", "player": 0, "x": 1, "y": 4},
+            {"type": "MECH", "player": 0, "x": 2, "y": 5},
+            {"type": "RECON", "player": 1, "x": 6, "y": 5},
+            {"type": "TANK", "player": 1, "x": 7, "y": 6},
+            {"type": "FIGHTER", "player": 0, "x": 1, "y": 7},
+            {"type": "TCOPTER", "player": 1, "x": 8, "y": 8},
         ]
     elif focus == 'combat':
         # Add combat-focused units
         units = [
-            {"type": "TANK", "army": "RED", "x": 3, "y": 5},
-            {"type": "TANK", "army": "BLUE", "x": 5, "y": 5},
-            {"type": "ARTILLERY", "army": "RED", "x": 3, "y": 7},
-            {"type": "ROCKET", "army": "BLUE", "x": 6, "y": 7},
-            {"type": "FIGHTER", "army": "RED", "x": 1, "y": 8},
-            {"type": "FIGHTER", "army": "BLUE", "x": 8, "y": 8},
-            {"type": "BATTLESHIP", "army": "RED", "x": 3, "y": 0},
-            {"type": "CRUISER", "army": "BLUE", "x": 5, "y": 0},
+            {"type": "TANK", "player": 0, "x": 3, "y": 5},
+            {"type": "TANK", "player": 1, "x": 5, "y": 5},
+            {"type": "ARTILLERY", "player": 0, "x": 3, "y": 7},
+            {"type": "ROCKET", "player": 1, "x": 6, "y": 7},
+            {"type": "FIGHTER", "player": 0, "x": 1, "y": 8},
+            {"type": "FIGHTER", "player": 1, "x": 8, "y": 8},
+            {"type": "BATTLESHIP", "player": 0, "x": 3, "y": 0},
+            {"type": "CRUISER", "player": 1, "x": 5, "y": 0},
         ]
     elif focus == 'transport':
-        # Add transport-focused units
+        # Add basic transport-focused units
         units = [
-            {"type": "INFANTRY", "army": "RED", "x": 1, "y": 4},
-            {"type": "MECH", "army": "RED", "x": 2, "y": 4},
-            {"type": "APC", "army": "RED", "x": 3, "y": 4},
-            {"type": "LANDER", "army": "BLUE", "x": 7, "y": 1},
-            {"type": "TCOPTER", "army": "BLUE", "x": 8, "y": 7},
-            {"type": "BLACKBOAT", "army": "RED", "x": 2, "y": 2},
+            {"type": "INFANTRY", "player": 0, "x": 1, "y": 4},
+            {"type": "MECH", "player": 0, "x": 2, "y": 4},
+            {"type": "APC", "player": 0, "x": 3, "y": 4},
+            {"type": "LANDER", "player": 1, "x": 7, "y": 1},
+            {"type": "TCOPTER", "player": 1, "x": 8, "y": 7},
+            {"type": "BLACKBOAT", "player": 0, "x": 2, "y": 2},
+        ]
+    elif focus == 'transport_comprehensive':
+        # Comprehensive transport test with all transport types and loadable units
+        units = [
+            # Ground transports and their cargo
+            {"type": "APC", "player": 0, "x": 0, "y": 4},
+            {"type": "INFANTRY", "player": 0, "x": 1, "y": 4},
+            {"type": "MECH", "player": 0, "x": 2, "y": 4},
+            
+            # Air transports and cargo
+            {"type": "TCOPTER", "player": 0, "x": 0, "y": 7},
+            {"type": "INFANTRY", "player": 0, "x": 1, "y": 7},
+            {"type": "MECH", "player": 0, "x": 2, "y": 7},
+            
+            # Naval transports
+            {"type": "LANDER", "player": 0, "x": 0, "y": 1},
+            {"type": "BLACKBOAT", "player": 0, "x": 1, "y": 2},
+            {"type": "CRUISER", "player": 0, "x": 2, "y": 1},
+            {"type": "CARRIER", "player": 0, "x": 3, "y": 2},
+            
+            # Units that can be loaded on lander
+            {"type": "TANK", "player": 0, "x": 0, "y": 3},
+            {"type": "RECON", "player": 0, "x": 1, "y": 3},
+            {"type": "ARTILLERY", "player": 0, "x": 2, "y": 3},
+            
+            # Air units for carrier/cruiser
+            {"type": "FIGHTER", "player": 0, "x": 3, "y": 0},
+            {"type": "BOMBER", "player": 0, "x": 4, "y": 0},
+            {"type": "BCOPTER", "player": 0, "x": 3, "y": 1},
+            
+            # BLUE team transports
+            {"type": "APC", "player": 1, "x": 9, "y": 4},
+            {"type": "TCOPTER", "player": 1, "x": 9, "y": 7},
+            {"type": "LANDER", "player": 1, "x": 9, "y": 1},
+            {"type": "BLACKBOAT", "player": 1, "x": 8, "y": 2},
+            {"type": "CRUISER", "player": 1, "x": 7, "y": 1},
+            {"type": "CARRIER", "player": 1, "x": 6, "y": 2},
+            
+            # BLUE loadable units
+            {"type": "INFANTRY", "player": 1, "x": 8, "y": 4},
+            {"type": "MECH", "player": 1, "x": 7, "y": 4},
+            {"type": "TANK", "player": 1, "x": 9, "y": 3},
+            {"type": "FIGHTER", "player": 1, "x": 6, "y": 0},
+            {"type": "BCOPTER", "player": 1, "x": 7, "y": 0},
         ]
     elif focus == 'capture':
         # Add units near capturable properties
         units = [
-            {"type": "INFANTRY", "army": "RED", "x": 3, "y": 3},  # Near city
-            {"type": "MECH", "army": "BLUE", "x": 8, "y": 4},     # Near factory
-            {"type": "INFANTRY", "army": "RED", "x": 7, "y": 8},  # Near airport
-            {"type": "MECH", "army": "BLUE", "x": 0, "y": 0},     # Near port
+            {"type": "INFANTRY", "player": 0, "x": 3, "y": 3},  # Near city
+            {"type": "MECH", "player": 1, "x": 8, "y": 4},     # Near factory
+            {"type": "INFANTRY", "player": 0, "x": 7, "y": 8},  # Near airport
+            {"type": "MECH", "player": 1, "x": 0, "y": 0},     # Near port
+        ]
+    elif focus == 'naval':
+        # Comprehensive naval units test
+        units = [
+            # Player 1 (RED) naval units on left side
+            {"type": "BATTLESHIP", "player": 0, "x": 0, "y": 1},
+            {"type": "CRUISER", "player": 0, "x": 1, "y": 0},
+            {"type": "SUB", "player": 0, "x": 2, "y": 1},
+            {"type": "LANDER", "player": 0, "x": 0, "y": 2},
+            {"type": "CARRIER", "player": 0, "x": 1, "y": 3},
+            {"type": "BLACKBOAT", "player": 0, "x": 2, "y": 2},
+            
+            # Player 2 (BLUE) naval units on right side with proper spacing
+            {"type": "BATTLESHIP", "player": 1, "x": 9, "y": 1},  # Range 2-6
+            {"type": "CRUISER", "player": 1, "x": 8, "y": 0},
+            {"type": "SUB", "player": 1, "x": 7, "y": 1},
+            {"type": "LANDER", "player": 1, "x": 9, "y": 2},
+            {"type": "CARRIER", "player": 1, "x": 8, "y": 3},
+            {"type": "BLACKBOAT", "player": 1, "x": 7, "y": 2},
+            
+            # Add some air units for carrier testing
+            {"type": "FIGHTER", "player": 0, "x": 1, "y": 4},
+            {"type": "BOMBER", "player": 1, "x": 8, "y": 4},
+            
+            # Add infantry for transport testing
+            {"type": "INFANTRY", "player": 0, "x": 0, "y": 4},
+            {"type": "MECH", "player": 1, "x": 9, "y": 4},
+        ]
+    elif focus == 'air':
+        # Comprehensive air units test
+        units = [
+            # Player 1 (RED) air units
+            {"type": "FIGHTER", "player": 0, "x": 1, "y": 7},
+            {"type": "BOMBER", "player": 0, "x": 2, "y": 8},
+            {"type": "BCOPTER", "player": 0, "x": 0, "y": 8},
+            {"type": "TCOPTER", "player": 0, "x": 1, "y": 9},
+            {"type": "STEALTH", "player": 0, "x": 2, "y": 7},
+            {"type": "BLACKBOMB", "player": 0, "x": 0, "y": 9},
+            
+            # Player 2 (BLUE) air units
+            {"type": "FIGHTER", "player": 1, "x": 8, "y": 7},
+            {"type": "BOMBER", "player": 1, "x": 7, "y": 8},
+            {"type": "BCOPTER", "player": 1, "x": 9, "y": 8},
+            {"type": "TCOPTER", "player": 1, "x": 8, "y": 9},
+            {"type": "STEALTH", "player": 1, "x": 7, "y": 7},
+            {"type": "BLACKBOMB", "player": 1, "x": 9, "y": 9},
+            
+            # Add ground units for air-to-ground testing
+            {"type": "TANK", "player": 0, "x": 3, "y": 5},
+            {"type": "ANTIAIR", "player": 1, "x": 6, "y": 5},
+            {"type": "MISSILE", "player": 0, "x": 4, "y": 6},
+            {"type": "MISSILE", "player": 1, "x": 5, "y": 6},
+        ]
+    elif focus == 'land':
+        # Comprehensive land units test
+        units = [
+            # Player 1 (RED) land units
+            {"type": "INFANTRY", "player": 0, "x": 1, "y": 4},
+            {"type": "MECH", "player": 0, "x": 2, "y": 4},
+            {"type": "RECON", "player": 0, "x": 0, "y": 5},
+            {"type": "TANK", "player": 0, "x": 1, "y": 5},
+            {"type": "MEDIUMTANK", "player": 0, "x": 2, "y": 5},
+            {"type": "NEOTANK", "player": 0, "x": 0, "y": 6},
+            {"type": "MEGATANK", "player": 0, "x": 1, "y": 6},
+            {"type": "ANTIAIR", "player": 0, "x": 2, "y": 6},
+            {"type": "ARTILLERY", "player": 0, "x": 0, "y": 7},
+            {"type": "ROCKET", "player": 0, "x": 1, "y": 7},
+            {"type": "MISSILE", "player": 0, "x": 2, "y": 7},
+            {"type": "APC", "player": 0, "x": 0, "y": 8},
+            {"type": "PIPERUNNER", "player": 0, "x": 1, "y": 8},
+            
+            # Player 2 (BLUE) land units
+            {"type": "INFANTRY", "player": 1, "x": 8, "y": 4},
+            {"type": "MECH", "player": 1, "x": 7, "y": 4},
+            {"type": "RECON", "player": 1, "x": 9, "y": 5},
+            {"type": "TANK", "player": 1, "x": 8, "y": 5},
+            {"type": "MEDIUMTANK", "player": 1, "x": 7, "y": 5},
+            {"type": "NEOTANK", "player": 1, "x": 9, "y": 6},
+            {"type": "MEGATANK", "player": 1, "x": 8, "y": 6},
+            {"type": "ANTIAIR", "player": 1, "x": 7, "y": 6},
+            {"type": "ARTILLERY", "player": 1, "x": 9, "y": 7},
+            {"type": "ROCKET", "player": 1, "x": 8, "y": 7},
+            {"type": "MISSILE", "player": 1, "x": 7, "y": 7},
+            {"type": "APC", "player": 1, "x": 9, "y": 8},
+            {"type": "PIPERUNNER", "player": 1, "x": 8, "y": 8},
         ]
     else:
         # Default comprehensive unit set
         units = [
             # Naval units
-            {"type": "BATTLESHIP", "army": "RED", "x": 3, "y": 0},
-            {"type": "CRUISER", "army": "BLUE", "x": 5, "y": 0},
-            {"type": "SUB", "army": "RED", "x": 1, "y": 1},
-            {"type": "LANDER", "army": "BLUE", "x": 7, "y": 1},
+            {"type": "BATTLESHIP", "player": 0, "x": 3, "y": 0},
+            {"type": "CRUISER", "player": 1, "x": 5, "y": 0},
+            {"type": "SUB", "player": 0, "x": 1, "y": 1},
+            {"type": "LANDER", "player": 1, "x": 7, "y": 1},
             
             # Ground units
-            {"type": "INFANTRY", "army": "RED", "x": 1, "y": 4},
-            {"type": "MECH", "army": "BLUE", "x": 7, "y": 4},
-            {"type": "TANK", "army": "RED", "x": 3, "y": 5},
-            {"type": "RECON", "army": "BLUE", "x": 6, "y": 5},
-            {"type": "ARTILLERY", "army": "RED", "x": 3, "y": 9},
-            {"type": "ROCKET", "army": "BLUE", "x": 6, "y": 9},
+            {"type": "INFANTRY", "player": 0, "x": 1, "y": 4},
+            {"type": "MECH", "player": 1, "x": 7, "y": 4},
+            {"type": "TANK", "player": 0, "x": 3, "y": 5},
+            {"type": "RECON", "player": 1, "x": 6, "y": 5},
+            {"type": "ARTILLERY", "player": 0, "x": 3, "y": 9},
+            {"type": "ROCKET", "player": 1, "x": 6, "y": 9},
             
             # Air units
-            {"type": "FIGHTER", "army": "RED", "x": 1, "y": 7},
-            {"type": "BOMBER", "army": "RED", "x": 1, "y": 8},
-            {"type": "FIGHTER", "army": "BLUE", "x": 8, "y": 8},
+            {"type": "FIGHTER", "player": 0, "x": 1, "y": 7},
+            {"type": "BOMBER", "player": 0, "x": 1, "y": 8},
+            {"type": "FIGHTER", "player": 1, "x": 8, "y": 8},
             
             # Special units
-            {"type": "BLACKBOAT", "army": "RED", "x": 2, "y": 2},
-            {"type": "APC", "army": "BLUE", "x": 8, "y": 6},
+            {"type": "BLACKBOAT", "player": 0, "x": 2, "y": 2},
+            {"type": "APC", "player": 1, "x": 8, "y": 6},
         ]
     
     # Create units
     for unit_data in units:
         try:
-            game.create_unit(
-                army=unit_data["army"],
+            # Convert player number to army name
+            army_name = "RED" if unit_data["player"] == 0 else "BLUE"
+            game.unit_create(
+                army=army_name,
                 unit_type=unit_data["type"],
                 x=unit_data["x"],
                 y=unit_data["y"]
             )
+        except Exception as e:
+            app_logger.warning(f"Failed to create {unit_data['type']}: {e}")
+
+
+def _add_test_units_v2(game, focus: str = None):
+    """Add pre-deployed units for v2 GameManager with direct unit placement"""
+    from unit import Unit, UnitType
+    from config import Config
+    
+    # Same unit configurations as before but with direct placement
+    if focus == 'naval':
+        units = [
+            # Player 1 (RED) naval units on left side
+            {"type": "BATTLESHIP", "player": 0, "x": 0, "y": 1},
+            {"type": "CRUISER", "player": 0, "x": 1, "y": 0},
+            {"type": "SUB", "player": 0, "x": 2, "y": 1},
+            {"type": "LANDER", "player": 0, "x": 0, "y": 2},
+            {"type": "CARRIER", "player": 0, "x": 1, "y": 3},
+            {"type": "BLACKBOAT", "player": 0, "x": 2, "y": 2},
+            
+            # Player 2 (BLUE) naval units on right side
+            {"type": "BATTLESHIP", "player": 1, "x": 9, "y": 1},
+            {"type": "CRUISER", "player": 1, "x": 8, "y": 0},
+            {"type": "SUB", "player": 1, "x": 7, "y": 1},
+            {"type": "LANDER", "player": 1, "x": 9, "y": 2},
+            {"type": "CARRIER", "player": 1, "x": 8, "y": 3},
+            {"type": "BLACKBOAT", "player": 1, "x": 7, "y": 2},
+            
+            # Add some air units for carrier testing
+            {"type": "FIGHTER", "player": 0, "x": 1, "y": 4},
+            {"type": "BOMBER", "player": 1, "x": 8, "y": 4},
+            
+            # Add infantry for transport testing
+            {"type": "INFANTRY", "player": 0, "x": 0, "y": 4},
+            {"type": "MECH", "player": 1, "x": 9, "y": 4},
+        ]
+    elif focus == 'air':
+        units = [
+            # Player 1 air units
+            {"type": "FIGHTER", "player": 0, "x": 1, "y": 7},
+            {"type": "BOMBER", "player": 0, "x": 2, "y": 8},
+            {"type": "BCOPTER", "player": 0, "x": 0, "y": 8},
+            {"type": "TCOPTER", "player": 0, "x": 1, "y": 9},
+            
+            # Player 2 air units
+            {"type": "FIGHTER", "player": 1, "x": 8, "y": 7},
+            {"type": "BOMBER", "player": 1, "x": 7, "y": 8},
+            {"type": "BCOPTER", "player": 1, "x": 9, "y": 8},
+            {"type": "TCOPTER", "player": 1, "x": 8, "y": 9},
+            
+            # Add ground units for air-to-ground testing
+            {"type": "TANK", "player": 0, "x": 3, "y": 5},
+            {"type": "ANTIAIR", "player": 1, "x": 6, "y": 5},
+        ]
+    elif focus == 'land':
+        units = [
+            # Player 1 land units
+            {"type": "INFANTRY", "player": 0, "x": 1, "y": 4},
+            {"type": "MECH", "player": 0, "x": 2, "y": 4},
+            {"type": "RECON", "player": 0, "x": 0, "y": 5},
+            {"type": "TANK", "player": 0, "x": 1, "y": 5},
+            {"type": "MEDIUMTANK", "player": 0, "x": 2, "y": 5},
+            {"type": "ANTIAIR", "player": 0, "x": 2, "y": 6},
+            {"type": "ARTILLERY", "player": 0, "x": 0, "y": 7},
+            {"type": "ROCKET", "player": 0, "x": 1, "y": 7},
+            {"type": "APC", "player": 0, "x": 0, "y": 8},
+            
+            # Player 2 land units
+            {"type": "INFANTRY", "player": 1, "x": 8, "y": 4},
+            {"type": "MECH", "player": 1, "x": 7, "y": 4},
+            {"type": "RECON", "player": 1, "x": 9, "y": 5},
+            {"type": "TANK", "player": 1, "x": 8, "y": 5},
+            {"type": "MEDIUMTANK", "player": 1, "x": 7, "y": 5},
+            {"type": "ANTIAIR", "player": 1, "x": 7, "y": 6},
+            {"type": "ARTILLERY", "player": 1, "x": 9, "y": 7},
+            {"type": "ROCKET", "player": 1, "x": 8, "y": 7},
+            {"type": "APC", "player": 1, "x": 9, "y": 8},
+        ]
+    else:
+        # Default units
+        units = [
+            {"type": "INFANTRY", "player": 0, "x": 1, "y": 4},
+            {"type": "TANK", "player": 0, "x": 3, "y": 5},
+            {"type": "INFANTRY", "player": 1, "x": 8, "y": 4},
+            {"type": "TANK", "player": 1, "x": 6, "y": 5},
+        ]
+    
+    # Get config for unit stats
+    config = Config()
+    
+    # Create and place units directly on the board
+    for unit_data in units:
+        try:
+            unit_type = UnitType[unit_data["type"]]
+            unit_config = config.units[unit_type.name]
+            
+            # For v2 games, we need to map player ID to Army enum
+            # Player 0 = RED, Player 1 = BLUE for test games
+            from map_system import Army
+            army = Army.RED if unit_data["player"] == 0 else Army.BLUE
+            
+            # Create unit with proper army
+            unit = Unit.create(
+                army=army,
+                unit_type=unit_type,
+                unit_config=unit_config
+            )
+            
+            # Place unit on board
+            tile_index = unit_data["y"] * game.board.width + unit_data["x"]
+            if 0 <= tile_index < len(game.board.grid):
+                game.board.grid[tile_index].unit = unit
+                app_logger.info(f"Placed {unit_type.name} at ({unit_data['x']}, {unit_data['y']})")
+            
         except Exception as e:
             app_logger.warning(f"Failed to create {unit_data['type']}: {e}")
 

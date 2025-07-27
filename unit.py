@@ -490,7 +490,7 @@ class Unit:
         '''Creates the unit with proper separation of config and status.'''
         # Create a new status from the config
         unit_status = UnitStatus.from_config(unit_config)
-        return Unit(
+        unit = Unit(
             army=army,
             type=unit_type,
             status=unit_status,
@@ -498,5 +498,10 @@ class Unit:
             id=uuid.uuid4(),
             can_move=False,
             can_attack=False,
-            can_capture=True
+            can_capture=True  # Will be set correctly below
         )
+        
+        # Set can_capture based on unit type
+        unit.can_capture = unit.type_can_capture()
+        
+        return unit

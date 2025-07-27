@@ -213,7 +213,7 @@ class GameManager:
                 unit = tile.unit
                 unit.can_move = True
                 unit.can_attack = True
-                unit.can_capture = True
+                unit.can_capture = unit.type_can_capture()  # Only infantry/mech can capture
 
     def _apply_damage(self, unit: Unit, damage: int) -> None:
         """Apply damage to a unit, ensuring HP doesn't go below 1."""
@@ -822,7 +822,7 @@ class GameManager:
         # Activate unit
         unit.can_move = True
         unit.can_attack = True
-        unit.can_capture = True
+        unit.can_capture = unit.type_can_capture()  # Only infantry/mech can capture
         
         # # Consume daily fuel
         # unit.status.fuel -= unit.fuel_use()
@@ -1765,7 +1765,7 @@ class GameManager:
                 # Reset all action flags for new turn
                 tile.unit.can_move = True
                 tile.unit.can_attack = True
-                tile.unit.can_capture = True
+                tile.unit.can_capture = tile.unit.type_can_capture()  # Only infantry/mech can capture
                 
                 # Reset transport-specific movement flags
                 if self.is_transport_unit(tile.unit):

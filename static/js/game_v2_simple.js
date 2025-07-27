@@ -112,10 +112,15 @@ class Game {
                 
                 const clickedTile = this.getTile(x, y);
                 
-                // PRIORITY 1: Check if this tile is highlighted for movement
-                if (clickedTile && clickedTile.can_be_moved_to) {
-                    // This is a valid move target - always try movement
-                    console.log('Tile is highlighted for movement, attempting move');
+                // PRIORITY 1: Check if this is a valid movement destination
+                // First check if highlights are set, otherwise try movement anyway for empty tiles
+                const selectedUnit = this.getTile(this.board.selected.x, this.board.selected.y)?.unit;
+                const canTryMove = selectedUnit && !selectedUnit.done && selectedUnit.can_move;
+                const isEmptyTile = clickedTile && !clickedTile.unit;
+                
+                if (canTryMove && (clickedTile?.can_be_moved_to || isEmptyTile)) {
+                    // This might be a valid move target - try movement
+                    console.log('Attempting move to', x, y);
                     try {
                         const moveResult = await this.rpc('unit_move', {
                             x: this.board.selected.x,
@@ -160,7 +165,8 @@ class Game {
                     });
                     
                     // Check various ways the unit might be marked as done
-                    if (selectedTile.unit.has_moved === true || 
+                    const hasMoved = selectedTile.unit.status?.has_moved_this_turn || selectedTile.unit.has_moved || false;
+                    if (hasMoved === true || 
                         selectedTile.unit.done === true ||
                         selectedTile.unit.has_moved === 1 ||
                         selectedTile.unit.done === 1) {
@@ -962,6 +968,7 @@ class Game {
                         
                     case 'wait':
                         await this.rpc('unit_wait', { x, y });
+                        this.hideContextMenu();  // Close menu after wait
                         break;
                         
                     case 'capture':
@@ -1129,14 +1136,26 @@ class Game {
                     // Build sprite name - format is TYPE_ARMY_idle/unavailable_frame
                     let unitSprite;
                     
+                    // A unit is unavailable if:
+                    // 1. It belongs to another player (enemy)
+                    // 2. It has no actions left (can't move, attack, or capture)
+                    // 3. It's explicitly marked as done
+                    const isEnemy = this.board.current_player !== undefined ? 
+                        tile.unit.player_id !== this.board.current_player :
+                        tile.unit.army !== this.board.current_turn;
+                    
+                    const hasNoActions = !tile.unit.can_move && !tile.unit.can_attack && !tile.unit.can_capture;
+                    const isDone = tile.unit.done || false;
+                    const isUnavailable = isEnemy || hasNoActions || isDone;
+                    
                     // For v2 games, use sprite mapper
                     if (this.spriteMapper && tile.unit.player_id !== undefined) {
-                        const state = (tile.unit.has_moved || tile.unit.done) ? 'unavailable' : 'idle';
+                        const state = isUnavailable ? 'unavailable' : 'idle';
                         unitSprite = this.spriteMapper.buildUnitSprite(tile.unit, state);
                     } else {
                         // Legacy path for non-v2 games
                         unitSprite = `${tile.unit.type}_${tile.unit.army}`;
-                        if (tile.unit.has_moved || tile.unit.done) {
+                        if (isUnavailable) {
                             unitSprite += '_unavailable';
                         } else {
                             unitSprite += '_idle';
@@ -1156,7 +1175,13 @@ class Game {
                         }
                         
                         const armyLower = army.toLowerCase();
-                        const unitIsAvailable = !tile.unit.has_moved && !tile.unit.done && tile.unit.can_move;
+                        // Unit is available if it belongs to current player and has actions left
+                        const isOwnUnit = this.board.current_player !== undefined ? 
+                            tile.unit.player_id === this.board.current_player :
+                            tile.unit.army === this.board.current_turn;
+                        const hasActions = tile.unit.can_move || tile.unit.can_attack || tile.unit.can_capture;
+                        const isDone = tile.unit.done || false;
+                        const unitIsAvailable = isOwnUnit && hasActions && !isDone;
                         let statusSprite = null;
                         
                         // Check for special status conditions

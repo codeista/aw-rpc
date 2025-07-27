@@ -1093,17 +1093,61 @@ def test_game():
     custom_map = request.args.get('map')
     force_units = request.args.get('units', '').lower() == 'true'
     
+    # Map test types that need custom maps and units
+    CUSTOM_TEST_CONFIGS = {
+        'naval': {'map': 'naval_test', 'add_units': True, 'unit_focus': 'naval'},
+        'air': {'map': 'air_test', 'add_units': True, 'unit_focus': 'air'},
+        'land': {'map': 'land_test', 'add_units': True, 'unit_focus': 'land'},
+        'transport_comprehensive': {'map': 'transport_test', 'add_units': True, 'unit_focus': 'transport_comprehensive'},
+        'triangle': {'map': 'triangle', 'add_units': False},
+        'cross': {'map': 'cross', 'add_units': False},
+        'pentagon': {'map': 'pentagon', 'add_units': False},
+        'scorpion': {'map': 'scorpion', 'add_units': False},
+        'green_yellow': {'map': 'green_yellow_arena', 'add_units': False},
+        'islands': {'map': 'green_blue_islands', 'add_units': False},
+        'mountains': {'map': 'yellow_grey_mountains', 'add_units': False},
+        'hq_rush': {'map': 'green_yellow_hq_rush', 'add_units': False},
+        'multi_army': {'map': 'multi_army_test', 'add_units': False},
+        'elimination': {'map': 'elimination_test', 'add_units': False}
+    }
+    
     # Generate token
     token = secrets.token_urlsafe(8)
     
     try:
-        # Create game based on type
-        if test_type == 'comprehensive' or (test_type == 'basic' and force_units):
+        # Check if this is a custom test type
+        if test_type in CUSTOM_TEST_CONFIGS:
+            config = CUSTOM_TEST_CONFIGS[test_type]
+            map_name = custom_map or config['map']
+            
+            # Get the map
+            game_map = map_repository.get_map(map_name)
+            if not game_map:
+                return f"Map not found: {map_name}", 404
+                
+            # Create v2 game with GameFactory
+            from game_factory import GameFactory
+            
+            # Default 2 players for test games
+            players = [
+                {"name": "Player 1", "color": "Red", "sprite_color": "RED"},
+                {"name": "Player 2", "color": "Blue", "sprite_color": "BLUE"}
+            ]
+            
+            mngr, _ = GameFactory.create_game_with_players(map_name, players)
+            
+            # Set high funds for test games
+            mngr.board.players[0]['funds'] = 50000
+            mngr.board.players[1]['funds'] = 50000
+            
+            # Add units if needed
+            if config.get('add_units', False) or force_units:
+                from routes.unified_test_route import _add_test_units_v2
+                _add_test_units_v2(mngr, config.get('unit_focus'))
+                
+        elif test_type == 'comprehensive' or (test_type == 'basic' and force_units):
             mngr = get_comprehensive_test_game(token)
         elif test_type == 'movement':
-            # Use optimized test for movement
-            # from tests.debug.optimized_test_map import get_optimized_test_game
-            # mngr = get_optimized_test_game(token)
             mngr = get_predeployed_test_game(token)
         else:
             # Basic test game
