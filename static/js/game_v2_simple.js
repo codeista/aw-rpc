@@ -282,9 +282,8 @@ class Game {
             this.showContextMenu(e.clientX, e.clientY, x, y);
         });
         
-        // Mouse move for tile info and combat preview (with debouncing)
+        // Mouse move for tile info and combat preview
         let lastHoverTile = null;
-        let previewTimeout = null;
         
         this.canvas.addEventListener('mousemove', (e) => {
             const rect = this.canvas.getBoundingClientRect();
@@ -316,11 +315,6 @@ class Game {
                     // Check if this is a new tile to avoid repeated calls
                     const currentTileKey = `${x},${y}`;
                     if (lastHoverTile !== currentTileKey) {
-                        // Clear previous timeout only when changing tiles
-                        if (previewTimeout) {
-                            clearTimeout(previewTimeout);
-                            previewTimeout = null;
-                        }
                         lastHoverTile = currentTileKey;
                         
                         // Show combat preview if hovering over enemy unit with selected unit
@@ -343,15 +337,35 @@ class Game {
                                     console.log(`Enemy check (v1): unit.army=${tile.unit.army}, current_turn=${this.board.current_turn}, isEnemy=${isEnemy}`);
                                 }
                                 
-                                // Always show combat preview for enemy units
-                                // This helps with planning attacks
                                 if (isEnemy) {
-                                    console.log('Showing preview for enemy unit');
-                                    // Debounce the preview call
-                                    previewTimeout = setTimeout(() => {
-                                        console.log('Timeout fired, calling showCombatPreview');
+                                    // Check if we should show combat preview
+                                    const selectedUnit = selectedTile.unit;
+                                    const distance = Math.abs(x - this.board.selected.x) + Math.abs(y - this.board.selected.y);
+                                    
+                                    // For direct units, check if they could move into attack range
+                                    if (selectedUnit.status && !this.isIndirectUnit(selectedUnit.type)) {
+                                        // Direct unit - check if within movement + attack range
+                                        // Direct units have attack range of 1
+                                        const moveRange = selectedUnit.status.move || selectedUnit.move || 3;
+                                        
+                                        // Can attack if:
+                                        // 1. Already adjacent (distance = 1)
+                                        // 2. Can move to be adjacent (distance <= moveRange + 1)
+                                        if (distance === 1 || (distance <= moveRange + 1 && !selectedUnit.has_moved)) {
+                                            console.log(`Direct unit can reach target: distance=${distance}, moveRange=${moveRange}`);
+                                            this.showCombatPreview(this.board.selected.x, this.board.selected.y, x, y);
+                                        } else {
+                                            console.log(`Direct unit cannot reach target: distance=${distance}, moveRange=${moveRange}`);
+                                            this.hideCombatPreview();
+                                        }
+                                    } else if (selectedUnit.status && this.isIndirectUnit(selectedUnit.type)) {
+                                        // Indirect unit - show preview if in range
+                                        console.log('Indirect unit, showing preview if in range');
                                         this.showCombatPreview(this.board.selected.x, this.board.selected.y, x, y);
-                                    }, 150); // 150ms delay
+                                    } else {
+                                        console.log('Unit type not recognized or no status');
+                                        this.hideCombatPreview();
+                                    }
                                 } else {
                                     console.log('Not enemy, hiding preview');
                                     this.hideCombatPreview();
@@ -697,6 +711,11 @@ class Game {
     showContextMenu(screenX, screenY, tileX, tileY) {
         const menu = document.getElementById('context-menu');
         const tile = this.getTile(tileX, tileY);
+        
+        // First ensure menu has content
+        if (menu.innerHTML === '') {
+            this.restoreOriginalContextMenu();
+        }
         
         // Hide menu if clicking on empty tile
         if (!tile || !tile.unit) {
@@ -1207,7 +1226,7 @@ class Game {
     
     async showMovementRange(x, y) {
         try {
-            const result = await this.rpc('movement_range', { x, y });
+            const result = await this.rpc('movement_range', { unit_x: x, unit_y: y });
             if (result.success) {
                 // Clear previous highlights
                 this.clearHighlights();
@@ -1324,8 +1343,14 @@ class Game {
     }
     
     async showCombatPreview(attackerX, attackerY, defenderX, defenderY) {
-        // Create cache key
-        const cacheKey = `${attackerX},${attackerY}->${defenderX},${defenderY}`;
+        // Determine if we need to skip range check
+        const selectedTile = this.getTile(attackerX, attackerY);
+        const distance = Math.abs(defenderX - attackerX) + Math.abs(defenderY - attackerY);
+        const isDirectUnit = selectedTile?.unit && !this.isIndirectUnit(selectedTile.unit.type);
+        const skipRangeCheck = isDirectUnit && distance > 1;
+        
+        // Create cache key including skip_range_check
+        const cacheKey = `${attackerX},${attackerY}->${defenderX},${defenderY}:${skipRangeCheck}`;
         
         console.log(`Combat preview requested: ${cacheKey}`);
         
@@ -1341,7 +1366,8 @@ class Game {
                 attacker_x: attackerX,
                 attacker_y: attackerY,
                 defender_x: defenderX,
-                defender_y: defenderY
+                defender_y: defenderY,
+                skip_range_check: skipRangeCheck
             });
             
             console.log('Combat preview result:', result);
@@ -1739,6 +1765,11 @@ class Game {
             this.hasHighlights = false;
             this.render();
         }
+    }
+    
+    isIndirectUnit(unitType) {
+        // Check if unit is an indirect attacker
+        return ['ARTILLERY', 'ROCKET', 'BATTLESHIP', 'MISSILE', 'CARRIER', 'PIPERUNNER'].includes(unitType);
     }
     
     drawSprite(type, name, x, y) {

@@ -434,30 +434,61 @@ def reconstruct_unit_from_dict(unit_dict: dict):
         else:
             army = army_name
         
-        # Create UnitConfig (status) from the saved data
-        if isinstance(status_data, dict):
-            # If status is serialized as dict, reconstruct UnitConfig
+        # Get config data - might be in 'config' key or at top level
+        config_data = unit_dict.get('config', {})
+        
+        # CRITICAL FIX: Get the proper unit configuration from Config
+        # This ensures indirect units like ROCKET get correct range values (3-5)
+        # instead of defaulting to 1-1
+        from config import Config
+        game_config = Config()
+        proper_config = game_config.units.get(unit_type.name)
+        
+        if proper_config:
+            # Use the proper configuration from config.ini
+            unit_config = proper_config
+        else:
+            # Fallback only if unit type not found (shouldn't happen)
             unit_config = UnitConfig(
-                cls=UnitClass[status_data.get('cls', 'FOOT')] if isinstance(status_data.get('cls'), str) else status_data.get('cls', UnitClass.FOOT),
-                cost=status_data.get('cost', 1000),
-                move=status_data.get('move', 3),
-                rangemin=status_data.get('rangemin', 1),
-                rangemax=status_data.get('rangemax', 1),
-                fuel=status_data.get('fuel', 99),
-                vision=status_data.get('vision', 2),
+                cls=UnitClass[config_data.get('cls', 'FOOT')] if isinstance(config_data.get('cls'), str) else config_data.get('cls', UnitClass.FOOT),
+                cost=config_data.get('cost', 1000),
+                move=config_data.get('move', 3),
+                rangemin=config_data.get('rangemin', 1),
+                rangemax=config_data.get('rangemax', 1),
+                max_fuel=config_data.get('max_fuel', 99),
+                vision=config_data.get('vision', 2),
+                max_hp=config_data.get('max_hp', 100),
+                max_ammo=config_data.get('max_ammo', 99)
+            )
+        
+        # Create UnitStatus from the saved status data
+        from unit import UnitStatus
+        if isinstance(status_data, dict):
+            # Reconstruct UnitStatus from saved data
+            unit_status = UnitStatus(
                 hp=status_data.get('hp', 100),
-                ammo=status_data.get('ammo', 99),
-                cargo=status_data.get('cargo', [])
+                fuel=status_data.get('fuel', unit_config.max_fuel),
+                ammo=status_data.get('ammo', unit_config.max_ammo),
+                cargo=status_data.get('cargo', []),
+                has_moved_this_turn=status_data.get('has_moved_this_turn', False),
+                # Copy static attributes from config
+                cls=unit_config.cls,
+                cost=unit_config.cost,
+                move=unit_config.move,
+                rangemin=unit_config.rangemin,
+                rangemax=unit_config.rangemax,
+                vision=unit_config.vision
             )
         else:
-            # If status is already a UnitConfig object, use it
-            unit_config = status_data
+            # Create fresh status from config
+            unit_status = UnitStatus.from_config(unit_config)
         
         # Create the Unit object with all required parameters
         unit = Unit(
             army=army,
             type=unit_type,
-            status=unit_config,  # This was the missing required parameter!
+            status=unit_status,  # Now passing UnitStatus, not UnitConfig
+            config=unit_config,  # Also pass the config
             id=unit_id,
             can_move=unit_dict.get('can_move', True),
             can_attack=unit_dict.get('can_attack', True), 
@@ -483,17 +514,20 @@ def reconstruct_unit_from_dict(unit_dict: dict):
                 move=3,
                 rangemin=1,
                 rangemax=1,
-                fuel=99,
+                max_fuel=99,
                 vision=2,
-                hp=100,
-                ammo=99,
-                cargo=[]
+                max_hp=100,
+                max_ammo=99
             )
+            
+            from unit import UnitStatus
+            fallback_status = UnitStatus.from_config(fallback_config)
             
             return Unit(
                 army=Army.RED,
                 type=UnitType.INFANTRY,
-                status=fallback_config,  # Proper UnitConfig
+                status=fallback_status,  # Proper UnitStatus
+                config=fallback_config,  # Also provide config
                 id='fallback',
                 can_move=True,
                 can_attack=True,
@@ -1001,6 +1035,8 @@ def create_combat_test():
         board.grid[tile_index].unit = blue_tank
         
         games[token] = game_manager
+        # Save the game to persist the units
+        game_save(game_manager, token)
         app_logger.info(f"Created combat test game: {token}")
         return redirect(f'/game/{token}')
         
@@ -4967,7 +5003,8 @@ def resupply_unit_rpc(token: str, resupply_x: int, resupply_y: int,
 @jsonrpc.method('combat_preview')
 @log_rpc_performance
 def combat_preview_consolidated_rpc(token: str, attacker_x: int, attacker_y: int, 
-                                   defender_x: int, defender_y: int) -> dict:
+                                   defender_x: int, defender_y: int, 
+                                   skip_range_check: bool = False) -> dict:
     """
     Consolidated combat preview - comprehensive pre-attack information.
     Replaces: damage_estimate, damage_preview, old combat_preview
@@ -5017,12 +5054,16 @@ def combat_preview_consolidated_rpc(token: str, attacker_x: int, attacker_y: int
         if not attacker.can_attack:
             return {"success": False, "error": "Unit has already attacked this turn"}
         
-        # Check range
-        if not mngr.unit_can_attack(attacker, defender_x, defender_y):
+        # Check range (unless skip_range_check is True for hypothetical attacks)
+        if not skip_range_check and not mngr.unit_can_attack(attacker, defender_x, defender_y):
             return {"success": False, "error": "Target is out of range"}
         
         # Get comprehensive preview
-        preview = mngr.get_damage_preview(attacker_x, attacker_y, defender_x, defender_y)
+        # Pass hypothetical_distance=1 when skip_range_check is True (for previewing moves)
+        if skip_range_check:
+            preview = mngr.get_damage_preview(attacker_x, attacker_y, defender_x, defender_y, hypothetical_distance=1)
+        else:
+            preview = mngr.get_damage_preview(attacker_x, attacker_y, defender_x, defender_y)
         
         if "error" in preview:
             return {"success": False, "error": preview["error"]}

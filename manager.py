@@ -499,8 +499,13 @@ class GameManager:
         return result
 
     def get_damage_preview(self, attacker_x: int, attacker_y: int, 
-                        defender_x: int, defender_y: int) -> Dict:
-        """Get damage preview using authentic AW damage calculations"""
+                        defender_x: int, defender_y: int, hypothetical_distance: int = None) -> Dict:
+        """Get damage preview using authentic AW damage calculations
+        
+        Args:
+            hypothetical_distance: If provided, use this distance for calculations instead of actual distance.
+                                 Used for previewing attacks after movement.
+        """
         
         attacker = self.unit_at(attacker_x, attacker_y)
         defender = self.unit_at(defender_x, defender_y)
@@ -518,10 +523,18 @@ class GameManager:
         counter_damage = 0
         can_counter = False
         
-        # Authentic AW counter-attack logic: defender can counter ONLY if alive AFTER taking damage
-        if defender.status.hp > 0 and defender._select_weapon_damage(attacker) > 0:
+        # Authentic AW counter-attack logic: defender can counter ONLY if:
+        # 1. It's a direct unit (indirect units NEVER counter)
+        # 2. It survives the attack
+        # 3. It can damage the attacker
+        # 4. The attacker is within its range
+        if not defender.is_indirect() and defender.status.hp > 0 and defender._select_weapon_damage(attacker) > 0:
             # Calculate distance for range check
-            distance = abs(attacker_x - defender_x) + abs(attacker_y - defender_y)
+            # Use hypothetical distance if provided (for preview of moves)
+            if hypothetical_distance is not None:
+                distance = hypothetical_distance
+            else:
+                distance = abs(attacker_x - defender_x) + abs(attacker_y - defender_y)
             if defender.status.rangemin <= distance <= defender.status.rangemax:
                 # Check if defender survives the attack
                 defender_hp_after = defender.status.hp - attacker_damage
