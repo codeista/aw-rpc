@@ -14,6 +14,7 @@ class Game {
         this.combatPreviewCache = null;
         this.hasHighlights = false;
         this.canvasInitialized = false;
+        this.lastActedUnit = null;  // Track last unit that took an action
         
         this.init();
     }
@@ -493,6 +494,13 @@ class Game {
             // Always update board after RPC call
             await this.updateBoard();
             
+            // Track unit actions for turn mechanics
+            const actionMethods = ['unit_move', 'unit_wait', 'unit_capture', 'unit_attack', 
+                                 'unit_load', 'unit_unload', 'unit_resupply', 'unit_delete'];
+            if (actionMethods.includes(method) && params.x !== undefined && params.y !== undefined) {
+                this.lockPreviousUnit(params.x, params.y);
+            }
+            
             // Check if we should deselect after certain actions
             if (method === 'unit_move' && this.board?.selected) {
                 await this.checkPostActionSelection();
@@ -519,7 +527,15 @@ class Game {
         
         const data = await response.json();
         if (data.result) {
+            // Check for turn change
+            const previousTurn = this.board?.current_turn;
             this.board = data.result;
+            
+            // Reset last acted unit on turn change
+            if (previousTurn && previousTurn !== this.board.current_turn) {
+                this.lastActedUnit = null;
+                console.log(`Turn changed from ${previousTurn} to ${this.board.current_turn}`);
+            }
             
             // Debug log for selected unit
             if (this.board.selected) {
@@ -878,6 +894,11 @@ class Game {
                         item.disabled = tile.unit.has_moved || tile.unit.done;
                     }
                     break;
+                    
+                case 'delete':
+                    // Always available for own units
+                    item.disabled = false;
+                    break;
             }
         });
         
@@ -935,9 +956,8 @@ class Game {
                 
                 switch(action) {
                     case 'move':
-                        // Show movement highlights
-                        this.board.selected = { x, y };
-                        await this.showMovementRange(x, y);
+                        // Select unit and show movement highlights (same as left-click)
+                        await this.handleTileClick(x, y);
                         break;
                         
                     case 'wait':
@@ -953,23 +973,8 @@ class Game {
                         break;
                         
                     case 'load':
-                        // Find adjacent transport
-                        const offsets = [[0,-1], [1,0], [0,1], [-1,0]];
-                        for (const [dx, dy] of offsets) {
-                            const nx = x + dx;
-                            const ny = y + dy;
-                            const tile = this.getTile(nx, ny);
-                            if (tile?.unit && ['APC', 'LANDER', 'CRUISER', 'TCOPTER', 'BLACKBOAT'].includes(tile.unit.type)) {
-                                console.log(`Loading unit at (${x},${y}) into transport at (${nx},${ny})`);
-                                await this.rpc('unit_load', {
-                                    x: x,      // unit position
-                                    y: y,      // unit position  
-                                    x2: nx,    // transport position
-                                    y2: ny     // transport position
-                                });
-                                break;
-                            }
-                        }
+                        // Show available transports to load into
+                        this.showLoadOptions(x, y);
                         break;
                         
                     case 'unload':
@@ -982,8 +987,15 @@ class Game {
                         await this.rpc('unit_resupply', { x, y });
                         break;
                         
+                    case 'delete':
+                        await this.handleDeleteUnit(x, y);
+                        break;
+                        
                     case 'cancel':
-                        // Just close menu
+                        // Clear selection and highlights
+                        this.board.selected = null;
+                        this.clearHighlights();
+                        this.render();
                         break;
                 }
             });
@@ -1755,6 +1767,97 @@ class Game {
         menu.addEventListener('click', this.attackTargetClickHandler);
     }
     
+    lockPreviousUnit(currentX, currentY) {
+        // If acting with a different unit, mark the previous unit as done
+        if (this.lastActedUnit && 
+            (this.lastActedUnit.x !== currentX || this.lastActedUnit.y !== currentY)) {
+            
+            const lastTile = this.getTile(this.lastActedUnit.x, this.lastActedUnit.y);
+            if (lastTile && lastTile.unit) {
+                // Exception: Transports can continue loading/unloading
+                const transportTypes = ['APC', 'LANDER', 'CRUISER', 'T_COPTER', 'BLACK_BOAT'];
+                if (!transportTypes.includes(lastTile.unit.type)) {
+                    // Mark non-transport units as done
+                    lastTile.unit.done = true;
+                    console.log(`Locked previous unit ${lastTile.unit.type} at (${this.lastActedUnit.x}, ${this.lastActedUnit.y})`);
+                }
+            }
+        }
+        
+        // Update last acted unit
+        this.lastActedUnit = { x: currentX, y: currentY };
+    }
+    
+    async handleDeleteUnit(x, y) {
+        // Show confirmation dialog
+        const tile = this.getTile(x, y);
+        if (!tile || !tile.unit) return;
+        
+        const unitType = tile.unit.type;
+        const confirmed = confirm(`Are you sure you want to delete this ${unitType}?`);
+        
+        if (confirmed) {
+            // Call RPC to delete unit
+            const result = await this.rpc('unit_delete', { x, y });
+            if (result.success) {
+                console.log(`Deleted ${unitType} at (${x}, ${y})`);
+            }
+        }
+    }
+    
+    showLoadOptions(x, y) {
+        // Find adjacent transports
+        const offsets = [[0,-1], [1,0], [0,1], [-1,0]];
+        const transports = [];
+        
+        for (const [dx, dy] of offsets) {
+            const nx = x + dx;
+            const ny = y + dy;
+            const tile = this.getTile(nx, ny);
+            
+            if (tile?.unit && ['APC', 'LANDER', 'CRUISER', 'T_COPTER', 'BLACK_BOAT'].includes(tile.unit.type)) {
+                // Check if it's a friendly transport
+                let isFriendly = false;
+                if (this.board.current_player !== undefined) {
+                    isFriendly = tile.unit.player_id === this.board.current_player;
+                } else {
+                    isFriendly = tile.unit.army === this.board.current_turn;
+                }
+                
+                if (isFriendly) {
+                    transports.push({ x: nx, y: ny, type: tile.unit.type });
+                }
+            }
+        }
+        
+        if (transports.length === 0) {
+            console.log('No adjacent transports found');
+            return;
+        }
+        
+        if (transports.length === 1) {
+            // Only one transport, load directly
+            this.rpc('unit_load', {
+                x: x,      // unit position
+                y: y,      // unit position  
+                x2: transports[0].x,    // transport position
+                y2: transports[0].y     // transport position
+            });
+        } else {
+            // Multiple transports - highlight them and let user choose
+            this.clearHighlights();
+            transports.forEach(t => {
+                const tile = this.getTile(t.x, t.y);
+                if (tile) {
+                    tile.can_be_loaded_to = true;
+                    this.hasHighlights = true;
+                }
+            });
+            this.pendingLoadData = { unitX: x, unitY: y };
+            this.render();
+        }
+    }
+    
     restoreOriginalContextMenu() {
         // Restore the original context menu HTML structure
         const menu = document.getElementById('context-menu');
@@ -1766,6 +1869,7 @@ class Game {
             <button class="menu-item" data-action="load">Load</button>
             <button class="menu-item" data-action="unload">Unload</button>
             <button class="menu-item" data-action="repair">Supply/Repair</button>
+            <button class="menu-item" data-action="delete">Delete Unit</button>
             <div class="menu-divider"></div>
             <button class="menu-item" data-action="cancel">Cancel</button>
         `;

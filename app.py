@@ -2744,6 +2744,52 @@ def unit_move_rpc(token: str, x: int, y: int, x2: int, y2: int) -> dict:
             "details": {"from": {"x": x, "y": y}, "to": {"x": x2, "y": y2}}
         }
 
+@jsonrpc.method('unit_delete')
+@log_rpc_performance
+def unit_delete_rpc(token: str, x: int, y: int) -> dict:
+    """Delete a unit at the given position (with ownership check)"""
+    try:
+        mngr = game_load(token)
+        
+        # Check game state
+        if not mngr.board.game_active:
+            return {
+                "success": False,
+                "error": "Game has ended"
+            }
+        
+        # Get unit
+        unit = mngr.unit_at(x, y)
+        if not unit:
+            return {
+                "success": False,
+                "error": "No unit at position"
+            }
+        
+        # Check ownership
+        if unit.army != mngr.board.current_turn:
+            return {
+                "success": False,
+                "error": "Cannot delete enemy units"
+            }
+        
+        # Remove the unit
+        mngr.unit_remove(x, y)
+        game_save(token, mngr)
+        
+        app_logger.info(f'Unit deleted: {token} - {unit.type.name} at ({x},{y})')
+        
+        return {
+            "success": True,
+            "message": f"Deleted {unit.type.name}"
+        }
+    except Exception as ex:
+        app_logger.error(f'unit_delete failed for {token} at ({x},{y}): {str(ex)}')
+        return {
+            "success": False,
+            "error": str(ex)
+        }
+
 @jsonrpc.method('unit_select')
 @log_rpc_performance
 def unit_select_rpc(token: str, x: int, y: int) -> dict:
