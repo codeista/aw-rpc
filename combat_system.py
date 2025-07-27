@@ -36,7 +36,7 @@ class CombatSystem:
         """Authentic Advance Wars damage calculation"""
         
         # Use the unit's enhanced damage method which implements the authentic formula
-        return attacker.enhanced_attack_damage(defender, defender_tile, luck_enabled)
+        return attacker.enhanced_attack_damage(defender, defender_tile, luck_enabled, board_manager=self.manager)
     
     def can_counter_attack(self, attacker: 'Unit', defender: 'Unit', 
                           attacker_pos: Tuple[int, int], defender_pos: Tuple[int, int]) -> bool:

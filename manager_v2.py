@@ -66,12 +66,12 @@ class GameManagerV2(GameManager):
         """Update property ownership and adjust player statistics."""
         old_army = tile.mapTile.army
         
-        # Convert armies to player IDs
+        # Call parent method to handle COM_TOWER modifiers and other logic
+        super()._update_property_ownership(tile, new_army)
+        
+        # Convert armies to player IDs for v2-specific updates
         old_player = self.board_v2.get_player_for_army(old_army) if old_army else None
         new_player = self.board_v2.get_player_for_army(new_army) if new_army else None
-        
-        # Update tile ownership
-        tile.mapTile.army = new_army
         
         # Update player property counts
         if old_player is not None:

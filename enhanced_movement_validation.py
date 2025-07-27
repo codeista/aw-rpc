@@ -26,8 +26,9 @@ class MovementValidationResult:
 class EnhancedMovementValidator:
     """Enhanced movement validation with comprehensive checks"""
     
-    def __init__(self, board: GameBoard):
+    def __init__(self, board: GameBoard, manager=None):
         self.board = board
+        self.manager = manager  # GameManager reference for modifiers
     
     def validate_movement(self, unit: Unit, from_x: int, from_y: int, to_x: int, to_y: int) -> MovementValidationResult:
         """
@@ -157,13 +158,19 @@ class EnhancedMovementValidator:
     def _validate_movement_range(self, unit: Unit, from_x: int, from_y: int, to_x: int, to_y: int) -> MovementValidationResult:
         """Validate movement is within unit's movement range"""
         
+        # Get modified movement range if manager available
+        if self.manager:
+            movement_range = self.manager.get_modified_movement(unit)
+        else:
+            movement_range = unit.status.move
+        
         # Calculate Manhattan distance
         distance = abs(to_x - from_x) + abs(to_y - from_y)
         
-        if distance > unit.status.move:
+        if distance > movement_range:
             return MovementValidationResult(
                 False, 
-                f"Distance {distance} exceeds movement range {unit.status.move}",
+                f"Distance {distance} exceeds movement range {movement_range}",
                 MOVEMENT_COST=distance
             )
         
@@ -187,10 +194,16 @@ class EnhancedMovementValidator:
                     path_found=False
                 )
             
-            if pathfinding_cost > unit.status.move:
+            # Get modified movement range
+            if self.manager:
+                movement_range = self.manager.get_modified_movement(unit)
+            else:
+                movement_range = unit.status.move
+            
+            if pathfinding_cost > movement_range:
                 return MovementValidationResult(
                     False, 
-                    f"Path requires {pathfinding_cost} movement, but unit only has {unit.status.move}",
+                    f"Path requires {pathfinding_cost} movement, but unit only has {movement_range}",
                     MOVEMENT_COST=pathfinding_cost,
                     path_found=True
                 )
@@ -213,7 +226,13 @@ class EnhancedMovementValidator:
         except Exception as e:
             # Fallback to simple distance check if pathfinding fails
             distance = abs(to_x - from_x) + abs(to_y - from_y)
-            if distance <= unit.status.move:
+            # Get modified movement range
+            if self.manager:
+                movement_range = self.manager.get_modified_movement(unit)
+            else:
+                movement_range = unit.status.move
+                
+            if distance <= movement_range:
                 return MovementValidationResult(
                     True, 
                     f"Path validation failed, using simple distance check: {e}",
@@ -223,7 +242,7 @@ class EnhancedMovementValidator:
             else:
                 return MovementValidationResult(
                     False, 
-                    f"Path validation failed and distance {distance} > range {unit.status.move}: {e}"
+                    f"Path validation failed and distance {distance} > range {movement_range}: {e}"
                 )
     
     def _can_unit_traverse_terrain(self, unit: Unit, terrain_type: MapType) -> bool:
@@ -251,7 +270,12 @@ class EnhancedMovementValidator:
         valid_moves = []
         
         # Check all tiles within movement range
-        max_range = min(unit.status.move, unit.status.fuel)
+        # Get modified movement range
+        if self.manager:
+            movement_range = self.manager.get_modified_movement(unit)
+        else:
+            movement_range = unit.status.move
+        max_range = min(movement_range, unit.status.fuel)
         
         for y in range(max(0, from_y - max_range), min(self.board.height, from_y + max_range + 1)):
             for x in range(max(0, from_x - max_range), min(self.board.width, from_x + max_range + 1)):

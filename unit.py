@@ -429,16 +429,29 @@ class Unit:
         if self.type in {UnitType.APC, UnitType.BLACKBOAT}:
             return True
         
-    def enhanced_attack_damage(self, target, tile, luck_enabled=True):
-        """Enhanced attack damage using authentic Advance Wars formula"""
+    def enhanced_attack_damage(self, target, tile, luck_enabled=True, board_manager=None):
+        """Enhanced attack damage using authentic Advance Wars formula
+        
+        Args:
+            target: The defending unit
+            tile: The tile the defender is on
+            luck_enabled: Whether to include random luck factor
+            board_manager: Optional GameManager reference for COM_TOWER bonus calculation
+        """
         
         # B: Base damage from weapon selection
         base_damage = self._select_weapon_damage(target)
         if base_damage == 0:
             return 0
         
-        # AV: Attacker's attack value (default 100, modified by COs)
-        attack_value = UNIT_ATTACK_VALUES.get(self.type, 100)
+        # AV: Attacker's attack value (default 100, modified by COs and COM_TOWERs)
+        base_av = UNIT_ATTACK_VALUES.get(self.type, 100)
+        
+        # Apply all modifiers through board_manager
+        if board_manager:
+            attack_value = board_manager.get_modified_attack_value(self, base_av)
+        else:
+            attack_value = base_av
         
         # L: Luck damage (0-9 random bonus)
         luck = random.randint(0, 9) if luck_enabled else 0
@@ -450,7 +463,13 @@ class Unit:
         attacker_visual_hp = math.ceil(self.status.hp / 10)
         
         # DV: Defender's defense value (default 100, modified by COs)
-        defense_value = UNIT_DEFENSE_VALUES.get(target.type, 100)
+        base_dv = UNIT_DEFENSE_VALUES.get(target.type, 100)
+        
+        # Apply defense modifiers if board_manager available
+        if board_manager:
+            defense_value = board_manager.get_modified_defense_value(target, base_dv)
+        else:
+            defense_value = base_dv
         
         # DTR: Defending terrain defense stars
         terrain_defense = TERRAIN_DEFENSE.get(tile.mapTile.type, 0)

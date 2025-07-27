@@ -67,6 +67,10 @@ class GameManager:
         self.board = board
         self.transport_system = CompleteTransportSystem(self)
         self.app_logger = None  # Will be set by the calling code
+        
+        # Modifier system for COs, COM_TOWERs, etc.
+        self.modifiers = {}  # army -> list of modifiers
+        self._update_com_tower_modifiers()  # Initialize COM_TOWER modifiers
 
     def __repr__(self):
         return f"{self.__class__.__name__}"
@@ -250,6 +254,10 @@ class GameManager:
             self.board.total_red_properties += income
         elif new_army == Army.BLUE:
             self.board.total_blue_properties += income
+        
+        # Update COM_TOWER modifiers if a COM_TOWER was captured
+        if tile.mapTile.type == MapType.COM_TOWER:
+            self._update_com_tower_modifiers()
 
     def _update_army_funds(self, army: Army, amount: int) -> None:
         """Update army funds."""
@@ -272,6 +280,94 @@ class GameManager:
         elif hasattr(self.board, 'army_funds') and army in self.board.army_funds:
             return self.board.army_funds[army]
         return 0
+
+    def count_com_towers(self, army: Army) -> int:
+        """Count number of COM_TOWERs owned by specified army.
+        
+        Each COM_TOWER provides +10% attack bonus to all units of that army.
+        """
+        count = 0
+        for tile in self.board.grid:
+            if tile.mapTile.type == MapType.COM_TOWER and tile.mapTile.army == army:
+                count += 1
+        return count
+    
+    # =============================================================================
+    # MODIFIER SYSTEM
+    # =============================================================================
+    
+    def _update_com_tower_modifiers(self):
+        """Update COM_TOWER modifiers for all armies"""
+        from modifiers import COMTowerModifier
+        
+        # Remove existing COM_TOWER modifiers
+        for army in self.modifiers:
+            self.modifiers[army] = [m for m in self.modifiers[army] 
+                                  if not isinstance(m, COMTowerModifier)]
+        
+        # Add new COM_TOWER modifiers based on current ownership
+        for army in Army:
+            tower_count = self.count_com_towers(army)
+            if tower_count > 0:
+                self.add_modifier(army, COMTowerModifier(tower_count))
+    
+    def add_modifier(self, army: Army, modifier):
+        """Add a modifier for a specific army"""
+        if army not in self.modifiers:
+            self.modifiers[army] = []
+        self.modifiers[army].append(modifier)
+        # Sort by priority so higher priority modifiers apply last
+        self.modifiers[army].sort(key=lambda m: m.priority)
+    
+    def remove_modifier(self, army: Army, modifier):
+        """Remove a modifier for a specific army"""
+        if army in self.modifiers:
+            self.modifiers[army] = [m for m in self.modifiers[army] if m != modifier]
+    
+    def get_modifiers(self, army: Army):
+        """Get all modifiers for an army"""
+        return self.modifiers.get(army, [])
+    
+    def get_modified_attack_value(self, unit: Unit, base_av: float) -> float:
+        """Apply all attack modifiers for a unit"""
+        av = base_av
+        modifiers = self.get_modifiers(unit.army)
+        for modifier in modifiers:
+            av = modifier.modify_attack_value(unit, av)
+        return av
+    
+    def get_modified_defense_value(self, unit: Unit, base_dv: float) -> float:
+        """Apply all defense modifiers for a unit"""
+        dv = base_dv
+        for modifier in self.get_modifiers(unit.army):
+            dv = modifier.modify_defense_value(unit, dv)
+        return dv
+    
+    def get_modified_movement(self, unit: Unit) -> int:
+        """Get modified movement range for a unit"""
+        base_move = unit.config.move if hasattr(unit, 'config') else unit.status.move
+        move = base_move
+        for modifier in self.get_modifiers(unit.army):
+            move = modifier.modify_movement(unit, move)
+        return max(0, move)  # Ensure non-negative
+    
+    def get_modified_range(self, unit: Unit) -> Tuple[int, int]:
+        """Get modified attack range for a unit"""
+        min_range = unit.status.rangemin
+        max_range = unit.status.rangemax
+        for modifier in self.get_modifiers(unit.army):
+            min_range, max_range = modifier.modify_range(unit, min_range, max_range)
+        # Ensure valid range
+        min_range = max(1, min_range)
+        max_range = max(min_range, max_range)
+        return min_range, max_range
+    
+    def get_tile_from_unit(self, unit: Unit) -> Optional[GameTile]:
+        """Get the tile a unit is on (used by modifiers like Koal)"""
+        for tile in self.board.grid:
+            if tile.unit == unit:
+                return tile
+        return None
 
     def _update_army_statistics(self) -> None:
         """Update all army statistics in a single pass."""
@@ -517,7 +613,7 @@ class GameManager:
         defender_tile = self.tile_at(defender_x, defender_y)
         
         # Use unit's built-in enhanced damage calculation (authentic AW formula)
-        attacker_damage = attacker.enhanced_attack_damage(defender, defender_tile, luck_enabled=False)
+        attacker_damage = attacker.enhanced_attack_damage(defender, defender_tile, luck_enabled=False, board_manager=self)
         
         # Check for potential counter-attack
         counter_damage = 0
@@ -544,7 +640,7 @@ class GameManager:
                     # Calculate counter damage using defender's HP AFTER taking damage
                     original_hp = defender.status.hp
                     defender.status.hp = defender_hp_after  # Use actual reduced HP
-                    counter_damage = defender.enhanced_attack_damage(attacker, attacker_tile, luck_enabled=False)
+                    counter_damage = defender.enhanced_attack_damage(attacker, attacker_tile, luck_enabled=False, board_manager=self)
                     defender.status.hp = original_hp  # Restore original HP (this is just a preview)
         
         return {
@@ -585,7 +681,7 @@ class GameManager:
             return False
         
         # Use enhanced validator
-        validator = EnhancedMovementValidator(self.board)
+        validator = EnhancedMovementValidator(self.board, self)
         result = validator.validate_movement(unit, tile.x, tile.y, x, y)
         
         return result.valid    
@@ -1808,7 +1904,7 @@ class GameManager:
         if not tile:
             return []
         
-        validator = EnhancedMovementValidator(self.board)
+        validator = EnhancedMovementValidator(self.board, self)
         return validator.get_valid_moves(unit, tile.x, tile.y)
     
     def get_movement_preview(self, x: int, y: int, x2: int, y2: int) -> dict:
@@ -1816,7 +1912,7 @@ class GameManager:
         
         self._validate_coordinates(x, y, x2, y2)
         unit = self._validate_unit_exists(x, y)
-        validator = EnhancedMovementValidator(self.board)
+        validator = EnhancedMovementValidator(self.board, self)
         
         return validator.get_movement_preview(unit, x, y, x2, y2)
     
@@ -1845,7 +1941,7 @@ class GameManager:
         # Use the enhanced validator
         try:
             from enhanced_movement_validation import EnhancedMovementValidator
-            validator = EnhancedMovementValidator(self.board)
+            validator = EnhancedMovementValidator(self.board, self)
             return validator.validate_movement(unit, x, y, x2, y2)
         except Exception as e:
             return MovementValidationResult(False, f"Validation error: {str(e)}")
