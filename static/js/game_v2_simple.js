@@ -35,6 +35,9 @@ class Game {
         // Setup input handlers
         this.setupInput();
         
+        // Initialize context menu with all options
+        this.restoreOriginalContextMenu();
+        
         // Get initial board state
         await this.rpc('game_board');
     }
@@ -763,6 +766,11 @@ class Game {
             item.style.display = 'block';
             
             switch(action) {
+                case 'move':
+                    // Move is available if unit hasn't moved yet
+                    item.disabled = tile.unit.has_moved || tile.unit.done;
+                    break;
+                    
                 case 'wait':
                     // Wait is always available if unit hasn't moved
                     item.disabled = tile.unit.has_moved || tile.unit.done;
@@ -926,6 +934,12 @@ class Game {
                 const y = this.contextMenuTarget.y;
                 
                 switch(action) {
+                    case 'move':
+                        // Show movement highlights
+                        this.board.selected = { x, y };
+                        await this.showMovementRange(x, y);
+                        break;
+                        
                     case 'wait':
                         await this.rpc('unit_wait', { x, y });
                         break;
@@ -1745,6 +1759,7 @@ class Game {
         // Restore the original context menu HTML structure
         const menu = document.getElementById('context-menu');
         menu.innerHTML = `
+            <button class="menu-item" data-action="move">Move</button>
             <button class="menu-item" data-action="wait">Wait</button>
             <button class="menu-item" data-action="capture">Capture</button>
             <button class="menu-item" data-action="attack">Attack</button>
