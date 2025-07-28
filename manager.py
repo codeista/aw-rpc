@@ -625,13 +625,19 @@ class GameManager:
         # 3. It can damage the attacker
         # 4. The attacker is within its range
         if not defender.is_indirect() and defender.status.hp > 0 and defender._select_weapon_damage(attacker) > 0:
-            # Calculate distance for range check
-            # Use hypothetical distance if provided (for preview of moves)
+            # For hypothetical attacks (skip_range_check), assume the attacker will be adjacent
+            # This is used when previewing attacks after movement
             if hypothetical_distance is not None:
-                distance = hypothetical_distance
+                # When hypothetical_distance is set, we're previewing a move+attack
+                # For direct units, assume they can counter if attacker would be in range
+                # Since most direct units have range 1, check if hypothetical distance allows counter
+                can_counter_based_on_range = defender.status.rangemin <= hypothetical_distance <= defender.status.rangemax
             else:
+                # Normal case: check actual distance
                 distance = abs(attacker_x - defender_x) + abs(attacker_y - defender_y)
-            if defender.status.rangemin <= distance <= defender.status.rangemax:
+                can_counter_based_on_range = defender.status.rangemin <= distance <= defender.status.rangemax
+            
+            if can_counter_based_on_range:
                 # Check if defender survives the attack
                 defender_hp_after = defender.status.hp - attacker_damage
                 if defender_hp_after > 0:  # Only counter if defender survives
@@ -1615,7 +1621,29 @@ class GameManager:
                 if remaining_hqs == 0:
                     # Enemy has lost all HQs - victory!
                     self.board.game_active = False
-                    self.board.winner = capturing_army
+                    
+                    # Handle V2 games with player names
+                    from manager_v2 import GameManagerV2
+                    if isinstance(self, GameManagerV2) and hasattr(self, 'board_v2'):
+                        # Set V2 board status
+                        self.board_v2.game_active = False
+                        
+                        # Get player name for winner
+                        capturing_player_id = self.board_v2.army_to_player.get(capturing_army)
+                        if capturing_player_id is not None:
+                            capturing_player = self.player_manager.get_player(capturing_player_id)
+                            self.board_v2.winner = capturing_player.name
+                            self.board.winner = capturing_player.name
+                        else:
+                            self.board_v2.winner = capturing_army.name
+                            self.board.winner = capturing_army.name
+                        
+                        self.board_v2.victory_type = "HQ Capture"
+                        self.board.victory_type = "HQ Capture"
+                    else:
+                        # Legacy system
+                        self.board.winner = capturing_army.name
+                        self.board.victory_type = "HQ Capture"
                     
                     victory_result = {
                         "victory": True,

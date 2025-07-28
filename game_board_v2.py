@@ -28,6 +28,8 @@ class GameBoardV2:
     current_player: int = 0
     days: int = 1
     game_active: bool = True
+    winner: Optional[str] = None  # Player name who won
+    victory_type: Optional[str] = None  # How they won (e.g. "HQ Capture", "Elimination")
     
     # Army mapping for backward compatibility
     army_to_player: Dict[Army, int] = field(default_factory=dict)

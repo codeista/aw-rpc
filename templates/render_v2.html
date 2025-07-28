@@ -344,7 +344,7 @@
             align-items: center;
             justify-content: center;
             backdrop-filter: blur(5px);
-            z-index: 1000;
+            z-index: 9999;
         }
         
         #modal-content {
@@ -657,6 +657,31 @@
         
         <!-- Info Panels -->
         <div id="info-panels">
+            <!-- Game Status Panel -->
+            <div id="game-status-panel" class="info-panel" style="display: none;">
+                <h4>Game Status</h4>
+                <div class="stat-row">
+                    <span class="stat-label">Status:</span>
+                    <span class="stat-value" id="game-status">Active</span>
+                </div>
+                <div class="stat-row" id="winner-row" style="display: none;">
+                    <span class="stat-label">Winner:</span>
+                    <span class="stat-value" id="game-winner" style="color: #2ecc71; font-weight: bold;">-</span>
+                </div>
+                <div class="stat-row" id="victory-type-row" style="display: none;">
+                    <span class="stat-label">Victory Type:</span>
+                    <span class="stat-value" id="victory-type">-</span>
+                </div>
+            </div>
+            
+            <!-- Player Stats Panel -->
+            <div id="player-stats-panel" class="info-panel" style="display: block;">
+                <h4>Player Statistics</h4>
+                <div id="player-stats-content">
+                    <!-- Will be dynamically populated -->
+                </div>
+            </div>
+            
             <!-- Action Prompt Panel -->
             <div id="action-prompt-panel" class="info-panel" style="display: block; background: rgba(52, 152, 219, 0.1); border-color: rgba(52, 152, 219, 0.3);">
                 <h4 style="margin-bottom: 5px; font-size: 18px;">Action</h4>

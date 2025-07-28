@@ -408,23 +408,32 @@ class Game {
         });
         
         // Modal buttons
-        document.getElementById('create').addEventListener('click', async () => {
-            const select = document.getElementById('unit-select');
-            const modal = document.getElementById('modal');
-            
-            if (this.productionCoords && select.value) {
-                await this.rpc('produce_unit', {
-                    x: this.productionCoords.x,
-                    y: this.productionCoords.y,
-                    unit_type: select.value
-                });
-                modal.style.display = 'none';
-            }
-        });
+        const createBtn = document.getElementById('create');
+        const cancelBtn = document.getElementById('cancel');
         
-        document.getElementById('cancel').addEventListener('click', () => {
-            document.getElementById('modal').style.display = 'none';
-        });
+        if (createBtn && cancelBtn) {
+            console.log('Attaching modal event handlers');
+            
+            createBtn.addEventListener('click', async () => {
+                const select = document.getElementById('unit-select');
+                const modal = document.getElementById('modal');
+                
+                if (this.productionCoords && select.value) {
+                    await this.rpc('produce_unit', {
+                        x: this.productionCoords.x,
+                        y: this.productionCoords.y,
+                        unit_type: select.value
+                    });
+                    modal.style.display = 'none';
+                }
+            });
+            
+            cancelBtn.addEventListener('click', () => {
+                document.getElementById('modal').style.display = 'none';
+            });
+        } else {
+            console.error('Modal buttons not found! Create:', createBtn, 'Cancel:', cancelBtn);
+        }
         
         // Help panel toggle
         const helpToggle = document.getElementById('help-toggle');
@@ -665,7 +674,16 @@ class Game {
             
             if (result && result.success && result.production_options && result.production_options.available_units) {
                 const select = document.getElementById('unit-select');
+                const modal = document.getElementById('modal');
+                
+                if (!select || !modal) {
+                    console.error('Modal elements missing! Select:', select, 'Modal:', modal);
+                    return;
+                }
+                
                 select.innerHTML = '';
+                
+                console.log(`Loading ${result.production_options.available_units.length} units into production menu`);
                 
                 result.production_options.available_units.forEach(opt => {
                     const option = document.createElement('option');
@@ -679,8 +697,8 @@ class Game {
                 });
                 
                 this.productionCoords = { x, y };
-                document.getElementById('modal').style.display = 'flex';
-                console.log('Production modal should now be visible');
+                modal.style.display = 'flex';
+                console.log('Production modal displayed');
             } else {
                 console.error('No production options available:', result);
             }
@@ -1270,6 +1288,12 @@ class Game {
                 mapNameElement.textContent = this.board.map_name;
             }
         }
+        
+        // Update game status panel
+        this.updateGameStatusPanel();
+        
+        // Update player statistics
+        this.updatePlayerStatsPanel();
         
         // Update browser title
         const turn = this.board.current_turn || 'Loading';
@@ -1963,6 +1987,170 @@ class Game {
                 sprite.x, sourceY, sprite.w, fullHeight,
                 x, drawY, sprite.w, fullHeight
             );
+        }
+    }
+    
+    updateGameStatusPanel() {
+        const panel = document.getElementById('game-status-panel');
+        if (!panel || !this.board) return;
+        
+        // Check if game is active or ended
+        const isActive = this.board.game_active !== false;
+        
+        if (!isActive) {
+            // Game has ended, show the panel
+            panel.style.display = 'block';
+            
+            // Update status
+            document.getElementById('game-status').textContent = 'Ended';
+            document.getElementById('game-status').style.color = '#e74c3c';
+            
+            // Show winner info if available
+            if (this.board.winner) {
+                document.getElementById('winner-row').style.display = 'flex';
+                document.getElementById('game-winner').textContent = this.board.winner;
+                
+                // Show victory type if available
+                if (this.board.victory_type) {
+                    document.getElementById('victory-type-row').style.display = 'flex';
+                    document.getElementById('victory-type').textContent = this.board.victory_type;
+                }
+            }
+        } else {
+            // Game is active, hide the panel
+            panel.style.display = 'none';
+        }
+    }
+    
+    updatePlayerStatsPanel() {
+        const content = document.getElementById('player-stats-content');
+        if (!content || !this.board) return;
+        
+        // Clear existing content
+        content.innerHTML = '';
+        
+        // Calculate player statistics
+        const playerStats = {};
+        
+        // Initialize player data
+        if (this.board.players) {
+            // V2 game with player data
+            this.board.players.forEach(player => {
+                playerStats[player.id] = {
+                    name: player.name,
+                    color: player.color,
+                    units: 0,
+                    unitValue: 0,
+                    properties: 0,
+                    funds: this.board.player_funds ? (this.board.player_funds[player.id] || 0) : 0
+                };
+            });
+        } else {
+            // Legacy game
+            playerStats[0] = {
+                name: 'Red Army',
+                color: '#e74c3c',
+                units: 0,
+                unitValue: 0,
+                properties: 0,
+                funds: this.board.red_funds || 0
+            };
+            playerStats[1] = {
+                name: 'Blue Army',
+                color: '#3498db',
+                units: 0,
+                unitValue: 0,
+                properties: 0,
+                funds: this.board.blue_funds || 0
+            };
+        }
+        
+        // Count units and properties
+        this.board.grid.forEach(tile => {
+            // Count units
+            if (tile.unit) {
+                let playerId;
+                if (tile.unit.player_id !== undefined) {
+                    playerId = tile.unit.player_id;
+                } else {
+                    // Legacy: map army to player ID
+                    playerId = tile.unit.army === 'RED' ? 0 : 1;
+                }
+                
+                if (playerStats[playerId]) {
+                    playerStats[playerId].units++;
+                    // Estimate unit value (simplified - should use actual costs)
+                    const unitCosts = {
+                        'INFANTRY': 1000, 'MECH': 3000, 'RECON': 4000, 'TANK': 7000,
+                        'MD_TANK': 16000, 'NEOTANK': 22000, 'APC': 5000, 'ARTILLERY': 6000,
+                        'ROCKET': 15000, 'ANTI_AIR': 8000, 'MISSILE': 12000, 'B_COPTER': 9000,
+                        'T_COPTER': 5000, 'FIGHTER': 20000, 'BOMBER': 22000, 'BATTLESHIP': 28000,
+                        'CRUISER': 18000, 'LANDER': 12000, 'SUB': 20000, 'BLACK_BOAT': 7500
+                    };
+                    playerStats[playerId].unitValue += unitCosts[tile.unit.type] || 10000;
+                }
+            }
+            
+            // Count properties
+            if (tile.mapTile && ['CITY', 'FACTORY', 'AIRPORT', 'PORT', 'HQ', 'BASE_TOWER_0', 'BASE_TOWER_1', 'BASE_TOWER_2', 'BASE_TOWER_3', 'BASE_TOWER_4'].includes(tile.mapTile.type)) {
+                let playerId;
+                if (tile.mapTile.player_id !== undefined) {
+                    playerId = tile.mapTile.player_id;
+                } else if (tile.mapTile.army) {
+                    // Legacy: map army to player ID
+                    playerId = tile.mapTile.army === 'RED' ? 0 : 1;
+                } else {
+                    return; // Neutral property
+                }
+                
+                if (playerStats[playerId]) {
+                    playerStats[playerId].properties++;
+                }
+            }
+        });
+        
+        // Create stat rows for each player
+        Object.entries(playerStats).forEach(([playerId, stats]) => {
+            const playerDiv = document.createElement('div');
+            playerDiv.style.marginBottom = '15px';
+            playerDiv.style.borderBottom = '1px solid rgba(255,255,255,0.1)';
+            playerDiv.style.paddingBottom = '10px';
+            
+            // Player name header
+            const nameDiv = document.createElement('div');
+            nameDiv.style.fontSize = '14px';
+            nameDiv.style.fontWeight = '600';
+            nameDiv.style.color = stats.color;
+            nameDiv.style.marginBottom = '8px';
+            nameDiv.textContent = stats.name;
+            playerDiv.appendChild(nameDiv);
+            
+            // Stats
+            const statsData = [
+                { label: 'Units:', value: stats.units },
+                { label: 'Unit Value:', value: stats.unitValue.toLocaleString() },
+                { label: 'Properties:', value: stats.properties },
+                { label: 'Funds:', value: stats.funds.toLocaleString() }
+            ];
+            
+            statsData.forEach(stat => {
+                const row = document.createElement('div');
+                row.className = 'stat-row';
+                row.innerHTML = `
+                    <span class="stat-label">${stat.label}</span>
+                    <span class="stat-value">${stat.value}</span>
+                `;
+                playerDiv.appendChild(row);
+            });
+            
+            content.appendChild(playerDiv);
+        });
+        
+        // Remove last border
+        if (content.lastChild) {
+            content.lastChild.style.borderBottom = 'none';
+            content.lastChild.style.paddingBottom = '0';
+            content.lastChild.style.marginBottom = '0';
         }
     }
 }

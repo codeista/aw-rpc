@@ -45,6 +45,10 @@ class GameBoard():
     
     # Reference to the original map
     map: Optional[Map] = None
+    
+    # Game end state
+    winner: Optional[str] = None  # Name of winning army
+    victory_type: Optional[str] = None  # How they won
 
     @classmethod
     def create(cls, map: Map):

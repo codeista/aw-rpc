@@ -137,4 +137,80 @@ class CombatSystem:
         if result.attacker_destroyed:
             self.manager.unit_remove(attacker_x, attacker_y)
         
+        # Check for elimination victory after units are removed
+        self._check_elimination_victory()
+        
         return result
+    
+    def _check_elimination_victory(self):
+        """Check if any army has been eliminated after combat"""
+        from manager_v2 import GameManagerV2
+        
+        # Count units for each player/army
+        if isinstance(self.manager, GameManagerV2):
+            # V2 system - count by player
+            player_unit_counts = {}
+            for tile in self.manager.board.grid:
+                if tile.unit:
+                    player_id = tile.unit.player_id if hasattr(tile.unit, 'player_id') else None
+                    if player_id is None:
+                        # Fallback to army mapping
+                        player_id = self.manager.board_v2.army_to_player.get(tile.unit.army)
+                    
+                    if player_id is not None:
+                        if player_id not in player_unit_counts:
+                            player_unit_counts[player_id] = 0
+                        player_unit_counts[player_id] += 1
+            
+            # Find players with units
+            players_with_units = [pid for pid, count in player_unit_counts.items() if count > 0]
+            
+            # Check for elimination victory
+            if (len(players_with_units) == 1 and 
+                self.manager.board_v2.days > 0 and 
+                self.manager.board_v2.game_active):
+                
+                winner_player_id = players_with_units[0]
+                winner_player = self.manager.player_manager.get_player(winner_player_id)
+                
+                self.manager.board_v2.game_active = False
+                self.manager.board_v2.winner = winner_player.name
+                self.manager.board_v2.victory_type = "Elimination"
+                
+                # Log victory
+                try:
+                    from logging import getLogger
+                    logger = getLogger('awrpc')
+                    logger.info(f"🎉 VICTORY: {winner_player.name} wins by elimination!")
+                except:
+                    print(f"🎉 VICTORY: {winner_player.name} wins by elimination!")
+        else:
+            # Legacy system - count by army
+            army_unit_counts = {}
+            for tile in self.manager.board.grid:
+                if tile.unit:
+                    army = tile.unit.army
+                    if army not in army_unit_counts:
+                        army_unit_counts[army] = 0
+                    army_unit_counts[army] += 1
+            
+            # Find armies with units
+            armies_with_units = [army for army, count in army_unit_counts.items() if count > 0]
+            
+            # Check for elimination victory
+            if (len(armies_with_units) == 1 and 
+                self.manager.board.days > 0 and 
+                self.manager.board.game_active):
+                
+                winner_army = armies_with_units[0]
+                self.manager.board.game_active = False
+                self.manager.board.winner = winner_army.name
+                self.manager.board.victory_type = "Elimination"
+                
+                # Log victory
+                try:
+                    from logging import getLogger
+                    logger = getLogger('awrpc')
+                    logger.info(f"🎉 VICTORY: {winner_army.name} wins by elimination!")
+                except:
+                    print(f"🎉 VICTORY: {winner_army.name} wins by elimination!")
