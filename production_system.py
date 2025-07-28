@@ -196,9 +196,6 @@ class ProductionSystem:
         if facility_tile.mapTile.army != army:
             return {"error": "Facility not owned by army"}
         
-        if facility_tile.unit:
-            return {"error": "Facility is occupied"}
-        
         current_funds = self.manager._get_army_funds(army)
         available_units = []
         
@@ -207,7 +204,7 @@ class ProductionSystem:
             can_afford = current_funds >= cost
             
             available_units.append({
-                "unit_type": unit_type.name,
+                "type": unit_type.name,  # Changed from "unit_type" to "type" to match test expectations
                 "cost": cost,
                 "can_afford": can_afford
             })
@@ -215,7 +212,8 @@ class ProductionSystem:
         return {
             "facility_type": facility_type.name,
             "current_funds": current_funds,
-            "available_units": available_units
+            "units": available_units,  # Changed from "available_units" to "units" to match test expectations
+            "is_occupied": facility_tile.unit is not None  # Include occupation status
         }
     
     def calculate_daily_income(self, army: Army) -> int:

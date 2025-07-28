@@ -27,8 +27,14 @@ def rpc_call(method: str, params: dict = None) -> dict:
         result = response.json()
         if "error" in result:
             return {"error": result["error"]}
-        # Return the entire result if it exists, otherwise empty dict
-        return result.get("result", result)
+        
+        # Check if result contains an error structure
+        result_data = result.get("result", result)
+        if isinstance(result_data, dict) and result_data.get("error") == True:
+            # This is an error response wrapped in result
+            return {"error": result_data.get("message", "Unknown error")}
+        
+        return result_data
     except Exception as e:
         return {"error": f"Request failed: {str(e)}"}
 
@@ -104,7 +110,7 @@ def test_factory_production():
     print(f"   📊 Initial state - Turn: {current_turn}, RED funds: {initial_funds}")
     
     # Factory locations for RED: (0,3) and (1,4)
-    factory_x, factory_y = 0, 3
+    factory_x, factory_y = 0, 4
     
     # Test creating different ground units
     ground_units = [
@@ -116,6 +122,7 @@ def test_factory_production():
     ]
     
     passed = 0
+    unit_index = 0
     for unit_type, expected_cost in ground_units:
         ensure_correct_turn(game_id, "RED")
         
@@ -142,21 +149,25 @@ def test_factory_production():
             board = rpc_call("game_board", {"token": game_id})
             print(f"      Current turn: {board.get('current_turn')}, RED funds: {get_player_funds(board, 'RED')}")
         else:
-            # If we got a unit back (either as unit object or tile with unit), it was created
-            if (result.get("unit") or result.get("type") == unit_type or 
-                (result.get("unit") and result["unit"].get("type") == unit_type)):
-                # Check funds after
-                board = rpc_call("game_board", {"token": game_id})
-                funds_after = get_player_funds(board, "RED")
-                actual_cost = funds_before - funds_after
-                
-                if actual_cost == expected_cost:
-                    print(f"   ✅ {unit_type} created for {actual_cost} funds")
-                    passed += 1
+            # Successful unit creation returns tile info with the unit
+            # Check if response contains tile info with a unit
+            if "mapTile" in result and "unit" in result:
+                unit_in_result = result.get("unit", {})
+                if unit_in_result.get("type") == unit_type:
+                    # Check funds after
+                    board = rpc_call("game_board", {"token": game_id})
+                    funds_after = get_player_funds(board, "RED")
+                    actual_cost = funds_before - funds_after
+                    
+                    if actual_cost == expected_cost:
+                        print(f"   ✅ {unit_type} created for {actual_cost} funds")
+                        passed += 1
+                    else:
+                        print(f"   ❌ {unit_type} cost mismatch: expected {expected_cost}, got {actual_cost}")
                 else:
-                    print(f"   ❌ {unit_type} cost mismatch: expected {expected_cost}, got {actual_cost}")
+                    print(f"   ❌ Wrong unit type created: expected {unit_type}, got {unit_in_result.get('type')}")
             else:
-                print(f"   ❌ Unexpected response for {unit_type}: {str(result)[:100]}")
+                print(f"   ❌ Unexpected response format for {unit_type}: {str(result)[:100]}")
         
         # Move unit away to free the factory
         # Skip moving if unit creation failed
@@ -169,14 +180,27 @@ def test_factory_production():
         
         # Now move the unit away
         ensure_correct_turn(game_id, "RED")
+        # Move to different locations to avoid collision
+        # INFANTRY to (1,4), MECH to (0,3), RECON to (0,5), etc.
+        move_offsets = [(1, 0), (0, -1), (0, 1), (1, 1), (1, -1)]
+        dx, dy = move_offsets[unit_index % len(move_offsets)]
         move_result = rpc_call("unit_move", {
             "token": game_id,
             "x": factory_x, "y": factory_y,
-            "x2": factory_x + 1, "y2": factory_y
+            "x2": factory_x + dx, "y2": factory_y + dy
         })
+        unit_index += 1
         
         if "error" in move_result:
-            print(f"      ⚠️  Failed to move unit: {move_result.get('error', 'Unknown')}")
+            if isinstance(move_result.get('error'), dict):
+                error_msg = move_result['error'].get('message', str(move_result['error']))
+            else:
+                error_msg = move_result.get('message', move_result.get('error', 'Unknown'))
+            print(f"      ⚠️  Failed to move unit: {error_msg}")
+        else:
+            # Move successful - check if it returned tile info
+            if "mapTile" in move_result or "x" in move_result:
+                print(f"      ✅ Unit moved successfully")
         
         # End turn after movement
         rpc_call("army_end_turn", {"token": game_id})
@@ -192,8 +216,8 @@ def test_airport_production():
     if not game_id:
         return False
     
-    # Airport location for RED: (0,8)
-    airport_x, airport_y = 0, 8
+    # Airport location for RED: (0,7)
+    airport_x, airport_y = 0, 7
     
     # Test creating air units
     air_units = [
@@ -204,6 +228,7 @@ def test_airport_production():
     ]
     
     passed = 0
+    unit_index = 0
     for unit_type, expected_cost in air_units:
         ensure_correct_turn(game_id, "RED")
         
@@ -230,21 +255,25 @@ def test_airport_production():
             board = rpc_call("game_board", {"token": game_id})
             print(f"      Current turn: {board.get('current_turn')}, RED funds: {get_player_funds(board, 'RED')}")
         else:
-            # If we got a unit back (either as unit object or tile with unit), it was created
-            if (result.get("unit") or result.get("type") == unit_type or 
-                (result.get("unit") and result["unit"].get("type") == unit_type)):
-                # Check funds after
-                board = rpc_call("game_board", {"token": game_id})
-                funds_after = get_player_funds(board, "RED")
-                actual_cost = funds_before - funds_after
-                
-                if actual_cost == expected_cost:
-                    print(f"   ✅ {unit_type} created for {actual_cost} funds")
-                    passed += 1
+            # Successful unit creation returns tile info with the unit
+            # Check if response contains tile info with a unit
+            if "mapTile" in result and "unit" in result:
+                unit_in_result = result.get("unit", {})
+                if unit_in_result.get("type") == unit_type:
+                    # Check funds after
+                    board = rpc_call("game_board", {"token": game_id})
+                    funds_after = get_player_funds(board, "RED")
+                    actual_cost = funds_before - funds_after
+                    
+                    if actual_cost == expected_cost:
+                        print(f"   ✅ {unit_type} created for {actual_cost} funds")
+                        passed += 1
+                    else:
+                        print(f"   ❌ {unit_type} cost mismatch: expected {expected_cost}, got {actual_cost}")
                 else:
-                    print(f"   ❌ {unit_type} cost mismatch: expected {expected_cost}, got {actual_cost}")
+                    print(f"   ❌ Wrong unit type created: expected {unit_type}, got {unit_in_result.get('type')}")
             else:
-                print(f"   ❌ Unexpected response for {unit_type}: {str(result)[:100]}")
+                print(f"   ❌ Unexpected response format for {unit_type}: {str(result)[:100]}")
         
         # Move unit away to free the airport
         # First end turns to enable movement
@@ -253,11 +282,15 @@ def test_airport_production():
         
         # Now move the unit away
         ensure_correct_turn(game_id, "RED")
+        # Move to different locations to avoid collision
+        move_offsets = [(1, 0), (0, -1), (0, 1), (-1, 0)]
+        dx, dy = move_offsets[unit_index % len(move_offsets)]
         rpc_call("unit_move", {
             "token": game_id,
             "x": airport_x, "y": airport_y,
-            "x2": airport_x + 1, "y2": airport_y
+            "x2": airport_x + dx, "y2": airport_y + dy
         })
+        unit_index += 1
         
         # End turn after movement
         rpc_call("army_end_turn", {"token": game_id})
@@ -286,6 +319,7 @@ def test_port_production():
     ]
     
     passed = 0
+    unit_index = 0
     for unit_type, expected_cost in naval_units:
         ensure_correct_turn(game_id, "RED")
         
@@ -317,21 +351,25 @@ def test_port_production():
             board = rpc_call("game_board", {"token": game_id})
             print(f"      Current turn: {board.get('current_turn')}, RED funds: {get_player_funds(board, 'RED')}")
         else:
-            # If we got a unit back (either as unit object or tile with unit), it was created
-            if (result.get("unit") or result.get("type") == unit_type or 
-                (result.get("unit") and result["unit"].get("type") == unit_type)):
-                # Check funds after
-                board = rpc_call("game_board", {"token": game_id})
-                funds_after = get_player_funds(board, "RED")
-                actual_cost = funds_before - funds_after
-                
-                if actual_cost == expected_cost:
-                    print(f"   ✅ {unit_type} created for {actual_cost} funds")
-                    passed += 1
+            # Successful unit creation returns tile info with the unit
+            # Check if response contains tile info with a unit
+            if "mapTile" in result and "unit" in result:
+                unit_in_result = result.get("unit", {})
+                if unit_in_result.get("type") == unit_type:
+                    # Check funds after
+                    board = rpc_call("game_board", {"token": game_id})
+                    funds_after = get_player_funds(board, "RED")
+                    actual_cost = funds_before - funds_after
+                    
+                    if actual_cost == expected_cost:
+                        print(f"   ✅ {unit_type} created for {actual_cost} funds")
+                        passed += 1
+                    else:
+                        print(f"   ❌ {unit_type} cost mismatch: expected {expected_cost}, got {actual_cost}")
                 else:
-                    print(f"   ❌ {unit_type} cost mismatch: expected {expected_cost}, got {actual_cost}")
+                    print(f"   ❌ Wrong unit type created: expected {unit_type}, got {unit_in_result.get('type')}")
             else:
-                print(f"   ❌ Unexpected response for {unit_type}: {str(result)[:100]}")
+                print(f"   ❌ Unexpected response format for {unit_type}: {str(result)[:100]}")
         
         # Move unit away to free the airport
         # First end turns to enable movement
@@ -340,11 +378,15 @@ def test_port_production():
         
         # Now move the unit away
         ensure_correct_turn(game_id, "RED")
+        # Move to different locations to avoid collision
+        move_offsets = [(1, 0), (0, 1), (2, 0), (1, 1), (2, 1)]
+        dx, dy = move_offsets[unit_index % len(move_offsets)]
         rpc_call("unit_move", {
             "token": game_id,
             "x": port_x, "y": port_y,
-            "x2": port_x + 1, "y2": port_y
+            "x2": port_x + dx, "y2": port_y + dy
         })
+        unit_index += 1
         
         # End turn after movement
         rpc_call("army_end_turn", {"token": game_id})
@@ -362,8 +404,8 @@ def test_production_options():
     
     # Test different facility types
     facilities = [
-        ((0, 3), "FACTORY", ["INFANTRY", "MECH", "RECON", "TANK", "APC"]),
-        ((0, 8), "AIRPORT", ["TCOPTER", "BCOPTER", "FIGHTER", "BOMBER"]),
+        ((0, 4), "FACTORY", ["INFANTRY", "MECH", "RECON", "TANK", "APC"]),
+        ((0, 7), "AIRPORT", ["TCOPTER", "BCOPTER", "FIGHTER", "BOMBER"]),
         ((0, 0), "PORT", ["LANDER", "CRUISER", "SUB", "BATTLESHIP", "BLACKBOAT"])
     ]
     
@@ -375,17 +417,26 @@ def test_production_options():
             "y": y
         })
         
-        if result.get("success"):
-            options = result.get("options", [])
-            available_types = [opt["type"] for opt in options]
+        if "error" not in result:
+            # Check the response structure
+            if result.get("success") == True and "production_options" in result:
+                options = result.get("production_options", {}).get("units", [])
+                available_types = [opt["type"] for opt in options if isinstance(opt, dict)]
+            else:
+                # Handle direct response format
+                options = result.get("units", [])
+                available_types = [opt["type"] for opt in options if isinstance(opt, dict)]
             
             # Check if expected units are available
             missing = [u for u in expected_units if u not in available_types]
-            if not missing:
+            if not missing and available_types:
                 print(f"   ✅ {facility_type} has correct production options")
                 passed += 1
             else:
-                print(f"   ❌ {facility_type} missing units: {missing}")
+                if not available_types:
+                    print(f"   ❌ {facility_type} returned no units")
+                else:
+                    print(f"   ❌ {facility_type} missing units: {missing}")
         else:
             print(f"   ❌ Failed to get options for {facility_type}: {result.get('error')}")
     
@@ -407,7 +458,7 @@ def test_facility_occupation():
         "army": "RED",
         "unit_type": "INFANTRY",
         "x": 0,
-        "y": 3  # Factory position
+        "y": 4  # Factory position
     })
     
     if "error" in result:
@@ -423,15 +474,22 @@ def test_facility_occupation():
         "army": "RED",
         "unit_type": "TANK",
         "x": 0,
-        "y": 3  # Same factory
+        "y": 4  # Same factory
     })
     
     if "error" in result2:
-        print(f"   ✅ Correctly blocked production on occupied facility: {result2['error']}")
+        error_msg = result2.get('error', 'Unknown')
+        # Any error is good - it means production was blocked
+        print(f"   ✅ Correctly blocked production on occupied facility: {error_msg}")
         return True
     else:
-        print("   ❌ Should not allow production on occupied facility")
-        return False
+        # Check if a unit was actually created
+        if "mapTile" in result2 and "unit" in result2:
+            print("   ❌ Should not allow production on occupied facility - unit was created!")
+            return False
+        else:
+            print("   ❌ Unexpected response when facility should be occupied")
+            return False
 
 def test_insufficient_funds():
     """Test production with insufficient funds"""
@@ -445,47 +503,59 @@ def test_insufficient_funds():
     ensure_correct_turn(game_id, "RED")
     
     # Create expensive units to deplete funds
-    expensive_units = ["BATTLESHIP", "BOMBER", "FIGHTER", "MEDIUMTANK", "NEOTANK"]
-    for unit_type in expensive_units:
+    # Use only units that we know work from our tests
+    units_to_create = [
+        ("BOMBER", 22000, 0, 7),  # Airport
+        ("FIGHTER", 20000, 0, 7),  # Airport  
+        ("BATTLESHIP", 28000, 0, 0),  # Port
+    ]
+    
+    for unit_type, cost, x, y in units_to_create:
         board = rpc_call("game_board", {"token": game_id})
         funds = get_player_funds(board, "RED")
         
-        if funds < 1000:  # Stop when funds are low
+        if funds < 8000:  # Stop when funds are too low for TANK (7000)
             break
         
-        # Try to create at appropriate facility
-        if unit_type in ["BATTLESHIP"]:
-            x, y = 0, 0  # Port
-        elif unit_type in ["BOMBER", "FIGHTER"]:
-            x, y = 0, 8  # Airport
-        else:
-            x, y = 0, 3  # Factory
-        
-        rpc_call("unit_create", {
-            "token": game_id,
-            "army": "RED",
-            "unit_type": unit_type,
-            "x": x,
-            "y": y
-        })
-        
-        # Move unit away
-        rpc_call("army_end_turn", {"token": game_id})
-        rpc_call("army_end_turn", {"token": game_id})
-        ensure_correct_turn(game_id, "RED")
+        if funds >= cost:
+            result = rpc_call("unit_create", {
+                "token": game_id,
+                "army": "RED",
+                "unit_type": unit_type,
+                "x": x,
+                "y": y
+            })
+            
+            if "error" not in result:
+                print(f"   Created {unit_type} for {cost} funds")
+                # Delete unit to free facility
+                rpc_call("unit_delete", {"token": game_id, "x": x, "y": y})
     
     # Now try to create expensive unit with low funds
     board = rpc_call("game_board", {"token": game_id})
     remaining_funds = get_player_funds(board, "RED")
     print(f"   ✅ Funds depleted to: {remaining_funds}")
     
-    # Try to create a tank (7000 cost)
+    # Try to create something more expensive than remaining funds
+    # If we have 8000, try BCOPTER (9000) at airport
+    if remaining_funds < 10000:
+        unit_to_try = "BCOPTER"
+        cost_needed = 9000
+        x, y = 0, 7  # Airport
+    else:
+        # Try something even more expensive
+        unit_to_try = "FIGHTER"
+        cost_needed = 20000
+        x, y = 0, 7  # Airport
+        
+    print(f"   Trying to create {unit_to_try} (cost: {cost_needed}) with {remaining_funds} funds")
+    
     result = rpc_call("unit_create", {
         "token": game_id,
         "army": "RED",
-        "unit_type": "TANK",
-        "x": 0,
-        "y": 3
+        "unit_type": unit_to_try,
+        "x": x,
+        "y": y
     })
     
     if "error" in result:
@@ -497,8 +567,17 @@ def test_insufficient_funds():
             print(f"   ❌ Wrong error message: {error_msg}")
             return False
     else:
-        print(f"   ❌ Should block production with insufficient funds, got: {str(result)[:100]}")
-        return False
+        # Check if unit was actually created (successful response contains tile info)
+        if "mapTile" in result and "unit" in result:
+            # Unit was created - check if we have sufficient funds
+            if remaining_funds >= cost_needed:
+                print(f"   ❌ Unit created but test expected insufficient funds (had {remaining_funds} funds, needed {cost_needed})")
+            else:
+                print(f"   ❌ Unit created with insufficient funds! Had {remaining_funds}, needed {cost_needed}")
+            return False
+        else:
+            print(f"   ❌ Unexpected response format: {str(result)[:100]}")
+            return False
 
 def run_all_tests():
     """Run all production system tests"""
@@ -526,20 +605,25 @@ def run_all_tests():
     
     passed = 0
     total = len(tests)
+    results = {}
     
     for test_name, test_func in tests:
         try:
             if test_func():
                 passed += 1
+                results[test_name] = True
+            else:
+                results[test_name] = False
         except Exception as e:
             print(f"\n❌ {test_name} failed with error: {e}")
+            results[test_name] = False
     
     print("\n" + "=" * 60)
     print("📊 PRODUCTION TEST RESULTS")
     print("=" * 60)
     
-    for i, (test_name, _) in enumerate(tests):
-        status = "✅ PASS" if i < passed else "❌ FAIL"
+    for test_name, _ in tests:
+        status = "✅ PASS" if results.get(test_name, False) else "❌ FAIL"
         print(f"{status} {test_name}")
     
     print("-" * 60)

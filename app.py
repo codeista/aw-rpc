@@ -2450,6 +2450,16 @@ def game_board_rpc(token: str) -> dict:
         else:
             board_data['selected'] = None
             
+        # Add game status fields
+        if isinstance(mngr, GameManagerV2):
+            board_data['game_active'] = mngr.board_v2.game_active
+            board_data['winner'] = mngr.board_v2.winner
+            board_data['victory_type'] = mngr.board_v2.victory_type
+        else:
+            board_data['game_active'] = mngr.board.game_active
+            board_data['winner'] = mngr.board.winner if hasattr(mngr.board, 'winner') else None
+            board_data['victory_type'] = mngr.board.victory_type if hasattr(mngr.board, 'victory_type') else None
+            
         return board_data  # Now guaranteed to be a dict
         
     except Exception as ex:
@@ -2690,9 +2700,13 @@ def unit_create_rpc(token: str, army: str, unit_type: str, x: int, y: int) -> di
         mngr = game_load(token)
         unit = mngr.unit_create(army, unit_type, x, y)
         
-        # Log successful creation
+        # Log successful creation with cost
         if ENHANCED_LOGGING:
-            game_event_logger.log_unit_created(token, army, unit_type, x, y)
+            # Get unit cost from production system
+            from production_system import ProductionSystem
+            from unit import UnitType
+            unit_cost = ProductionSystem.UNIT_COSTS.get(UnitType[unit_type], 0)
+            game_event_logger.log_unit_created(token, army, unit_type, x, y, unit_cost)
         
         # Save and return
         game_save(mngr, token)
@@ -2709,6 +2723,31 @@ def unit_create_rpc(token: str, army: str, unit_type: str, x: int, y: int) -> di
             "message": e.message,
             "details": getattr(e, 'details', {})
         }
+        
+    except ValueError as e:
+        # Handle known game logic errors
+        error_msg = str(e).lower()
+        if "occupied" in error_msg:
+            return {
+                "error": True,
+                "error_code": "TILE_OCCUPIED",
+                "message": "Cannot create unit - tile is already occupied",
+                "details": {"position": {"x": x, "y": y}}
+            }
+        elif "insufficient funds" in error_msg:
+            return {
+                "error": True,
+                "error_code": "INSUFFICIENT_FUNDS",
+                "message": str(e),
+                "details": {}
+            }
+        else:
+            return {
+                "error": True,
+                "error_code": "CREATION_ERROR",
+                "message": str(e),
+                "details": {}
+            }
         
     except Exception as e:
         app_logger.error(f"unit_create failed for {token}: {army}:{unit_type} at ({x},{y}): {str(e)}")
@@ -2839,9 +2878,14 @@ def unit_delete_rpc(token: str, x: int, y: int) -> dict:
         
         # Remove the unit
         mngr.unit_remove(x, y)
-        game_save(token, mngr)
+        game_save(mngr, token)  # Fixed parameter order
         
         app_logger.info(f'Unit deleted: {token} - {unit.type.name} at ({x},{y})')
+        
+        # Log to game events
+        if ENHANCED_LOGGING:
+            army_name = unit.army.name if hasattr(unit.army, 'name') else str(unit.army)
+            game_event_logger.log_unit_deleted(token, army_name, unit.type.name, x, y)
         
         return {
             "success": True,

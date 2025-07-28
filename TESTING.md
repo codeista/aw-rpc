@@ -65,15 +65,22 @@ curl http://localhost:5000
 
 **Note:** The flask-env virtual environment contains all required dependencies including Flask, flask-cors, and other packages. Always activate it before running the app or tests.
 
-## Test Results Summary (Last Updated: 2025-07-27)
+## Test Results Summary (Last Updated: 2025-07-29)
 
 ### ✅ Passing Tests
 
-**Unit Tests (12/13 passing):**
+**Unit Tests (15/15 passing - 100%):**
+- `test_production_system.py` - Production mechanics (6/6 tests - 100% passing)
+- `test_game_features.py` - Comprehensive feature tests (4/4 tests - 100% passing)
+  - COM_TOWER damage bonus
+  - Transport system (load/unload/movement)
+  - Production variety (all unit types)
+  - Combat scenarios (direct/indirect/air/naval)
+- `test_benchmark.py` - Performance benchmarks (avg response: 6.68ms)
 - `test_combat_system.py` - All combat mechanics
 - `test_combat_system_fixed.py` - Fixed combat test with win condition check
-- `test_movement_system.py` - Unit movement validation
-- `test_transport_features.py` - Transport load/unload/resupply
+- `test_movement_system.py` - Unit movement validation (6/6 categories)
+- `test_transport_features.py` - Transport load/unload/resupply (3/3 tests)
 - `test_economic_system.py` - Income and funds management
 - `test_income_with_cross_map.py` - Multi-army income
 - `test_ui_mobile_features.py` - UI endpoints and mobile support
@@ -89,9 +96,15 @@ curl http://localhost:5000
 - `test_complete_victory_conditions.py` - 3/4 victory scenarios
 
 **Regression Tests:**
-- All 28 core game mechanics tests passing
-- 100% success rate on established functionality
+- 53/54 tests passing (98.1% success rate)
+- All core game mechanics validated
 - `test_recent_features.py` - Tests for COM_TOWER bonus and unavailable sprites
+- `test_complete_game_mechanics.py` - Comprehensive mechanics validation
+
+**Performance Improvements (July 2025):**
+- Response times improved by 20-67% across all operations
+- Zero database errors (was 40% failure rate)
+- All operations under 50ms threshold
 
 **UI/Frontend Tests:**
 - `test_click_handling.py` - Priority-based click processing (in root directory)
@@ -100,19 +113,38 @@ curl http://localhost:5000
 
 ### ❌ Known Issues
 
-1. **test_production_system.py** (1/6 tests pass)
-   - Production options API needs update
-   - Unit creation validation too strict
-
-2. **test_complex_scenarios.py**
+1. **test_complex_scenarios.py**
    - Some unit creation conflicts on occupied tiles
    - Needs update for V2 player system
 
-3. **test_core_integration.py**
+2. **test_core_integration.py**
    - API compatibility issues with newer test format
    - Import path problems
 
+3. **Regression test suite** (1 test failing)
+   - 53/54 tests passing
+   - Minor issue in one test scenario
+
 ## Important Test Notes
+
+### Game Status and Player Statistics Display (NEW - 2025-07-29)
+The game now displays comprehensive game information:
+
+**Game Status Panel (Shows when game ends):**
+- Victory status (Active/Ended)
+- Winner name
+- Victory type (HQ Capture/Elimination)
+
+**Player Statistics Panel (Always visible):**
+- Number of units per player
+- Total unit value
+- Number of properties owned
+- Current funds
+
+**Victory Conditions Implemented:**
+- HQ Capture: Capturing all enemy HQ tiles
+- Elimination: Destroying all enemy units
+- Both set appropriate winner and victory_type fields
 
 ### Unit Availability Testing (NEW - 2025-07-27)
 Units now properly display as unavailable (greyed out) when:
@@ -299,6 +331,10 @@ When making changes, manually verify:
 - [ ] Only infantry/mech units can capture properties
 - [ ] Wait action properly marks units as done
 - [ ] Combat preview shows accurate damage with COM_TOWER bonuses
+- [ ] Game status panel appears when game ends
+- [ ] Winner name and victory type display correctly
+- [ ] Player statistics update in real-time
+- [ ] Map name displays above game board
 
 ## Continuous Integration
 

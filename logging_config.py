@@ -120,6 +120,10 @@ class GameEventLogger:
         """Log unit creation"""
         self.logger.info(f"UNIT_CREATED token={token} army={army} type={unit_type} pos=({x},{y}) cost={cost}")
     
+    def log_unit_deleted(self, token, army, unit_type, x, y):
+        """Log unit deletion"""
+        self.logger.info(f"UNIT_DELETED token={token} army={army} type={unit_type} pos=({x},{y})")
+    
     def log_unit_moved(self, token, army, unit_type, from_pos, to_pos, fuel_used=0):
         """Log unit movement"""
         self.logger.info(f"UNIT_MOVED token={token} army={army} type={unit_type} from={from_pos} to={to_pos} fuel_used={fuel_used}")
