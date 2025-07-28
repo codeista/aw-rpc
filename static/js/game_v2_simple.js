@@ -419,11 +419,14 @@ class Game {
                 const modal = document.getElementById('modal');
                 
                 if (this.productionCoords && select.value) {
-                    await this.rpc('produce_unit', {
+                    console.log('Creating unit:', select.value, 'at', this.productionCoords);
+                    const result = await this.rpc('unit_create', {
+                        army: this.board.current_turn,
+                        unit_type: select.value,
                         x: this.productionCoords.x,
-                        y: this.productionCoords.y,
-                        unit_type: select.value
+                        y: this.productionCoords.y
                     });
+                    console.log('Unit creation result:', result);
                     modal.style.display = 'none';
                 }
             });
@@ -672,7 +675,7 @@ class Game {
             const result = await this.rpc('get_production_options', { x, y });
             console.log('Production options result:', result);
             
-            if (result && result.success && result.production_options && result.production_options.available_units) {
+            if (result && result.success && result.production_options && result.production_options.units) {
                 const select = document.getElementById('unit-select');
                 const modal = document.getElementById('modal');
                 
@@ -683,12 +686,12 @@ class Game {
                 
                 select.innerHTML = '';
                 
-                console.log(`Loading ${result.production_options.available_units.length} units into production menu`);
+                console.log(`Loading ${result.production_options.units.length} units into production menu`);
                 
-                result.production_options.available_units.forEach(opt => {
+                result.production_options.units.forEach(opt => {
                     const option = document.createElement('option');
-                    option.value = opt.unit_type;
-                    option.textContent = `${opt.unit_type} - ${opt.cost}G`;
+                    option.value = opt.type;
+                    option.textContent = `${opt.type} - ${opt.cost}G`;
                     if (!opt.can_afford) {
                         option.disabled = true;
                         option.textContent += ' (Not enough funds)';
@@ -1162,9 +1165,24 @@ class Game {
                         tile.unit.player_id !== this.board.current_player :
                         tile.unit.army !== this.board.current_turn;
                     
+                    // A unit has no actions if it can't move, attack, or capture
                     const hasNoActions = !tile.unit.can_move && !tile.unit.can_attack && !tile.unit.can_capture;
                     const isDone = tile.unit.done || false;
                     const isUnavailable = isEnemy || hasNoActions || isDone;
+                    
+                    // Debug newly created units
+                    if (tile.x === 0 && tile.y === 4 && tile.unit) {
+                        console.log('Unit state debug at factory:', {
+                            type: tile.unit.type,
+                            can_move: tile.unit.can_move,
+                            can_attack: tile.unit.can_attack,
+                            can_capture: tile.unit.can_capture,
+                            done: tile.unit.done,
+                            hasNoActions,
+                            isUnavailable,
+                            sprite: isUnavailable ? 'unavailable' : 'idle'
+                        });
+                    }
                     
                     // For v2 games, use sprite mapper
                     if (this.spriteMapper && tile.unit.player_id !== undefined) {

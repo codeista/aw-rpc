@@ -499,11 +499,8 @@ class Unit:
             id=uuid.uuid4(),
             can_move=False,
             can_attack=False,
-            can_capture=True  # Will be set correctly below
+            can_capture=False  # Newly created units cannot capture until they move
         )
-        
-        # Set can_capture based on unit type
-        unit.can_capture = unit.type_can_capture()
         
         return unit
     
