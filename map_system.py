@@ -88,7 +88,7 @@ class MapType(Enum):
 class MapTile:
     """Individual map tile with terrain and ownership."""
     type: MapType
-    army: Optional[Army] = None
+    army: Optional[Army] = None  # DEPRECATED: Use player_id in MapTileV2
 
     def ground_repairs(self) -> bool:
         """Returns true if terrain repairs ground units."""
@@ -739,3 +739,165 @@ def add_test_units_to_game(game_manager):
             print(f"Failed to create {unit_data['type']} at ({unit_data['x']},{unit_data['y']}): {e}")
     
     return len(test_units)
+
+
+# New Player-Based System
+
+@dataclass 
+class MapTileV2:
+    """Map tile using player IDs instead of armies."""
+    type: MapType
+    player_id: Optional[int] = None  # Player who owns this tile (None for neutral)
+    
+    def ground_repairs(self) -> bool:
+        """Returns true if terrain repairs ground units."""
+        return self.type in {
+            MapType.CITY, MapType.FACTORY,
+            MapType.BASE_TOWER_0, MapType.BASE_TOWER_1,
+            MapType.BASE_TOWER_2, MapType.BASE_TOWER_3,
+            MapType.BASE_TOWER_4
+        }
+
+    def air_repairs(self) -> bool:
+        """Returns true if terrain repairs air units."""
+        return self.type in {MapType.AIRPORT}
+
+    def sea_repairs(self) -> bool:
+        """Returns true if terrain repairs sea units."""
+        return self.type in {MapType.PORT}
+
+    def is_capturable(self) -> bool:
+        """Returns true if terrain can be captured."""
+        return self.type in {
+            MapType.CITY, MapType.FACTORY,
+            MapType.BASE_TOWER_0, MapType.BASE_TOWER_1,
+            MapType.BASE_TOWER_2, MapType.BASE_TOWER_3,
+            MapType.COM_TOWER, MapType.PORT, MapType.AIRPORT,
+            MapType.LAB, MapType.MISSILE_SILO
+        }
+
+    def is_hq(self) -> bool:
+        """Returns true if terrain is a HQ."""
+        return self.type in {
+            MapType.BASE_TOWER_0, MapType.BASE_TOWER_1,
+            MapType.BASE_TOWER_2, MapType.BASE_TOWER_3
+        }
+
+
+@dataclass
+class MapV2:
+    """Map using player-based system instead of armies."""
+    width: int
+    height: int
+    tiles: List[MapTileV2]
+    player_count: int  # Number of players in this map
+    name: str = "Unnamed Map"
+    description: str = ""
+    
+    @classmethod
+    def parse(cls, map_data: str, name: str = "Parsed Map") -> 'MapV2':
+        """
+        Parse map from string format using player IDs.
+        
+        Expected format:
+        First line: number of players (e.g., "2" for 2-player map)
+        Following lines: comma-separated terrain types with optional player ownership
+        Player ownership format: TYPE:0 (player 0), TYPE:1 (player 1), etc.
+        
+        Args:
+            map_data: String representation of the map
+            name: Name for the map
+            
+        Returns:
+            Parsed MapV2 object
+            
+        Raises:
+            ValueError: If map format is invalid
+        """
+        width = 0
+        height = 0
+        player_count = 0
+        tiles = []
+        row_count = 0
+        
+        for line in map_data.strip().split('\n'):
+            line = line.strip()
+            if not line:
+                continue
+                
+            if row_count == 0:
+                # First line contains player count
+                try:
+                    player_count = int(line)
+                except ValueError:
+                    raise ValueError(f"First line must be player count, got: {line}")
+            else:
+                # Map data lines
+                col_count = 0
+                for cell in line.split(','):
+                    cell = cell.strip()
+                    tile_type = None
+                    multiplier = 1
+                    player_id = None
+                    
+                    # Parse cell format: TYPE*multiplier or TYPE:player_id
+                    if '*' in cell:
+                        type_str, mult_str = cell.split('*', 1)
+                        multiplier = int(mult_str)
+                    elif ':' in cell:
+                        type_str, player_str = cell.split(':', 1)
+                        player_id = int(player_str.strip())
+                        if player_id >= player_count:
+                            raise ValueError(f"Player {player_id} exceeds player count {player_count}")
+                    else:
+                        type_str = cell
+                    
+                    try:
+                        tile_type = MapType[type_str.strip()]
+                    except KeyError:
+                        raise ValueError(f"Invalid terrain type: {type_str}")
+                    
+                    # Add tiles with multiplier
+                    for _ in range(multiplier):
+                        tile = MapTileV2(tile_type, player_id)
+                        tiles.append(tile)
+                        col_count += 1
+                
+                if row_count == 1:
+                    width = col_count
+                elif width != col_count:
+                    raise ValueError(f"Row {row_count} has {col_count} columns, expected {width}")
+                height += 1
+            
+            row_count += 1
+        
+        return cls(width, height, tiles, player_count, name)
+    
+    def get_tile(self, x: int, y: int) -> Optional[MapTileV2]:
+        """Get tile at coordinates."""
+        if 0 <= x < self.width and 0 <= y < self.height:
+            return self.tiles[x + y * self.width]
+        return None
+    
+    @classmethod
+    def from_legacy_map(cls, legacy_map: 'Map') -> 'MapV2':
+        """Convert a legacy Map to MapV2."""
+        # Map armies to player IDs
+        army_to_player = {}
+        for i, army in enumerate(legacy_map.turn_order):
+            army_to_player[army] = i
+        
+        # Convert tiles
+        tiles_v2 = []
+        for tile in legacy_map.tiles:
+            player_id = army_to_player.get(tile.army) if tile.army else None
+            tiles_v2.append(MapTileV2(tile.type, player_id))
+        
+        return cls(
+            width=legacy_map.width,
+            height=legacy_map.height,
+            tiles=tiles_v2,
+            player_count=len(legacy_map.turn_order),
+            name=legacy_map.name,
+            description=legacy_map.description
+        )

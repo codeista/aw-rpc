@@ -6,7 +6,7 @@ from enum import Enum
 import uuid
 from map_system import TERRAIN_DEFENSE
 from map_system import Army
-from typing import List
+from typing import List, Optional
 
 
 class UnitType(Enum):
@@ -199,7 +199,7 @@ class UnitStatus:
 @dataclass
 class Unit:
     '''Type and status of a unit.'''
-    army: Army
+    army: Army  # DEPRECATED: Use player_id instead
     type: UnitType
     status: UnitStatus  # Now uses UnitStatus instead of UnitConfig
     config: UnitConfig  # Keep reference to static config
@@ -207,6 +207,7 @@ class Unit:
     can_move: bool
     can_attack: bool
     can_capture: bool
+    player_id: Optional[int] = None  # Player who owns this unit
 
     def attack_damage(self, target, tile):
         '''Returns the attack damage using authentic Advance Wars formula.
@@ -504,4 +505,16 @@ class Unit:
         # Set can_capture based on unit type
         unit.can_capture = unit.type_can_capture()
         
+        return unit
+    
+    @classmethod
+    def create_with_player(cls, player_id: int, unit_type: UnitType, unit_config: UnitConfig, sprite_color: str = None):
+        '''Creates a unit for the new player system.'''
+        # Map player to army for backward compatibility
+        # This will be removed once full migration is complete
+        army_map = {0: Army.RED, 1: Army.BLUE, 2: Army.GREEN, 3: Army.YELLOW, 4: Army.GREY}
+        army = army_map.get(player_id, Army.GREY)
+        
+        unit = cls.create(army, unit_type, unit_config)
+        unit.player_id = player_id
         return unit
