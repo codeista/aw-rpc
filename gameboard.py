@@ -1,7 +1,7 @@
 '''[This module defines and creates the gameboard ]'''
 
 from dataclasses import dataclass, field
-from typing import List, Dict
+from typing import List, Dict, Optional
 from unit import Army, Unit
 from map_system import MapTile, Map
 
@@ -42,10 +42,14 @@ class GameBoard():
     army_funds: Dict[Army, int] = field(default_factory=dict)
     army_properties: Dict[Army, int] = field(default_factory=dict)
     army_troops: Dict[Army, int] = field(default_factory=dict)
+    
+    # Reference to the original map
+    map: Optional[Map] = None
 
     @classmethod
     def create(cls, map: Map):
         board = GameBoard(map.width, map.height)
+        board.map = map  # Store reference to the map
         for i in range(map.width * map.height):
             x = i % map.width
             y = int(i / map.width)

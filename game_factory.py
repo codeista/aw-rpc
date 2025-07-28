@@ -142,6 +142,7 @@ class GameFactory:
         board_v2.height = board.height
         board_v2.days = board.days if board.days > 0 else 1
         board_v2.game_active = board.game_active if hasattr(board, 'game_active') else True
+        board_v2.map = map_obj  # Store the map reference
         
         # Initialize with player manager
         board_v2.initialize_from_player_manager(player_manager)
@@ -212,6 +213,7 @@ class GameFactory:
         board_v2.width = old_manager.board.width
         board_v2.height = old_manager.board.height
         board_v2.days = old_manager.board.days
+        board_v2.map = old_manager.board.map if hasattr(old_manager.board, 'map') else None
         
         # Initialize with player manager
         board_v2.initialize_from_player_manager(player_manager)

@@ -131,7 +131,11 @@ All systems fully tested and operational:
 ### Automated Regression Tests (Recommended)
 ```bash
 # Quick regression test runner (comprehensive mechanics validation)
+# Includes COM_TOWER bonus and unit availability tests
 python3 run_regression_tests.py
+
+# Run recent features tests (COM_TOWER, unavailable sprites)
+python3 tests/regression/test_recent_features.py
 
 # Or use the full test runner with options
 python3 tests/run_tests.py
@@ -142,7 +146,7 @@ python3 tests/run_tests.py
 ```bash
 # Run individual unit tests
 python3 tests/unit/test_combat_system.py
-python3 tests/unit/test_combat_system_fixed.py
+python3 tests/unit/test_attack_defense_ranges.py  # NEW: Attack ranges & counter-attacks
 python3 tests/unit/test_movement_system.py
 python3 tests/unit/test_transport_features.py
 python3 tests/unit/test_complete_repair_refuel.py
@@ -154,6 +158,7 @@ python3 tests/integration/test_unit_deselection.py
 
 # Run via web interface
 # Visit http://localhost:5000/test_interface for interactive testing
+# NEW: Test interface includes dropdown options for Naval/Air/Land unit test maps
 ```
 
 ### Regression Test Suite Features
@@ -190,27 +195,32 @@ See [SPRITE_STATUS.md](SPRITE_STATUS.md) for current sprite mapping progress and
 - ✅ All unit types (25 total)
 - ✅ All terrain types with proper effects
 - ✅ Complete transport load/unload system
-- ✅ Property capture mechanics
+- ✅ Property capture mechanics (Infantry/Mech only)
 - ✅ Turn management
 - ✅ Combat with counter-attacks
 - ✅ Victory detection
 - ✅ Save/load game state
+- ✅ COM_TOWER damage bonus system (+10% per tower)
+- ✅ Unit availability display (greyed out when no actions)
 
-### Recently Completed
+### Recently Completed (2025-07-27)
+- [x] COM_TOWER damage bonus system (+10% per tower, cumulative)
+- [x] Fixed unit availability display (greyed out when no actions)
+- [x] Fixed can_capture flag (only Infantry/Mech can capture)
+- [x] Context menu auto-closes after wait action
+- [x] Attack range and counter-attack testing suite
+- [x] Modifier system foundation for CO abilities
+- [x] Enhanced combat preview with COM_TOWER bonuses
 - [x] APC/Cruiser/Carrier auto-resupply at turn start
-- [x] Black Boat manual repair command (up to 2 HP per action, max 10 visual HP / 90 actual HP)
-- [x] Comprehensive repair and refuel testing suite
-- [x] Test interface integration for repair/refuel tests
+- [x] Black Boat manual repair command (up to 2 HP per action)
 - [x] Enhanced context menu with Move/Wait/Load/Delete options
 - [x] Unit locking mechanics (acting with different unit locks previous unit)
 - [x] Transport exceptions (can continue loading/unloading after moving)
 - [x] Combat preview for units within movement + attack range
 - [x] Fixed indirect units showing counter damage
-- [x] Unit delete functionality with ownership verification
-- [x] Transport units no longer show ammo warnings
 
 ### In Progress
-- [ ] COM_TOWER damage bonus (+10% per tower)
+- [ ] Comprehensive unit type test maps (Naval/Air/Land)
 
 ### Future Features
 - [ ] Commanding Officer (CO) system with powers

@@ -3,7 +3,7 @@ GameBoard V2 - Color-agnostic game board with backward compatibility
 """
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
-from map_system import Army, MapTile
+from map_system import Army, MapTile, Map
 from player_system import PlayerManager
 
 @dataclass
@@ -37,6 +37,9 @@ class GameBoardV2:
     army_funds: Dict[Army, int] = field(default_factory=dict)
     army_properties: Dict[Army, int] = field(default_factory=dict)
     army_troops: Dict[Army, int] = field(default_factory=dict)
+    
+    # Reference to the original map
+    map: Optional[Map] = None
     
     # Legacy fields as properties for backward compatibility
     @property

@@ -107,16 +107,27 @@ This is a complete implementation of Advance Wars as a web-based RPC game. Key s
 - ✅ Legacy tile renderer with AWDS tileset
 - ✅ Optimized unit sprites still work (93KB vs 370KB)
 
-### Recent Code Fixes (2025-07-25)
-1. **API Consolidation** - Reduced 58 API methods to 23 core methods (60% reduction)
+### Recent Code Fixes (2025-07-27)
+1. **Unavailable Unit Sprites** - Fixed display logic for greyed out units
+   - Units show as unavailable when they have no actions remaining
+   - Fixed can_capture flag to only apply to infantry/mech units
+   - Context menu auto-closes after wait action for better UX
+   - Only infantry and mech units can capture properties (fixed battleship bug)
+
+2. **COM_TOWER Implementation** - Added damage bonus system
+   - Each COM_TOWER provides +10% attack damage
+   - Bonus is cumulative (max +40% with 4 towers)
+   - Created modifier system foundation for future CO abilities
+   - Integrated with enhanced combat preview
+
+3. **API Consolidation** - Reduced 58 API methods to 23 core methods (60% reduction)
    - Transport API: 20→5 methods with auto-loading support
    - Combat API: 7→4 methods using enhanced versions
    - Movement API: 8→4 methods with simplified interface
    - Added 7 new UI features (repair, resupply, capture, etc.)
-2. **HP Sprite Display** - Fixed sprite mapping where HP indicators showed wrong icons
-   - Reordered sprite coordinates: status icons first, then numbers 1-9
-3. **V2 Migration** - Added GameFactory and SpriteMapper for v2 player system
-4. **Documentation** - Added API_BEST_PRACTICES.md and API_QUICK_REFERENCE.md
+
+4. **V2 Migration** - Added GameFactory and SpriteMapper for v2 player system
+5. **Documentation** - Added API_BEST_PRACTICES.md and API_QUICK_REFERENCE.md
 
 ## STANDARD WORKFLOW
 1. First think through the problem, read the codebase for relevant files and write a plan to tasks/todo.md. 
@@ -145,6 +156,8 @@ NEVER proactively create documentation files (*.md) or README files. Only create
 - **Use temp/ folder for temporary analysis files**
 - **Clean up test/verification files after use**
 - **Current tileset work**: Replacing old center-based coordinate system with new direct coordinates
+- **Unit Capture Rules**: Only INFANTRY and MECH units can capture properties
+- **COM_TOWER Bonus**: Each tower provides +10% attack damage (cumulative)
 
 ## Testing Requirements (CRITICAL)
 **NEVER commit changes without testing them first!**
@@ -174,6 +187,17 @@ When making combat-related changes, ALWAYS test:
 3. Check for console errors in browser (F12)
 4. Verify no visual glitches or UI issues
 5. Only commit after ALL tests pass
+
+### Testing Recent Features
+**Unit Availability Display:**
+- Create units and verify they show greyed out when no actions remain
+- Test wait action marks units as done
+- Verify only infantry/mech have capture ability
+
+**COM_TOWER Damage Bonus:**
+- Capture COM_TOWERs and verify +10% damage per tower
+- Test damage preview shows correct boosted values
+- Verify bonus updates immediately on capture/loss
 
 ## Helper Documentation Locations
 - Core game logic and rules: `manager.py`

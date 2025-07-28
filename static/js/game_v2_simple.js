@@ -1263,6 +1263,14 @@ class Game {
             document.getElementById('blue-funds').textContent = this.board.blue_funds || '-';
         }
         
+        // Update map name if available
+        if (this.board.map_name) {
+            const mapNameElement = document.getElementById('map-name');
+            if (mapNameElement) {
+                mapNameElement.textContent = this.board.map_name;
+            }
+        }
+        
         // Update browser title
         const turn = this.board.current_turn || 'Loading';
         const titleDay = this.board.days === 0 ? 1 : (this.board.days || 1);

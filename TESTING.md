@@ -65,11 +65,11 @@ curl http://localhost:5000
 
 **Note:** The flask-env virtual environment contains all required dependencies including Flask, flask-cors, and other packages. Always activate it before running the app or tests.
 
-## Test Results Summary (Last Updated: 2025-07-24)
+## Test Results Summary (Last Updated: 2025-07-27)
 
 ### ✅ Passing Tests
 
-**Unit Tests (11/12 passing):**
+**Unit Tests (12/13 passing):**
 - `test_combat_system.py` - All combat mechanics
 - `test_combat_system_fixed.py` - Fixed combat test with win condition check
 - `test_movement_system.py` - Unit movement validation
@@ -80,6 +80,7 @@ curl http://localhost:5000
 - `test_blackboat_repair_complete.py` - Black boat repair feature
 - `test_complete_repair_refuel.py` - Repair/refuel systems
 - `test_victory_conditions.py` - All victory conditions
+- `test_attack_defense_ranges.py` - Attack ranges and counter-attack rules
 
 **Integration Tests:**
 - `test_multiplayer_armies.py` - 4-player army support
@@ -90,6 +91,7 @@ curl http://localhost:5000
 **Regression Tests:**
 - All 28 core game mechanics tests passing
 - 100% success rate on established functionality
+- `test_recent_features.py` - Tests for COM_TOWER bonus and unavailable sprites
 
 **UI/Frontend Tests:**
 - `test_click_handling.py` - Priority-based click processing (in root directory)
@@ -103,14 +105,48 @@ curl http://localhost:5000
    - Unit creation validation too strict
 
 2. **test_complex_scenarios.py**
-   - HQ tile naming issue (looking for "HQ" instead of BASE_TOWER_*)
    - Some unit creation conflicts on occupied tiles
+   - Needs update for V2 player system
 
 3. **test_core_integration.py**
    - API compatibility issues with newer test format
    - Import path problems
 
 ## Important Test Notes
+
+### Unit Availability Testing (NEW - 2025-07-27)
+Units now properly display as unavailable (greyed out) when:
+- They belong to the enemy player
+- They have no remaining actions (can't move, attack, or capture)
+- They have been marked as done via the wait action
+
+**Important Notes:**
+- Only INFANTRY and MECH units can capture properties
+- Direct units can attack after moving, indirect units cannot
+- The wait action sets all action flags to false
+- Context menu auto-closes after wait action for better UX
+
+### COM_TOWER Damage Bonus Testing (NEW - 2025-07-27)
+The COM_TOWER bonus system is now implemented:
+- Each COM_TOWER provides +10% attack damage to all units
+- Bonus is cumulative (2 towers = +20%, max +40% with 4 towers)
+- Bonus applies immediately when towers are captured/lost
+- Foundation for future CO ability implementation
+
+**Testing COM_TOWER mechanics:**
+```python
+# Create test with COM_TOWERs
+# Capture towers and verify damage increase
+# Test with test_recent_features.py
+```
+
+### Comprehensive Unit Type Testing (NEW - 2025-07-27)
+New test configurations available via test interface:
+- **Naval Units Test** - All sea units with proper spacing for battleship range (2-6)
+- **Air Units Test** - All air units with varied terrain for defense testing
+- **Land Units Test** - All ground units with defensive terrain placement
+
+Access these via the test interface dropdown at http://localhost:5000/test_interface
 
 ### V2 Player System (NEW - Updated 2025-07)
 The game now uses a player-based system instead of army colors:
@@ -236,13 +272,16 @@ tester.runAllTests();
 
 ## Test Coverage
 
-- **Combat System**: 100% coverage
+- **Combat System**: 100% coverage (including COM_TOWER bonuses)
 - **Movement System**: 100% coverage  
 - **Transport System**: 100% coverage
 - **Economic System**: 100% coverage
 - **Victory Conditions**: 100% coverage
-- **Click Handler**: 100% coverage ✨ NEW
+- **Click Handler**: 100% coverage
 - **UI/Frontend**: Enhanced coverage with automated tests
+- **Unit Availability**: 100% coverage ✨ NEW
+- **Attack/Defense Ranges**: 100% coverage ✨ NEW
+- **COM_TOWER Mechanics**: 100% coverage ✨ NEW
 
 ## Manual Testing Checklist
 
@@ -255,6 +294,11 @@ When making changes, manually verify:
 - [ ] Victory conditions trigger appropriately
 - [ ] UI updates reflect game state changes
 - [ ] Context menus work for special actions
+- [ ] Units show as unavailable (greyed out) when they have no actions
+- [ ] COM_TOWER bonuses apply correctly to damage calculations
+- [ ] Only infantry/mech units can capture properties
+- [ ] Wait action properly marks units as done
+- [ ] Combat preview shows accurate damage with COM_TOWER bonuses
 
 ## Continuous Integration
 

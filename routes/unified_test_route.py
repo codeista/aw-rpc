@@ -366,6 +366,50 @@ def _add_test_units(game: GameManager, focus: str = None):
             {"type": "APC", "player": 1, "x": 9, "y": 8},
             {"type": "PIPERUNNER", "player": 1, "x": 8, "y": 8},
         ]
+    elif focus == 'transport_comprehensive':
+        # Same as transport_comprehensive from the main function
+        units = [
+            # Ground transports and their cargo
+            {"type": "APC", "player": 0, "x": 0, "y": 4},
+            {"type": "INFANTRY", "player": 0, "x": 1, "y": 4},
+            {"type": "MECH", "player": 0, "x": 2, "y": 4},
+            
+            # Air transports and cargo
+            {"type": "TCOPTER", "player": 0, "x": 0, "y": 7},
+            {"type": "INFANTRY", "player": 0, "x": 1, "y": 7},
+            {"type": "MECH", "player": 0, "x": 2, "y": 7},
+            
+            # Naval transports
+            {"type": "LANDER", "player": 0, "x": 0, "y": 1},
+            {"type": "BLACKBOAT", "player": 0, "x": 1, "y": 2},
+            {"type": "CRUISER", "player": 0, "x": 2, "y": 1},
+            {"type": "CARRIER", "player": 0, "x": 3, "y": 2},
+            
+            # Units that can be loaded on lander
+            {"type": "TANK", "player": 0, "x": 0, "y": 3},
+            {"type": "RECON", "player": 0, "x": 1, "y": 3},
+            {"type": "ARTILLERY", "player": 0, "x": 2, "y": 3},
+            
+            # Air units for carrier/cruiser
+            {"type": "FIGHTER", "player": 0, "x": 3, "y": 0},
+            {"type": "BOMBER", "player": 0, "x": 4, "y": 0},
+            {"type": "BCOPTER", "player": 0, "x": 3, "y": 1},
+            
+            # BLUE team transports
+            {"type": "APC", "player": 1, "x": 9, "y": 4},
+            {"type": "TCOPTER", "player": 1, "x": 9, "y": 7},
+            {"type": "LANDER", "player": 1, "x": 9, "y": 1},
+            {"type": "BLACKBOAT", "player": 1, "x": 8, "y": 2},
+            {"type": "CRUISER", "player": 1, "x": 7, "y": 1},
+            {"type": "CARRIER", "player": 1, "x": 6, "y": 2},
+            
+            # BLUE loadable units
+            {"type": "INFANTRY", "player": 1, "x": 8, "y": 4},
+            {"type": "MECH", "player": 1, "x": 7, "y": 4},
+            {"type": "TANK", "player": 1, "x": 9, "y": 3},
+            {"type": "FIGHTER", "player": 1, "x": 6, "y": 0},
+            {"type": "BCOPTER", "player": 1, "x": 7, "y": 0},
+        ]
     else:
         # Default comprehensive unit set
         units = [
@@ -404,6 +448,17 @@ def _add_test_units(game: GameManager, focus: str = None):
                 x=unit_data["x"],
                 y=unit_data["y"]
             )
+            
+            # For player 1 units on day 1, set them as active so they can be tested immediately
+            if unit_data["player"] == 1 and game.board.days == 0:
+                tile = game.board.grid[unit_data["y"] * game.board.width + unit_data["x"]]
+                if tile and tile.unit:
+                    tile.unit.can_move = True
+                    tile.unit.can_attack = True
+                    tile.unit.can_capture = tile.unit.type_can_capture()
+                    tile.unit.has_moved_this_turn = False
+                    app_logger.info(f"Setting player 1 {unit_data['type']} as active for day 1 testing")
+                    
         except Exception as e:
             app_logger.warning(f"Failed to create {unit_data['type']}: {e}")
 
@@ -412,6 +467,8 @@ def _add_test_units_v2(game, focus: str = None):
     """Add pre-deployed units for v2 GameManager with direct unit placement"""
     from unit import Unit, UnitType
     from config import Config
+    
+    app_logger.info(f"_add_test_units_v2 called with focus: {focus}")
     
     # Same unit configurations as before but with direct placement
     if focus == 'naval':
@@ -511,6 +568,14 @@ def _add_test_units_v2(game, focus: str = None):
                 unit_type=unit_type,
                 unit_config=unit_config
             )
+            
+            # For player 1 units on day 1, set them as active so they can be tested immediately
+            if unit_data["player"] == 1 and game.board.days == 0:
+                unit.can_move = True
+                unit.can_attack = True
+                unit.can_capture = unit.type_can_capture()
+                unit.has_moved_this_turn = False
+                app_logger.info(f"Setting player 1 {unit_type.name} as active for day 1 testing")
             
             # Place unit on board
             tile_index = unit_data["y"] * game.board.width + unit_data["x"]

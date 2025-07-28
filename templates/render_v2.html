@@ -74,11 +74,12 @@
             padding: 0px;
             box-shadow: 0 15px 35px rgba(0,0,0,0.4);
             position: relative;
-            overflow: hidden;
+            overflow: visible; /* Changed from hidden to visible for map name */
             flex-shrink: 0; /* Prevent canvas from shrinking */
             flex-grow: 0; /* Prevent canvas from growing */
             display: block;
             width: min-content; /* Fit exactly to canvas size */
+            margin-top: 30px; /* Add space for map name */
         }
         
         #canvas-wrapper::before {
@@ -619,6 +620,7 @@
         <div class="game-main">
             <!-- Game Canvas -->
             <div id="canvas-wrapper">
+                <div id="map-name" style="position: absolute; top: -28px; left: 50%; transform: translateX(-50%); color: #ecf0f1; font-size: 18px; font-weight: 600; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); white-space: nowrap; background: rgba(0,0,0,0.3); padding: 2px 12px; border-radius: 4px;"></div>
                 <canvas id="game-canvas"></canvas>
             </div>
             

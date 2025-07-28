@@ -1137,8 +1137,14 @@ def test_game():
             mngr, _ = GameFactory.create_game_with_players(map_name, players)
             
             # Set high funds for test games
-            mngr.board.players[0]['funds'] = 50000
-            mngr.board.players[1]['funds'] = 50000
+            # Use player_funds for V2 boards
+            if hasattr(mngr.board, 'player_funds'):
+                mngr.board.player_funds[0] = 50000
+                mngr.board.player_funds[1] = 50000
+            else:
+                # Fallback for legacy boards
+                mngr.board.red_funds = 50000
+                mngr.board.blue_funds = 50000
             
             # Add units if needed
             if config.get('add_units', False) or force_units:
@@ -2379,6 +2385,20 @@ def game_board_rpc(token: str) -> dict:
         if isinstance(board_data, str):
             import json
             board_data = json.loads(board_data)
+            
+        # Add map name if available
+        if isinstance(mngr, GameManagerV2):
+            # For V2 games, check board_v2
+            if hasattr(mngr.board_v2, 'map') and mngr.board_v2.map and hasattr(mngr.board_v2.map, 'name'):
+                board_data['map_name'] = mngr.board_v2.map.name
+            else:
+                board_data['map_name'] = 'Unknown Map'
+        else:
+            # Legacy games check board
+            if hasattr(mngr.board, 'map') and hasattr(mngr.board.map, 'name'):
+                board_data['map_name'] = mngr.board.map.name
+            else:
+                board_data['map_name'] = 'Unknown Map'
             
         # Add player info if this is a v2 game
         if isinstance(mngr, GameManagerV2):
