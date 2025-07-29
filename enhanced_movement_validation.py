@@ -220,6 +220,7 @@ class EnhancedMovementValidator:
                 True, 
                 "Valid path found",
                 MOVEMENT_COST=pathfinding_cost,
+                fuel_required=pathfinding_cost,
                 path_found=True
             )
             

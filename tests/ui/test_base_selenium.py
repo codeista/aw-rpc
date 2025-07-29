@@ -31,7 +31,7 @@ class BaseSeleniumTest:
     # Configuration
     BASE_URL = "http://localhost:5000"
     WAIT_TIMEOUT = 10
-    CANVAS_ID = "draw"
+    CANVAS_ID = "game-canvas"
     TILE_SIZE = 16
     SCENE_Y_OFFSET = 16  # Two.js scene translation
     
@@ -148,9 +148,9 @@ class BaseSeleniumTest:
             EC.presence_of_element_located((By.ID, self.CANVAS_ID))
         )
         
-        # Wait for Two.js to initialize
+        # Wait for game to be initialized (check for window.game object)
         self.wait.until(lambda driver: driver.execute_script(
-            "return window.two && window.two.scene !== undefined"
+            "return window.game !== undefined && window.game.canvas !== undefined"
         ))
         
         return canvas
@@ -180,7 +180,7 @@ class BaseSeleniumTest:
         
         # Use JavaScript to trigger click event directly to avoid ActionChains coordinate issues
         result = self.safe_execute_script("""
-            const canvas = document.querySelector('#draw canvas');
+            const canvas = document.getElementById('game-canvas');
             if (!canvas) return {error: 'Canvas not found'};
             
             // Create and dispatch click event
@@ -194,14 +194,16 @@ class BaseSeleniumTest:
             });
             
             // Verify coordinates before click
-            const tile = window.tileAt(arguments[0], arguments[1]);
-            console.log(`Clicking pixel (${arguments[0]}, ${arguments[1]}) -> tile (${tile?.x}, ${tile?.y})`);
+            // Calculate tile coordinates from pixel coordinates
+            const tileX = Math.floor(arguments[0] / 16);
+            const tileY = Math.floor((arguments[1] - 16) / 16);  // Account for scene offset
+            console.log(`Clicking pixel (${arguments[0]}, ${arguments[1]}) -> tile (${tileX}, ${tileY})`);
             
             canvas.dispatchEvent(event);
             
             return {
                 pixelCoords: [arguments[0], arguments[1]],
-                tileCoords: tile ? [tile.x, tile.y] : null,
+                tileCoords: [tileX, tileY],
                 success: true
             };
         """, canvas_x, canvas_y)
@@ -254,18 +256,18 @@ class BaseSeleniumTest:
         """Get the current game state via JavaScript"""
         return self.safe_execute_script("""
             return {
-                selected: window.board?.selected,
-                currentTurn: window.board?.current_turn,
-                movementHighlights: window.movementHighlights?.length || 0,
-                attackHighlights: window.gameState?.attackHighlights?.length || 0,
-                transportHighlights: window.transportHighlights?.length || 0,
-                selectedUnit: window.gameState?.selectedUnit,
+                selected: window.game?.selectedUnit,
+                currentTurn: window.game?.board?.current_turn,
+                movementHighlights: window.game?.movementHighlights?.length || 0,
+                attackHighlights: window.game?.attackHighlights?.length || 0,
+                transportHighlights: window.game?.transportHighlights?.length || 0,
+                selectedUnit: window.game?.selectedUnit,
                 board: {
-                    width: window.board?.width,
-                    height: window.board?.height,
-                    currentTurn: window.board?.current_turn,
-                    redFunds: window.board?.red_funds,
-                    blueFunds: window.board?.blue_funds
+                    width: window.game?.board?.width,
+                    height: window.game?.board?.height,
+                    currentTurn: window.game?.board?.current_turn,
+                    redFunds: window.game?.board?.red_funds,
+                    blueFunds: window.game?.board?.blue_funds
                 }
             };
         """)

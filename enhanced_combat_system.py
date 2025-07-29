@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 if TYPE_CHECKING:
-    from manager import GameManager
+    from manager_v2 import GameManager
     from unit import Unit, UnitType
     from gameboard import GameTile
 
@@ -127,6 +127,10 @@ class EnhancedCombatSystem:
         # Calculate distance
         distance = abs(attacker_pos[0] - defender_pos[0]) + abs(attacker_pos[1] - defender_pos[1])
         
+        # Indirect units cannot counter-attack at all
+        if self._is_indirect_unit(defender):
+            return False
+            
         # Check if defender can reach attacker
         if not (defender.status.rangemin <= distance <= defender.status.rangemax):
             return False
@@ -162,7 +166,7 @@ class EnhancedCombatSystem:
     def _is_indirect_unit(self, unit: 'Unit') -> bool:
         """Check if unit is indirect fire"""
         from unit import UnitType
-        indirect_units = [UnitType.ARTILLERY, UnitType.ROCKETS, UnitType.MISSILES]
+        indirect_units = [UnitType.ARTILLERY, UnitType.ROCKET, UnitType.MISSILE, UnitType.BATTLESHIP, UnitType.CARRIER, UnitType.PIPERUNNER]
         return unit.type in indirect_units
     
     def _is_direct_unit(self, unit: 'Unit') -> bool:
@@ -172,20 +176,20 @@ class EnhancedCombatSystem:
     def _is_air_unit(self, unit: 'Unit') -> bool:
         """Check if unit is air unit"""
         from unit import UnitType
-        air_units = [UnitType.FIGHTER, UnitType.BOMBER, UnitType.BATTLE_COPTER, UnitType.TRANSPORT_COPTER]
+        air_units = [UnitType.FIGHTER, UnitType.BOMBER, UnitType.BCOPTER, UnitType.TCOPTER]
         return unit.type in air_units
     
     def _is_anti_air_unit(self, unit: 'Unit') -> bool:
         """Check if unit is specialized anti-air"""
         from unit import UnitType
-        anti_air_units = [UnitType.ANTI_AIR, UnitType.MISSILES, UnitType.CRUISER]
+        anti_air_units = [UnitType.ANTIAIR, UnitType.MISSILE, UnitType.CRUISER]
         return unit.type in anti_air_units
     
     def _is_naval_unit(self, unit: 'Unit') -> bool:
         """Check if unit is naval"""
         from unit import UnitType
         naval_units = [UnitType.BATTLESHIP, UnitType.CRUISER, UnitType.SUBMARINE, 
-                      UnitType.LANDER, UnitType.BLACK_BOAT, UnitType.CARRIER]
+                      UnitType.LANDER, UnitType.BLACKBOAT, UnitType.CARRIER]
         return unit.type in naval_units
     
     # =============================================================================

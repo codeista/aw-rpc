@@ -9,8 +9,11 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from manager import GameManager
+from manager_v2 import GameManager
 from gameboard import GameBoard, GameTile
+from game_board_v2 import GameBoardV2
+from player_system import PlayerManager, Player, SpriteColor
+from game_factory import GameFactory
 from config import Config
 from unit import Unit, UnitType
 from map_system import MapTile, MapType, Army
@@ -20,37 +23,20 @@ class TestAttackDefenseRanges(unittest.TestCase):
     
     def setUp(self):
         """Create a test game with various unit types"""
-        config = Config()
+        # Use GameFactory to create a proper v2 game
+        players = [
+            {"name": "Player 1", "color": "Red", "sprite_color": "RED"},
+            {"name": "Player 2", "color": "Blue", "sprite_color": "BLUE"}
+        ]
         
-        # Create a simple map for testing
-        self.board = GameBoard(15, 10)
-        self.board.grid = []
+        self.manager, _ = GameFactory.create_game_with_players('test', players)
+        self.board = self.manager.board
         
-        # Create a flat map with some sea tiles
-        for y in range(10):
-            for x in range(15):
-                if y < 3 and x >= 10:
-                    # Sea tiles in top-right
-                    map_type = MapType.SEA
-                else:
-                    map_type = MapType.PLAIN
-                    
-                map_tile = MapTile(x, y)
-                map_tile.type = map_type
-                game_tile = GameTile(x, y, mapTile=map_tile)
-                self.board.grid.append(game_tile)
-        
-        self.board.current_turn = Army.RED
-        self.board.turn_order = [Army.RED, Army.BLUE]
-        self.board.game_active = True
-        self.board.days = 1
-        
-        # Set up funds
-        self.board.red_funds = 500000
-        self.board.blue_funds = 500000
-        self.board.army_funds = {Army.RED: 500000, Army.BLUE: 500000}
-        
-        self.manager = GameManager(config, self.board)
+        # Give lots of funds for testing
+        self.manager.board_v2.player_funds[0] = 500000
+        self.manager.board_v2.player_funds[1] = 500000
+        self.manager._update_army_funds(Army.RED, 0)  # Update to 500000
+        self.manager._update_army_funds(Army.BLUE, 0)  # Update to 500000
     
     def create_unit(self, unit_type, army, x, y):
         """Helper to create a unit at position"""
