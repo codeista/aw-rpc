@@ -1,0 +1,11 @@
+# Archive directory for old/temporary files
+# This directory contains:
+# - temp_debug/ : Temporary debug scripts and test files
+# - old_code/ : Deprecated code and backups
+# - documentation/ : Old planning docs and notes
+
+# Keep the directory structure but ignore most contents
+!.gitignore
+!README.md
+temp_debug/*
+!temp_debug/.gitkeep
