@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Frontend Test</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        #log { background: #f0f0f0; padding: 10px; margin: 10px 0; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <h1>Frontend JavaScript Test</h1>
+    <div id="log"></div>
+    
+    <script>
+        const log = (msg, isError = false) => {
+            const div = document.createElement('div');
+            div.className = isError ? 'error' : 'success';
+            div.textContent = msg;
+            document.getElementById('log').appendChild(div);
+        };
+        
+        // Test loading the game script
+        const script = document.createElement('script');
+        script.src = '/static/js/game_v2_simple.js?v=' + Date.now();
+        script.onload = () => log('✓ game_v2_simple.js loaded successfully');
+        script.onerror = () => log('✗ Failed to load game_v2_simple.js', true);
+        
+        // Mock required globals
+        window.TOKEN = 'test-token';
+        window.SpriteMapper = class {
+            constructor() {}
+            getSpriteColor() { return 'RED'; }
+            buildUnitSprite() { return 'TANK_RED_idle_0'; }
+        };
+        
+        // Add to page
+        document.head.appendChild(script);
+        
+        // Check for syntax errors
+        window.addEventListener('error', (e) => {
+            log(`✗ JavaScript Error: ${e.message} at line ${e.lineno}`, true);
+        });
+        
+        // Test Game class instantiation after load
+        setTimeout(() => {
+            try {
+                if (typeof Game !== 'undefined') {
+                    log('✓ Game class is defined');
+                    // Don't instantiate as it needs canvas
+                } else {
+                    log('✗ Game class is not defined', true);
+                }
+            } catch (e) {
+                log(`✗ Error checking Game class: ${e.message}`, true);
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
