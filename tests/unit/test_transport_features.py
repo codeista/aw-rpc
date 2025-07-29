@@ -258,6 +258,124 @@ def test_cruiser_carrier_resupply(game_id: str) -> bool:
         print("   ⚠️ Could not verify Carrier resupply (no cargo info)")
         return True  # Feature is implemented even if we can't verify
 
+def test_lander_transport(game_id: str) -> bool:
+    """Test LANDER transport capabilities"""
+    print("\n4️⃣ Testing LANDER Transport...")
+    
+    # Find port position and adjacent water
+    board = rpc_call("game_board", {"token": game_id})
+    grid = board.get("grid", [])
+    width = board.get("width", 0)
+    height = board.get("height", 0)
+    
+    # Look for port (for creating units) and adjacent water (for lander)
+    port_pos = None
+    water_pos = None
+    land_pos = None
+    
+    tiles = [[None for _ in range(width)] for _ in range(height)]
+    for tile in grid:
+        tiles[tile["y"]][tile["x"]] = tile
+    
+    # Find port tile
+    for y in range(height):
+        for x in range(width):
+            if tiles[y][x] and tiles[y][x].get("type") == "PORT":
+                port_pos = (x, y)
+                
+                # Look for adjacent water for lander
+                for dx, dy in [(1,0), (0,1), (-1,0), (0,-1)]:
+                    wx, wy = x + dx, y + dy
+                    if 0 <= wx < width and 0 <= wy < height:
+                        if tiles[wy][wx] and tiles[wy][wx].get("type") in ["SEA", "REEF"]:
+                            water_pos = (wx, wy)
+                            
+                            # Look for land position for unloading
+                            for dx2, dy2 in [(1,0), (0,1), (-1,0), (0,-1)]:
+                                lx, ly = wx + dx2, wy + dy2
+                                if 0 <= lx < width and 0 <= ly < height:
+                                    if tiles[ly][lx] and tiles[ly][lx].get("type") in ["PLAIN", "ROAD"]:
+                                        land_pos = (lx, ly)
+                                        break
+                            break
+                break
+        if port_pos and water_pos and land_pos:
+            break
+    
+    if not all([port_pos, water_pos, land_pos]):
+        print("   ❌ Could not find suitable positions for LANDER test")
+        return False
+    
+    print(f"   Creating LANDER at {water_pos} and TANK at {land_pos}...")
+    
+    # Create lander and tank
+    lander_result = rpc_call("unit_create", {"token": game_id, "army": "RED", "unit_type": "LANDER", "x": water_pos[0], "y": water_pos[1]})
+    tank_result = rpc_call("unit_create", {"token": game_id, "army": "RED", "unit_type": "TANK", "x": land_pos[0], "y": land_pos[1]})
+    
+    if "error" in lander_result or "error" in tank_result:
+        print("   ❌ Failed to create LANDER or TANK")
+        return False
+    
+    print("   ✅ LANDER transport test setup complete")
+    return True
+
+def test_tcopter_transport(game_id: str) -> bool:
+    """Test TCOPTER transport capabilities"""  
+    print("\n5️⃣ Testing TCOPTER Transport...")
+    
+    # Find airport and adjacent positions
+    board = rpc_call("game_board", {"token": game_id})
+    grid = board.get("grid", [])
+    width = board.get("width", 0)
+    height = board.get("height", 0)
+    
+    # Look for airport and adjacent plain for units
+    airport_pos = None
+    plain_pos1 = None
+    plain_pos2 = None
+    
+    tiles = [[None for _ in range(width)] for _ in range(height)]
+    for tile in grid:
+        tiles[tile["y"]][tile["x"]] = tile
+    
+    # Find airport tile
+    for y in range(height):
+        for x in range(width):
+            if tiles[y][x] and tiles[y][x].get("type") == "AIRPORT":
+                airport_pos = (x, y)
+                
+                # Look for adjacent plain tiles for units
+                adjacent_plains = []
+                for dx, dy in [(1,0), (0,1), (-1,0), (0,-1), (1,1), (-1,-1), (1,-1), (-1,1)]:
+                    px, py = x + dx, y + dy
+                    if 0 <= px < width and 0 <= py < height:
+                        if tiles[py][px] and tiles[py][px].get("type") in ["PLAIN", "ROAD"]:
+                            adjacent_plains.append((px, py))
+                
+                if len(adjacent_plains) >= 2:
+                    plain_pos1 = adjacent_plains[0]  
+                    plain_pos2 = adjacent_plains[1]
+                    break
+        if airport_pos and plain_pos1 and plain_pos2:
+            break
+    
+    if not all([airport_pos, plain_pos1, plain_pos2]):
+        print("   ❌ Could not find suitable positions for TCOPTER test")
+        return False
+    
+    print(f"   Creating TCOPTER at {plain_pos1} and INFANTRY at {plain_pos2}...")
+    
+    # Create tcopter and infantry
+    tcopter_result = rpc_call("unit_create", {"token": game_id, "army": "RED", "unit_type": "TCOPTER", "x": plain_pos1[0], "y": plain_pos1[1]})
+    infantry_result = rpc_call("unit_create", {"token": game_id, "army": "RED", "unit_type": "INFANTRY", "x": plain_pos2[0], "y": plain_pos2[1]})
+    
+    if "error" in tcopter_result or "error" in infantry_result:
+        print("   ❌ Failed to create TCOPTER or INFANTRY")
+        return False
+    
+    print("   ✅ TCOPTER transport test setup complete")
+    return True
+
 def test_blackboat_repair(game_id: str) -> bool:
     """Test Black Boat manual repair command"""
     print("\n3️⃣ Testing Black Boat Manual Repair...")
@@ -415,11 +533,13 @@ def main():
     # Generate initial funds for expensive units
     generate_initial_funds(game_id, cycles=5)
     
-    # Run tests
+    # Run tests - all transport units
     results = {
         "APC Auto-Resupply": test_apc_auto_resupply(game_id),
         "Cruiser/Carrier Auto-Resupply": test_cruiser_carrier_resupply(game_id),
-        "Black Boat Manual Repair": test_blackboat_repair(game_id)
+        "Black Boat Manual Repair": test_blackboat_repair(game_id),
+        "LANDER Transport": test_lander_transport(game_id),
+        "TCOPTER Transport": test_tcopter_transport(game_id)
     }
     
     # Display results

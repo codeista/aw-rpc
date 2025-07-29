@@ -826,23 +826,36 @@ def setup_combat_units(game_id):
     
     # Create RED units at factories/ports/airports
     units_to_create = [
-        # Ground units - create more units for multiple test scenarios
-        ("RED", "TANK", 0, 3),      # Factory position
-        ("RED", "INFANTRY", 1, 4),  # Factory position
-        ("RED", "ARTILLERY", 0, 4), # Near factory
-        ("RED", "RECON", 1, 3),     # Near factory
-        ("RED", "MECH", 2, 3),      # Additional unit
-        ("RED", "TANK", 2, 4),      # Additional tank
+        # Ground units - all tank types and infantry
+        ("RED", "INFANTRY", 0, 3),      # Factory position
+        ("RED", "MECH", 1, 3),          # Factory position
+        ("RED", "RECON", 2, 3),         # Factory position
+        ("RED", "TANK", 0, 4),          # Factory position
+        ("RED", "MEDIUMTANK", 1, 4),    # Factory position
+        ("RED", "NEOTANK", 2, 4),       # Factory position
+        ("RED", "MEGATANK", 0, 5),      # Factory position
+        ("RED", "APC", 1, 5),           # Factory position
+        ("RED", "ARTILLERY", 2, 5),     # Near factory
+        ("RED", "ROCKET", 0, 6),        # Near factory
+        ("RED", "MISSILE", 1, 6),       # Near factory
+        ("RED", "ANTIAIR", 2, 6),       # Near factory
+        ("RED", "PIPERUNNER", 0, 7),    # Special unit
         
         # Naval units at port
-        ("RED", "BATTLESHIP", 0, 0), # Port position
-        ("RED", "CRUISER", 1, 0),    # Near port
-        ("RED", "SUB", 2, 0),       # Additional naval
+        ("RED", "BATTLESHIP", 0, 0),    # Port position
+        ("RED", "CRUISER", 1, 0),       # Near port
+        ("RED", "SUB", 2, 0),           # Additional naval
+        ("RED", "LANDER", 3, 0),        # Transport
+        ("RED", "CARRIER", 4, 0),       # Air transport
+        ("RED", "BLACKBOAT", 5, 0),     # Repair unit
         
         # Air units at airport  
-        ("RED", "FIGHTER", 0, 8),    # Airport position
-        ("RED", "BOMBER", 1, 8),     # Near airport
-        ("RED", "BCOPTER", 2, 8),   # Additional air
+        ("RED", "FIGHTER", 0, 8),       # Airport position
+        ("RED", "BOMBER", 1, 8),        # Near airport
+        ("RED", "BCOPTER", 2, 8),       # Battle copter
+        ("RED", "TCOPTER", 3, 8),       # Transport copter
+        ("RED", "STEALTH", 4, 8),       # Stealth fighter
+        ("RED", "BLACKBOMB", 5, 8),     # Suicide unit
     ]
     
     for army, unit_type, x, y in units_to_create:
@@ -859,25 +872,38 @@ def setup_combat_units(game_id):
     # End turn to switch to BLUE
     rpc_call("army_end_turn", {"token": game_id})
     
-    # Create BLUE units - more units for multiple test scenarios
+    # Create BLUE units - all unit types for comprehensive testing
     blue_units = [
-        # Ground units
-        ("BLUE", "TANK", 9, 6),      # Factory position
-        ("BLUE", "INFANTRY", 8, 5), # Factory position  
-        ("BLUE", "MECH", 9, 5),     # Near factory
-        ("BLUE", "ARTILLERY", 8, 6), # Near factory
-        ("BLUE", "TANK", 7, 5),     # Additional tank
-        ("BLUE", "INFANTRY", 7, 6), # Additional infantry
+        # Ground units - mirror RED units for comprehensive combat testing
+        ("BLUE", "INFANTRY", 9, 6),     # Factory position
+        ("BLUE", "MECH", 8, 6),         # Factory position
+        ("BLUE", "RECON", 7, 6),        # Factory position
+        ("BLUE", "TANK", 9, 5),         # Factory position
+        ("BLUE", "MEDIUMTANK", 8, 5),   # Factory position
+        ("BLUE", "NEOTANK", 7, 5),      # Factory position
+        ("BLUE", "MEGATANK", 9, 4),     # Factory position
+        ("BLUE", "APC", 8, 4),          # Factory position
+        ("BLUE", "ARTILLERY", 7, 4),    # Near factory
+        ("BLUE", "ROCKET", 9, 3),       # Near factory
+        ("BLUE", "MISSILE", 8, 3),      # Near factory
+        ("BLUE", "ANTIAIR", 7, 3),      # Near factory
+        ("BLUE", "PIPERUNNER", 9, 2),   # Special unit
         
         # Naval units
-        ("BLUE", "BATTLESHIP", 9, 9), # Port position
-        ("BLUE", "SUB", 8, 9),        # Near port
-        ("BLUE", "LANDER", 7, 9),     # Additional naval
+        ("BLUE", "BATTLESHIP", 9, 9),   # Port position
+        ("BLUE", "CRUISER", 8, 9),      # Near port
+        ("BLUE", "SUB", 7, 9),          # Additional naval
+        ("BLUE", "LANDER", 6, 9),       # Transport
+        ("BLUE", "CARRIER", 5, 9),      # Air transport
+        ("BLUE", "BLACKBOAT", 4, 9),    # Repair unit
         
         # Air units
-        ("BLUE", "FIGHTER", 9, 1),    # Airport position
-        ("BLUE", "TCOPTER", 8, 1),    # Near airport
-        ("BLUE", "BOMBER", 7, 1),     # Additional air
+        ("BLUE", "FIGHTER", 9, 1),      # Airport position
+        ("BLUE", "BOMBER", 8, 1),       # Near airport
+        ("BLUE", "BCOPTER", 7, 1),      # Battle copter
+        ("BLUE", "TCOPTER", 6, 1),      # Transport copter
+        ("BLUE", "STEALTH", 5, 1),      # Stealth fighter
+        ("BLUE", "BLACKBOMB", 4, 1),    # Suicide unit
     ]
     
     for army, unit_type, x, y in blue_units:

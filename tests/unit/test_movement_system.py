@@ -39,25 +39,35 @@ def rpc_call(method: str, params: dict = None) -> dict:
 def get_test_game():
     """Create optimized test game for movement testing"""
     try:
-        # Try test_game route first
+        # Request a movement test game with predeployed units
+        response = requests.get("http://localhost:5000/test_game?type=movement", allow_redirects=False)
+        if response.status_code == 302:
+            location = response.headers.get('Location', '')
+            # Check for v2 game format
+            match = re.search(r'/v2\?token=([A-Za-z0-9_]+)', location)
+            if match:
+                game_id = match.group(1)
+                print(f"✅ Created movement test game with units: {game_id}")
+                return game_id
+        
+        # Fallback to RPC method
+        result = rpc_call("game_create_test", {"use_optimized": True})
+        if "error" not in result:
+            token = result.get("result", result).get("token")
+            if token:
+                print(f"✅ Created test game with units: {token}")
+                return token
+        
+        # Final fallback to basic test game
         response = requests.get("http://localhost:5000/test_game", allow_redirects=False)
         if response.status_code == 302:
             location = response.headers.get('Location', '')
-            match = re.search(r'/game/([A-Za-z0-9_]+)', location)
+            match = re.search(r'/v2\?token=([A-Za-z0-9_]+)', location)
             if match:
                 game_id = match.group(1)
-                print(f"✅ Created test game: {game_id}")
+                print(f"✅ Created v2 test game: {game_id}")
                 return game_id
         
-        # Fallback to test_optimized if available
-        response = requests.get("http://localhost:5000/test_optimized", allow_redirects=False)
-        if response.status_code == 302:
-            location = response.headers.get('Location', '')
-            match = re.search(r'/game/([A-Za-z0-9_]+)', location)
-            if match:
-                game_id = match.group(1)
-                print(f"✅ Created optimized test game: {game_id}")
-                return game_id
         return None
     except Exception as e:
         print(f"❌ Error creating game: {e}")
@@ -217,8 +227,16 @@ class MovementTester:
         """Test get_movement_costs RPC method"""
         print("\n💰 Testing Movement Costs...")
         
-        # Test movement costs for different unit types
-        test_units = ["INFANTRY", "TANK", "ARTILLERY", "BATTLESHIP"]
+        # Test movement costs for all unit types
+        test_units = [
+            # Ground units
+            "INFANTRY", "MECH", "RECON", "TANK", "MEDIUMTANK", "NEOTANK", "MEGATANK",
+            "APC", "ARTILLERY", "ROCKET", "MISSILE", "ANTIAIR", "PIPERUNNER",
+            # Air units  
+            "FIGHTER", "BOMBER", "BCOPTER", "TCOPTER", "STEALTH", "BLACKBOMB",
+            # Naval units
+            "BATTLESHIP", "CRUISER", "SUB", "LANDER", "CARRIER", "BLACKBOAT"
+        ]
         costs_tested = 0
         
         for unit_type in test_units:
