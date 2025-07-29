@@ -152,6 +152,100 @@ table {
 	margin-right: auto;
 }
 /* =============================================================================
+   CONTEXT MENU STYLES
+   ============================================================================= */
+
+.context-menu {
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.9);
+    border: 1px solid #3498db;
+    border-radius: 4px;
+    padding: 0;
+    margin: 0;
+    display: none;
+    z-index: 1000;
+}
+
+.context-menu-header {
+    padding: 8px 20px;
+    color: #3498db;
+    font-weight: bold;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 4px;
+}
+
+.context-menu button {
+    display: block;
+    width: 100%;
+    padding: 8px 20px;
+    background: transparent;
+    color: #fff;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.context-menu button:hover:not(:disabled) {
+    background-color: rgba(52, 152, 219, 0.3);
+}
+
+.context-menu button:disabled {
+    color: #666;
+    cursor: not-allowed;
+}
+
+/* =============================================================================
+   UI PANEL STYLES
+   ============================================================================= */
+
+.info-panel {
+    background-color: rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    padding: 10px;
+    color: white;
+    font-size: 14px;
+}
+
+.info-panel h4 {
+    margin: 0 0 10px 0;
+    color: #3498db;
+    font-size: 16px;
+}
+
+.info-panel .info-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.info-panel .info-label {
+    color: #999;
+}
+
+.info-panel .info-value {
+    color: white;
+    font-weight: bold;
+}
+
+/* =============================================================================
+   PLAYER STATS STYLES
+   ============================================================================= */
+
+.player-stats-item {
+    margin-bottom: 15px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 10px;
+}
+
+.player-stats-name {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+/* =============================================================================
    PHASE 2A: ENHANCED COMBAT STYLES
    ============================================================================= */
 
