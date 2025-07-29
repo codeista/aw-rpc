@@ -1,10 +1,19 @@
-Flask==2.3.3
-Flask-CORS==4.0.0
+# Core Flask dependencies
+Flask==3.0.3
+Flask-CORS==5.0.0
 Flask-JSONRPC==2.2.2
-Flask-SocketIO==5.3.2
-Flask-SQLAlchemy==3.0.3
-Werkzeug==2.3.7
-python-socketio==5.9.0
+Flask-SocketIO==5.3.6
+Flask-SQLAlchemy==3.1.1
+Werkzeug==3.0.3
+
+# SocketIO and async support
+python-socketio==5.11.3
+
+# Database and utilities
+psycopg2-binary==2.9.9
+psutil==6.0.0
 jsons==1.6.3
-psycopg2-binary==2.9.5
-psutil==5.9.5
+
+# Production server (replaces development server)
+gunicorn==22.0.0
+eventlet==0.35.2  # For async support with gunicorn

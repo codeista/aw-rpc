@@ -29,10 +29,9 @@ import jsons
 # )
 import secrets
 
-from manager import GameManager
+from manager_v2 import GameManager
 from gameboard import GameBoard
 from game_factory import GameFactory
-from manager_v2 import GameManagerV2
 from game_board_v2 import GameBoardV2
 from player_system import PlayerManager
 from config import Config
@@ -262,18 +261,61 @@ def game_load(token):
             
             app_logger.debug(f"Reconstructed {units_reconstructed} units total")
             
-            # Now try to deserialize with jsons - pass the dict directly, not as JSON
-            try:
-                board = jsons.loads(board_dict, GameBoard)
-                app_logger.debug(f"jsons.loads succeeded")
-            except Exception as jsons_error:
-                app_logger.debug(f"jsons.loads failed: {jsons_error}")
-                # Try alternative approach - create GameBoard manually
-                board = create_board_from_dict(board_dict)
-            
-            mngr = GameManager(config_game, board)
-            mngr.app_logger = app_logger  # Set logger for income processing
-            return mngr
+            # Reconstruct v2 game from saved data
+            # First, check if this is a v2 game (has army_to_player mapping)
+            if 'army_to_player' in board_dict:
+                # This is a v2 game, reconstruct properly
+                from game_board_v2 import GameBoardV2
+                from player_system import PlayerManager, SpriteColor
+                
+                # Create player manager from saved data
+                player_manager = PlayerManager()
+                
+                # Reconstruct players from army_to_player mapping
+                army_to_player_map = {}
+                for army_str, player_id in board_dict.get('army_to_player', {}).items():
+                    # Convert string keys to Army enum if needed
+                    if isinstance(army_str, str):
+                        try:
+                            army = Army[army_str]
+                        except:
+                            army = army_str
+                    else:
+                        army = army_str
+                    army_to_player_map[army] = player_id
+                    
+                    # Add player if not already added
+                    if player_id not in [p.id for p in player_manager.players]:
+                        # Use army name as player name and sprite color
+                        sprite_color = SpriteColor[army_str] if isinstance(army_str, str) else SpriteColor.RED
+                        player_manager.add_player(f"Player {player_id + 1}", army_str, sprite_color)
+                
+                # Create v2 board
+                board = GameBoardV2(config_game)
+                
+                # Deserialize board data
+                try:
+                    # Use jsons to load the board data into the v2 board
+                    for key, value in board_dict.items():
+                        if hasattr(board, key) and key != 'army_to_player':
+                            setattr(board, key, value)
+                    
+                    # Restore grid properly
+                    if 'grid' in board_dict:
+                        board.grid = [jsons.loads(tile, GameTile) if isinstance(tile, dict) else tile 
+                                    for tile in board_dict['grid']]
+                except Exception as e:
+                    app_logger.error(f"Error restoring board state: {e}")
+                    raise
+                
+                # Create v2 game manager
+                mngr = GameManager(config_game, board, player_manager)
+                mngr.app_logger = app_logger
+                return mngr
+            else:
+                # Legacy game - this shouldn't happen anymore but handle gracefully
+                app_logger.error(f"Attempting to load legacy game format for {token}")
+                raise ValueError("Legacy game format no longer supported")
             
         except Exception as e:
             app_logger.error(f"Failed to deserialize game {token}: {str(e)}")
@@ -282,23 +324,14 @@ def game_load(token):
             # Fall through to create new game
     
     app_logger.info(f"Creating new game: {token}")   
-    # If no game found or deserialization failed, create a new one with default map 
-    try:
-        default_map = map_repository.get_map('test')
-        if not default_map:
-            default_map = map_repository.get_map('scorpion')  
-    except:
-        # Fallback if map system isn't working
-        from map_system import Map
-        default_map = Map()
-    
-    board = GameBoard.create(default_map)
-    mngr = GameManager(config_game, board)
+    # If no game found or deserialization failed, create a new one with default map
+    # Use GameFactory for v2 games
+    mngr, _ = GameFactory.create_standard_game(token)
     mngr.app_logger = app_logger  # Set logger for income processing
     
     # Log game creation
     if ENHANCED_LOGGING:
-        game_event_logger.log_game_created(token, len(board.turn_order))
+        game_event_logger.log_game_created(token, 2)  # Standard game has 2 players
     
     return mngr
 
@@ -933,7 +966,7 @@ def create_terrain_test_game():
         game_manager = get_predeployed_test_game(token)
         games[token] = game_manager
         app_logger.info(f"Created terrain test game: {token}")
-        return redirect(f'/game/{token}')
+        return redirect(f'/v2?token={token}')
     except Exception as e:
         app_logger.error(f"Failed to create terrain test game: {e}")
         return f"Error creating test game: {e}", 500
@@ -946,7 +979,7 @@ def create_comprehensive_test():
         game_manager = get_comprehensive_test_game(token)
         games[token] = game_manager
         app_logger.info(f"Created comprehensive test game: {token}")
-        return redirect(f'/game/{token}')
+        return redirect(f'/v2?token={token}')
     except Exception as e:
         app_logger.error(f"Failed to create comprehensive test game: {e}")
         return f"Error creating comprehensive test game: {e}", 500
@@ -997,7 +1030,7 @@ def test_movement_scenario():
         
         games[token] = game_manager
         app_logger.info(f"Created movement test game: {token}")
-        return redirect(f'/game/{token}')
+        return redirect(f'/v2?token={token}')
         
     except Exception as e:
         app_logger.error(f"Failed to create movement test game: {e}")
@@ -1038,7 +1071,7 @@ def create_combat_test():
         # Save the game to persist the units
         game_save(game_manager, token)
         app_logger.info(f"Created combat test game: {token}")
-        return redirect(f'/game/{token}')
+        return redirect(f'/v2?token={token}')
         
     except Exception as e:
         app_logger.error(f"Failed to create combat test game: {e}")
@@ -1151,10 +1184,29 @@ def test_game():
                 from routes.unified_test_route import _add_test_units_v2
                 _add_test_units_v2(mngr, config.get('unit_focus'))
                 
-        elif test_type == 'comprehensive' or (test_type == 'basic' and force_units):
-            mngr = get_comprehensive_test_game(token)
-        elif test_type == 'movement':
-            mngr = get_predeployed_test_game(token)
+        elif test_type in ['comprehensive', 'movement', 'combat', 'transport']:
+            # Use the unified test route configs
+            from routes.unified_test_route import TEST_CONFIGS
+            config = TEST_CONFIGS.get(test_type, {})
+            map_name = custom_map or config.get('map', 'test')
+            
+            # Create v2 game
+            from game_factory import GameFactory
+            players = [
+                {"name": "Player 1", "color": "Red", "sprite_color": "RED"},
+                {"name": "Player 2", "color": "Blue", "sprite_color": "BLUE"}
+            ]
+            mngr, _ = GameFactory.create_game_with_players(map_name, players)
+            
+            # Set high funds
+            if hasattr(mngr.board, 'player_funds'):
+                mngr.board.player_funds[0] = 50000
+                mngr.board.player_funds[1] = 50000
+            
+            # Add units based on config
+            if config.get('add_units', False):
+                from routes.unified_test_route import _add_test_units_v2
+                _add_test_units_v2(mngr, config.get('unit_focus', test_type))
         else:
             # Basic test game
             mngr = get_predeployed_test_game(token)
@@ -1162,7 +1214,7 @@ def test_game():
         if mngr:
             games[token] = mngr
             app_logger.info(f"Created test game '{token}' with type '{test_type}'")
-            return redirect(f'/game/{token}')
+            return redirect(f'/v2?token={token}')
         else:
             return "Failed to create test game", 500
             
@@ -1508,19 +1560,15 @@ def create_optimized_test_game():
     try:
         # Import everything we need explicitly
         from config import Config
-        from manager import GameManager
+        from manager_v2 import GameManager
         # from tests.debug.optimized_test_map import create_optimized_test_map
         
         # Create configuration
         config_game = Config()
         app_logger.debug(f"Config created: {type(config_game)}")
         
-        # Create the optimized board
-        board = create_optimized_test_map()
-        app_logger.debug(f"Board created: {type(board)}")
-        
-        # Create game manager with proper parameters
-        game_manager = GameManager(config_game, board)
+        # Create optimized test game using GameFactory
+        game_manager, _ = GameFactory.create_standard_game(token)
         game_manager.app_logger = app_logger  # Set logger for income processing
         app_logger.debug(f"GameManager created: {type(game_manager)}")
         
@@ -1541,7 +1589,7 @@ def create_optimized_test_game():
         app_logger.info("   💰 Economy: 50,000 funds each army")
         app_logger.info("   🎯 All unit types: Naval, air, land units deployed")
         
-        return redirect(f'/game/{token}')
+        return redirect(f'/v2?token={token}')
     
     except Exception as e:
         # Enhanced error reporting
@@ -1592,7 +1640,7 @@ def create_transport_test_game():
         print("   🚁 Naval and land transport options")
         print("   📋 Test: Load/unload, transport movement, cargo protection")
         
-        return redirect(f'/game/{token}')
+        return redirect(f'/v2?token={token}')
     
     except Exception as e:
         app_logger.error(f"Failed to create transport test game: {e}")
@@ -1646,7 +1694,7 @@ def create_triangle_map_game():
     token = secrets.token_urlsafe(6)
     
     try:
-        from manager import GameManager
+        from manager_v2 import GameManager
         from config import Config
         from map_system import map_repository
         
@@ -1658,21 +1706,21 @@ def create_triangle_map_game():
             return "Triangle map not found", 500
         
         # Create GameBoard from Map
-        from gameboard import GameBoard
-        board = GameBoard.create(triangle_map)
+        # Create v2 game using GameFactory
+        players = [
+            {"name": "Player 1", "color": "Red", "sprite_color": "RED"},
+            {"name": "Player 2", "color": "Blue", "sprite_color": "BLUE"}
+        ]
         
-        app_logger.debug(f"Triangle: Map {triangle_map.name}, size {triangle_map.width}x{triangle_map.height}, armies: {[a.name for a in triangle_map.turn_order]}")
-        
-        # Create game manager
-        game_manager = GameManager(config_game, board)
+        game_manager, _ = GameFactory.create_game_with_players('triangle', players)
         game_manager.app_logger = app_logger  # Set logger for income processing
-        board.game_active = True
-        board.current_turn = Army.RED
+        game_manager.board.game_active = True
+        game_manager.board.current_turn = Army.RED
         
         games[token] = game_manager
         app_logger.info(f"Created triangle map game: {token}")
         
-        return redirect(f'/game/{token}')
+        return redirect(f'/v2?token={token}')
     
     except Exception as e:
         app_logger.error(f"Failed to create triangle map game: {e}")
@@ -1684,7 +1732,7 @@ def create_cross_map_game():
     token = secrets.token_urlsafe(6)
     
     try:
-        from manager import GameManager
+        from manager_v2 import GameManager
         from config import Config
         from map_system import map_repository
         
@@ -1695,22 +1743,21 @@ def create_cross_map_game():
         if not cross_map:
             return "Cross map not found", 500
         
-        # Create GameBoard from Map
-        from gameboard import GameBoard
-        board = GameBoard.create(cross_map)
+        # Create v2 game using GameFactory
+        players = [
+            {"name": "Player 1", "color": "Red", "sprite_color": "RED"},
+            {"name": "Player 2", "color": "Blue", "sprite_color": "BLUE"}
+        ]
         
-        app_logger.debug(f"Cross: Map {cross_map.name}, size {cross_map.width}x{cross_map.height}, armies: {[a.name for a in cross_map.turn_order]}")
-        
-        # Create game manager
-        game_manager = GameManager(config_game, board)
+        game_manager, _ = GameFactory.create_game_with_players('cross', players)
         game_manager.app_logger = app_logger  # Set logger for income processing
-        board.game_active = True
-        board.current_turn = Army.RED
+        game_manager.board.game_active = True
+        game_manager.board.current_turn = Army.RED
         
         games[token] = game_manager
         app_logger.info(f"Created cross map game: {token}")
         
-        return redirect(f'/game/{token}')
+        return redirect(f'/v2?token={token}')
     
     except Exception as e:
         app_logger.error(f"Failed to create cross map game: {e}")
@@ -1722,7 +1769,7 @@ def create_pentagon_map_game():
     token = secrets.token_urlsafe(6)
     
     try:
-        from manager import GameManager
+        from manager_v2 import GameManager
         from config import Config
         from map_system import map_repository
         
@@ -1733,22 +1780,21 @@ def create_pentagon_map_game():
         if not pentagon_map:
             return "Pentagon map not found", 500
         
-        # Create GameBoard from Map
-        from gameboard import GameBoard
-        board = GameBoard.create(pentagon_map)
+        # Create v2 game using GameFactory
+        players = [
+            {"name": "Player 1", "color": "Red", "sprite_color": "RED"},
+            {"name": "Player 2", "color": "Blue", "sprite_color": "BLUE"}
+        ]
         
-        app_logger.debug(f"Pentagon: Map {pentagon_map.name}, size {pentagon_map.width}x{pentagon_map.height}, armies: {[a.name for a in pentagon_map.turn_order]}")
-        
-        # Create game manager
-        game_manager = GameManager(config_game, board)
+        game_manager, _ = GameFactory.create_game_with_players('pentagon', players)
         game_manager.app_logger = app_logger  # Set logger for income processing
-        board.game_active = True
-        board.current_turn = Army.RED
+        game_manager.board.game_active = True
+        game_manager.board.current_turn = Army.RED
         
         games[token] = game_manager
         app_logger.info(f"Created pentagon map game: {token}")
         
-        return redirect(f'/game/{token}')
+        return redirect(f'/v2?token={token}')
     
     except Exception as e:
         app_logger.error(f"Failed to create pentagon map game: {e}")
@@ -2285,17 +2331,12 @@ def game_create_test_rpc(token: str, use_optimized: bool = True) -> str:
             manager, _ = GameFactory.create_game_with_players('test', players)
             
             # Set high starting funds for testing
-            # For V2 games, set funds by player ID
-            if hasattr(manager, 'board_v2'):
-                manager.board_v2.player_funds[0] = 50000  # Player 0 (RED)
-                manager.board_v2.player_funds[1] = 50000  # Player 1 (BLUE)
-                # Also set via properties for backward compatibility
-                manager.board.red_funds = 50000
-                manager.board.blue_funds = 50000
-            else:
-                # Fallback for legacy boards
-                manager.board.red_funds = 50000
-                manager.board.blue_funds = 50000
+            # All games are v2 now, set funds by player ID
+            manager.board.player_funds[0] = 50000  # Player 0 (RED)
+            manager.board.player_funds[1] = 50000  # Player 1 (BLUE)
+            # Also set via properties for backward compatibility
+            manager.board.red_funds = 50000
+            manager.board.blue_funds = 50000
             
             # Store in games dict
             games[token] = manager
@@ -2387,59 +2428,57 @@ def game_board_rpc(token: str) -> dict:
             board_data = json.loads(board_data)
             
         # Add map name if available
-        if isinstance(mngr, GameManagerV2):
-            # For V2 games, check board_v2
-            if hasattr(mngr.board_v2, 'map') and mngr.board_v2.map and hasattr(mngr.board_v2.map, 'name'):
-                board_data['map_name'] = mngr.board_v2.map.name
-            else:
-                board_data['map_name'] = 'Unknown Map'
+        # All games are now v2 games, use board instead of board_v2
+        if hasattr(mngr.board, 'map') and mngr.board.map and hasattr(mngr.board.map, 'name'):
+            board_data['map_name'] = mngr.board.map.name
         else:
-            # Legacy games check board
-            if hasattr(mngr.board, 'map') and hasattr(mngr.board.map, 'name'):
-                board_data['map_name'] = mngr.board.map.name
-            else:
-                board_data['map_name'] = 'Unknown Map'
+            board_data['map_name'] = 'Unknown Map'
             
-        # Add player info if this is a v2 game
-        if isinstance(mngr, GameManagerV2):
-            board_data['players'] = mngr.player_manager.to_dict()['players']
-            board_data['sprite_mapping'] = mngr.player_manager.to_dict()['sprite_mapping']
-            # Convert integer keys to strings for JSON serialization
-            board_data['player_funds'] = {str(k): v for k, v in mngr.board_v2.player_funds.items()}
-            board_data['player_properties'] = {str(k): v for k, v in mngr.board_v2.player_properties.items()}
-            board_data['player_troops'] = {str(k): v for k, v in mngr.board_v2.player_troops.items()}
-            board_data['current_player'] = mngr.board_v2.current_player
-            
-            # CRITICAL: Include grid data from the v2 board
-            if hasattr(mngr.board_v2, 'grid') and not board_data.get('grid'):
-                board_data['grid'] = jsons.dump(mngr.board_v2.grid)
-                board_data['width'] = mngr.board_v2.width
-                board_data['height'] = mngr.board_v2.height
-                
-                # Add player_id to tiles and units for v2 games
-                if 'grid' in board_data and isinstance(board_data['grid'], list):
-                    for tile in board_data['grid']:
-                        if isinstance(tile, dict):
-                            # Add player_id to map tiles
-                            if 'mapTile' in tile and tile['mapTile'].get('army'):
-                                army = tile['mapTile']['army']
-                                from map_system import Army
-                                player_id = mngr.board_v2.army_to_player.get(Army[army])
-                                if player_id is not None:
-                                    tile['mapTile']['player_id'] = player_id
-                            
-                            # Add player_id to units
-                            if 'unit' in tile and tile['unit'] and tile['unit'].get('army'):
-                                army = tile['unit']['army']
-                                player_id = mngr.board_v2.army_to_player.get(Army[army])
-                                if player_id is not None:
-                                    tile['unit']['player_id'] = player_id
+        # Add player info - all games are v2 now
+        board_data['players'] = mngr.player_manager.to_dict()['players']
+        board_data['sprite_mapping'] = mngr.player_manager.to_dict()['sprite_mapping']
+        # Convert integer keys to strings for JSON serialization
+        board_data['player_funds'] = {str(k): v for k, v in mngr.board.player_funds.items()}
+        board_data['player_properties'] = {str(k): v for k, v in mngr.board.player_properties.items()}
+        board_data['player_troops'] = {str(k): v for k, v in mngr.board.player_troops.items()}
+        board_data['current_player'] = mngr.board.current_player
         
-        # Remove fields that might have mixed key types
+        # CRITICAL: Include grid data from the board
+        if hasattr(mngr.board, 'grid') and not board_data.get('grid'):
+            board_data['grid'] = jsons.dump(mngr.board.grid)
+            board_data['width'] = mngr.board.width
+            board_data['height'] = mngr.board.height
+            
+            # Add player_id to tiles and units for v2 games
+            if 'grid' in board_data and isinstance(board_data['grid'], list):
+                for tile in board_data['grid']:
+                    if isinstance(tile, dict):
+                        # Add player_id to map tiles
+                        if 'mapTile' in tile and tile['mapTile'].get('army'):
+                            army = tile['mapTile']['army']
+                            from map_system import Army
+                            player_id = mngr.board.army_to_player.get(Army[army])
+                            if player_id is not None:
+                                tile['mapTile']['player_id'] = player_id
+                        
+                        # Add player_id to units
+                        if 'unit' in tile and tile['unit'] and tile['unit'].get('army'):
+                            army = tile['unit']['army']
+                            player_id = mngr.board.army_to_player.get(Army[army])
+                            if player_id is not None:
+                                tile['unit']['player_id'] = player_id
+        
+        # Remove fields that might have mixed key types or non-serializable keys
         if 'army_to_player' in board_data:
             del board_data['army_to_player']
         if 'player_to_army' in board_data:
             del board_data['player_to_army']
+        if 'army_funds' in board_data:
+            del board_data['army_funds']
+        if 'army_properties' in board_data:
+            del board_data['army_properties']
+        if 'army_troops' in board_data:
+            del board_data['army_troops']
             
         # Add selected coordinates if a unit is selected
         if hasattr(mngr.board, 'selected') and mngr.board.selected:
@@ -2450,15 +2489,10 @@ def game_board_rpc(token: str) -> dict:
         else:
             board_data['selected'] = None
             
-        # Add game status fields
-        if isinstance(mngr, GameManagerV2):
-            board_data['game_active'] = mngr.board_v2.game_active
-            board_data['winner'] = mngr.board_v2.winner
-            board_data['victory_type'] = mngr.board_v2.victory_type
-        else:
-            board_data['game_active'] = mngr.board.game_active
-            board_data['winner'] = mngr.board.winner if hasattr(mngr.board, 'winner') else None
-            board_data['victory_type'] = mngr.board.victory_type if hasattr(mngr.board, 'victory_type') else None
+        # Add game status fields - all games are v2 now
+        board_data['game_active'] = mngr.board.game_active
+        board_data['winner'] = mngr.board.winner if hasattr(mngr.board, 'winner') else None
+        board_data['victory_type'] = mngr.board.victory_type if hasattr(mngr.board, 'victory_type') else None
             
         return board_data  # Now guaranteed to be a dict
         
@@ -2479,52 +2513,31 @@ def army_end_turn_rpc(token: str) -> dict:
     try:
         mngr = game_load(token)
         
-        # Handle v2 games
-        if isinstance(mngr, GameManagerV2):
-            # Get current player info
-            current_player = mngr.board_v2.current_player
-            current_player_name = mngr.player_manager.get_player(current_player).name
-            
-            # End turn
-            mngr.army_end_turn()
-            
-            # Get new player info
-            new_player = mngr.board_v2.current_player
-            new_player_name = mngr.player_manager.get_player(new_player).name
-            
-            game_save(mngr, token)
-            ws_board_update(token)
-            
-            turn_number = mngr.board_v2.days
-            
-            app_logger.info(f'V2 Turn ended: {current_player_name} -> {new_player_name} (Day {turn_number})')
-            
-            return {
-                'current_turn': mngr.board_v2.current_turn.name if mngr.board_v2.current_turn else str(new_player),
-                'current_player': new_player,
-                'status': 'success',
-                'day': turn_number
-            }
-        else:
-            # Legacy path
-            current_army = mngr.check_turn()
-            winner = mngr.check_win_condition()
-            mngr.army_end_turn()
-            game_save(mngr, token)
-            ws_board_update(token)
-            
-            new_turn = mngr.check_turn()
-            
-            # Enhanced logging
-            turn_number = getattr(mngr.board, 'days', 1)
-            funds = getattr(mngr.board, f'{current_army.name.lower()}_funds', 0)
-            
-            if ENHANCED_LOGGING:
-                game_event_logger.log_turn_ended(token, current_army.name, turn_number, funds)
-            
-            app_logger.info(f'Turn ended: {current_army.name} -> {new_turn.name} (Day {turn_number})')
-            
-            return {'current_turn': new_turn.name, 'status': 'success', 'day': turn_number}
+        # Handle v2 games - all games are v2 now
+        # Get current player info
+        current_player = mngr.board.current_player
+        current_player_name = mngr.player_manager.get_player(current_player).name
+        
+        # End turn
+        mngr.army_end_turn()
+        
+        # Get new player info
+        new_player = mngr.board.current_player
+        new_player_name = mngr.player_manager.get_player(new_player).name
+        
+        game_save(mngr, token)
+        ws_board_update(token)
+        
+        turn_number = mngr.board.days
+        
+        app_logger.info(f'V2 Turn ended: {current_player_name} -> {new_player_name} (Day {turn_number})')
+        
+        return {
+            'current_turn': mngr.board.current_turn.name if mngr.board.current_turn else str(new_player),
+            'current_player': new_player,
+            'status': 'success',
+            'day': turn_number
+        }
     except Exception as ex:
         app_logger.error(f'army_end_turn error: {ex}')
         return handle_rpc_error('army_end_turn', token, ex)
@@ -3268,14 +3281,11 @@ def produce_unit_rpc(token: str, x: int, y: int, unit_type: str) -> dict:
                 "message": f"Coordinates ({x}, {y}) out of bounds"
             }
         
-        # Get current army - handle v2 games
-        if isinstance(mngr, GameManagerV2):
-            # Get army from player
-            current_player = mngr.board_v2.current_player
-            current_army = mngr.board_v2.get_army_for_player(current_player)
-            app_logger.debug(f'V2 produce_unit: player {current_player} -> army {current_army}')
-        else:
-            current_army = mngr.board.current_turn
+        # Get current army - all games are v2 now
+        # Get army from player
+        current_player = mngr.board.current_player
+        current_army = mngr.board.get_army_for_player(current_player)
+        app_logger.debug(f'V2 produce_unit: player {current_player} -> army {current_army}')
         
         # Attempt production
         result = mngr.produce_unit_at_facility(x, y, unit_type, current_army)
@@ -3333,14 +3343,11 @@ def get_production_options_rpc(token: str, x: int, y: int) -> dict:
                 "message": f"Coordinates ({x}, {y}) out of bounds"
             }
         
-        # Get current army - handle v2 games
-        if isinstance(mngr, GameManagerV2):
-            # Get army from player
-            current_player = mngr.board_v2.current_player
-            current_army = mngr.board_v2.get_army_for_player(current_player)
-            app_logger.debug(f'V2 produce_unit: player {current_player} -> army {current_army}')
-        else:
-            current_army = mngr.board.current_turn
+        # Get current army - all games are v2 now
+        # Get army from player
+        current_player = mngr.board.current_player
+        current_army = mngr.board.get_army_for_player(current_player)
+        app_logger.debug(f'V2 produce_unit: player {current_player} -> army {current_army}')
         
         # Get production options
         options = mngr.get_production_options(x, y, current_army)
@@ -5269,7 +5276,9 @@ def combat_preview_consolidated_rpc(token: str, attacker_x: int, attacker_y: int
         }
         
     except Exception as e:
+        import traceback
         app_logger.error(f"Combat preview failed: {token} - {str(e)}")
+        app_logger.error(f"Traceback: {traceback.format_exc()}")
         return {"success": False, "error": str(e)}
 
 @jsonrpc.method('combat_attack')
@@ -5483,20 +5492,16 @@ def game_info_rpc(token: str) -> dict:
             }
         }
         
-        # Add v2 player information if available
-        if isinstance(mngr, GameManagerV2):
-            info["is_v2"] = True
-            info["players"] = mngr.player_manager.to_dict()['players']
-            info["sprite_mapping"] = mngr.player_manager.to_dict()['sprite_mapping']
-            info["current_player"] = {
-                "id": mngr.board_v2.current_player,
-                "info": mngr.get_current_player_info()
-            }
-        else:
-            # Legacy game - provide compatibility info
-            info["is_v2"] = False
-            info["armies"] = [army.name for army in mngr.board.turn_order]
-            info["current_turn"] = mngr.board.current_turn.name
+        # Add v2 player information - all games are v2 now
+        info["is_v2"] = True
+        info["players"] = mngr.player_manager.to_dict()['players']
+        info["sprite_mapping"] = mngr.player_manager.to_dict()['sprite_mapping']
+        info["current_player"] = {
+            "id": mngr.board.current_player,
+            "info": mngr.get_current_player_info()
+        }
+        info["armies"] = [army.name for army in mngr.board.turn_order]
+        info["current_turn"] = mngr.board.current_turn.name
             
         # Add win state if game ended
         if not mngr.board.game_active and hasattr(mngr.board, 'winner'):
@@ -5518,58 +5523,42 @@ def player_stats_rpc(token: str, player_id: Optional[int] = None) -> dict:
     try:
         mngr = game_load(token)
         
-        if isinstance(mngr, GameManagerV2):
-            # V2 game - use player system
-            if player_id is None:
-                # Get all player stats
-                stats = {}
-                for pid in range(mngr.player_manager.get_player_count()):
-                    player = mngr.player_manager.get_player(pid)
-                    if player:
-                        stats[str(pid)] = {
-                            "name": player.name,
-                            "color": player.color,
-                            "sprite_color": player.sprite_color.value,
-                            "funds": mngr.board_v2.player_funds.get(pid, 0),
-                            "properties": mngr.board_v2.player_properties.get(pid, 0),
-                            "troops": mngr.board_v2.player_troops.get(pid, 0),
-                            "income": mngr.board_v2.player_properties.get(pid, 0) * 1000
-                        }
-                return {"success": True, "stats": stats}
-            else:
-                # Get specific player stats
-                player = mngr.player_manager.get_player(player_id)
-                if not player:
-                    return {"success": False, "error": f"Player {player_id} not found"}
-                    
-                return {
-                    "success": True,
-                    "player": {
-                        "id": player_id,
+        # All games are v2 now - use player system
+        if player_id is None:
+            # Get all player stats
+            stats = {}
+            for pid in range(mngr.player_manager.get_player_count()):
+                player = mngr.player_manager.get_player(pid)
+                if player:
+                    stats[str(pid)] = {
                         "name": player.name,
                         "color": player.color,
                         "sprite_color": player.sprite_color.value,
-                        "funds": mngr.board_v2.player_funds.get(player_id, 0),
-                        "properties": mngr.board_v2.player_properties.get(player_id, 0),
-                        "troops": mngr.board_v2.player_troops.get(player_id, 0),
-                        "income": mngr.board_v2.player_properties.get(player_id, 0) * 1000
+                        "funds": mngr.board.player_funds.get(pid, 0),
+                        "properties": mngr.board.player_properties.get(pid, 0),
+                        "troops": mngr.board.player_troops.get(pid, 0),
+                        "income": mngr.board.player_properties.get(pid, 0) * 1000
                     }
-                }
+            return {"success": True, "stats": stats}
         else:
-            # Legacy game - convert army to player-like format
-            armies = mngr.board.turn_order
-            stats = {}
-            for idx, army in enumerate(armies):
-                stats[str(idx)] = {
-                    "name": army.name,
-                    "color": army.name,
-                    "sprite_color": army.name,
-                    "funds": mngr.board.army_funds.get(army, 0),
-                    "properties": mngr.board.army_properties.get(army, 0),
-                    "troops": mngr.board.army_troops.get(army, 0),
-                    "income": mngr.board.army_properties.get(army, 0) * 1000
+            # Get specific player stats
+            player = mngr.player_manager.get_player(player_id)
+            if not player:
+                return {"success": False, "error": f"Player {player_id} not found"}
+                
+            return {
+                "success": True,
+                "player": {
+                    "id": player_id,
+                    "name": player.name,
+                    "color": player.color,
+                    "sprite_color": player.sprite_color.value,
+                    "funds": mngr.board.player_funds.get(player_id, 0),
+                    "properties": mngr.board.player_properties.get(player_id, 0),
+                    "troops": mngr.board.player_troops.get(player_id, 0),
+                    "income": mngr.board.player_properties.get(player_id, 0) * 1000
                 }
-            return {"success": True, "stats": stats, "legacy": True}
+            }
             
     except Exception as e:
         app_logger.error(f"Get player stats failed: {token} - {str(e)}")
@@ -6847,4 +6836,15 @@ if __name__ == '__main__':
     app_logger.info(f"Starting server on {host}:{port} (debug={debug})")
     app_logger.info("=== AW-RPC Application Ready ===")
     
-    socketio.run(app, host=host, port=port, debug=debug, allow_unsafe_werkzeug=True)
+    # Check if we're in production mode
+    if os.environ.get('FLASK_ENV') == 'production' or os.environ.get('PRODUCTION'):
+        app_logger.warning("WARNING: Using Flask development server in production!")
+        app_logger.warning("Use a production WSGI server like Gunicorn instead:")
+        app_logger.warning("  gunicorn -c gunicorn_config.py 'app:app'")
+    
+    # Only allow unsafe werkzeug in development
+    if debug:
+        socketio.run(app, host=host, port=port, debug=debug, allow_unsafe_werkzeug=True)
+    else:
+        # In production, this should not be reached - use gunicorn instead
+        socketio.run(app, host=host, port=port, debug=debug)

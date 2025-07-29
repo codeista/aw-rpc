@@ -12,6 +12,22 @@ app = Flask(__name__)
 CORS(app)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# Load production configuration if available
+if os.environ.get('FLASK_ENV') == 'production':
+    try:
+        from config_production import ProductionConfig
+        app.config.from_object(ProductionConfig)
+    except ImportError:
+        pass
+
+# Initialize security middleware in production
+if not app.debug and os.environ.get('FLASK_ENV') == 'production':
+    try:
+        from security_middleware import init_security
+        init_security(app)
+    except ImportError:
+        app_logger.warning("Security middleware not found - running without enhanced security")
+
 # Configure JSON to handle mixed key types
 app.config['JSON_SORT_KEYS'] = False  # Prevent sorting that causes mixed key type errors
 
