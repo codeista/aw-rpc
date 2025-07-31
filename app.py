@@ -145,64 +145,11 @@ def log_game_event(event_type, token, details):
         # Fallback to original logging
         game_logger.info(f"{event_type} | {token} | {json.dumps(details)}")
 
-# Map system - use your existing flexible approach
-try:
-    from map_system import Map, MapType, Army, MapTile
-    
-    # Create a working map inline
-    MAP_DATA = '''RED,BLUE
-FACTORY:RED,PLAIN*5,FACTORY:BLUE
-PLAIN*7
-PLAIN*2,CITY,PLAIN,CITY,PLAIN*2
-PLAIN*7
-FACTORY:BLUE,PLAIN*5,FACTORY:RED'''
-    
-    default_map = Map.parse(MAP_DATA)
-    app_logger.info("Using map_system for map data")
-
-except ImportError:
-    # Use your existing fallback system
-    app_logger.warning("Using minimal map system - map_system not available")
-    
-    class Army:
-        RED = 'RED'
-        BLUE = 'BLUE'
-    
-    class MapType:
-        PLAIN = 'PLAIN'
-        FACTORY = 'FACTORY'
-        CITY = 'CITY'
-    
-    class MapTile:
-        def __init__(self, tile_type, army=None):
-            self.type = tile_type
-            self.army = army
-    
-    class Map:
-        def __init__(self):
-            self.width = 7
-            self.height = 5
-            self.tiles = []
-            self.turn_order = [Army.RED, Army.BLUE]
+# Map system
+from map_system import Map, MapType, Army, MapTile, map_repository
+app_logger.info("Using map_system for map data")
             
-            # Create simple 7x5 map
-            for y in range(self.height):
-                for x in range(self.width):
-                    if y == 0 and x == 0:
-                        tile = MapTile(MapType.FACTORY, Army.RED)
-                    elif y == 0 and x == 6:
-                        tile = MapTile(MapType.FACTORY, Army.BLUE)
-                    elif y == 4 and x == 0:
-                        tile = MapTile(MapType.FACTORY, Army.BLUE)
-                    elif y == 4 and x == 6:
-                        tile = MapTile(MapType.FACTORY, Army.RED)
-                    elif (y == 2 and x == 2) or (y == 2 and x == 4):
-                        tile = MapTile(MapType.CITY)
-                    else:
-                        tile = MapTile(MapType.PLAIN)
-                    self.tiles.append(tile)
-    
-    default_map = Map()
+# Maps are now loaded from files
 
 config_game = Config()
 
@@ -2611,10 +2558,10 @@ def tile_rpc(token: str, x: int, y: int) -> dict:
         tile = mngr.tile_get(x, y)
         
         # Add terrain defense stars before serialization
-        from map_system import TERRAIN_DEFENSE
+        from map_system import TERRAIN_DEFENSE_STARS
         defense_stars = 0
         if tile.mapTile:
-            defense_stars = TERRAIN_DEFENSE.get(tile.mapTile.type, 0)
+            defense_stars = TERRAIN_DEFENSE_STARS.get(tile.mapTile.type, 0)
         
         result = jsons.dump(tile)
         
@@ -4922,8 +4869,8 @@ def combat_preview_consolidated_rpc(token: str, attacker_x: int, attacker_y: int
         defender_tile = mngr.tile_at(defender_x, defender_y)
         terrain_defense = 0
         if defender_tile and defender_tile.mapTile:
-            from map_system import TERRAIN_DEFENSE
-            terrain_defense = TERRAIN_DEFENSE.get(defender_tile.mapTile.type, 0)
+            from map_system import TERRAIN_DEFENSE_STARS
+            terrain_defense = TERRAIN_DEFENSE_STARS.get(defender_tile.mapTile.type, 0)
         
         # Calculate damage ranges (±10% luck)
         base_damage = preview.get("attacker_damage", 0)
@@ -6007,7 +5954,7 @@ def movement_info_rpc(token: str, unit_type: str) -> dict:
             }
         
         # Get movement costs
-        from map_system import MOVEMENT_COST, MapType, INF
+        from map_system import get_movement_cost, MapType, INF
         from unit import UnitClass
         
         # Get unit class
@@ -6022,9 +5969,7 @@ def movement_info_rpc(token: str, unit_type: str) -> dict:
         terrain_costs = {}
         for terrain_type in MapType:
             try:
-                # Convert UnitClass enum to its integer value for indexing
-                unit_class_index = unit_config.cls.value if hasattr(unit_config.cls, 'value') else unit_config.cls
-                cost = MOVEMENT_COST[terrain_type][unit_class_index]
+                cost = get_movement_cost(unit_config.cls, terrain_type)
                 terrain_costs[terrain_type.name] = "impassable" if cost == INF else cost
             except (KeyError, IndexError):
                 terrain_costs[terrain_type.name] = "impassable"

@@ -8,7 +8,7 @@ from typing import Tuple, Optional, List, Set
 from dataclasses import dataclass
 from gameboard import GameBoard, GameTile
 from unit import Unit, UnitClass
-from map_system import MapType, MOVEMENT_COST, INF, TERRAIN_DEFENSE
+from map_system import MapType, get_movement_cost, INF, TERRAIN_DEFENSE_STARS
 from dijkstra import dijkstra
 
 
@@ -251,7 +251,7 @@ class EnhancedMovementValidator:
         
         try:
             unit_class_index = unit.status.cls.value
-            movement_cost = MOVEMENT_COST[terrain_type][unit_class_index]
+            movement_cost = get_movement_cost(unit.status.cls, terrain_type)
             return movement_cost != INF
         except (KeyError, IndexError):
             # Unknown terrain or unit class - default to false for safety
@@ -323,7 +323,7 @@ class EnhancedMovementValidator:
         
         return {
             "type": terrain_type.name,
-            "defense_stars": TERRAIN_DEFENSE.get(terrain_type, 0),
+            "defense_stars": TERRAIN_DEFENSE_STARS.get(terrain_type, 0),
             "is_property": terrain_type in {MapType.CITY, MapType.FACTORY, MapType.AIRPORT, MapType.PORT},
             "owner": tile.mapTile.army.name if tile.mapTile.army else "Neutral"
         }

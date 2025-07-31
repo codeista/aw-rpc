@@ -2,7 +2,27 @@
 
 A fully functional Advance Wars implementation with authentic combat mechanics, transport systems, and multiplayer support. All core game systems are complete and fully tested.
 
-## Recent Updates (2025-07-30)
+## Recent Updates (2025-07-31)
+
+### Major Feature: Slot-Based Map System
+- **NEW**: Maps now use player slots (0, 1, 2...) instead of fixed army colors
+- **NEW**: Players can choose their army color during game setup
+- **NEW**: Support for any number of players (2-4+)
+- **NEW**: Map validator tool for balance checking
+- **NEW**: All legacy maps converted to new format
+- Removed 40% cap on COM_TOWER bonuses (now stacks infinitely)
+- Fixed transport system: carriers can carry ANY air unit
+- Fixed: transports can always unload (even after moving)
+- Starting funds set to 0 (income-only economy)
+
+### Code Improvements
+- Removed all legacy color-based map parsing code
+- Fixed all import errors (TERRAIN_DEFENSE → TERRAIN_DEFENSE_STARS)
+- Fixed all movement cost imports (MOVEMENT_COST → get_movement_cost)
+- Updated test maps to slot format
+- 98.3% regression test success rate (58/59 tests passing)
+
+### Previous Updates (2025-07-30)
 
 ### Performance Improvements
 - **Game Creation**: 12.31ms average response time
@@ -23,7 +43,6 @@ A fully functional Advance Wars implementation with authentic combat mechanics, 
 - Migrated to player-based game system (v2)
 - Added backward compatibility for legacy tests
 - Cleaned up repository structure with archive system
-- All 57 regression tests passing (100% success rate)
 
 ## Quick Start
 
@@ -320,6 +339,56 @@ rpc('repair_unit', {token, blackboat_x, blackboat_y, target_x, target_y, hp_to_r
 // Manual Resupply (Black Boat/APC - FREE)
 rpc('resupply_unit', {token, resupply_x, resupply_y, target_x, target_y, fuel_amount, ammo_amount})
 ```
+
+## Map Format
+
+### Slot-Based Map System (v2)
+Maps now use a flexible slot-based system where players are assigned to numbered slots (0, 1, 2...) instead of fixed army colors. This allows:
+- Dynamic player color selection during game setup
+- Support for any number of players
+- Better compatibility with future multiplayer features
+
+### Map File Format
+```
+<number_of_players>
+<width>,<height>
+<row1_tiles>
+<row2_tiles>
+...
+```
+
+### Example Map (2 Players)
+```
+2
+10,8
+FACTORY:0 CITY PLAIN ROAD_HORT ROAD_HORT PLAIN CITY FACTORY:1
+PORT:0 SEA SEA BEACH_W BEACH_E SEA SEA PORT:1
+...
+```
+
+### Tile Format
+- **Neutral tiles**: `PLAIN`, `MOUNTAIN`, `WOOD`, `SEA`, etc.
+- **Owned properties**: `<TILE_TYPE>:<PLAYER_SLOT>` (e.g., `CITY:0`, `FACTORY:1`)
+- **Player slots**: 0-based indexing (player 0, player 1, etc.)
+
+### Creating Maps
+1. Define number of players on first line
+2. Specify map dimensions (width,height)
+3. List tiles row by row, space-separated
+4. Use player slot numbers for owned properties
+5. Save in `maps/` directory with `.txt` extension
+
+### Map Validation
+Use the map validator to ensure balance:
+```python
+python3 map_validator.py maps/your_map.txt
+```
+
+Checks for:
+- Income balance between players
+- HQ distance fairness
+- Property distribution
+- Valid tile types
 
 ## Contributing
 

@@ -1,23 +1,12 @@
 """
-Map Parser V2 - Supports both legacy color-based and new index-based formats
+Map Parser V2 - Parses slot-based map format
 """
 from typing import List, Tuple, Dict, Optional
 from map_system import MapType
 from player_system import PlayerManager, SpriteColor
-import re
 
 class MapParserV2:
-    """Parses map files supporting both legacy and new formats"""
-    
-    # Legacy color to player index mapping
-    LEGACY_COLOR_MAP = {
-        "RED": 0,
-        "BLUE": 1,
-        "GREEN": 2,
-        "YELLOW": 3,
-        "GREY": 4,
-        "NEUTRAL": -1
-    }
+    """Parses map files using player slot indices"""
     
     def __init__(self):
         self.width = 0
@@ -40,14 +29,12 @@ class MapParserV2:
         if not lines:
             raise ValueError("Empty map file")
             
-        # Parse header
+        # Parse header - must be number of players
         header = lines[0]
-        if header.isdigit():
-            # New format: just number of players
-            self._parse_new_header(int(header))
-        else:
-            # Legacy format: color names
-            self._parse_legacy_header(header)
+        if not header.isdigit():
+            raise ValueError(f"Invalid map format. Expected number of players, got: {header}")
+        
+        self._parse_header(int(header))
             
         # Parse dimensions
         if len(lines) < 2:
@@ -80,8 +67,8 @@ class MapParserV2:
             
         return self.player_manager, self.tiles
         
-    def _parse_new_header(self, player_count: int):
-        """Parse new format header (just player count)"""
+    def _parse_header(self, player_count: int):
+        """Parse header (player count)"""
         self.player_manager = PlayerManager()
         
         # Create default players
@@ -104,27 +91,6 @@ class MapParserV2:
                 color = f"Color{i + 1}"
                 sprite = list(SpriteColor)[i % len(SpriteColor)]
                 self.player_manager.add_player(i, name, color, sprite)
-                
-    def _parse_legacy_header(self, header: str):
-        """Parse legacy format header (color names)"""
-        colors = [c.strip().upper() for c in header.split(',')]
-        
-        self.player_manager = PlayerManager()
-        
-        for i, color in enumerate(colors):
-            if color not in self.LEGACY_COLOR_MAP:
-                raise ValueError(f"Unknown army color: {color}")
-                
-            # Map legacy colors to sprite colors
-            sprite_color = SpriteColor(color) if color != "NEUTRAL" else SpriteColor.GREY
-            
-            # Create player with legacy color as both display and sprite color
-            self.player_manager.add_player(
-                player_id=i,
-                name=f"{color.title()} Army",
-                color=color.title(),
-                sprite_color=sprite_color
-            )
             
     def _parse_tile(self, tile_str: str) -> Tuple[MapType, Optional[int]]:
         """Parse a single tile string"""
@@ -138,17 +104,12 @@ class MapParserV2:
             except KeyError:
                 raise ValueError(f"Unknown tile type: {tile_part}")
                 
-            # Parse owner
-            if owner_part.isdigit():
-                # New format: player index
-                owner = int(owner_part)
-            else:
-                # Legacy format: color name
-                owner_part = owner_part.upper()
-                if owner_part not in self.LEGACY_COLOR_MAP:
-                    raise ValueError(f"Unknown owner: {owner_part}")
-                owner = self.LEGACY_COLOR_MAP[owner_part]
-                
+            # Parse owner - must be player index
+            if not owner_part.isdigit():
+                raise ValueError(f"Invalid owner format. Expected player index, got: {owner_part}")
+            
+            owner = int(owner_part)
+            
             # Convert -1 (neutral) to None
             if owner == -1:
                 owner = None
@@ -162,21 +123,13 @@ class MapParserV2:
             except KeyError:
                 raise ValueError(f"Unknown tile type: {tile_str}")
                 
-    def save_map(self, filename: str, use_new_format: bool = True):
-        """Save map to file"""
+    def save_map(self, filename: str):
+        """Save map to file in slot format"""
         lines = []
         
-        # Header
-        if use_new_format:
-            lines.append(str(self.player_manager.get_player_count()))
-        else:
-            # Legacy format - use sprite colors
-            colors = []
-            for i in range(self.player_manager.get_player_count()):
-                sprite_color = self.player_manager.get_sprite_color(i)
-                colors.append(sprite_color)
-            lines.append(','.join(colors))
-            
+        # Header - player count
+        lines.append(str(self.player_manager.get_player_count()))
+        
         # Dimensions
         lines.append(f"{self.width},{self.height}")
         
@@ -185,12 +138,7 @@ class MapParserV2:
             tile_strs = []
             for tile_type, owner in row:
                 if owner is not None:
-                    if use_new_format:
-                        tile_strs.append(f"{tile_type.name}:{owner}")
-                    else:
-                        # Legacy format - convert back to color
-                        sprite_color = self.player_manager.get_sprite_color(owner)
-                        tile_strs.append(f"{tile_type.name}:{sprite_color}")
+                    tile_strs.append(f"{tile_type.name}:{owner}")
                 else:
                     tile_strs.append(tile_type.name)
                     
@@ -199,12 +147,3 @@ class MapParserV2:
         # Write file
         with open(filename, 'w') as f:
             f.write('\n'.join(lines))
-            
-    @staticmethod
-    def convert_legacy_to_new(input_file: str, output_file: str):
-        """Convert a legacy map to new format"""
-        parser = MapParserV2()
-        player_manager, tiles = parser.parse_file(input_file)
-        parser.player_manager = player_manager
-        parser.tiles = tiles
-        parser.save_map(output_file, use_new_format=True)

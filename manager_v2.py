@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import math
 import configparser
 
-from map_system import Army, MapType, MOVEMENT_COST, INF, TERRAIN_DEFENSE
+from map_system import Army, MapType, get_movement_cost, INF, TERRAIN_DEFENSE_STARS
 from gameboard import GameTile, GameBoard
 from unit import UnitType, Unit, UnitClass, UnitConfig, UnitStatus
 from game_board_v2 import GameBoardV2
@@ -62,14 +62,13 @@ class GameManager:
                         if tile_player == player_id:
                             initial_income += income
                             
-            # Set starting funds
-            starting_funds = max(10000, initial_income * 3)
-            self.board_v2.player_funds[player_id] = starting_funds
+            # Set starting funds to 0 - players only get income at turn start
+            self.board_v2.player_funds[player_id] = 0
             
             # Update army funds for backward compatibility
             army = self.board_v2.get_army_for_player(player_id)
             if army:
-                self.board_v2.army_funds[army] = starting_funds
+                self.board_v2.army_funds[army] = 0
                 
     def _update_property_ownership(self, tile: GameTile, new_army: Army) -> None:
         """Update property ownership and adjust player statistics."""
@@ -660,8 +659,9 @@ class GameManager:
     
     def can_transport_load_unload(self, unit: Unit) -> bool:
         """Check if transport can load/unload units."""
-        # Transports can load/unload if they haven't acted yet
-        return unit.can_move or unit.can_attack
+        # Transports can always unload during their turn
+        # They can unload after moving or after unloading other units
+        return unit.army == self.board.current_turn
     
     def unit_load(self, cargo_x: int, cargo_y: int, transport_x: int, transport_y: int) -> Dict:
         """Load a unit into a transport (legacy interface)."""

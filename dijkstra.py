@@ -9,7 +9,7 @@ determined
 
 from dataclasses import dataclass
 from typing import List
-from map_system import MOVEMENT_COST, INF
+from map_system import get_movement_cost, INF
 
 from gameboard import GameTile, GameBoard
 
@@ -142,7 +142,7 @@ def dijkstra(board: GameBoard, source: GameTile, target: GameTile) -> int:
                     continue
                 
             try:
-                cost = MOVEMENT_COST[tile.mapTile.type][unit_class.value]
+                cost = get_movement_cost(unit_class, tile.mapTile.type)
                 if cost == INF:
                     continue  # Impassable terrain
                     

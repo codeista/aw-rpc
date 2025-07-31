@@ -84,7 +84,7 @@ class COMTowerModifier(GameModifier):
     
     In Advance Wars:
     - Each COM_TOWER owned provides +10% attack to all units
-    - Stacks up to 4 towers typically (+40% max)
+    - Stacks indefinitely (no maximum limit)
     - No effect on defense or other stats
     """
     

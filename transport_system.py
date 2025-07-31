@@ -37,7 +37,8 @@ class CompleteTransportSystem:
     Key mechanics:
     - Units move INTO transports to board (not transport picking them up)
     - Unloaded units cannot act on the same turn
-    - Transport cannot move after unloading
+    - Transport cannot move after unloading (but CAN unload after moving)
+    - Transports can unload multiple units in the same turn
     - Some transports have terrain restrictions for loading
     - Auto-resupply happens at turn start for specific transports
     """
@@ -90,7 +91,7 @@ class CompleteTransportSystem:
             ),
             'CARRIER': TransportCapability(
                 max_capacity=2,
-                compatible_units=['FIGHTER', 'BOMBER', 'STEALTH'],
+                compatible_units=['FIGHTER', 'BOMBER', 'STEALTH', 'BCOPTER', 'TCOPTER', 'BLACKBOMB'],
                 loading_terrain=None,  # Can load anywhere at sea
                 can_resupply=True,
                 can_repair=False,
@@ -291,10 +292,9 @@ class CompleteTransportSystem:
         cargo_unit = transport.status.cargo[cargo_index]
         if unload_tile:
             try:
-                from map_system import MOVEMENT_COST, INF
-                unit_class_index = cargo_unit.status.cls.value
+                from map_system import get_movement_cost, INF
                 terrain_type = unload_tile.mapTile.type
-                movement_cost = MOVEMENT_COST[terrain_type][unit_class_index]
+                movement_cost = get_movement_cost(cargo_unit.status.cls, terrain_type)
                 
                 if movement_cost == INF:
                     return False, f"{cargo_unit.type.name} cannot traverse {terrain_type.name} terrain"

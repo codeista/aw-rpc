@@ -88,7 +88,7 @@ class ProductionSystem:
         MapType.AIRPORT: 1000,
         MapType.PORT: 1000,
         MapType.COM_TOWER: 1000,     # Communication towers provide 1000 funds
-        MapType.LAB: 1000,           # Labs provide 1000 funds
+        # MapType.LAB: 0,            # Labs enable advanced units, don't provide funds
     }
     
     def __init__(self, game_manager):

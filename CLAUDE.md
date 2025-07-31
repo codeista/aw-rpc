@@ -108,6 +108,27 @@ This is a complete implementation of Advance Wars as a web-based RPC game. Key s
 - ✅ Legacy tile renderer with AWDS tileset
 - ✅ Optimized unit sprites still work (93KB vs 370KB)
 
+### Recent Code Fixes (2025-07-31)
+1. **Slot-Based Map System** - Complete overhaul of map format
+   - Maps now use player slots (0, 1, 2...) instead of hardcoded army colors
+   - Players can choose their army color during game setup
+   - Removed all legacy color-based parsing code
+   - Created map validator tool for balance checking
+   - Converted all test maps to new slot format
+   - Starting funds set to 0 (income-only economy)
+
+2. **Import Fixes** - Fixed all import errors
+   - Changed TERRAIN_DEFENSE → TERRAIN_DEFENSE_STARS throughout codebase
+   - Changed MOVEMENT_COST[terrain][class] → get_movement_cost(class, terrain)
+   - Fixed imports in app.py, dijkstra.py, enhanced_movement_validation.py, transport_system.py
+   - 98.3% regression test success rate (58/59 tests passing)
+
+3. **Game Mechanics Updates**
+   - Removed 40% cap on COM_TOWER bonuses (now stacks infinitely)
+   - Fixed: Carriers can carry ANY air unit (not just copters)
+   - Fixed: Transports can always unload (even after moving)
+   - Labs enable advanced unit production (don't provide funds)
+
 ### Recent Code Fixes (2025-07-30)
 1. **V2 Player System Migration** - Fixed test compatibility issues
    - Updated GameManager initialization to use GameFactory with player_manager

@@ -4,7 +4,7 @@ import math
 from dataclasses import dataclass, field
 from enum import Enum
 import uuid
-from map_system import TERRAIN_DEFENSE
+from map_system import TERRAIN_DEFENSE_STARS
 from map_system import Army
 from typing import List, Optional
 
@@ -234,7 +234,7 @@ class Unit:
         defense_value = UNIT_DEFENSE_VALUES.get(target.type, 100)
         
         # DTR: Defending terrain defense stars
-        terrain_defense = TERRAIN_DEFENSE[tile.mapTile.type]
+        terrain_defense = TERRAIN_DEFENSE_STARS[tile.mapTile.type]
         
         # HPD: Defender's visual HP (1-10)
         defender_visual_hp = math.ceil(target.status.hp / 10)
@@ -473,7 +473,7 @@ class Unit:
             defense_value = base_dv
         
         # DTR: Defending terrain defense stars
-        terrain_defense = TERRAIN_DEFENSE.get(tile.mapTile.type, 0)
+        terrain_defense = TERRAIN_DEFENSE_STARS.get(tile.mapTile.type, 0)
         
         # HPD: Defender's visual HP (1-10)
         defender_visual_hp = math.ceil(target.status.hp / 10)

@@ -228,8 +228,8 @@ class EnhancedCombatSystem:
             attacker_hp_after = max(0, attacker.status.hp - counter_damage)
         
         # Get terrain bonus
-        from map_system import TERRAIN_DEFENSE
-        terrain_bonus = TERRAIN_DEFENSE.get(defender_tile.mapTile.type, 0)
+        from map_system import TERRAIN_DEFENSE_STARS
+        terrain_bonus = TERRAIN_DEFENSE_STARS.get(defender_tile.mapTile.type, 0)
         
         # Check ammo warnings
         ammo_warning = not self._has_ammo_for_attack(attacker)
@@ -299,8 +299,8 @@ class EnhancedCombatSystem:
                 defender.status.ammo -= 1
         
         # Get terrain bonus used
-        from map_system import TERRAIN_DEFENSE
-        terrain_bonus = TERRAIN_DEFENSE.get(defender_tile.mapTile.type, 0)
+        from map_system import TERRAIN_DEFENSE_STARS
+        terrain_bonus = TERRAIN_DEFENSE_STARS.get(defender_tile.mapTile.type, 0)
         
         # Create result
         result = EnhancedCombatResult(
