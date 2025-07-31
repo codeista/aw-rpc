@@ -215,6 +215,10 @@ class GameManager:
         if tile.mapTile and tile.mapTile.army:
             return self.board_v2.get_player_for_army(tile.mapTile.army)
         return None
+    
+    def _get_player_for_army(self, army: Army) -> Optional[int]:
+        """Get player ID for an army"""
+        return self.board_v2.get_player_for_army(army)
         
     def _advance_to_next_army(self) -> None:
         """Advance to the next player's turn."""
@@ -246,6 +250,43 @@ class GameManager:
                 'troops': self.board_v2.player_troops.get(player_id, 0)
             }
         return {}
+    
+    def produce_unit_at_facility(self, x: int, y: int, unit_type: str) -> Unit:
+        """Create unit at production facility."""
+        # Validate coordinates
+        self._validate_coordinates(x, y)
+        self._validate_game_active()
+        
+        # Get tile
+        tile = self.tile_at(x, y)
+        
+        # Validate it's a production facility
+        if not tile.mapTile or tile.mapTile.type not in [MapType.FACTORY, MapType.AIRPORT, MapType.PORT]:
+            raise ValueError(f"No production facility at ({x}, {y})")
+        
+        # Validate ownership
+        if tile.mapTile.army != self.board.current_turn:
+            raise ValueError("Facility not owned by current player")
+        
+        # Validate not occupied
+        if tile.unit:
+            raise ValueError("Facility is occupied")
+        
+        # Use unit_create method which handles everything
+        return self.unit_create(self.board.current_turn.name, unit_type, x, y)
+    
+    def can_afford_unit(self, unit_type: str, army: Army) -> bool:
+        """Check if army can afford a unit type."""
+        from production_system import ProductionSystem
+        from unit import UnitType
+        
+        try:
+            unit_type_enum = UnitType[unit_type] if isinstance(unit_type, str) else unit_type
+            cost = ProductionSystem.UNIT_COSTS.get(unit_type_enum, 99999)
+            funds = self._get_army_funds(army)
+            return funds >= cost
+        except:
+            return False
         
     def to_dict(self) -> Dict:
         """Convert game state to dictionary with player information"""
@@ -398,7 +439,10 @@ class GameManager:
         
         # Update unit state
         unit.status.fuel -= result.fuel_required
-        self._set_unit_inactive(unit)
+        unit.can_move = False
+        # Only indirect units lose attack ability after moving
+        if unit.is_indirect():
+            unit.can_attack = False
         
         return unit
     
@@ -423,6 +467,36 @@ class GameManager:
         # TODO: Apply CO and other modifiers here
         return base_movement
     
+    def get_movement_preview(self, x: int, y: int, x2: int, y2: int) -> Dict:
+        """Preview movement path and fuel cost."""
+        try:
+            unit = self._validate_unit_exists(x, y)
+            validator = EnhancedMovementValidator(self.board, self)
+            result = validator.validate_movement(unit, x, y, x2, y2)
+            
+            return {
+                'valid': result.valid,
+                'fuel_cost': result.fuel_required,
+                'path_found': result.path_found,
+                'reason': result.reason if not result.valid else None,
+                'distance': abs(x2 - x) + abs(y2 - y)
+            }
+        except Exception as e:
+            return {
+                'valid': False,
+                'error': str(e)
+            }
+    
+    def unit_can_move_to(self, unit: Unit, x: int, y: int) -> bool:
+        """Check if unit can reach destination."""
+        tile = self.tile_from_unit(unit)
+        if not tile:
+            return False
+        
+        validator = EnhancedMovementValidator(self.board, self)
+        result = validator.validate_movement(unit, tile.x, tile.y, x, y)
+        return result.valid
+    
     # =============================================================================
     # COMBAT SYSTEM (Delegates to EnhancedCombatSystem)
     # =============================================================================
@@ -441,6 +515,19 @@ class GameManager:
         
         self._validate_unit_turn(attacker)
         self._validate_unit_can_act(attacker, 'attack')
+        
+        # Validate no friendly fire
+        if attacker.army == defender.army:
+            raise ValueError("Cannot attack friendly units")
+        
+        # Validate attack range
+        distance = abs(attacker_x - defender_x) + abs(attacker_y - defender_y)
+        if distance < attacker.status.rangemin or distance > attacker.status.rangemax:
+            raise ValueError(f"Target out of range. Unit range: {attacker.status.rangemin}-{attacker.status.rangemax}, distance: {distance}")
+        
+        # Validate unit can damage target
+        if not attacker.is_attackable(defender):
+            raise ValueError(f"{attacker.type.name} cannot attack {defender.type.name}")
         
         # Use enhanced combat system
         combat_system = EnhancedCombatSystem(self)
@@ -508,6 +595,74 @@ class GameManager:
             # Update statistics
             self._update_army_statistics()
     
+    # =============================================================================
+    # TRANSPORT SYSTEM WRAPPERS
+    # =============================================================================
+    
+    def is_transport_unit(self, unit: Unit) -> bool:
+        """Check if unit is a transport."""
+        return self.transport_system.is_transport_unit(unit)
+    
+    def get_transport_capability(self, unit: Unit) -> Optional[Dict]:
+        """Get transport capacity info."""
+        return self.transport_system.get_transport_capability(unit)
+    
+    def get_transport_cargo_info(self, unit: Unit) -> List[Dict]:
+        """Get information about units loaded in transport."""
+        return self.transport_system.get_cargo_info(unit)
+    
+    def load_transport_unit(self, transport_x: int, transport_y: int, 
+                           cargo_x: int, cargo_y: int) -> Dict:
+        """Load unit into transport."""
+        transport = self.unit_at(transport_x, transport_y)
+        cargo = self.unit_at(cargo_x, cargo_y)
+        
+        if not transport or not cargo:
+            return {'success': False, 'error': 'Unit not found'}
+        
+        result = self.transport_system.load_unit_enhanced(
+            transport, cargo, transport_x, transport_y, cargo_x, cargo_y
+        )
+        
+        if result.success:
+            # Remove cargo from board
+            self.tile_at(cargo_x, cargo_y).unit = None
+            # Update statistics
+            self._update_army_statistics()
+            
+        return {'success': result.success, 'message': result.message}
+    
+    def unload_transport_unit(self, transport_x: int, transport_y: int,
+                             unload_x: int, unload_y: int, cargo_index: int = 0) -> Dict:
+        """Unload unit from transport."""
+        transport = self.unit_at(transport_x, transport_y)
+        
+        if not transport:
+            return {'success': False, 'error': 'Transport not found'}
+        
+        result = self.transport_system.unload_unit_enhanced(
+            transport, cargo_index, transport_x, transport_y, unload_x, unload_y
+        )
+        
+        if result.success and result.unloaded_unit:
+            # Place unloaded unit on board
+            self.tile_at(unload_x, unload_y).unit = result.unloaded_unit
+            # Mark unit as unable to act
+            self._set_unit_inactive(result.unloaded_unit)
+            # Update statistics
+            self._update_army_statistics()
+            
+        return {'success': result.success, 'message': result.message}
+    
+    def can_transport_move(self, unit: Unit) -> bool:
+        """Check if transport can still move."""
+        return unit.can_move and not getattr(unit.status, 'has_moved_this_turn', False)
+    
+    def can_transport_load_unload(self, unit: Unit) -> bool:
+        """Check if transport can load/unload units."""
+        # Transports can load/unload if they haven't acted yet
+        return unit.can_move or unit.can_attack
+    
     def unit_load(self, cargo_x: int, cargo_y: int, transport_x: int, transport_y: int) -> Dict:
         """Load a unit into a transport (legacy interface)."""
         try:
@@ -537,6 +692,144 @@ class GameManager:
         if unit:
             self._set_unit_inactive(unit)
     
+    def unit_select(self, x: int, y: int) -> None:
+        """Select a unit or tile at the given coordinates."""
+        # Validate coordinates
+        self._validate_coordinates(x, y)
+        
+        # Clear previous highlights
+        for tile in self.board.grid:
+            tile.can_be_moved_to = False
+            tile.can_be_attacked = False
+        
+        # Get the tile
+        tile = self.tile_at(x, y)
+        
+        # If clicking on the currently selected tile, deselect
+        if self.board.selected and self.board.selected.x == x and self.board.selected.y == y:
+            self.board.selected = None
+        else:
+            # Select the new tile
+            self.board.selected = tile
+    
+    def capture_tile(self, x: int, y: int) -> None:
+        """Capture a property with an infantry or mech unit."""
+        # Validate coordinates and game state
+        self._validate_coordinates(x, y)
+        self._validate_game_active()
+        
+        # Get tile and unit
+        tile = self.tile_at(x, y)
+        unit = tile.unit
+        
+        # Validate unit exists and can capture
+        if not unit:
+            raise ValueError(f"No unit at ({x}, {y})")
+        
+        if unit.army != self.board.current_turn:
+            raise ValueError("Not this unit's turn")
+        
+        # Only infantry and mech can capture
+        if unit.type not in [UnitType.INFANTRY, UnitType.MECH]:
+            raise ValueError(f"{unit.type.name} units cannot capture")
+        
+        # Check if there's a capturable property
+        if not tile.mapTile or tile.mapTile.type not in [
+            MapType.CITY, MapType.FACTORY, MapType.AIRPORT, MapType.PORT,
+            MapType.BASE_TOWER_1, MapType.BASE_TOWER_2, MapType.BASE_TOWER_3, MapType.BASE_TOWER_4
+        ]:
+            raise ValueError("No capturable property at this location")
+        
+        # Can't capture own properties
+        if tile.mapTile.army == unit.army:
+            raise ValueError("Cannot capture own property")
+        
+        # Calculate capture power (HP / 10, rounded up)
+        capture_power = math.ceil(unit.status.hp / 10)
+        
+        # Apply capture damage
+        tile.capture_hp = max(0, tile.capture_hp - capture_power)
+        
+        # If captured, change ownership
+        if tile.capture_hp <= 0:
+            old_army = tile.mapTile.army
+            self._update_property_ownership(tile, unit.army)
+            
+            # Check for HQ capture victory
+            if tile.mapTile.type in [MapType.BASE_TOWER_1, MapType.BASE_TOWER_2, 
+                                      MapType.BASE_TOWER_3, MapType.BASE_TOWER_4]:
+                self._check_hq_capture_victory(old_army)
+        
+        # Mark unit as having acted
+        self._set_unit_inactive(unit)
+    
+    def capture_tile_enhanced(self, x: int, y: int) -> Dict:
+        """Enhanced capture with detailed feedback."""
+        try:
+            # Get initial state
+            tile = self.tile_at(x, y)
+            initial_hp = tile.capture_hp
+            initial_owner = tile.mapTile.army if tile.mapTile else None
+            
+            # Execute capture
+            self.capture_tile(x, y)
+            
+            # Get final state
+            final_hp = tile.capture_hp
+            final_owner = tile.mapTile.army if tile.mapTile else None
+            captured = final_hp <= 0
+            
+            return {
+                'success': True,
+                'capture_progress': {
+                    'initial_hp': initial_hp,
+                    'final_hp': final_hp,
+                    'damage_dealt': initial_hp - final_hp,
+                    'captured': captured
+                },
+                'ownership': {
+                    'previous': initial_owner.name if initial_owner else 'Neutral',
+                    'current': final_owner.name if final_owner else 'Neutral'
+                }
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': str(e)
+            }
+    
+    def get_capture_preview(self, x: int, y: int) -> Dict:
+        """Preview capture without executing it."""
+        try:
+            tile = self.tile_at(x, y)
+            unit = tile.unit
+            
+            if not unit or unit.type not in [UnitType.INFANTRY, UnitType.MECH]:
+                return {'can_capture': False, 'reason': 'Invalid unit type'}
+            
+            if not tile.mapTile or tile.mapTile.type not in [
+                MapType.CITY, MapType.FACTORY, MapType.AIRPORT, MapType.PORT,
+                MapType.BASE_TOWER_1, MapType.BASE_TOWER_2, MapType.BASE_TOWER_3, MapType.BASE_TOWER_4
+            ]:
+                return {'can_capture': False, 'reason': 'No capturable property'}
+            
+            if tile.mapTile.army == unit.army:
+                return {'can_capture': False, 'reason': 'Already owned'}
+            
+            capture_power = math.ceil(unit.status.hp / 10)
+            turns_to_capture = math.ceil(tile.capture_hp / capture_power)
+            
+            return {
+                'can_capture': True,
+                'current_hp': tile.capture_hp,
+                'capture_power': capture_power,
+                'turns_to_capture': turns_to_capture,
+                'property_type': tile.mapTile.type.name,
+                'current_owner': tile.mapTile.army.name if tile.mapTile.army else 'Neutral'
+            }
+        except Exception as e:
+            return {'can_capture': False, 'reason': str(e)}
+    
     # =============================================================================
     # GAME STATE MANAGEMENT
     # =============================================================================
@@ -565,6 +858,82 @@ class GameManager:
         """Apply effects at the end of an army's turn."""
         # Note: Fuel consumption moved to turn start AFTER refueling
         pass
+    
+    def _check_hq_capture_victory(self, defeated_army: Army) -> None:
+        """Check if HQ capture results in victory."""
+        # Mark game as ended
+        self.board.game_active = False
+        
+        # Determine winner - current turn's army captured the HQ
+        winner_army = self.board.current_turn
+        winner_player_id = self._get_player_for_army(winner_army)
+        
+        if winner_player_id is not None:
+            winner = self.player_manager.get_player(winner_player_id)
+            self.board.winner = winner.name if winner else winner_army.name
+        else:
+            self.board.winner = winner_army.name
+            
+        self.board.victory_type = "HQ Capture"
+        
+        # Log victory
+        if self.app_logger:
+            self.app_logger.info(f"Game ended: {self.board.winner} wins by HQ capture!")
+    
+    def check_win_condition(self) -> Optional[Dict]:
+        """Check if game has ended due to victory conditions."""
+        if not self.board.game_active:
+            return {
+                'game_ended': True,
+                'winner': self.board.winner,
+                'victory_type': self.board.victory_type
+            }
+        
+        # Check unit elimination
+        army_units = {}
+        # Get list of armies actually in the game
+        active_armies = set()
+        for player_id in self.board.turn_order:
+            army = self.board.get_army_for_player(player_id)
+            if army:
+                active_armies.add(army)
+                army_units[army] = 0
+        
+        # If no armies found through players, use default
+        if not active_armies:
+            active_armies = {Army.RED, Army.BLUE}
+            for army in active_armies:
+                army_units[army] = 0
+        
+        # Count units for each army
+        for tile in self.board.grid:
+            if tile.unit and tile.unit.army in active_armies:
+                army_units[tile.unit.army] = army_units.get(tile.unit.army, 0) + 1
+        
+        # Check if any active army has no units
+        for army, count in army_units.items():
+            if army in active_armies and count == 0:
+                # Find who has units (the winner)
+                for winner_army, winner_count in army_units.items():
+                    if winner_count > 0:
+                        self.board.game_active = False
+                        winner_player_id = self._get_player_for_army(winner_army)
+                        
+                        if winner_player_id is not None:
+                            winner = self.player_manager.get_player(winner_player_id)
+                            self.board.winner = winner.name if winner else winner_army.name
+                        else:
+                            self.board.winner = winner_army.name
+                            
+                        self.board.victory_type = "Elimination"
+                        
+                        return {
+                            'game_ended': True,
+                            'winner': self.board.winner,
+                            'victory_type': self.board.victory_type
+                        }
+        
+        return None
     
     def _apply_turn_start_effects(self, army: Army) -> None:
         """Apply effects at the start of an army's turn."""
@@ -645,3 +1014,101 @@ class GameManager:
                             # Resupply adjacent friendly units
                             adj_unit.status.fuel = adj_unit.config.max_fuel
                             adj_unit.status.ammo = adj_unit.config.max_ammo
+    
+    def get_army_economy(self, army: Army) -> Dict:
+        """Get economic information for an army (legacy compatibility)."""
+        player_id = self.board_v2.get_player_for_army(army)
+        if player_id is None:
+            return {
+                'funds': 0,
+                'properties': 0,
+                'troops': 0,
+                'total_income': 0
+            }
+        
+        return {
+            'funds': self.board_v2.player_funds.get(player_id, 0),
+            'properties': self.board_v2.player_properties.get(player_id, 0),
+            'troops': self.board_v2.player_troops.get(player_id, 0),
+            'total_income': self.board_v2.player_properties.get(player_id, 0) * 1000
+        }
+    
+    def get_army_facilities(self, army: Army) -> List[Dict]:
+        """Get list of facilities owned by an army (legacy compatibility)."""
+        facilities = []
+        
+        for y in range(self.board.height):
+            for x in range(self.board.width):
+                tile = self.tile_at(x, y)
+                if tile.mapTile and tile.mapTile.army == army:
+                    if tile.mapTile.type in {MapType.FACTORY, MapType.AIRPORT, MapType.PORT}:
+                        facilities.append({
+                            'x': x,
+                            'y': y,
+                            'type': tile.mapTile.type.name,
+                            'can_produce': True
+                        })
+        
+        return facilities
+    
+    def get_production_options(self, x: int, y: int, army: Army) -> Dict:
+        """Get available units that can be produced at a facility."""
+        tile = self.tile_at(x, y)
+        
+        # Check if it's a valid production facility
+        if not tile or not tile.mapTile:
+            return {"error": "Invalid tile"}
+        
+        facility_type = tile.mapTile.type
+        if facility_type not in {MapType.FACTORY, MapType.AIRPORT, MapType.PORT}:
+            return {"error": "Not a production facility"}
+        
+        # Check ownership
+        if tile.mapTile.army != army:
+            return {"error": "Facility not owned by current player"}
+        
+        # Check if occupied
+        if self.unit_at(x, y):
+            return {"error": "Facility is occupied"}
+        
+        # Define production options by facility type
+        production_units = {
+            MapType.FACTORY: ['INFANTRY', 'MECH', 'RECON', 'TANK', 'MEDIUMTANK', 'NEOTANK', 'MEGATANK',
+                            'APC', 'ARTILLERY', 'ROCKET', 'ANTIAIR', 'MISSILE', 'PIPERUNNER'],
+            MapType.AIRPORT: ['FIGHTER', 'BOMBER', 'BCOPTER', 'TCOPTER', 'STEALTH', 'BLACKBOMB'],
+            MapType.PORT: ['BATTLESHIP', 'CRUISER', 'SUB', 'LANDER', 'CARRIER', 'BLACKBOAT']
+        }
+        
+        # Get unit costs from production system
+        from production_system import ProductionSystem
+        from unit import UnitType
+        
+        # Use default costs from production system
+        production_system = ProductionSystem(self)
+        unit_costs = production_system.UNIT_COSTS
+        
+        available_units = []
+        units = production_units.get(facility_type, [])
+        
+        # Get player funds
+        player_id = self._get_player_for_army(army)
+        player_funds = self.board_v2.player_funds.get(player_id, 0)
+        
+        for unit_name in units:
+            try:
+                unit_type = UnitType[unit_name]
+                cost = unit_costs.get(unit_type, 0)
+                available_units.append({
+                    'type': unit_name,
+                    'cost': cost,
+                    'can_afford': player_funds >= cost
+                })
+            except KeyError:
+                # Skip invalid unit types
+                continue
+        
+        return {
+            'facility_type': facility_type.name,
+            'units': available_units,
+            'player_funds': player_funds
+        }

@@ -28,7 +28,8 @@ This is a complete implementation of Advance Wars as a web-based RPC game. Key s
    - Game mechanics docs in archive/documentation/GAME_MECHANICS.md
 
 ### Code Architecture
-- `manager.py` - Core game logic
+- `manager_v2.py` - Core game logic (player-based system)
+- `manager.py` - REMOVED (replaced by manager_v2.py)
 - `transport_system.py` - All transport mechanics
 - `app.py` - RPC endpoints and server
 - `render.js` - Frontend game rendering
@@ -106,6 +107,25 @@ This is a complete implementation of Advance Wars as a web-based RPC game. Key s
 - ✅ No rendering crashes
 - ✅ Legacy tile renderer with AWDS tileset
 - ✅ Optimized unit sprites still work (93KB vs 370KB)
+
+### Recent Code Fixes (2025-07-30)
+1. **V2 Player System Migration** - Fixed test compatibility issues
+   - Updated GameManager initialization to use GameFactory with player_manager
+   - Added missing unit_load and unit_wait methods for legacy support
+   - Fixed unit type enum names throughout codebase (ROCKETS→ROCKET, MISSILES→MISSILE, etc.)
+   - Maintained backward compatibility with army-based system
+
+2. **Combat System Fixes** - Fixed attack mechanics
+   - Direct units can now attack after movement (only indirect units lose attack)
+   - Added proper attack validations (range, friendly fire, target type)
+   - Fixed indirect units cannot counter-attack rule (includes BATTLESHIP, CARRIER, PIPERUNNER)
+   - Fixed fuel consumption tracking in movement system (fuel_required now properly set)
+
+3. **Repository Cleanup** - Organized codebase structure
+   - Created archive/ directory for old files and documentation
+   - Moved debug scripts, backups, and old docs to archive
+   - Maintained all active test files in proper locations
+   - All 57 regression tests passing (100% success rate)
 
 ### Recent Code Fixes (2025-07-27)
 1. **Unavailable Unit Sprites** - Fixed display logic for greyed out units

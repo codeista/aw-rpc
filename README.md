@@ -2,6 +2,29 @@
 
 A fully functional Advance Wars implementation with authentic combat mechanics, transport systems, and multiplayer support. All core game systems are complete and fully tested.
 
+## Recent Updates (2025-07-30)
+
+### Performance Improvements
+- **Game Creation**: 12.31ms average response time
+- **Combat Preview**: 3.17ms average response time  
+- **Board Retrieval**: 15.71ms average response time
+- All operations complete in under 50ms (fast category)
+
+### Bug Fixes
+- Fixed v2 player system migration issues
+- Fixed unit type enum names (ROCKETS→ROCKET, etc.)
+- Fixed fuel consumption tracking (now properly deducts fuel)
+- Fixed direct units can now attack after movement
+- Fixed indirect units cannot counter-attack
+- Added proper attack validations (range, friendly fire, target type)
+- Fixed UI test canvas references
+
+### Code Improvements
+- Migrated to player-based game system (v2)
+- Added backward compatibility for legacy tests
+- Cleaned up repository structure with archive system
+- All 57 regression tests passing (100% success rate)
+
 ## Quick Start
 
 ### Setup

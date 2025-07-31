@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 # Use TYPE_CHECKING to avoid circular imports
 if TYPE_CHECKING:
-    from manager import GameManager
+    from manager_v2 import GameManager
     from unit import Unit
     from game_board import GameTile
 

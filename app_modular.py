@@ -25,7 +25,7 @@ from tests.debug.optimized_test_map import (
     verify_optimized_map
 )
 
-from manager import GameManager
+from manager_v2 import GameManager
 from gameboard import GameBoard
 from config import Config
 from app_core import app, jsonrpc, db, socketio

@@ -43,6 +43,13 @@ def get_test_game():
         response = requests.get("http://localhost:5000/test_game", allow_redirects=False)
         if response.status_code == 302:
             location = response.headers.get('Location', '')
+            # Check for v2 game format
+            match = re.search(r'/v2\?token=([A-Za-z0-9_]+)', location)
+            if match:
+                game_id = match.group(1)
+                print(f"✅ Created v2 test game: {game_id}")
+                return game_id
+            # Check for legacy game format
             match = re.search(r'/game/([A-Za-z0-9_]+)', location)
             if match:
                 game_id = match.group(1)

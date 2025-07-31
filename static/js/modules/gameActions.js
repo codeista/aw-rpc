@@ -161,11 +161,11 @@ export function unitMove(targetTile) {
         return;
     }
     
-    jsonrpc('unit_move', {
-        x: source.x,
-        y: source.y,
-        x2: targetTile.x,
-        y2: targetTile.y
+    jsonrpc('movement_execute', {
+        from_x: source.x,
+        from_y: source.y,
+        to_x: targetTile.x,
+        to_y: targetTile.y
     }).then(result => {
         // Update the selected tile position
         setSelectedTile(targetTile);

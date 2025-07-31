@@ -18,7 +18,7 @@ from models_v2 import (
 )
 
 # Import existing game logic we'll reuse
-from manager import GameManager
+from manager_v2 import GameManager
 from gameboard import GameBoard
 from map_system import Map, MapType, MapTile
 

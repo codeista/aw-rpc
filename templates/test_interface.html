@@ -261,6 +261,40 @@
             font-size: 12px;
             color: #999;
         }
+        
+        /* Console output styling */
+        details {
+            margin: 10px 0;
+        }
+        
+        details summary {
+            user-select: none;
+            padding: 8px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        
+        details summary:hover {
+            background: rgba(255,255,255,0.08);
+        }
+        
+        details pre {
+            margin: 0;
+            padding: 12px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 4px;
+            font-size: 11px;
+            line-height: 1.6;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        /* Syntax highlighting for test output */
+        .test-pass { color: #10b981; }
+        .test-fail { color: #ef4444; }
+        .test-info { color: #3b82f6; }
     </style>
 </head>
 <body>
@@ -617,8 +651,35 @@
                 }
                 updateTestStats();
                 
-                // Display output
-                addResult(`📋 ${testName} test output:\n${output}`, !success);
+                // Display output - format it properly for console display
+                const formattedOutput = output.replace(/\\n/g, '\n');
+                addResult(`📋 ${testName} test completed`, !success);
+                
+                // Add the actual console output in a separate entry
+                const outputEntry = document.createElement('div');
+                outputEntry.className = 'result-entry';
+                outputEntry.style.backgroundColor = 'rgba(0,0,0,0.3)';
+                outputEntry.style.border = '1px solid rgba(255,255,255,0.1)';
+                
+                // Create pre element and set text content to escape HTML
+                const preElement = document.createElement('pre');
+                preElement.className = 'result-content';
+                preElement.style.cssText = 'overflow-x: auto; white-space: pre-wrap; word-wrap: break-word;';
+                preElement.textContent = formattedOutput;
+                
+                const detailsElement = document.createElement('details');
+                detailsElement.open = true;
+                
+                const summaryElement = document.createElement('summary');
+                summaryElement.style.cssText = 'cursor: pointer; margin-bottom: 10px;';
+                summaryElement.innerHTML = '<strong>Console Output:</strong> (click to toggle)';
+                
+                detailsElement.appendChild(summaryElement);
+                detailsElement.appendChild(preElement);
+                outputEntry.appendChild(detailsElement);
+                
+                document.getElementById('results-content').appendChild(outputEntry);
+                document.getElementById('results-content').scrollTop = document.getElementById('results-content').scrollHeight;
                 
                 // Re-enable button
                 const buttons = document.querySelectorAll('.test-button');
@@ -704,6 +765,32 @@
                     updateTestStats();
                     
                     addResult(`${success ? '✅' : '❌'} ${test.name} test completed`, !success);
+                    
+                    // Add the actual console output in a collapsible section
+                    const formattedOutput = output.replace(/\\n/g, '\n');
+                    const outputEntry = document.createElement('div');
+                    outputEntry.className = 'result-entry';
+                    outputEntry.style.backgroundColor = 'rgba(0,0,0,0.3)';
+                    outputEntry.style.border = '1px solid rgba(255,255,255,0.1)';
+                    
+                    // Create pre element and set text content to escape HTML
+                    const preElement = document.createElement('pre');
+                    preElement.className = 'result-content';
+                    preElement.style.cssText = 'overflow-x: auto; white-space: pre-wrap; word-wrap: break-word;';
+                    preElement.textContent = formattedOutput;
+                    
+                    const detailsElement = document.createElement('details');
+                    detailsElement.open = !success; // Open if failed, closed if success
+                    
+                    const summaryElement = document.createElement('summary');
+                    summaryElement.style.cssText = 'cursor: pointer; margin-bottom: 10px;';
+                    summaryElement.innerHTML = `<strong>${test.name} Console Output:</strong> (click to toggle)`;
+                    
+                    detailsElement.appendChild(summaryElement);
+                    detailsElement.appendChild(preElement);
+                    outputEntry.appendChild(detailsElement);
+                    
+                    document.getElementById('results-content').appendChild(outputEntry);
                     
                 } catch (error) {
                     setTestStatus(test.name, 'failed');

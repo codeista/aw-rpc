@@ -46,27 +46,13 @@ def rpc_call(method: str, params: dict = None) -> dict:
 def get_test_game():
     """Create test game with units for combat testing"""
     try:
-        # Try test_game route first
-        response = requests.get("http://localhost:5000/test_game", allow_redirects=False)
-        if response.status_code == 302:
-            location = response.headers.get('Location', '')
-            match = re.search(r'/game/([A-Za-z0-9_]+)', location)
-            if match:
-                game_id = match.group(1)
-                print(f"✅ Created test game: {game_id}")
-                
-                # Add units for combat testing
-                setup_combat_units(game_id)
-                
-                return game_id
-        
-        # If that fails, try creating via RPC with a generated token
+        # Generate game ID
         game_id = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
         
-        # Try game_create_v2 with the token
+        # Create game with combat test map which has predeployed units
         result = rpc_call("game_create_v2", {
             "token": game_id,
-            "map_name": "test",
+            "map_name": "combat",  # Use our combat test map with all 25 unit types
             "players": [
                 {"name": "Player 1", "color": "Red", "sprite_color": "RED"},
                 {"name": "Player 2", "color": "Blue", "sprite_color": "BLUE"}
@@ -77,10 +63,13 @@ def get_test_game():
             print(f"❌ Failed to create game: {result}")
             return None
             
-        print(f"✅ Created test game: {game_id}")
+        print(f"✅ Created combat test game: {game_id}")
         
-        # Add units for combat testing
-        setup_combat_units(game_id)
+        # Units are predeployed on the combat map
+        # Just need to enable them by ending turns
+        print("   ⏳ Enabling predeployed units...")
+        rpc_call("army_end_turn", {"token": game_id})
+        rpc_call("army_end_turn", {"token": game_id})
         
         return game_id
         
@@ -163,32 +152,43 @@ class CombatTester:
         for i, (attacker, defender, combat_type) in enumerate(combat_pairs[:3]):  # Test first 3 pairs
             distance = abs(attacker['x'] - defender['x']) + abs(attacker['y'] - defender['y'])
             print(f"\n🎯 Testing {attacker['type']} vs {defender['type']} (distance: {distance}, type: {combat_type})")
+            print(f"   Attacker HP: {attacker['hp']}, Defender HP: {defender['hp']}")
             
             # Get damage preview
-            preview_result = rpc_call("damage_preview", {
+            preview_result = rpc_call("combat_preview", {
                 "token": self.game_id,
-                "x": attacker['x'],
-                "y": attacker['y'],
-                "x2": defender['x'],
-                "y2": defender['y']
+                "attacker_x": attacker['x'],
+                "attacker_y": attacker['y'],
+                "defender_x": defender['x'],
+                "defender_y": defender['y']
             })
             
             logger.debug(f"Damage preview result: {preview_result}")
             
-            if "error" not in preview_result and preview_result.get("success", False):
-                # Handle new preview format with nested preview data
-                preview_data = preview_result.get("preview", {})
-                defender_hp_after = preview_data.get("defender_hp_after", defender['hp'])
+            if "error" in preview_result:
+                print(f"   ❌ Preview error: {preview_result.get('error')}")
+            elif not preview_result.get("success", False):
+                print(f"   ❌ Preview failed: {preview_result}")
+            else:
+                # Handle combat preview format
+                defender_data = preview_result.get("defender", {})
+                defender_hp_after = defender_data.get("hp_after", defender['hp'])
                 estimated_damage = defender['hp'] - defender_hp_after  # Calculate damage from HP difference
                 defender_hp_before = defender['hp']
                 
+                # Also get the damage percentage for display
+                damage_data = preview_result.get("damage", {})
+                damage_percent = damage_data.get("attacker_damage", 0)
+                
+                print(f"   Preview: {estimated_damage} damage expected ({defender_hp_before} → {defender_hp_after} HP)")
+                
                 # Execute actual attack
-                attack_result = rpc_call("unit_attack", {
+                attack_result = rpc_call("combat_attack", {
                     "token": self.game_id,
-                    "x": attacker['x'],
-                    "y": attacker['y'],
-                    "x2": defender['x'],
-                    "y2": defender['y']
+                    "attacker_x": attacker['x'],
+                    "attacker_y": attacker['y'],
+                    "defender_x": defender['x'],
+                    "defender_y": defender['y']
                 })
                 
                 logger.debug(f"Attack result: {attack_result}")
@@ -199,6 +199,7 @@ class CombatTester:
                     print(f"   ❌ Attack failed: {attack_result.get('message', 'Unknown error')}")
                 elif attack_result.get("error") == True:
                     print(f"   ❌ Attack failed: {attack_result.get('message', 'Combat error')}")
+                    print(f"      Full error: {attack_result}")
                 elif attack_result.get("success") == True:
                     attack_succeeded = True
                 elif "army" in attack_result and "hp" in attack_result.get("status", {}):
@@ -263,18 +264,19 @@ class CombatTester:
             defender_terrain = defender.get('terrain', 'UNKNOWN')
             
             # Get damage preview to see terrain effects
-            preview_result = rpc_call("damage_preview", {
+            preview_result = rpc_call("combat_preview", {
                 "token": self.game_id,
-                "x": attacker['x'],
-                "y": attacker['y'],
-                "x2": defender['x'],
-                "y2": defender['y']
+                "attacker_x": attacker['x'],
+                "attacker_y": attacker['y'],
+                "defender_x": defender['x'],
+                "defender_y": defender['y']
             })
             
             if "error" not in preview_result and preview_result.get("success", False):
-                preview_data = preview_result.get("preview", {})
-                defender_hp_after = preview_data.get("defender_hp_after", defender['hp'])
+                defender_data = preview_result.get("defender", {})
+                defender_hp_after = defender_data.get("hp_after", defender['hp'])
                 damage = defender['hp'] - defender_hp_after
+                terrain_defense = defender_data.get("terrain_defense", 0)
                 
                 # Store terrain-based damage for comparison
                 if defender_terrain not in terrain_results:
@@ -287,7 +289,7 @@ class CombatTester:
                     "terrain": defender_terrain
                 })
                 
-                print(f"   {attacker['type']} vs {defender['type']} on {defender_terrain}: {damage} damage")
+                print(f"   {attacker['type']} vs {defender['type']} on {defender_terrain} (defense: {terrain_defense}⭐): {damage} damage")
         
         # Store results
         for terrain, results in terrain_results.items():
@@ -356,18 +358,18 @@ class CombatTester:
             
             else:
                 # Fallback to damage_preview if combat_preview fails
-                damage_preview_result = rpc_call("damage_preview", {
+                damage_preview_result = rpc_call("combat_preview", {
                     "token": self.game_id,
-                    "x": attacker['x'],
-                    "y": attacker['y'],
-                    "x2": defender['x'],
-                    "y2": defender['y']
+                    "attacker_x": attacker['x'],
+                    "attacker_y": attacker['y'],
+                    "defender_x": defender['x'],
+                    "defender_y": defender['y']
                 })
                 
                 if "error" not in damage_preview_result and damage_preview_result.get("success", False):
-                    preview = damage_preview_result.get("preview", {})
-                    can_counter = preview.get("can_counter", False)
-                    counter_damage = preview.get("counter_damage", 0)
+                    damage_data = damage_preview_result.get("damage", {})
+                    can_counter = damage_data.get("can_counter", False)
+                    counter_damage = damage_data.get("counter_damage", 0)
                     
                     result = {
                         "attacker": attacker['type'],
@@ -411,6 +413,7 @@ class CombatTester:
         # Find a suitable target for multi-attack destruction
         for attacker, defender, combat_type in combat_pairs[:2]:
             print(f"   Testing multi-attack destruction: {attacker['type']} vs {defender['type']}")
+            print(f"      Attacker at ({attacker['x']},{attacker['y']}), Defender at ({defender['x']},{defender['y']})")
             
             # Track HP reduction over multiple attacks
             attacks_performed = 0
@@ -419,31 +422,35 @@ class CombatTester:
             
             while attacks_performed < max_attacks and current_defender_hp > 0:
                 # Get damage preview
-                preview_result = rpc_call("damage_preview", {
+                preview_result = rpc_call("combat_preview", {
                     "token": self.game_id,
-                    "x": attacker['x'],
-                    "y": attacker['y'],
-                    "x2": defender['x'],
-                    "y2": defender['y']
+                    "attacker_x": attacker['x'],
+                    "attacker_y": attacker['y'],
+                    "defender_x": defender['x'],
+                    "defender_y": defender['y']
                 })
                 
                 if "error" in preview_result or not preview_result.get("success", False):
                     print(f"      ❌ Could not get damage preview for attack {attacks_performed + 1}")
+                    if "error" in preview_result:
+                        print(f"         Error: {preview_result.get('error')}")
+                    elif preview_result.get("error"):
+                        print(f"         Error: {preview_result.get('message', 'Unknown error')}")
                     break
                 
-                preview_data = preview_result.get("preview", {})
-                expected_hp_after = preview_data.get("defender_hp_after", current_defender_hp)
+                defender_data = preview_result.get("defender", {})
+                expected_hp_after = defender_data.get("hp_after", current_defender_hp)
                 expected_damage = current_defender_hp - expected_hp_after
                 
                 print(f"      Attack {attacks_performed + 1}: Expected {expected_damage} damage ({current_defender_hp} → {expected_hp_after} HP)")
                 
                 # Execute the attack
-                attack_result = rpc_call("unit_attack", {
+                attack_result = rpc_call("combat_attack", {
                     "token": self.game_id,
-                    "x": attacker['x'],
-                    "y": attacker['y'],
-                    "x2": defender['x'],
-                    "y2": defender['y']
+                    "attacker_x": attacker['x'],
+                    "attacker_y": attacker['y'],
+                    "defender_x": defender['x'],
+                    "defender_y": defender['y']
                 })
                 
                 # Check if attack succeeded
@@ -582,7 +589,7 @@ class CombatTester:
         
         for red_unit in red_units:
             # Get valid attack targets for this unit
-            attack_targets_result = rpc_call("get_attack_targets", {
+            attack_targets_result = rpc_call("combat_targets", {
                 "token": self.game_id,
                 "unit_x": red_unit['x'],
                 "unit_y": red_unit['y']
@@ -820,7 +827,7 @@ def main():
     
     return success
 
-def setup_combat_units(game_id):
+def setup_combat_units_old(game_id):  # Deprecated - using predeployed units now
     """Set up units for combat testing"""
     print("🎮 Setting up combat units...")
     
@@ -940,7 +947,13 @@ def setup_combat_units(game_id):
     ]
     
     for move in moves:
-        rpc_call("unit_move", move)
+        rpc_call("movement_execute", {
+            "token": game_id,
+            "from_x": move["x"],
+            "from_y": move["y"],
+            "to_x": move["x2"],
+            "to_y": move["y2"]
+        })
     
     # End turn to switch to BLUE
     rpc_call("army_end_turn", {"token": game_id})
@@ -958,7 +971,13 @@ def setup_combat_units(game_id):
     ]
     
     for move in blue_moves:
-        rpc_call("unit_move", move)
+        rpc_call("movement_execute", {
+            "token": game_id,
+            "from_x": move["x"],
+            "from_y": move["y"],
+            "to_x": move["x2"],
+            "to_y": move["y2"]
+        })
     
     # End turn to enable all units again
     rpc_call("army_end_turn", {"token": game_id})

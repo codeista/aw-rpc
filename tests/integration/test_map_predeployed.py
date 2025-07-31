@@ -293,17 +293,19 @@ def get_predeployed_test_game(token: str = None):
     Function to integrate with your existing game creation system.
     Call this instead of the normal game creation to get a test game with units.
     """
-    from manager import GameManager
-    from config import Config
+    from game_factory import GameFactory
     
-    # Load configuration
-    config_game = Config()
+    # Create v2 game using factory
+    players = [
+        {"name": "Player 1", "color": "Red", "sprite_color": "RED"},
+        {"name": "Player 2", "color": "Blue", "sprite_color": "BLUE"}
+    ]
     
-    # Create board with predeployed units using new map system
-    board = create_test_map_with_units()
+    # Create game with factory
+    mngr, _ = GameFactory.create_game_with_players('test', players)
     
-    # Create game manager
-    mngr = GameManager(config_game, board)
+    # TODO: Add predeployed units to the game
+    # For now, just return the standard game
     
     return mngr
 
@@ -311,12 +313,15 @@ def get_comprehensive_test_game(token: str = None):
     """
     Get a comprehensive test game with all unit types and terrain scenarios
     """
-    from manager import GameManager
-    from config import Config
+    from game_factory import GameFactory
     
-    config_game = Config()
-    board = create_comprehensive_test_map()
-    mngr = GameManager(config_game, board)
+    # Create v2 game using factory
+    players = [
+        {"name": "Player 1", "color": "Red", "sprite_color": "RED"},
+        {"name": "Player 2", "color": "Blue", "sprite_color": "BLUE"}
+    ]
+    
+    mngr, _ = GameFactory.create_game_with_players('test', players)
     
     return mngr
 

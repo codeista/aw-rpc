@@ -103,15 +103,15 @@ class Game {
             if (this.board && this.board.selected) {
                 // Try move, then attack, then new selection
                 try {
-                    await this.rpc('unit_move', {
-                        x: this.board.selected.x,
-                        y: this.board.selected.y,
-                        x2: x,
-                        y2: y
+                    await this.rpc('movement_execute', {
+                        from_x: this.board.selected.x,
+                        from_y: this.board.selected.y,
+                        to_x: x,
+                        to_y: y
                     });
                 } catch (e) {
                     try {
-                        await this.rpc('unit_attack_enhanced', {
+                        await this.rpc('combat_attack', {
                             attacker_x: this.board.selected.x,
                             attacker_y: this.board.selected.y,
                             defender_x: x,

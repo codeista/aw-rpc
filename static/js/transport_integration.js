@@ -126,11 +126,11 @@ function safelyPerformEnhancedMovement(fromX, fromY, toX, toY) {
     
     // ✅ FIX: Use regular movement for transports (much more reliable)
     if (isTransportUnit(fromTile.unit)) {
-        jsonrpc('unit_move', {
-            x: fromX,
-            y: fromY,
-            x2: toX,
-            y2: toY
+        jsonrpc('movement_execute', {
+            from_x: fromX,
+            from_y: fromY,
+            to_x: toX,
+            to_y: toY
         }).then(result => {
             if (result.success || !result.error) {
                 
@@ -166,7 +166,7 @@ function safelyPerformEnhancedMovement(fromX, fromY, toX, toY) {
     }
     
     // Regular enhanced movement for non-transport units
-    jsonrpc('unit_move_enhanced', {
+    jsonrpc('movement_execute', {
         from_x: fromX,
         from_y: fromY,
         to_x: toX,

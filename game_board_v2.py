@@ -43,6 +43,9 @@ class GameBoardV2:
     # Reference to the original map
     map: Optional[Map] = None
     
+    # Selection state
+    selected: Optional[Any] = None  # Selected tile
+    
     # Legacy fields as properties for backward compatibility
     @property
     def red_funds(self) -> int:
@@ -239,7 +242,10 @@ class GameBoardV2:
             'total_blue_troops': self.total_blue_troops,
             'current_turn': self.current_turn.value if self.current_turn else None,
             # Include army dicts for compatibility
-            'army_funds': {army.value: funds for army, funds in self.army_funds.items()},
-            'army_properties': {army.value: props for army, props in self.army_properties.items()},
-            'army_troops': {army.value: troops for army, troops in self.army_troops.items()},
+            'army_funds': {(army.value if hasattr(army, 'value') else army): funds 
+                          for army, funds in self.army_funds.items()},
+            'army_properties': {(army.value if hasattr(army, 'value') else army): props 
+                               for army, props in self.army_properties.items()},
+            'army_troops': {(army.value if hasattr(army, 'value') else army): troops 
+                           for army, troops in self.army_troops.items()},
         }

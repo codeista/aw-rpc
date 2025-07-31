@@ -63,17 +63,32 @@ class AdvanceWarsRegressionTester:
     
     def assert_success(self, result: Dict, test_name: str, expected_keys: List[str] = None) -> bool:
         """Assert that RPC call was successful"""
+        # Check for top-level error
         if 'error' in result:
             self.record_test(test_name, False, f"RPC error: {result['error']}")
             return False
         
+        # Check for result
         if 'result' not in result:
             self.record_test(test_name, False, "No result in response")
             return False
+        
+        # NEW: Check for error inside result
+        result_data = result['result']
+        if isinstance(result_data, dict):
+            # Check for error field
+            if 'error' in result_data:
+                self.record_test(test_name, False, f"Method error: {result_data['error']}")
+                return False
+            
+            # Check for success=false
+            if 'success' in result_data and not result_data['success']:
+                error_msg = result_data.get('error', result_data.get('message', 'Unknown error'))
+                self.record_test(test_name, False, f"Method failed: {error_msg}")
+                return False
             
         # Check for expected keys in result
         if expected_keys:
-            result_data = result['result']
             for key in expected_keys:
                 if key not in result_data:
                     self.record_test(test_name, False, f"Missing expected key: {key}")
@@ -152,11 +167,11 @@ class AdvanceWarsRegressionTester:
         """Test unit creation, selection, and movement"""
         print("\n🪖 Testing Unit Operations...")
         
-        # Test unit creation
+        # Test unit creation at a valid plain tile
         result = self.rpc_call('unit_create', {
             'army': 'RED',
             'unit_type': 'INFANTRY', 
-            'x': 0, 'y': 3
+            'x': 0, 'y': 8  # PLAIN tile
         })
         if not self.assert_success(result, "Unit Creation"):
             return False
@@ -166,18 +181,18 @@ class AdvanceWarsRegressionTester:
         self.rpc_call('army_end_turn')
         
         # Test unit selection
-        result = self.rpc_call('unit_select', {'x': 0, 'y': 3})
+        result = self.rpc_call('unit_select', {'x': 0, 'y': 8})
         if not self.assert_success(result, "Unit Selection"):
             return False
         
-        # Test unit movement
-        result = self.rpc_call('unit_move', {'x': 0, 'y': 3, 'x2': 1, 'y2': 3})
-        if not self.assert_success(result, "Unit Movement"):
+        # Test movement validation (before moving)
+        result = self.rpc_call('movement_range', {'unit_x': 0, 'unit_y': 8})
+        if not self.assert_success(result, "Movement Validation"):
             return False
         
-        # Test movement validation
-        result = self.rpc_call('unit_valid_moves', {'x': 1, 'y': 3})
-        if not self.assert_success(result, "Movement Validation"):
+        # Test unit movement (simple adjacent move)
+        result = self.rpc_call('movement_execute', {'from_x': 0, 'from_y': 8, 'to_x': 1, 'to_y': 8})
+        if not self.assert_success(result, "Unit Movement"):
             return False
         
         return True
@@ -190,18 +205,39 @@ class AdvanceWarsRegressionTester:
         """Test combat mechanics"""
         print("\n⚔️ Testing Combat System...")
         
-        # Simplified combat test - just test damage preview with existing units
-        # Test combat preview between any two units at safe distance
+        # Create units for combat testing
+        # Create RED tank
+        result = self.rpc_call('unit_create', {
+            'army': 'RED',
+            'unit_type': 'TANK',
+            'x': 6, 'y': 8  # Plain tile
+        })
+        if not self.assert_success(result, "Create RED Tank"):
+            return False
+        
+        # Create BLUE infantry as target
+        result = self.rpc_call('unit_create', {
+            'army': 'BLUE',
+            'unit_type': 'INFANTRY',
+            'x': 7, 'y': 8  # Adjacent plain tile
+        })
+        if not self.assert_success(result, "Create BLUE Infantry"):
+            return False
+        
+        # End turns to enable combat
+        self.rpc_call('army_end_turn')
+        self.rpc_call('army_end_turn')
+        
+        # Test combat preview between the created units
         result = self.rpc_call('combat_preview', {
-            'attacker_x': 1, 'attacker_y': 3,
-            'defender_x': 1, 'defender_y': 4
+            'attacker_x': 6, 'attacker_y': 8,
+            'defender_x': 7, 'defender_y': 8
         })
         if not self.assert_success(result, "Combat Preview"):
-            # If preview fails, just test that the method exists
-            self.record_test("Combat Preview", True, "Method accessible")
+            return False
         
         # Test get attack targets
-        result = self.rpc_call('get_attack_targets', {'unit_x': 1, 'unit_y': 3})
+        result = self.rpc_call('combat_targets', {'unit_x': 6, 'unit_y': 8})
         if not self.assert_success(result, "Get Attack Targets"):
             return False
         
@@ -220,20 +256,20 @@ class AdvanceWarsRegressionTester:
         """Test transport loading and unloading"""
         print("\n🚢 Testing Transport System...")
         
-        # Create APC transport
+        # Create APC transport on a plain tile
         result = self.rpc_call('unit_create', {
             'army': 'RED',
             'unit_type': 'APC',
-            'x': 0, 'y': 6
+            'x': 4, 'y': 8  # MOUNTAIN tile but units can be created there
         })
         if not self.assert_success(result, "Create APC Transport"):
             return False
         
-        # Create infantry cargo
+        # Create infantry cargo adjacent
         result = self.rpc_call('unit_create', {
             'army': 'RED', 
             'unit_type': 'INFANTRY',
-            'x': 0, 'y': 7
+            'x': 5, 'y': 8  # MOUNTAIN tile adjacent
         })
         if not self.assert_success(result, "Create Infantry Cargo"):
             return False
@@ -243,27 +279,27 @@ class AdvanceWarsRegressionTester:
         self.rpc_call('army_end_turn')
         
         # Test loading unit into transport
-        result = self.rpc_call('load_unit', {
-            'transport_x': 0, 'transport_y': 6,
-            'cargo_x': 0, 'cargo_y': 7
+        result = self.rpc_call('transport_load', {
+            'transport_x': 4, 'transport_y': 8,
+            'cargo_x': 5, 'cargo_y': 8
         })
         if not self.assert_success(result, "Load Unit into Transport"):
             return False
         
         # Test getting transport info
-        result = self.rpc_call('get_transport_info', {'x': 0, 'y': 6})
+        result = self.rpc_call('get_transport_info', {'x': 4, 'y': 8})
         if not self.assert_success(result, "Get Transport Info"):
             return False
         
         # Test getting valid unload positions
-        result = self.rpc_call('get_valid_unload_positions', {'x': 0, 'y': 6})
+        result = self.rpc_call('get_valid_unload_positions', {'x': 4, 'y': 8})
         if not self.assert_success(result, "Get Valid Unload Positions"):
             return False
         
         # Test unloading unit
-        result = self.rpc_call('unload_unit', {
-            'transport_x': 0, 'transport_y': 6,
-            'unload_x': 1, 'unload_y': 6,
+        result = self.rpc_call('transport_unload', {
+            'transport_x': 4, 'transport_y': 8,
+            'unload_x': 3, 'unload_y': 8,  # Adjacent plain tile
             'cargo_index': 0
         })
         if not self.assert_success(result, "Unload Unit from Transport"):
@@ -279,11 +315,11 @@ class AdvanceWarsRegressionTester:
         """Test property capture system"""
         print("\n🏰 Testing Capture Mechanics...")
         
-        # Create infantry for capture at airport (which should be capturable)
+        # Create infantry for capture near a city
         result = self.rpc_call('unit_create', {
             'army': 'RED',
             'unit_type': 'INFANTRY',
-            'x': 0, 'y': 8
+            'x': 2, 'y': 4  # Near city at (3,4)
         })
         if not self.assert_success(result, "Create Infantry for Capture"):
             return False
@@ -292,13 +328,13 @@ class AdvanceWarsRegressionTester:
         self.rpc_call('army_end_turn')
         self.rpc_call('army_end_turn')
         
-        # Move to a city tile (test city at 2,3 based on optimized map)
-        result = self.rpc_call('unit_move', {'x': 0, 'y': 8, 'x2': 2, 'y2': 3})
+        # Move to a city tile at (3,4)
+        result = self.rpc_call('movement_execute', {'from_x': 2, 'from_y': 4, 'to_x': 3, 'to_y': 4})
         if not self.assert_success(result, "Move to Capturable Property"):
             return False
         
         # Check if tile is capturable first
-        result = self.rpc_call('tile', {'x': 2, 'y': 3})
+        result = self.rpc_call('tile', {'x': 3, 'y': 4})
         if not self.assert_success(result, "Check Tile Info"):
             return False
         
@@ -308,7 +344,7 @@ class AdvanceWarsRegressionTester:
             return True
         
         # Test capture attempt
-        result = self.rpc_call('capture_tile', {'x': 2, 'y': 3})
+        result = self.rpc_call('capture_tile', {'x': 3, 'y': 4})
         if not self.assert_success(result, "Capture Attempt"):
             return False
         
@@ -340,8 +376,8 @@ class AdvanceWarsRegressionTester:
         if not self.assert_success(result, "Check Unit Affordability"):
             return False
         
-        # Test production options
-        result = self.rpc_call('get_production_options', {'x': 0, 'y': 3})
+        # Test production options at factory
+        result = self.rpc_call('get_production_options', {'x': 0, 'y': 4})  # FACTORY:RED
         if not self.assert_success(result, "Get Production Options"):
             return False
         

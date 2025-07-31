@@ -71,7 +71,30 @@ class Game {
         
         this.socket.on('update', (msg) => {
             if (msg && msg.board) {
+                // Save current highlights
+                const savedHighlights = {};
+                if (this.board) {
+                    this.board.grid.forEach((tile, idx) => {
+                        if (tile.can_be_moved_to || tile.can_be_attacked) {
+                            savedHighlights[idx] = {
+                                can_be_moved_to: tile.can_be_moved_to,
+                                can_be_attacked: tile.can_be_attacked
+                            };
+                        }
+                    });
+                }
+                
                 this.board = msg.board;
+                
+                // Restore highlights
+                Object.entries(savedHighlights).forEach(([idx, highlights]) => {
+                    const tile = this.board.grid[parseInt(idx)];
+                    if (tile) {
+                        tile.can_be_moved_to = highlights.can_be_moved_to;
+                        tile.can_be_attacked = highlights.can_be_attacked;
+                    }
+                });
+                
                 this.render();
             }
         });
@@ -88,15 +111,15 @@ class Game {
             if (this.board && this.board.selected) {
                 // Try move, then attack, then new selection
                 try {
-                    await this.rpc('unit_move', {
-                        x: this.board.selected.x,
-                        y: this.board.selected.y,
-                        x2: x,
-                        y2: y
+                    await this.rpc('movement_execute', {
+                        from_x: this.board.selected.x,
+                        from_y: this.board.selected.y,
+                        to_x: x,
+                        to_y: y
                     });
                 } catch (e) {
                     try {
-                        await this.rpc('unit_attack_enhanced', {
+                        await this.rpc('combat_attack', {
                             attacker_x: this.board.selected.x,
                             attacker_y: this.board.selected.y,
                             defender_x: x,
@@ -191,8 +214,11 @@ class Game {
                 throw new Error(data.error.message);
             }
             
-            // Always update board after RPC call
-            await this.updateBoard();
+            // Update board after RPC call UNLESS it's a query method
+            const queryMethods = ['movement_range', 'combat_targets', 'get_production_options'];
+            if (!queryMethods.includes(method)) {
+                await this.updateBoard();
+            }
             
             return data.result;
         } catch (e) {
@@ -201,7 +227,20 @@ class Game {
         }
     }
     
-    async updateBoard() {
+    async updateBoard(preserveHighlights = false) {
+        // Save current highlights if requested
+        const savedHighlights = {};
+        if (preserveHighlights && this.board) {
+            this.board.grid.forEach((tile, idx) => {
+                if (tile.can_be_moved_to || tile.can_be_attacked) {
+                    savedHighlights[idx] = {
+                        can_be_moved_to: tile.can_be_moved_to,
+                        can_be_attacked: tile.can_be_attacked
+                    };
+                }
+            });
+        }
+        
         const response = await fetch('/api', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -216,7 +255,91 @@ class Game {
         const data = await response.json();
         if (data.result) {
             this.board = data.result;
+            
+            // Restore highlights if requested
+            if (preserveHighlights) {
+                Object.entries(savedHighlights).forEach(([idx, highlights]) => {
+                    const tile = this.board.grid[parseInt(idx)];
+                    if (tile) {
+                        tile.can_be_moved_to = highlights.can_be_moved_to;
+                        tile.can_be_attacked = highlights.can_be_attacked;
+                    }
+                });
+            }
+            
             this.render();
+            
+            // If there's a selected unit, update movement highlights
+            if (this.board.selected && this.board.selected.unit) {
+                await this.updateMovementHighlights();
+            }
+        }
+    }
+    
+    async updateMovementHighlights() {
+        console.log('updateMovementHighlights called');
+        
+        // Only update highlights if a unit is selected
+        if (!this.board || !this.board.selected || !this.board.selected.unit) {
+            console.log('No unit selected, returning');
+            return;
+        }
+        
+        const unit = this.board.selected.unit;
+        const x = this.board.selected.x;
+        const y = this.board.selected.y;
+        
+        console.log(`Selected unit: ${unit.type} at (${x}, ${y})`);
+        
+        // Only get movement highlights for the current player's units
+        if (unit.army !== this.board.current_turn) {
+            console.log(`Unit army ${unit.army} != current turn ${this.board.current_turn}`);
+            return;
+        }
+        
+        try {
+            // Get movement range from server
+            const moveResult = await this.rpc('movement_range', { 
+                unit_x: x, 
+                unit_y: y 
+            });
+            
+            console.log('Movement range result:', moveResult);
+            
+            if (moveResult.success && moveResult.positions) {
+                console.log(`Setting ${moveResult.positions.length} movement highlights`);
+                // Update can_be_moved_to flags
+                moveResult.positions.forEach(pos => {
+                    const tile = this.getTile(pos.x, pos.y);
+                    if (tile) {
+                        tile.can_be_moved_to = true;
+                    }
+                });
+            }
+            
+            // Get attack targets
+            const attackResult = await this.rpc('combat_targets', {
+                unit_x: x,
+                unit_y: y
+            });
+            
+            console.log('Combat targets result:', attackResult);
+            
+            if (attackResult.success && attackResult.targets) {
+                console.log(`Setting ${attackResult.targets.length} attack highlights`);
+                // Update can_be_attacked flags
+                attackResult.targets.forEach(target => {
+                    const tile = this.getTile(target.x, target.y);
+                    if (tile) {
+                        tile.can_be_attacked = true;
+                    }
+                });
+            }
+            
+            // Re-render to show highlights
+            this.render();
+        } catch (error) {
+            console.error('Failed to update movement highlights:', error);
         }
     }
     

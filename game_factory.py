@@ -7,8 +7,7 @@ from gameboard import GameBoard, GameTile
 from game_board_v2 import GameBoardV2
 from player_system import PlayerManager, SpriteColor
 from map_parser_v2 import MapParserV2
-from manager_v2 import GameManagerV2
-from manager import GameManager
+from manager_v2 import GameManager
 from config import Config
 import uuid
 import os
@@ -17,13 +16,13 @@ class GameFactory:
     """Factory for creating games with different player configurations"""
     
     @staticmethod
-    def create_standard_game(map_name: str = "small_battle") -> Tuple[GameManagerV2, str]:
+    def create_standard_game(map_name: str = "small_battle") -> Tuple[GameManager, str]:
         """Create a standard 2-player game"""
         player_manager = PlayerManager.create_default_2_player()
         return GameFactory._create_game(map_name, player_manager)
         
     @staticmethod
-    def create_game_with_players(map_name: str, players: List[Dict]) -> Tuple[GameManagerV2, str]:
+    def create_game_with_players(map_name: str, players: List[Dict]) -> Tuple[GameManager, str]:
         """
         Create a game with custom players
         
@@ -58,7 +57,7 @@ class GameFactory:
         return GameFactory._create_game(map_name, player_manager)
         
     @staticmethod
-    def create_3_player_game(map_name: str = "triangle_arena") -> Tuple[GameManagerV2, str]:
+    def create_3_player_game(map_name: str = "triangle_arena") -> Tuple[GameManager, str]:
         """Create a 3-player game"""
         player_manager = PlayerManager()
         player_manager.add_player(0, "Player 1", "Red", SpriteColor.RED)
@@ -67,13 +66,13 @@ class GameFactory:
         return GameFactory._create_game(map_name, player_manager)
         
     @staticmethod
-    def create_4_player_game(map_name: str = "cross_battle") -> Tuple[GameManagerV2, str]:
+    def create_4_player_game(map_name: str = "cross_battle") -> Tuple[GameManager, str]:
         """Create a 4-player game"""
         player_manager = PlayerManager.create_default_4_player()
         return GameFactory._create_game(map_name, player_manager)
         
     @staticmethod
-    def _create_game(map_name: str, player_manager: PlayerManager) -> Tuple[GameManagerV2, str]:
+    def _create_game(map_name: str, player_manager: PlayerManager) -> Tuple[GameManager, str]:
         """Internal method to create a game with given player configuration"""
         # Generate game token
         token = str(uuid.uuid4())
@@ -157,13 +156,13 @@ class GameFactory:
         config = Config()  # Will be set by setup_initial_economy
         
         # Create manager
-        manager = GameManagerV2(config, board_v2, player_manager)
+        manager = GameManager(config, board_v2, player_manager)
         manager.setup_initial_economy()
         
         return manager, token
         
     @staticmethod
-    def create_from_map_data(map_data: str, player_configs: Optional[List[Dict]] = None) -> Tuple[GameManagerV2, str]:
+    def create_from_map_data(map_data: str, player_configs: Optional[List[Dict]] = None) -> Tuple[GameManager, str]:
         """Create a game from raw map data"""
         # Parse map data
         parser = MapParserV2()
@@ -191,7 +190,7 @@ class GameFactory:
         return None, token  # Placeholder
         
     @staticmethod
-    def convert_legacy_game(old_manager: GameManager) -> GameManagerV2:
+    def convert_legacy_game(old_manager: GameManager) -> GameManager:
         """Convert a legacy game to the new system"""
         # Detect players from turn order
         player_manager = PlayerManager()
@@ -222,7 +221,7 @@ class GameFactory:
         board_v2.current_player = old_manager.board.turn_order.index(old_manager.board.current_turn)
         
         # Create new manager
-        manager_v2 = GameManagerV2(old_manager.config, board_v2, player_manager)
+        manager_v2 = GameManager(old_manager.config, board_v2, player_manager)
         
         # Copy funds
         if hasattr(old_manager.board, 'red_funds'):

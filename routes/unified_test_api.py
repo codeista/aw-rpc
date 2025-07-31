@@ -363,7 +363,7 @@ def test_websocket():
 def test_create_game():
     """Test custom game creation."""
     from app_core import games
-    from manager import GameManager
+    from manager_v2 import GameManager
     from map_system import map_repository
     
     data = request.get_json() or {}

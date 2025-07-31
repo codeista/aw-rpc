@@ -42,15 +42,34 @@ def rpc_call(method: str, params: dict = None) -> dict:
 def get_test_game():
     """Create optimized test game for victory testing"""
     try:
-        # Try test_game route first
-        response = requests.get("http://localhost:5000/test_game", allow_redirects=False)
+        # Request a capture test game which has units near capturable properties
+        response = requests.get("http://localhost:5000/test_game?type=capture", allow_redirects=False)
         if response.status_code == 302:
             location = response.headers.get('Location', '')
-            match = re.search(r'/game/([A-Za-z0-9_]+)', location)
+            # Check for v2 game format
+            match = re.search(r'/v2\?token=([A-Za-z0-9_]+)', location)
             if match:
                 game_id = match.group(1)
-                print(f"✅ Created test game: {game_id}")
+                print(f"✅ Created capture test game with units: {game_id}")
                 return game_id
+        
+        # Fallback to comprehensive test game
+        response = requests.get("http://localhost:5000/test_game?type=comprehensive", allow_redirects=False)
+        if response.status_code == 302:
+            location = response.headers.get('Location', '')
+            match = re.search(r'/v2\?token=([A-Za-z0-9_]+)', location)
+            if match:
+                game_id = match.group(1)
+                print(f"✅ Created comprehensive test game with units: {game_id}")
+                return game_id
+        
+        # Fallback to RPC method
+        result = rpc_call("game_create_test", {"use_optimized": True})
+        if "error" not in result:
+            token = result.get("result", result).get("token")
+            if token:
+                print(f"✅ Created test game with units: {token}")
+                return token
         
         # Fallback to test_optimized if available
         response = requests.get("http://localhost:5000/test_optimized", allow_redirects=False)
@@ -250,12 +269,12 @@ class VictoryTester:
                     
                     # Move unit to building if not already there
                     if distance == 1:
-                        move_result = rpc_call("unit_move", {
+                        move_result = rpc_call("movement_execute", {
                             "token": self.game_id,
-                            "x": unit["x"],
-                            "y": unit["y"],
-                            "x2": building["x"],
-                            "y2": building["y"]
+                            "from_x": unit["x"],
+                            "from_y": unit["y"],
+                            "to_x": building["x"],
+                            "to_y": building["y"]
                         })
                         
                         # Check move result - if it returns tile data, move succeeded

@@ -31,8 +31,8 @@ const CONSTANTS = {
     
     // Colors
     COLORS: {
-        MOVEMENT_HIGHLIGHT: 'rgba(255, 255, 0, 0.3)',
-        ATTACK_HIGHLIGHT: 'rgba(255, 0, 0, 0.3)',
+        MOVEMENT_HIGHLIGHT: 'rgba(255, 255, 0, 0.4)',  // Semi-transparent yellow
+        ATTACK_HIGHLIGHT: 'rgba(255, 0, 0, 0.4)',      // Semi-transparent red
         SELECTION_BORDER: '#ffff00',
         HP_BAR_BG: 'rgba(0, 0, 0, 0.5)',
         HP_BAR_FG: '#00ff00'
@@ -164,7 +164,30 @@ class Game {
         
         this.socket.on('update', (msg) => {
             if (msg && msg.board) {
+                // Save current highlights before updating board
+                const savedHighlights = {};
+                if (this.board && this.board.grid) {
+                    this.board.grid.forEach((tile, idx) => {
+                        if (tile.can_be_moved_to || tile.can_be_attacked) {
+                            savedHighlights[idx] = {
+                                can_be_moved_to: tile.can_be_moved_to,
+                                can_be_attacked: tile.can_be_attacked
+                            };
+                        }
+                    });
+                }
+                
+                // Update board
                 this.board = msg.board;
+                
+                // Restore highlights
+                Object.entries(savedHighlights).forEach(([idx, highlights]) => {
+                    if (this.board.grid[parseInt(idx)]) {
+                        this.board.grid[parseInt(idx)].can_be_moved_to = highlights.can_be_moved_to;
+                        this.board.grid[parseInt(idx)].can_be_attacked = highlights.can_be_attacked;
+                    }
+                });
+                
                 // Clear combat preview cache when board updates
                 this.combatPreviewCache = null;
                 this.render();
@@ -201,11 +224,11 @@ class Game {
                     // This might be a valid move target - try movement
                     log('Attempting move to', x, y);
                     try {
-                        const moveResult = await this.rpc('unit_move', {
-                            x: this.board.selected.x,
-                            y: this.board.selected.y,
-                            x2: x,
-                            y2: y
+                        const moveResult = await this.rpc('movement_execute', {
+                            from_x: this.board.selected.x,
+                            from_y: this.board.selected.y,
+                            to_x: x,
+                            to_y: y
                         });
                         log('Move result:', moveResult);
                         
@@ -483,7 +506,18 @@ class Game {
         
         // End turn button
         document.getElementById('end-turn').addEventListener('click', async () => {
-            await this.rpc('army_end_turn');
+            try {
+                await this.rpc('army_end_turn');
+                // Show success notification with new turn info
+                if (window.errorNotification && this.board) {
+                    const currentPlayer = this.board.current_turn || 'Player';
+                    const day = this.board.day || '?';
+                    window.errorNotification.showSuccess(`Turn ended. ${currentPlayer}'s turn - Day ${day}`);
+                }
+            } catch (e) {
+                // Error already handled by RPC method
+                console.error('End turn failed:', e);
+            }
         });
         
         // Modal buttons
@@ -499,14 +533,24 @@ class Game {
                 
                 if (this.productionCoords && select.value) {
                     log('Creating unit:', select.value, 'at', this.productionCoords);
-                    const result = await this.rpc('unit_create', {
-                        army: this.board.current_turn,
-                        unit_type: select.value,
-                        x: this.productionCoords.x,
-                        y: this.productionCoords.y
-                    });
-                    log('Unit creation result:', result);
-                    hideElement(modal);
+                    try {
+                        const result = await this.rpc('unit_create', {
+                            army: this.board.current_turn,
+                            unit_type: select.value,
+                            x: this.productionCoords.x,
+                            y: this.productionCoords.y
+                        });
+                        log('Unit creation result:', result);
+                        hideElement(modal);
+                        
+                        // Show success notification
+                        if (window.errorNotification) {
+                            window.errorNotification.showSuccess(`${select.value} created successfully`);
+                        }
+                    } catch (e) {
+                        // Error already handled by RPC method
+                        console.error('Unit creation failed:', e);
+                    }
                 }
             });
             
@@ -536,7 +580,18 @@ class Game {
             switch(e.key) {
                 case ' ':  // Space - End turn
                     e.preventDefault();
-                    await this.rpc('army_end_turn');
+                    try {
+                        await this.rpc('army_end_turn');
+                        // Show success notification with new turn info
+                        if (window.errorNotification && this.board) {
+                            const currentPlayer = this.board.current_turn || 'Player';
+                            const day = this.board.day || '?';
+                            window.errorNotification.showSuccess(`Turn ended. ${currentPlayer}'s turn - Day ${day}`);
+                        }
+                    } catch (e) {
+                        // Error already handled by RPC method
+                        console.error('End turn failed:', e);
+                    }
                     break;
                     
                 case 'Escape':  // Escape - Cancel action/close modal
@@ -582,13 +637,27 @@ class Game {
                 })
             });
             
+            // Check for network errors
+            if (!response.ok) {
+                throw new Error(`Network error: ${response.status} ${response.statusText}`);
+            }
+            
             const data = await response.json();
             if (data.error) {
+                // Show user-friendly error notification
+                if (window.errorNotification) {
+                    window.errorNotification.showRpcError(data, method);
+                }
                 throw new Error(data.error.message);
             }
             
-            // Always update board after RPC call
-            await this.updateBoard();
+            // Only update board for methods that change game state
+            const queryMethods = ['movement_range', 'combat_targets', 'get_production_options', 'combat_preview'];
+            const shouldUpdateBoard = !queryMethods.includes(method);
+            
+            if (shouldUpdateBoard) {
+                await this.updateBoard();
+            }
             
             // Track unit actions for turn mechanics
             const actionMethods = ['unit_move', 'unit_wait', 'unit_capture', 'unit_attack', 
@@ -605,6 +674,13 @@ class Game {
             return data.result;
         } catch (e) {
             console.error('RPC error:', e);
+            
+            // Show error notification if not already shown
+            if (window.errorNotification && !e.notificationShown) {
+                window.errorNotification.showRpcError(e, method);
+                e.notificationShown = true; // Prevent duplicate notifications
+            }
+            
             throw e;
         }
     }
@@ -627,6 +703,19 @@ class Game {
     }
     
     async updateBoard() {
+        // Save current highlights before updating
+        const savedHighlights = {};
+        if (this.board && this.board.grid) {
+            this.board.grid.forEach((tile, idx) => {
+                if (tile.can_be_moved_to || tile.can_be_attacked) {
+                    savedHighlights[idx] = {
+                        can_be_moved_to: tile.can_be_moved_to,
+                        can_be_attacked: tile.can_be_attacked
+                    };
+                }
+            });
+        }
+        
         const response = await fetch('/api', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -643,6 +732,15 @@ class Game {
             // Check for turn change
             const previousTurn = this.board?.current_turn;
             this.board = data.result;
+            
+            // Restore highlights
+            Object.entries(savedHighlights).forEach(([idx, highlights]) => {
+                const tile = this.board.grid[parseInt(idx)];
+                if (tile) {
+                    tile.can_be_moved_to = highlights.can_be_moved_to;
+                    tile.can_be_attacked = highlights.can_be_attacked;
+                }
+            });
             
             // Reset last acted unit on turn change
             if (previousTurn && previousTurn !== this.board.current_turn) {
@@ -1149,6 +1247,9 @@ class Game {
         // Update panels
         this.updateGameStatusPanel();
         this.updatePlayerStatsPanel();
+        
+        // Update UI displays (turn, day, funds)
+        this.updateUIDisplays();
     }
     
     setupCanvas() {
@@ -1264,6 +1365,7 @@ class Game {
     
     renderTileHighlight(tile, px, py) {
         if (tile.can_be_moved_to) {
+            // Fill with yellow
             this.ctx.fillStyle = CONSTANTS.COLORS.MOVEMENT_HIGHLIGHT;
             this.ctx.fillRect(px, py, this.tileSize, this.tileSize);
         }
@@ -1453,12 +1555,15 @@ class Game {
     async showMovementRange(x, y) {
         try {
             const result = await this.rpc('movement_range', { unit_x: x, unit_y: y });
+            
             if (result.success) {
                 // Clear previous highlights
                 this.clearHighlights();
                 
                 // Highlight movement range
-                result.moves.forEach(move => {
+                const positions = result.positions || result.moves || [];
+                
+                positions.forEach(move => {
                     const tile = this.getTile(move.x, move.y);
                     if (tile) {
                         tile.can_be_moved_to = true;
@@ -2175,7 +2280,12 @@ class Game {
         // Initialize player data
         if (this.board.players) {
             // V2 game with player data
-            this.board.players.forEach(player => {
+            // Handle both array and object formats
+            const playersArray = Array.isArray(this.board.players) 
+                ? this.board.players 
+                : Object.values(this.board.players);
+                
+            playersArray.forEach(player => {
                 playerStats[player.id] = {
                     name: player.name,
                     color: player.color,

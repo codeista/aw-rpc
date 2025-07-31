@@ -180,6 +180,39 @@ New test configurations available via test interface:
 
 Access these via the test interface dropdown at http://localhost:5000/test_interface
 
+### Test Games with Predeployed Units (NEW - 2025-07-30)
+
+Several test types automatically include predeployed units for immediate testing:
+
+#### Available Test Types:
+1. **comprehensive** - All features test with pre-deployed units
+2. **movement** - Movement system test with movement-focused units
+3. **combat** - Combat scenarios test with combat-focused units
+4. **transport** - Basic transport operations test with transports and cargo
+5. **transport_comprehensive** - Full transport testing with all transport types
+6. **naval** - Naval units test with battleships, carriers, subs, etc.
+7. **air** - Air units test with fighters, bombers, copters
+8. **land** - Land units test with tanks, artillery, infantry
+
+#### Creating Test Games with Units:
+```bash
+# Via URL parameters
+http://localhost:5000/test_game?type=movement
+http://localhost:5000/test_game?type=combat
+http://localhost:5000/test_game?type=comprehensive
+
+# Via RPC
+rpc('game_create_test', {token: 'mytest', use_optimized: true})
+```
+
+#### Unit Configurations by Test Type:
+- **movement**: Infantry, Mech, Recon, Tank, Fighter, T-Copter
+- **combat**: Tanks, Artillery, Rockets, Fighters, Battleships, Cruisers
+- **transport**: APCs, T-Copters, Landers, Black Boats, Carriers with appropriate cargo
+- **comprehensive**: Mix of all unit types for general testing
+
+**Note**: Units are placed strategically based on the test focus. For example, combat tests place opposing units within attack range, while movement tests spread units across varied terrain.
+
 ### V2 Player System (NEW - Updated 2025-07)
 The game now uses a player-based system instead of army colors:
 - Players are identified by numeric IDs (0, 1, 2, etc.)

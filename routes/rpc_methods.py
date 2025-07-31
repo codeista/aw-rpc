@@ -44,7 +44,7 @@ def game_create_with_setup(token: str, setup_data: Dict[str, Any]) -> Dict[str, 
     try:
         # Import here to avoid circular imports
         from game_utils import games
-        from manager import GameManager
+        from manager_v2 import GameManager
         from gameboard import GameBoard
         from config import Config
         from map_system import map_repository, Army

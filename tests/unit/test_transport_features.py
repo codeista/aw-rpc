@@ -105,7 +105,7 @@ def test_apc_auto_resupply(game_id: str) -> bool:
         # Move infantry away and back to deplete fuel
         print("   Moving infantry to deplete fuel...")
         # Move away
-        move1 = rpc_call("unit_move", {"token": game_id, "x": 6, "y": 5, "x2": 7, "y2": 5})
+        move1 = rpc_call("movement_execute", {"token": game_id, "from_x": 6, "from_y": 5, "to_x": 7, "to_y": 5})
         if "error" in move1:
             print(f"   ⚠️ First move failed: {move1.get('error')}")
         else:
@@ -114,7 +114,7 @@ def test_apc_auto_resupply(game_id: str) -> bool:
             rpc_call("army_end_turn", {"token": game_id})
             rpc_call("army_end_turn", {"token": game_id})
             # Move back adjacent to APC
-            move2 = rpc_call("unit_move", {"token": game_id, "x": 7, "y": 5, "x2": 6, "y2": 5})
+            move2 = rpc_call("movement_execute", {"token": game_id, "from_x": 7, "from_y": 5, "to_x": 6, "to_y": 5})
             if "error" not in move2:
                 print("   ✓ Moved infantry back adjacent to APC")
     else:
@@ -242,7 +242,7 @@ def test_cruiser_carrier_resupply(game_id: str) -> bool:
     
     # Move carrier with fighter to deplete fuel
     print("   Moving Carrier to deplete fuel...")
-    rpc_call("unit_move", {"token": game_id, "x": carrier_pos[0], "y": carrier_pos[1], "x2": fighter_pos[0], "y2": fighter_pos[1]})
+    rpc_call("movement_execute", {"token": game_id, "from_x": carrier_pos[0], "from_y": carrier_pos[1], "to_x": fighter_pos[0], "to_y": fighter_pos[1]})
     
     # End turn to trigger resupply
     print("   Ending turn to trigger Carrier resupply...")
@@ -407,7 +407,7 @@ def test_blackboat_repair(game_id: str) -> bool:
                         if abs(adj_tile["x"] - x) + abs(adj_tile["y"] - y) == 1:
                             if not adj_tile.get("unit"):
                                 nx, ny = adj_tile["x"], adj_tile["y"]
-                                move_result = rpc_call("unit_move", {"token": game_id, "x": x, "y": y, "x2": nx, "y2": ny})
+                                move_result = rpc_call("movement_execute", {"token": game_id, "from_x": x, "from_y": y, "to_x": nx, "to_y": ny})
                                 if "error" not in move_result:
                                     print(f"   ✓ Moved unit to ({nx},{ny})")
                                     port_pos = (x, y)

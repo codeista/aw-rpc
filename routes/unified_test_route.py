@@ -4,7 +4,7 @@ Unified test game creation route - consolidates all test game creation into one 
 
 from flask import Blueprint, request, redirect, url_for, jsonify
 import time
-from manager import GameManager
+from manager_v2 import GameManager
 from gameboard import GameBoard
 from config import Config
 from map_system import map_repository
@@ -538,6 +538,54 @@ def _add_test_units_v2(game, focus: str = None):
             {"type": "ARTILLERY", "player": 1, "x": 9, "y": 7},
             {"type": "ROCKET", "player": 1, "x": 8, "y": 7},
             {"type": "APC", "player": 1, "x": 9, "y": 8},
+        ]
+    elif focus == 'movement':
+        # Add movement-focused units
+        units = [
+            {"type": "INFANTRY", "player": 0, "x": 1, "y": 4},
+            {"type": "MECH", "player": 0, "x": 2, "y": 5},
+            {"type": "RECON", "player": 0, "x": 0, "y": 5},
+            {"type": "TANK", "player": 0, "x": 1, "y": 6},
+            {"type": "FIGHTER", "player": 0, "x": 1, "y": 7},
+            {"type": "TCOPTER", "player": 0, "x": 0, "y": 8},
+            # Player 2 units
+            {"type": "RECON", "player": 1, "x": 6, "y": 5},
+            {"type": "TANK", "player": 1, "x": 7, "y": 6},
+            {"type": "FIGHTER", "player": 1, "x": 8, "y": 7},
+            {"type": "TCOPTER", "player": 1, "x": 8, "y": 8},
+        ]
+    elif focus == 'combat':
+        # Add combat-focused units
+        units = [
+            {"type": "TANK", "player": 0, "x": 3, "y": 5},
+            {"type": "ARTILLERY", "player": 0, "x": 3, "y": 7},
+            {"type": "FIGHTER", "player": 0, "x": 1, "y": 8},
+            {"type": "BATTLESHIP", "player": 0, "x": 3, "y": 0},
+            # Player 2 units - positioned for combat
+            {"type": "TANK", "player": 1, "x": 5, "y": 5},
+            {"type": "ROCKET", "player": 1, "x": 6, "y": 7},
+            {"type": "FIGHTER", "player": 1, "x": 8, "y": 8},
+            {"type": "CRUISER", "player": 1, "x": 5, "y": 0},
+        ]
+    elif focus == 'transport':
+        # Add transport-focused units
+        units = [
+            # Ground transports and cargo
+            {"type": "APC", "player": 0, "x": 0, "y": 4},
+            {"type": "INFANTRY", "player": 0, "x": 1, "y": 4},
+            {"type": "MECH", "player": 0, "x": 2, "y": 4},
+            # Air transports
+            {"type": "TCOPTER", "player": 0, "x": 0, "y": 7},
+            {"type": "INFANTRY", "player": 0, "x": 1, "y": 7},
+            # Naval transports
+            {"type": "LANDER", "player": 0, "x": 0, "y": 1},
+            {"type": "BLACKBOAT", "player": 0, "x": 1, "y": 2},
+            {"type": "CRUISER", "player": 0, "x": 2, "y": 1},
+            {"type": "CARRIER", "player": 0, "x": 3, "y": 2},
+            # Cargo for naval
+            {"type": "TANK", "player": 0, "x": 0, "y": 3},
+            {"type": "FIGHTER", "player": 0, "x": 3, "y": 0},
+            {"type": "BCOPTER", "player": 0, "x": 3, "y": 1},
         ]
     else:
         # Default units

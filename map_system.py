@@ -662,6 +662,29 @@ AIRPORT:RED,PLAIN,PLAIN,PLAIN,PLAIN,PLAIN,PLAIN,PLAIN,PLAIN,PLAIN,PLAIN,AIRPORT:
 PLAIN,PLAIN,PLAIN,PLAIN,PLAIN,PLAIN,PLAIN,PLAIN,PLAIN,PLAIN,PLAIN,PLAIN
 CITY:RED,PLAIN,PLAIN,PLAIN,PLAIN,PLAIN,PLAIN,PLAIN,PLAIN,PLAIN,PLAIN,CITY:BLUE''', "Transport Test Map")
 
+        # Import and add specialized test maps
+        try:
+            import sys
+            import os
+            # Add parent directory to path to import test_map_templates
+            sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            from test_map_templates import COMBAT_TEST_MAP, TRANSPORT_TEST_MAP, VICTORY_TEST_MAP, MOVEMENT_TEST_MAP
+            
+            # Add combat test map with all 25 unit types
+            self._maps['combat'] = Map.parse(COMBAT_TEST_MAP['map_data'], COMBAT_TEST_MAP['name'])
+            
+            # Add transport test map with nested loading scenarios
+            self._maps['transport_nested'] = Map.parse(TRANSPORT_TEST_MAP['map_data'], TRANSPORT_TEST_MAP['name'])
+            
+            # Add victory test map
+            self._maps['victory'] = Map.parse(VICTORY_TEST_MAP['map_data'], VICTORY_TEST_MAP['name'])
+            
+            # Add movement test map
+            self._maps['movement'] = Map.parse(MOVEMENT_TEST_MAP['map_data'], MOVEMENT_TEST_MAP['name'])
+            
+        except ImportError:
+            # test_map_templates not available yet, skip
+            pass
 
     def get_map(self, map_id: str) -> Optional[Map]:
         """Get map by ID."""
