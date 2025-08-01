@@ -377,7 +377,7 @@ class AdvanceWarsRegressionTester:
             return False
         
         # Test production options at factory
-        result = self.rpc_call('get_production_options', {'x': 0, 'y': 4})  # FACTORY:RED
+        result = self.rpc_call('get_production_options', {'x': 0, 'y': 0})  # FACTORY at (0,0)
         if not self.assert_success(result, "Get Production Options"):
             return False
         
