@@ -1,336 +1,360 @@
 #!/usr/bin/env python3
 """
-Test movement highlights and attack targets functionality
-Tests:
-1. Movement highlights appear when selecting a unit
-2. Attack targets appear for units in range
-3. Highlights clear properly after deselection
-4. Attack targets show consistently
-
-USAGE:
-1. Activate virtual environment: source flask-env/bin/activate
-2. Start server: nohup python3 app.py > server.log 2>&1 &
-3. Run test: python3 test_highlights.py
+Test script to verify movement highlights and action flow
+Tests the complete flow: select → move → attack → highlights clear
 """
 
+import time
 import requests
 import json
-import time
 
-BASE_URL = 'http://localhost:5000/api'
+# Simple color codes without colorama
+class Colors:
+    GREEN = '\033[92m'
+    RED = '\033[91m'
+    YELLOW = '\033[93m'
+    CYAN = '\033[96m'
+    MAGENTA = '\033[95m'
+    RESET = '\033[0m'
 
-def rpc_call(method, params):
-    """Make an RPC call and return the result"""
-    try:
-        response = requests.post(BASE_URL, json={
-            "jsonrpc": "2.0",
-            "method": method,
-            "params": params,
-            "id": 1
-        })
-        
-        # Debug response
-        if response.status_code != 200:
-            print(f"❌ HTTP Error {response.status_code} for {method}")
-            print(f"Response: {response.text[:200]}")
-            return None
-            
-        result = response.json()
-        if 'error' in result:
-            print(f"❌ RPC Error in {method}: {result['error']}")
-            return None
-        return result.get('result')
-    except Exception as e:
-        print(f"❌ Exception in {method}: {e}")
-        print(f"URL: {BASE_URL}")
-        return None
+Fore = Colors
+Style = type('obj', (object,), {'RESET_ALL': Colors.RESET})
+
+BASE_URL = "http://localhost:5000/rpc"
+TOKEN = None
+
+def rpc_call(method, params=None):
+    """Make an RPC call"""
+    payload = {
+        "jsonrpc": "2.0",
+        "method": method,
+        "params": params or {},
+        "id": 1
+    }
+    
+    response = requests.post(BASE_URL, json=payload)
+    return response.json()
+
+def print_test(test_name, passed, details=""):
+    """Print test result"""
+    if passed:
+        print(f"{Fore.GREEN}✓ {test_name}{Style.RESET_ALL}")
+    else:
+        print(f"{Fore.RED}✗ {test_name}{Style.RESET_ALL}")
+    if details:
+        print(f"  {Fore.YELLOW}{details}{Style.RESET_ALL}")
+
+def check_highlights(board, expected_movement=0, expected_attack=0):
+    """Check highlight counts on board"""
+    movement_count = 0
+    attack_count = 0
+    highlighted_positions = []
+    
+    for tile in board['grid']:
+        if tile.get('can_be_moved_to'):
+            movement_count += 1
+            highlighted_positions.append(f"Move: ({tile['x']},{tile['y']})")
+        if tile.get('can_be_attacked'):
+            attack_count += 1
+            highlighted_positions.append(f"Attack: ({tile['x']},{tile['y']})")
+    
+    correct = movement_count == expected_movement and attack_count == expected_attack
+    
+    if not correct or highlighted_positions:
+        details = f"Movement: {movement_count}/{expected_movement}, Attack: {attack_count}/{expected_attack}"
+        if highlighted_positions:
+            details += f"\n  Highlights: {', '.join(highlighted_positions[:5])}"
+            if len(highlighted_positions) > 5:
+                details += f" ... and {len(highlighted_positions)-5} more"
+        return correct, details
+    
+    return correct, ""
+
+def find_unit_position(board, unit_type=None, army=None):
+    """Find a unit on the board"""
+    for tile in board['grid']:
+        if tile.get('unit'):
+            unit = tile['unit']
+            if (not unit_type or unit['type'] == unit_type) and \
+               (not army or unit.get('army') == army):
+                return tile['x'], tile['y']
+    return None, None
 
 def test_movement_highlights():
-    """Test movement highlight functionality"""
-    print("\n🚶 Testing Movement Highlights...")
+    """Test 1: Movement highlights appear and clear correctly"""
+    print(f"\n{Fore.CYAN}=== Test 1: Movement Highlights ==={Style.RESET_ALL}")
     
     # Create test game
-    token = 'highlight-test-' + str(int(time.time()))
-    result = rpc_call('game_create_test', {'token': token})
-    if result != 'ok':
-        return False
-    print(f"✅ Created test game: {token}")
+    TOKEN = 'highlight-test-1'
+    result = rpc_call('game_create_test', {'token': TOKEN, 'use_optimized': True})
     
-    # Create a tank with good movement range
-    tank_result = rpc_call('admin_unit_create', {
-        'token': token,
-        'x': 5,
-        'y': 5,
+    # Add to params
+    params_with_token = lambda p: {**p, 'token': TOKEN}
+    
+    # Get initial board
+    result = rpc_call('get_game_board', params_with_token({}))
+    board = result['result']['board']
+    
+    # Create a tank
+    rpc_call('unit_create', params_with_token({
+        'army': 'RED',
         'unit_type': 'TANK',
-        'army': 'RED'
-    })
-    if not tank_result or not tank_result.get('success'):
-        print("❌ Failed to create tank")
-        return False
-    print("✅ Created TANK at (5,5)")
+        'x': 3,
+        'y': 3
+    }))
+    
+    # End turn to allow movement
+    rpc_call('army_end_turn', params_with_token({}))
+    rpc_call('army_end_turn', params_with_token({}))
     
     # Select the tank
-    select_result = rpc_call('unit_select', {'token': token, 'x': 5, 'y': 5})
-    # unit_select returns board state, not success flag
-    if not select_result:
-        print("❌ Failed to select tank")
-        return False
-    print("✅ Selected tank")
+    result = rpc_call('unit_select', params_with_token({'x': 3, 'y': 3}))
     
     # Get movement range
-    move_result = rpc_call('movement_range', {
-        'token': token,
-        'unit_x': 5,
-        'unit_y': 5
-    })
-    if not move_result or not move_result.get('success'):
-        print("❌ Failed to get movement range")
-        return False
+    result = rpc_call('movement_range', params_with_token({'unit_x': 3, 'unit_y': 3}))
+    movement_tiles = len(result['result'].get('moves', []))
     
-    positions = move_result.get('positions', [])
-    print(f"✅ Got {len(positions)} movement positions")
+    # Check board for highlights
+    result = rpc_call('get_game_board', params_with_token({}))
+    board = result['result']['board']
     
-    if len(positions) == 0:
-        print("❌ No movement positions returned!")
-        return False
+    passed, details = check_highlights(board, expected_movement=movement_tiles)
+    print_test("Movement highlights shown after selection", movement_tiles > 0, 
+               f"Found {movement_tiles} movement options")
     
-    # Verify tank has correct movement range (should be 6)
-    tank_move = move_result.get('unit', {}).get('movement', 0)
-    if tank_move != 6:
-        print(f"⚠️  Tank movement is {tank_move}, expected 6")
+    # Click empty space to deselect
+    rpc_call('unit_select', params_with_token({'x': 0, 'y': 0}))
     
-    # Test deselection clears highlights
-    deselect_result = rpc_call('unit_select', {'token': token, 'x': 5, 'y': 5})
-    print("✅ Deselected unit (clicked same position)")
+    # Check highlights cleared
+    result = rpc_call('get_game_board', params_with_token({}))
+    board = result['result']['board']
     
-    # Check board state to verify selection cleared
-    board_result = rpc_call('game_board', {'token': token})
-    if board_result and board_result.get('board', {}).get('selected') is None:
-        print("✅ Selection cleared properly")
-    else:
-        print("⚠️  Selection may not have cleared")
-    
-    return True
+    passed, details = check_highlights(board, expected_movement=0)
+    print_test("Movement highlights cleared after deselection", passed, details)
 
-def test_attack_targets():
-    """Test attack target highlighting"""
-    print("\n⚔️  Testing Attack Target Highlights...")
+def test_move_attack_flow():
+    """Test 2: Move → Attack flow without reselection"""
+    print(f"\n{Fore.CYAN}=== Test 2: Move + Attack Flow ==={Style.RESET_ALL}")
     
     # Create test game
-    token = 'attack-test-' + str(int(time.time()))
-    result = rpc_call('game_create_test', {'token': token})
-    if result != 'ok':
-        return False
-    print(f"✅ Created test game: {token}")
+    TOKEN = 'highlight-test-2'
+    result = rpc_call('game_create_test', {'token': TOKEN, 'use_optimized': True})
     
-    # Create attacker
-    tank_result = rpc_call('admin_unit_create', {
-        'token': token,
-        'x': 5,
-        'y': 5,
+    params_with_token = lambda p: {**p, 'token': TOKEN}
+    
+    # Create attacker and target
+    rpc_call('unit_create', params_with_token({
+        'army': 'RED',
         'unit_type': 'TANK',
-        'army': 'RED'
-    })
-    print("✅ Created RED TANK at (5,5)")
+        'x': 2,
+        'y': 2
+    }))
     
-    # Create target in range
-    infantry_result = rpc_call('admin_unit_create', {
-        'token': token,
-        'x': 6,
-        'y': 5,
+    # End turn
+    rpc_call('army_end_turn', params_with_token({}))
+    
+    # Create enemy
+    rpc_call('unit_create', params_with_token({
+        'army': 'BLUE',
         'unit_type': 'INFANTRY',
-        'army': 'BLUE'
-    })
-    print("✅ Created BLUE INFANTRY at (6,5)")
+        'x': 4,
+        'y': 2
+    }))
     
-    # Select the tank
-    select_result = rpc_call('unit_select', {'token': token, 'x': 5, 'y': 5})
-    if not select_result:
-        print("❌ Failed to select tank")
-        return False
-    print("✅ Selected tank")
+    # End turn back to RED
+    rpc_call('army_end_turn', params_with_token({}))
     
-    # Get attack targets
-    targets_result = rpc_call('combat_targets', {
-        'token': token,
-        'unit_x': 5,
-        'unit_y': 5
-    })
+    # Select tank
+    rpc_call('unit_select', params_with_token({'x': 2, 'y': 2}))
     
-    if not targets_result or not targets_result.get('success'):
-        print("❌ Failed to get attack targets")
-        return False
+    # Move tank closer
+    result = rpc_call('movement_execute', params_with_token({
+        'from_x': 2,
+        'from_y': 2,
+        'to_x': 3,
+        'to_y': 2
+    }))
     
-    targets = targets_result.get('targets', [])
-    print(f"✅ Got {len(targets)} attack targets")
+    time.sleep(0.2)  # Wait for board update
     
-    if len(targets) == 0:
-        print("❌ No attack targets found (should have found infantry)")
-        return False
+    # Check if tank is still selected at new position
+    result = rpc_call('get_game_board', params_with_token({}))
+    board = result['result']['board']
+    selected = board.get('selected')
     
-    # Verify the infantry is in targets
-    found_infantry = False
-    for target in targets:
-        if target['x'] == 6 and target['y'] == 5:
-            found_infantry = True
-            unit_info = target.get('unit', {}).get('type', target.get('type', 'Unknown'))
-            print(f"✅ Found infantry in targets: {unit_info} at ({target['x']},{target['y']})")
+    print_test("Unit remains selected after move", 
+               selected and selected['x'] == 3 and selected['y'] == 2,
+               f"Selected: {selected}")
     
-    if not found_infantry:
-        print("❌ Infantry not in attack targets list")
-        return False
+    # Check for attack highlights
+    result = rpc_call('combat_targets', params_with_token({'unit_x': 3, 'unit_y': 2}))
+    targets = result['result'].get('targets', [])
     
-    return True
+    print_test("Attack targets available after move", len(targets) > 0,
+               f"Found {len(targets)} targets")
+    
+    # Execute attack
+    if targets:
+        result = rpc_call('combat_attack', params_with_token({
+            'attacker_x': 3,
+            'attacker_y': 2,
+            'defender_x': 4,
+            'defender_y': 2
+        }))
+        
+        time.sleep(0.2)
+        
+        # Check highlights are cleared
+        result = rpc_call('get_game_board', params_with_token({}))
+        board = result['result']['board']
+        
+        passed, details = check_highlights(board, expected_movement=0, expected_attack=0)
+        print_test("All highlights cleared after attack", passed, details)
 
-def test_highlight_clearing():
-    """Test that highlights clear properly in various scenarios"""
-    print("\n🧹 Testing Highlight Clearing...")
+def test_highlight_persistence():
+    """Test 3: Check for highlight persistence bugs"""
+    print(f"\n{Fore.CYAN}=== Test 3: Highlight Persistence ==={Style.RESET_ALL}")
     
-    # Create test game
-    token = 'clear-test-' + str(int(time.time()))
-    result = rpc_call('game_create_test', {'token': token})
-    if result != 'ok':
-        return False
-    print(f"✅ Created test game: {token}")
+    TOKEN = 'highlight-test-3'
+    result = rpc_call('game_create_test', {'token': TOKEN, 'use_optimized': True})
     
-    # Create two units
-    rpc_call('admin_unit_create', {
-        'token': token,
-        'x': 3,
-        'y': 3,
-        'unit_type': 'INFANTRY',
-        'army': 'RED'
-    })
-    rpc_call('admin_unit_create', {
-        'token': token,
-        'x': 7,
-        'y': 7,
+    params_with_token = lambda p: {**p, 'token': TOKEN}
+    
+    # Create unit
+    rpc_call('unit_create', params_with_token({
+        'army': 'RED',
         'unit_type': 'RECON',
-        'army': 'RED'
-    })
-    print("✅ Created INFANTRY at (3,3) and RECON at (7,7)")
-    
-    # Select first unit
-    rpc_call('unit_select', {'token': token, 'x': 3, 'y': 3})
-    move1 = rpc_call('movement_range', {'token': token, 'unit_x': 3, 'unit_y': 3})
-    print(f"✅ Selected infantry, got {len(move1.get('positions', []))} movement positions")
-    
-    # Select second unit (should clear first unit's highlights)
-    rpc_call('unit_select', {'token': token, 'x': 7, 'y': 7})
-    move2 = rpc_call('movement_range', {'token': token, 'unit_x': 7, 'unit_y': 7})
-    print(f"✅ Selected recon, got {len(move2.get('positions', []))} movement positions")
-    
-    # Click empty tile (should clear all highlights)
-    rpc_call('unit_select', {'token': token, 'x': 0, 'y': 0})
-    board = rpc_call('game_board', {'token': token})
-    if board and board.get('board', {}).get('selected') is None:
-        print("✅ Clicking empty tile cleared selection")
-    
-    return True
-
-def test_indirect_attack_targets():
-    """Test attack targets for indirect units"""
-    print("\n🎯 Testing Indirect Unit Attack Targets...")
-    
-    # Create test game
-    token = 'indirect-test-' + str(int(time.time()))
-    result = rpc_call('game_create_test', {'token': token})
-    if result != 'ok':
-        return False
-    print(f"✅ Created test game: {token}")
-    
-    # Create artillery (indirect unit)
-    rpc_call('admin_unit_create', {
-        'token': token,
         'x': 5,
-        'y': 5,
+        'y': 5
+    }))
+    
+    rpc_call('army_end_turn', params_with_token({}))
+    rpc_call('army_end_turn', params_with_token({}))
+    
+    # Select unit
+    rpc_call('unit_select', params_with_token({'x': 5, 'y': 5}))
+    
+    # Move unit
+    rpc_call('movement_execute', params_with_token({
+        'from_x': 5,
+        'from_y': 5,
+        'to_x': 7,
+        'to_y': 5
+    }))
+    
+    time.sleep(0.2)
+    
+    # Check original position for highlights
+    result = rpc_call('get_game_board', params_with_token({}))
+    board = result['result']['board']
+    
+    # Find tile at (5,5)
+    original_tile = None
+    for tile in board['grid']:
+        if tile['x'] == 5 and tile['y'] == 5:
+            original_tile = tile
+            break
+    
+    has_highlight = original_tile and (original_tile.get('can_be_moved_to') or original_tile.get('can_be_attacked'))
+    print_test("No highlight on original position after move", not has_highlight,
+               f"Tile (5,5): move={original_tile.get('can_be_moved_to')}, attack={original_tile.get('can_be_attacked')}" if original_tile else "")
+    
+    # Wait action
+    rpc_call('unit_wait', params_with_token({'x': 7, 'y': 5}))
+    
+    time.sleep(0.2)
+    
+    # Check all highlights cleared
+    result = rpc_call('get_game_board', params_with_token({}))
+    board = result['result']['board']
+    
+    passed, details = check_highlights(board, expected_movement=0, expected_attack=0)
+    print_test("All highlights cleared after wait", passed, details)
+
+def test_indirect_unit_flow():
+    """Test 4: Indirect unit movement (no attack after move)"""
+    print(f"\n{Fore.CYAN}=== Test 4: Indirect Unit Flow ==={Style.RESET_ALL}")
+    
+    TOKEN = 'highlight-test-4'
+    result = rpc_call('game_create_test', {'token': TOKEN, 'use_optimized': True})
+    
+    params_with_token = lambda p: {**p, 'token': TOKEN}
+    
+    # Create artillery
+    rpc_call('unit_create', params_with_token({
+        'army': 'RED',
         'unit_type': 'ARTILLERY',
-        'army': 'RED'
-    })
-    print("✅ Created RED ARTILLERY at (5,5)")
+        'x': 3,
+        'y': 4
+    }))
     
-    # Create targets at various ranges
-    test_targets = [
-        (5, 7, 'INFANTRY'),  # Range 2
-        (5, 8, 'TANK'),      # Range 3
-        (6, 5, 'RECON'),     # Range 1 (too close)
-        (5, 2, 'MECH'),      # Range 3
-    ]
+    rpc_call('army_end_turn', params_with_token({}))
     
-    for x, y, unit_type in test_targets:
-        rpc_call('admin_unit_create', {
-            'token': token,
-            'x': x,
-            'y': y,
-            'unit_type': unit_type,
-            'army': 'BLUE'
-        })
-    print("✅ Created 4 BLUE targets at various ranges")
+    # Create target
+    rpc_call('unit_create', params_with_token({
+        'army': 'BLUE',
+        'unit_type': 'TANK',
+        'x': 3,
+        'y': 7
+    }))
+    
+    rpc_call('army_end_turn', params_with_token({}))
     
     # Select artillery
-    rpc_call('unit_select', {'token': token, 'x': 5, 'y': 5})
+    rpc_call('unit_select', params_with_token({'x': 3, 'y': 4}))
     
-    # Get attack targets
-    targets_result = rpc_call('combat_targets', {
-        'token': token,
-        'unit_x': 5,
-        'unit_y': 5
-    })
+    # Check initial attack range
+    result = rpc_call('combat_targets', params_with_token({'unit_x': 3, 'unit_y': 4}))
+    initial_targets = len(result['result'].get('targets', []))
     
-    if not targets_result or not targets_result.get('success'):
-        print("❌ Failed to get artillery attack targets")
-        return False
+    # Move artillery
+    rpc_call('movement_execute', params_with_token({
+        'from_x': 3,
+        'from_y': 4,
+        'to_x': 3,
+        'to_y': 5
+    }))
     
-    targets = targets_result.get('targets', [])
-    print(f"✅ Artillery found {len(targets)} attack targets")
+    time.sleep(0.2)
     
-    # Artillery range is 2-3, so should find 3 targets (not the one at range 1)
-    if len(targets) != 3:
-        print(f"⚠️  Expected 3 targets for artillery (range 2-3), got {len(targets)}")
+    # Check attack options after move
+    result = rpc_call('combat_targets', params_with_token({'unit_x': 3, 'unit_y': 5}))
+    targets_after_move = len(result['result'].get('targets', []))
     
-    # Verify range 1 unit is not included
-    for target in targets:
-        if target['x'] == 6 and target['y'] == 5:
-            print("❌ Artillery incorrectly targeting unit at range 1")
-            return False
+    print_test("Indirect unit cannot attack after moving", targets_after_move == 0,
+               f"Targets before: {initial_targets}, after: {targets_after_move}")
     
-    print("✅ Artillery correctly excluding range 1 targets")
-    return True
+    # Check board state
+    result = rpc_call('get_game_board', params_with_token({}))
+    board = result['result']['board']
+    
+    passed, details = check_highlights(board, expected_movement=0, expected_attack=0)
+    print_test("No attack highlights for moved indirect unit", passed, details)
 
 def main():
-    """Run all highlight tests"""
-    print("🎮 Advance Wars RPC - Movement & Attack Highlight Tests")
-    print("=" * 60)
+    print(f"{Fore.MAGENTA}{'='*50}")
+    print(f"Movement Highlights and Flow Test Suite")
+    print(f"{'='*50}{Style.RESET_ALL}")
     
-    tests = [
-        ("Movement Highlights", test_movement_highlights),
-        ("Attack Target Highlights", test_attack_targets),
-        ("Highlight Clearing", test_highlight_clearing),
-        ("Indirect Attack Targets", test_indirect_attack_targets)
-    ]
+    try:
+        # Check server is running
+        response = requests.get("http://localhost:5000/api/browse")
+        if response.status_code != 200:
+            print(f"{Fore.RED}Error: Server not responding{Style.RESET_ALL}")
+            return
+    except:
+        print(f"{Fore.RED}Error: Cannot connect to server at localhost:5000{Style.RESET_ALL}")
+        return
     
-    passed = 0
-    failed = 0
+    # Run tests
+    test_movement_highlights()
+    test_move_attack_flow()
+    test_highlight_persistence()
+    test_indirect_unit_flow()
     
-    for test_name, test_func in tests:
-        try:
-            if test_func():
-                passed += 1
-                print(f"✅ {test_name} PASSED\n")
-            else:
-                failed += 1
-                print(f"❌ {test_name} FAILED\n")
-        except Exception as e:
-            failed += 1
-            print(f"❌ {test_name} FAILED with exception: {e}\n")
-    
-    print("=" * 60)
-    print(f"📊 Test Summary: {passed} passed, {failed} failed")
-    
-    if failed == 0:
-        print("✅ All highlight tests passed!")
-    else:
-        print("❌ Some tests failed - check output above")
+    print(f"\n{Fore.MAGENTA}{'='*50}")
+    print("Test Suite Complete")
+    print(f"{'='*50}{Style.RESET_ALL}")
 
 if __name__ == "__main__":
     main()

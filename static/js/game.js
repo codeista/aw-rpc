@@ -164,29 +164,39 @@ class Game {
         
         this.socket.on('update', (msg) => {
             if (msg && msg.board) {
-                // Save current highlights before updating board
-                const savedHighlights = {};
-                if (this.board && this.board.grid) {
-                    this.board.grid.forEach((tile, idx) => {
-                        if (tile.can_be_moved_to || tile.can_be_attacked) {
-                            savedHighlights[idx] = {
-                                can_be_moved_to: tile.can_be_moved_to,
-                                can_be_attacked: tile.can_be_attacked
-                            };
-                        }
-                    });
-                }
+                // Save current selection
+                const savedSelection = this.board?.selected;
                 
                 // Update board
                 this.board = msg.board;
                 
-                // Restore highlights
-                Object.entries(savedHighlights).forEach(([idx, highlights]) => {
-                    if (this.board.grid[parseInt(idx)]) {
-                        this.board.grid[parseInt(idx)].can_be_moved_to = highlights.can_be_moved_to;
-                        this.board.grid[parseInt(idx)].can_be_attacked = highlights.can_be_attacked;
+                // Restore selection if it still exists
+                if (savedSelection) {
+                    const tile = this.board.grid[savedSelection.y * this.board.width + savedSelection.x];
+                    if (tile && tile.unit) {
+                        this.board.selected = savedSelection;
+                    } else {
+                        this.board.selected = null;
                     }
+                }
+                
+                // NEVER restore highlights - let the game logic handle them
+                // This prevents stale highlights from persisting
+                this.board.grid.forEach(tile => {
+                    tile.can_be_moved_to = false;
+                    tile.can_be_attacked = false;
                 });
+                
+                // If we have a selected unit, recalculate its highlights
+                if (this.board.selected) {
+                    const selectedTile = this.board.grid[this.board.selected.y * this.board.width + this.board.selected.x];
+                    if (selectedTile && selectedTile.unit && !selectedTile.unit.done) {
+                        // Recalculate movement/attack options for selected unit
+                        setTimeout(() => {
+                            this.showMovementRange(this.board.selected.x, this.board.selected.y);
+                        }, 50);
+                    }
+                }
                 
                 // Clear combat preview cache when board updates
                 this.combatPreviewCache = null;
@@ -208,7 +218,9 @@ class Game {
             if (this.board && this.board.selected) {
                 // Check if clicking on same tile as selected - deselect
                 if (this.board.selected.x === x && this.board.selected.y === y) {
+                    this.clearHighlights();
                     await this.rpc('unit_select', { x, y });
+                    this.render();
                     return;
                 }
                 
@@ -232,23 +244,90 @@ class Game {
                         });
                         log('Move result:', moveResult);
                         
-                        // After moving, check if unit can still attack
-                        const movedTile = this.getTile(x, y);
-                        if (movedTile && movedTile.unit && movedTile.unit.can_attack && !movedTile.unit.done) {
-                            // For direct fire units that can attack after moving
-                            if (!movedTile.unit.is_indirect || movedTile.unit.is_indirect === false) {
-                                log('Unit can attack after move, showing attack range');
-                                await this.showAttackRange(x, y);
-                                this.updateActionPrompt('Select target to attack');
-                            } else {
-                                this.updateActionPrompt('Select action from menu');
-                            }
-                        } else {
-                            this.updateActionPrompt('Unit moved');
+                        // Store the original position before moving
+                        const originalX = this.board.selected.x;
+                        const originalY = this.board.selected.y;
+                        
+                        // IMPORTANT: Keep the unit selected after moving
+                        this.board.selected = { x: x, y: y };
+                        
+                        // Clear ALL highlights completely
+                        this.clearHighlights();
+                        
+                        // Make absolutely sure the source tile is cleared
+                        const sourceTile = this.getTile(originalX, originalY);
+                        if (sourceTile) {
+                            sourceTile.can_be_moved_to = false;
+                            sourceTile.can_be_attacked = false;
                         }
                         
-                        // Check if we need to show automatic context menu for multi-action scenarios
-                        await this.checkForAutoContextMenu(x, y);
+                        // After moving, check if unit can still attack
+                        const movedTile = this.getTile(x, y);
+                        if (movedTile && movedTile.unit) {
+                            const unit = movedTile.unit;
+                            const isIndirect = unit.is_indirect === true || 
+                                              ['ARTILLERY', 'ROCKET', 'MISSILE', 'BATTLESHIP', 'CARRIER', 'PIPERUNNER'].includes(unit.type);
+                            
+                            if (isIndirect) {
+                                // Indirect units cannot attack after moving - automatically wait
+                                log('Indirect unit moved - automatically executing wait');
+                                // Clear selection since unit is done
+                                this.board.selected = null;
+                                
+                                // Execute wait command automatically
+                                setTimeout(async () => {
+                                    await this.rpc('unit_wait', { x: x, y: y });
+                                    this.updateActionPrompt('Indirect unit moved and waited');
+                                    
+                                    // Manually update the unit to show as unavailable
+                                    const waitedTile = this.getTile(x, y);
+                                    if (waitedTile && waitedTile.unit) {
+                                        waitedTile.unit.can_move = false;
+                                        waitedTile.unit.can_attack = false;
+                                        waitedTile.unit.can_capture = false;
+                                        waitedTile.unit.done = true;
+                                    }
+                                    
+                                    // Force re-render to show greyed out state
+                                    this.render();
+                                }, 100);
+                            } else {
+                                // Check if direct unit has any valid targets
+                                const targetsResult = await this.rpc('combat_targets', { unit_x: x, unit_y: y });
+                                const hasTargets = targetsResult.success && targetsResult.targets && targetsResult.targets.length > 0;
+                                
+                                if (hasTargets && unit.can_attack && !unit.done) {
+                                    // Direct fire unit has targets available
+                                    log('Direct unit can attack after move, showing attack range');
+                                    setTimeout(async () => {
+                                        await this.showAttackRange(x, y);
+                                        this.updateActionPrompt('Select target to attack or right-click for menu');
+                                    }, 100);
+                                } else {
+                                    // No valid actions available - auto wait
+                                    log('No actions available after move - auto waiting');
+                                    this.board.selected = null;
+                                    
+                                    setTimeout(async () => {
+                                        await this.rpc('unit_wait', { x: x, y: y });
+                                        this.updateActionPrompt('Unit moved and waited');
+                                        
+                                        // Manually update the unit to show as unavailable
+                                        const waitedTile = this.getTile(x, y);
+                                        if (waitedTile && waitedTile.unit) {
+                                            waitedTile.unit.can_move = false;
+                                            waitedTile.unit.can_attack = false;
+                                            waitedTile.unit.can_capture = false;
+                                            waitedTile.unit.done = true;
+                                        }
+                                        
+                                        // Force re-render to show greyed out state
+                                        this.render();
+                                    }, 100);
+                                }
+                            }
+                        }
+                        
                         return; // Movement handled
                     } catch (moveError) {
                         log('Move failed:', moveError);
@@ -330,6 +409,42 @@ class Game {
                                         defender_y: y
                                     });
                                     log('Attack result:', attackResult);
+                                    
+                                    // Store attacker position
+                                    const attackerX = this.board.selected.x;
+                                    const attackerY = this.board.selected.y;
+                                    
+                                    // Clear ALL highlights after attack
+                                    this.clearHighlights();
+                                    
+                                    // Force clear all highlights
+                                    if (this.board && this.board.grid) {
+                                        this.board.grid.forEach(tile => {
+                                            tile.can_be_moved_to = false;
+                                            tile.can_be_attacked = false;
+                                        });
+                                    }
+                                    
+                                    // Clear selection
+                                    this.board.selected = null;
+                                    
+                                    // Auto-wait the attacking unit
+                                    setTimeout(async () => {
+                                        await this.rpc('unit_wait', { x: attackerX, y: attackerY });
+                                        
+                                        // Update unit to show as unavailable
+                                        const attackerTile = this.getTile(attackerX, attackerY);
+                                        if (attackerTile && attackerTile.unit) {
+                                            attackerTile.unit.can_move = false;
+                                            attackerTile.unit.can_attack = false;
+                                            attackerTile.unit.can_capture = false;
+                                            attackerTile.unit.done = true;
+                                        }
+                                        
+                                        this.updateActionPrompt('Unit attacked and waited');
+                                        this.render();
+                                    }, 100);
+                                    
                                     return;
                                 } else {
                                     log('Enemy is out of range');
@@ -839,8 +954,11 @@ class Game {
         }
         // Otherwise clear selection and panels
         else {
+            // Clear all highlights when clicking on empty tile
+            this.clearHighlights();
             this.clearUIPanels();
             await this.rpc('unit_select', { x, y });
+            this.render(); // Force re-render to clear highlights visually
         }
     }
     
@@ -1585,6 +1703,26 @@ class Game {
         }
     }
     
+    clearMovementHighlights() {
+        log('Clearing movement highlights');
+        if (this.board && this.board.grid) {
+            this.board.grid.forEach(tile => {
+                tile.can_be_moved_to = false;
+            });
+        }
+        this.render();
+    }
+    
+    clearAttackHighlights() {
+        log('Clearing attack highlights');
+        if (this.board && this.board.grid) {
+            this.board.grid.forEach(tile => {
+                tile.can_be_attacked = false;
+            });
+        }
+        this.render();
+    }
+    
     async showAttackRange(x, y) {
         try {
             log(`showAttackRange called for unit at (${x},${y})`);
@@ -2051,6 +2189,26 @@ class Game {
                         defender_y: targetY
                     });
                     log('Attack result:', result);
+                    
+                    // Auto-wait the attacking unit
+                    const attackerX = this.pendingAttackData.attackerX;
+                    const attackerY = this.pendingAttackData.attackerY;
+                    
+                    setTimeout(async () => {
+                        await this.rpc('unit_wait', { x: attackerX, y: attackerY });
+                        
+                        // Update unit to show as unavailable
+                        const attackerTile = this.getTile(attackerX, attackerY);
+                        if (attackerTile && attackerTile.unit) {
+                            attackerTile.unit.can_move = false;
+                            attackerTile.unit.can_attack = false;
+                            attackerTile.unit.can_capture = false;
+                            attackerTile.unit.done = true;
+                        }
+                        
+                        this.updateActionPrompt('Unit attacked and waited');
+                        this.render();
+                    }, 100);
                 } catch (error) {
                     console.error('Attack failed:', error);
                     console.error('Error details:', error.message);
