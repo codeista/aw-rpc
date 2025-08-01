@@ -28,11 +28,11 @@ This is a complete implementation of Advance Wars as a web-based RPC game. Key s
    - Game mechanics docs in archive/documentation/GAME_MECHANICS.md
 
 ### Code Architecture
-- `manager_v2.py` - Core game logic (player-based system)
-- `manager.py` - REMOVED (replaced by manager_v2.py)
+- `manager.py` - Core game logic (player-based system)
+- `gameboard.py` - Player-based game board with slot system
 - `transport_system.py` - All transport mechanics
 - `app.py` - RPC endpoints and server
-- `render.js` - Frontend game rendering
+- `game.js` - Frontend game implementation
 
 ### Tileset System  
 - **Current tileset**: AWDS tileset (reverted from AW2 RGB due to rendering issues)
@@ -43,7 +43,7 @@ This is a complete implementation of Advance Wars as a web-based RPC game. Key s
 - **Terrain sprites**: Individual 2x sprites in `/static/img/sprites_2x/terrain/`
 - **Combined sprite sheets**: `/static/img/sprites_2x/combined/`
   - `terrain_tileset_2x.png` + `terrain_tileset_2x_map.json` (minimal_game.js)
-  - `terrain_tileset_2x_final.png` + `terrain_tileset_2x_final_map.json` (game_v2.js)
+  - `terrain_tileset_2x_final.png` + `terrain_tileset_2x_final_map.json` (game.js)
   - `units_spritesheet_2x.png` + `units_spritesheet_2x_map.json`
   - `ui_spritesheet_2x.png` + `ui_spritesheet_2x_map.json`
 - **Sprite naming**: HQ sprites renamed from HQ_VARIANT_X to BASE_TOWER_X

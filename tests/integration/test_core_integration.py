@@ -8,7 +8,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from manager_v2 import GameManager
+from manager import GameManager
 from gameboard import GameBoard
 from config import Config
 from map_system import map_repository, Army

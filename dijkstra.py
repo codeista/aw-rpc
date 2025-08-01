@@ -13,8 +13,6 @@ from map_system import get_movement_cost, INF
 
 from gameboard import GameTile, GameBoard
 
-INF = 99999999
-
 
 @dataclass
 class Node():

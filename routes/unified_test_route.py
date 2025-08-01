@@ -4,7 +4,7 @@ Unified test game creation route - consolidates all test game creation into one 
 
 from flask import Blueprint, request, redirect, url_for, jsonify
 import time
-from manager_v2 import GameManager
+from manager import GameManager
 from gameboard import GameBoard
 from config import Config
 from map_system import map_repository

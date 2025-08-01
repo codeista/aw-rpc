@@ -7,9 +7,8 @@ import math
 import configparser
 
 from map_system import Army, MapType, get_movement_cost, INF, TERRAIN_DEFENSE_STARS
-from gameboard import GameTile, GameBoard
+from gameboard import GameBoard, GameTile
 from unit import UnitType, Unit, UnitClass, UnitConfig, UnitStatus
-from game_board_v2 import GameBoardV2
 from player_system import PlayerManager
 from transport_system import CompleteTransportSystem
 from production_system import ProductionSystem
@@ -21,7 +20,7 @@ from config import Config
 class GameManager:
     """Game manager that uses the new player system"""
     
-    def __init__(self, config, board: GameBoardV2, player_manager: PlayerManager):
+    def __init__(self, config, board: GameBoard, player_manager: PlayerManager):
         """Initialize with player-aware board"""
         # Store board and player manager
         self.board = board
@@ -159,6 +158,10 @@ class GameManager:
         
         # Mark unit as unable to act on creation turn
         self._set_unit_inactive(unit)
+        # Double-check the flags are set correctly
+        unit.can_move = False
+        unit.can_attack = False
+        unit.can_capture = False
         
         # Deduct funds
         self._update_army_funds(army_obj, -cost)
@@ -733,6 +736,10 @@ class GameManager:
         if unit.type not in [UnitType.INFANTRY, UnitType.MECH]:
             raise ValueError(f"{unit.type.name} units cannot capture")
         
+        # Check if unit can capture this turn
+        if not unit.can_capture:
+            raise ValueError("Unit has already acted this turn")
+        
         # Check if there's a capturable property
         if not tile.mapTile or tile.mapTile.type not in [
             MapType.CITY, MapType.FACTORY, MapType.AIRPORT, MapType.PORT,
@@ -754,6 +761,9 @@ class GameManager:
         if tile.capture_hp <= 0:
             old_army = tile.mapTile.army
             self._update_property_ownership(tile, unit.army)
+            
+            # Reset capture HP to full after ownership change
+            tile.capture_hp = 20
             
             # Check for HQ capture victory
             if tile.mapTile.type in [MapType.BASE_TOWER_1, MapType.BASE_TOWER_2, 

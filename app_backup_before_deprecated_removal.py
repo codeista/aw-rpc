@@ -29,10 +29,10 @@ import jsons
 # )
 import secrets
 
-from manager_v2 import GameManager
+from manager import GameManager
 from gameboard import GameBoard
 from game_factory import GameFactory
-from game_board_v2 import GameBoardV2
+from gameboard import GameBoard
 from player_system import PlayerManager
 from config import Config
 from app_core import (
@@ -265,7 +265,7 @@ def game_load(token):
             # First, check if this is a v2 game (has army_to_player mapping)
             if 'army_to_player' in board_dict:
                 # This is a v2 game, reconstruct properly
-                from game_board_v2 import GameBoardV2
+                from gameboard import GameBoard
                 from player_system import PlayerManager, SpriteColor
                 
                 # Create player manager from saved data
@@ -296,7 +296,7 @@ def game_load(token):
                         )
                 
                 # Create v2 board
-                board = GameBoardV2()
+                board = GameBoard()
                 
                 # Deserialize board data
                 try:
@@ -1565,7 +1565,7 @@ def create_optimized_test_game():
     try:
         # Import everything we need explicitly
         from config import Config
-        from manager_v2 import GameManager
+        from manager import GameManager
         # from tests.debug.optimized_test_map import create_optimized_test_map
         
         # Create configuration
@@ -1699,7 +1699,7 @@ def create_triangle_map_game():
     token = secrets.token_urlsafe(6)
     
     try:
-        from manager_v2 import GameManager
+        from manager import GameManager
         from config import Config
         from map_system import map_repository
         
@@ -1737,7 +1737,7 @@ def create_cross_map_game():
     token = secrets.token_urlsafe(6)
     
     try:
-        from manager_v2 import GameManager
+        from manager import GameManager
         from config import Config
         from map_system import map_repository
         
@@ -1774,7 +1774,7 @@ def create_pentagon_map_game():
     token = secrets.token_urlsafe(6)
     
     try:
-        from manager_v2 import GameManager
+        from manager import GameManager
         from config import Config
         from map_system import map_repository
         

@@ -19,9 +19,9 @@ def test_standard_colors():
     
     # Create game using the new system
     from map_parser_v2 import MapParserV2
-    from game_board_v2 import GameBoardV2
+    from gameboard import GameBoard
     from player_system import PlayerManager, SpriteColor
-    from manager_v2 import GameManager
+    from manager import GameManager
     from config import Config
     
     # Parse map
@@ -34,7 +34,7 @@ def test_standard_colors():
         player_manager.add_player(i, p['name'], p['color'], SpriteColor[p['sprite_color']])
     
     # Create board
-    board = GameBoardV2()
+    board = GameBoard()
     board.create_from_tiles(tiles, parser.width, parser.height)
     
     # Create game manager

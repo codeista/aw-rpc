@@ -50,7 +50,7 @@ export function showAttackTargets(unitX, unitY) {
         return;
     }
     
-    jsonrpc('get_attack_targets', {
+    jsonrpc('combat_targets', {
         unit_x: unitX,
         unit_y: unitY
     }).then(result => {
@@ -91,7 +91,7 @@ export function showAttackTargets(unitX, unitY) {
 export function showAttackTargetsAfterMove(unitX, unitY) {
     logger.debug(`⚔️ Checking for attack targets after move at (${unitX}, ${unitY})`);
     
-    jsonrpc('get_attack_targets', {
+    jsonrpc('combat_targets', {
         unit_x: unitX,
         unit_y: unitY
     }).then(result => {
@@ -131,7 +131,7 @@ export function showAttackTargetsAfterMove(unitX, unitY) {
  * @param {number} unitY - Unit Y coordinate
  */
 export function highlightAttackRange(unitX, unitY) {
-    jsonrpc('get_attack_targets', {
+    jsonrpc('combat_targets', {
         unit_x: unitX,
         unit_y: unitY
     }).then(result => {
@@ -304,7 +304,7 @@ function cancelCombat() {
  */
 async function enhancedAttack(attackerX, attackerY, defenderX, defenderY) {
     try {
-        const result = await jsonrpc('unit_attack_enhanced', {
+        const result = await jsonrpc('combat_attack', {
             attacker_x: attackerX,
             attacker_y: attackerY,
             defender_x: defenderX,
@@ -345,11 +345,11 @@ function unitAttackRegular(defenderX, defenderY) {
         return;
     }
     
-    jsonrpc('unit_attack', {
-        x: selected.x,
-        y: selected.y,
-        x2: defenderX,
-        y2: defenderY
+    jsonrpc('combat_attack', {
+        attacker_x: selected.x,
+        attacker_y: selected.y,
+        defender_x: defenderX,
+        defender_y: defenderY
     }).then(() => {
         logger.info('⚔️ Regular attack completed');
         update();
@@ -373,11 +373,11 @@ export function executeAttack(targetTile) {
     
     const attacker = board.selected;
     
-    jsonrpc('unit_attack', {
-        x: attacker.x,
-        y: attacker.y,
-        x2: targetTile.x,
-        y2: targetTile.y
+    jsonrpc('combat_attack', {
+        attacker_x: attacker.x,
+        attacker_y: attacker.y,
+        defender_x: targetTile.x,
+        defender_y: targetTile.y
     }).then(result => {
         logger.info('⚔️ Attack executed:', result);
         
@@ -525,11 +525,11 @@ export function advanceWarsAttack(selectedUnit, targetTile) {
         showCombatPreview(source.x, source.y, targetTile.x, targetTile.y);
     } else {
         // Direct attack
-        jsonrpc('unit_attack', {
-            x: source.x,
-            y: source.y,
-            x2: targetTile.x,
-            y2: targetTile.y
+        jsonrpc('combat_attack', {
+            attacker_x: source.x,
+            attacker_y: source.y,
+            defender_x: targetTile.x,
+            defender_y: targetTile.y
         }).then(result => {
             logger.info('⚔️ Attack result:', result);
             

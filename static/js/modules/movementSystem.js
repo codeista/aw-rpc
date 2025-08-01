@@ -35,7 +35,7 @@ export function showMovementRange(unitX, unitY) {
     logger.debug(`🚶 Showing movement range for unit at (${unitX}, ${unitY})`);
     
     // Use the backend movement highlights RPC
-    jsonrpc('get_movement_highlights', {x: unitX, y: unitY})
+    jsonrpc('movement_range', {unit_x: unitX, unit_y: unitY})
         .then(result => {
             if (result?.success && result.moves) {
                 applyMovementHighlights(result.moves);
@@ -60,7 +60,7 @@ export function highlightMovementRange(unitX, unitY) {
     logger.debug(`🚶 Highlighting movement range for unit at (${unitX}, ${unitY})`);
     
     // Get movement range data from backend
-    jsonrpc('get_unit_valid_moves', {x: unitX, y: unitY})
+    jsonrpc('movement_range', {unit_x: unitX, unit_y: unitY})
         .then(result => {
             if (result?.success && result.moves) {
                 clearMovementHighlights();

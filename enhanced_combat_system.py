@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 if TYPE_CHECKING:
-    from manager_v2 import GameManager
+    from manager import GameManager
     from unit import Unit, UnitType
     from gameboard import GameTile
 

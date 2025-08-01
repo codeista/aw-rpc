@@ -2,7 +2,7 @@
 Optimized test map creation for quick testing scenarios
 """
 
-from manager_v2 import GameManager
+from manager import GameManager
 from game_factory import GameFactory
 from player_system import PlayerManager, Player, SpriteColor
 from map_system import map_repository

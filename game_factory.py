@@ -4,10 +4,9 @@ Game Factory - Creates games with flexible player configuration
 from typing import List, Dict, Optional, Tuple
 from map_system import Map, Army, map_repository
 from gameboard import GameBoard, GameTile
-from game_board_v2 import GameBoardV2
 from player_system import PlayerManager, SpriteColor
 from map_parser_v2 import MapParserV2
-from manager_v2 import GameManager
+from manager import GameManager
 from config import Config
 import uuid
 import os
@@ -131,33 +130,42 @@ class GameFactory:
         if map_obj is None:
             map_obj = map_repository.get_map('test')
             
-        # Create board
-        board = GameBoard.create(map_obj)
+        # Create board directly
+        board = GameBoard()
+        board.width = map_obj.width
+        board.height = map_obj.height
+        board.days = 1
+        board.game_active = True
+        board.map = map_obj  # Store the map reference
         
-        # Create V2 board wrapper
-        board_v2 = GameBoardV2()
-        board_v2.grid = board.grid
-        board_v2.width = board.width
-        board_v2.height = board.height
-        board_v2.days = board.days if board.days > 0 else 1
-        board_v2.game_active = board.game_active if hasattr(board, 'game_active') else True
-        board_v2.map = map_obj  # Store the map reference
+        # Create grid from map
+        board.grid = []
+        for i in range(map_obj.width * map_obj.height):
+            x = i % map_obj.width
+            y = int(i / map_obj.width)
+            tile = GameTile(x, y, mapTile=map_obj.tiles[i])
+            board.grid.append(tile)
         
         # Initialize with player manager
-        board_v2.initialize_from_player_manager(player_manager)
+        board.initialize_from_player_manager(player_manager)
         
         # Set turn order based on players
-        board.turn_order = [board_v2.get_army_for_player(i) 
+        board.turn_order = [board.get_army_for_player(i) 
                            for i in range(player_manager.get_player_count())
-                           if board_v2.get_army_for_player(i) is not None]
+                           if board.get_army_for_player(i) is not None]
         board.current_turn = board.turn_order[0] if board.turn_order else Army.RED
         
         # Create config
         config = Config()  # Will be set by setup_initial_economy
         
         # Create manager
-        manager = GameManager(config, board_v2, player_manager)
+        manager = GameManager(config, board, player_manager)
         manager.setup_initial_economy()
+        
+        # Distribute initial income to the first player
+        manager._update_army_statistics()  # Ensure property counts are updated
+        current_army = manager.board.current_turn
+        manager._apply_turn_start_effects(current_army)  # Give first player their income
         
         return manager, token
         
@@ -206,27 +214,27 @@ class GameFactory:
                 sprite_color=sprite_color
             )
             
-        # Create V2 board
-        board_v2 = GameBoardV2()
-        board_v2.grid = old_manager.board.grid
-        board_v2.width = old_manager.board.width
-        board_v2.height = old_manager.board.height
-        board_v2.days = old_manager.board.days
-        board_v2.map = old_manager.board.map if hasattr(old_manager.board, 'map') else None
+        # Create new board
+        board = GameBoard()
+        board.grid = old_manager.board.grid
+        board.width = old_manager.board.width
+        board.height = old_manager.board.height
+        board.days = old_manager.board.days
+        board.map = old_manager.board.map if hasattr(old_manager.board, 'map') else None
         
         # Initialize with player manager
-        board_v2.initialize_from_player_manager(player_manager)
+        board.initialize_from_player_manager(player_manager)
         
         # Copy game state
-        board_v2.current_player = old_manager.board.turn_order.index(old_manager.board.current_turn)
+        board.current_player = old_manager.board.turn_order.index(old_manager.board.current_turn)
         
         # Create new manager
-        manager_v2 = GameManager(old_manager.config, board_v2, player_manager)
+        new_manager = GameManager(old_manager.config, board, player_manager)
         
         # Copy funds
         if hasattr(old_manager.board, 'red_funds'):
-            board_v2.red_funds = old_manager.board.red_funds
+            board.red_funds = old_manager.board.red_funds
         if hasattr(old_manager.board, 'blue_funds'):
-            board_v2.blue_funds = old_manager.board.blue_funds
+            board.blue_funds = old_manager.board.blue_funds
             
-        return manager_v2
+        return new_manager

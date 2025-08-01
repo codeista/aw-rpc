@@ -10,7 +10,7 @@ This document provides a comprehensive review of all game mechanics in the Advan
 ### How It Works:
 - **Turn Order**: Players take turns in sequence (managed by `turn_order` in GameBoardV2)
 - **Current Player**: Tracked via `current_player` index in turn order
-- **Army Assignment**: Each player controls one army (RED, BLUE, GREEN, YELLOW)
+- **Army Assignment**: Each player controls one army (RED, BLUE, GREEN, YELLOW,GREY)
 
 ### Player Interactions:
 - `army_end_turn()` - End current turn and advance to next player
@@ -44,7 +44,8 @@ This document provides a comprehensive review of all game mechanics in the Advan
 1. Funds deducted from player
 2. Unit created at facility location
 3. Unit marked as inactive (can_move=false, can_attack=false)
-4. Player statistics updated (troop count)
+4. Unit sprite changes from available to unavailable 
+5. Player statistics updated (troop count)
 
 ---
 

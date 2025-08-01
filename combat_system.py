@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 # Use TYPE_CHECKING to avoid circular imports
 if TYPE_CHECKING:
-    from manager_v2 import GameManager
+    from manager import GameManager
     from unit import Unit
     from game_board import GameTile
 
@@ -144,7 +144,7 @@ class CombatSystem:
     
     def _check_elimination_victory(self):
         """Check if any army has been eliminated after combat"""
-        from manager_v2 import GameManagerV2
+        from manager import GameManagerV2
         
         # Count units for each player/army
         if isinstance(self.manager, GameManagerV2):

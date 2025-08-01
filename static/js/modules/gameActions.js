@@ -208,7 +208,7 @@ export function unitAttack(targetTile) {
     // Use operation queue to prevent double-attacks
     if (window.operationQueue) {
         window.operationQueue.add(
-            () => jsonrpc('unit_attack', {x: source.x, y: source.y, x2: targetTile.x, y2: targetTile.y}),
+            () => jsonrpc('combat_attack', {attacker_x: source.x, attacker_y: source.y, defender_x: targetTile.x, defender_y: targetTile.y}),
             {
                 id: `attack-${source.x}-${source.y}-${targetTile.x}-${targetTile.y}`,
                 description: 'Attacking',
@@ -235,11 +235,11 @@ export function unitAttack(targetTile) {
         });
     } else {
         // Fallback without operation queue
-        jsonrpc('unit_attack', {
-            x: source.x,
-            y: source.y,
-            x2: targetTile.x,
-            y2: targetTile.y
+        jsonrpc('combat_attack', {
+            attacker_x: source.x,
+            attacker_y: source.y,
+            defender_x: targetTile.x,
+            defender_y: targetTile.y
         }).then(() => {
             update();
         }).catch(error => {
@@ -307,7 +307,7 @@ export function unitWait(tile) {
  * @param {Object} tile - Tile containing unit
  */
 export function unitCapture(tile) {
-    jsonrpc('capture_tile', {x: tile.x, y: tile.y}).then(result => {
+    jsonrpc('unit_capture', {x: tile.x, y: tile.y}).then(result => {
         // Manually update unit flags after capture
         const board = getBoard();
         if (board?.grid) {

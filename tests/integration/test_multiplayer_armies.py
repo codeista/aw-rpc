@@ -18,7 +18,7 @@ sys.path.insert(0, project_root)
 from config import Config
 from map_system import map_repository
 from gameboard import GameBoard
-from manager_v2 import GameManager
+from manager import GameManager
 
 class TestMultiplayerArmies(unittest.TestCase):
     """Test multiplayer army support across the system"""

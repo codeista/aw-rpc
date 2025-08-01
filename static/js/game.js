@@ -4,7 +4,7 @@
  */
 
 // Debug flag - set to false for production
-const DEBUG = false;
+const DEBUG = true;
 
 // Game constants
 const CONSTANTS = {
@@ -323,7 +323,7 @@ class Game {
                                 
                                 if (isValidTarget) {
                                     log('Valid target confirmed, executing attack');
-                                    const attackResult = await this.rpc('unit_attack_enhanced', {
+                                    const attackResult = await this.rpc('combat_attack', {
                                         attacker_x: this.board.selected.x,
                                         attacker_y: this.board.selected.y,
                                         defender_x: x,
@@ -1555,6 +1555,7 @@ class Game {
     async showMovementRange(x, y) {
         try {
             const result = await this.rpc('movement_range', { unit_x: x, unit_y: y });
+            log('movement_range result:', result);
             
             if (result.success) {
                 // Clear previous highlights
@@ -1933,7 +1934,7 @@ class Game {
                 const target = attackTargets[0];
                 log(`Attacking ${target.unit.type} at (${target.x},${target.y})`);
                 try {
-                    await this.rpc('unit_attack_enhanced', {
+                    await this.rpc('combat_attack', {
                         attacker_x: x,
                         attacker_y: y,
                         defender_x: target.x,
@@ -2043,7 +2044,7 @@ class Game {
                 });
                 
                 try {
-                    const result = await this.rpc('unit_attack_enhanced', {
+                    const result = await this.rpc('combat_attack', {
                         attacker_x: this.pendingAttackData.attackerX,
                         attacker_y: this.pendingAttackData.attackerY,
                         defender_x: targetX,

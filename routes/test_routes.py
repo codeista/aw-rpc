@@ -20,7 +20,7 @@ def create_movement_test_game():
     try:
         # Import here to avoid circular imports
         from app import games
-        from manager_v2 import GameManager
+        from manager import GameManager
         from gameboard import GameBoard
         from config import Config
         from map_system import map_repository
@@ -84,7 +84,7 @@ def test_create_custom_game():
         
         # Import here to avoid circular imports
         from app import games
-        from manager_v2 import GameManager
+        from manager import GameManager
         from gameboard import GameBoard
         from config import Config
         from map_system import map_repository
@@ -292,7 +292,7 @@ def create_transport_test():
     try:
         # Import here to avoid circular imports
         from app import games
-        from manager_v2 import GameManager
+        from manager import GameManager
         from gameboard import GameBoard
         from config import Config
         from map_system import map_repository
@@ -326,7 +326,7 @@ def create_capture_test():
     try:
         # Import here to avoid circular imports
         from app import games
-        from manager_v2 import GameManager
+        from manager import GameManager
         from gameboard import GameBoard
         from config import Config
         from map_system import map_repository
@@ -356,7 +356,7 @@ def create_triangle_test():
     try:
         # Import here to avoid circular imports
         from app import games
-        from manager_v2 import GameManager
+        from manager import GameManager
         from gameboard import GameBoard
         from config import Config
         from map_system import map_repository
@@ -384,7 +384,7 @@ def create_cross_test():
     try:
         # Import here to avoid circular imports
         from app import games
-        from manager_v2 import GameManager
+        from manager import GameManager
         from gameboard import GameBoard
         from config import Config
         from map_system import map_repository
@@ -412,7 +412,7 @@ def create_pentagon_test():
     try:
         # Import here to avoid circular imports  
         from app import games
-        from manager_v2 import GameManager
+        from manager import GameManager
         from gameboard import GameBoard
         from config import Config
         from map_system import map_repository
@@ -456,7 +456,7 @@ def verify_test_systems():
             
         # Test game creation
         try:
-            from manager_v2 import GameManager
+            from manager import GameManager
             from gameboard import GameBoard
             from config import Config
             verification_results['game_creation'] = True
@@ -582,7 +582,7 @@ def sprite_test():
         
         # Import here to avoid circular imports
         from app import games
-        from manager_v2 import GameManager
+        from manager import GameManager
         from gameboard import GameBoard
         from config import Config
         from units import UnitType, Unit

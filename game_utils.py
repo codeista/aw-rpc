@@ -20,7 +20,7 @@ def game_load(token):
     from app_core import app_logger
     from models import Game
     from app_core import db
-    from manager_v2 import GameManager
+    from manager import GameManager
     from gameboard import GameBoard
     from config import Config
     from map_system import map_repository

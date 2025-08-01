@@ -9,9 +9,8 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from manager_v2 import GameManager
+from manager import GameManager
 from gameboard import GameBoard, GameTile
-from game_board_v2 import GameBoardV2
 from player_system import PlayerManager, Player, SpriteColor
 from game_factory import GameFactory
 from config import Config

@@ -21,7 +21,7 @@ from flask_cors import CORS
 from flask import redirect, render_template, abort, request
 from flask_socketio import Namespace, join_room, leave_room
 import jsons
-# Suppress jsons serialization warnings for GameBoardV2
+# Suppress jsons serialization warnings for GameBoard
 jsons.suppress_warnings(True)
 
 # from tests.debug.optimized_test_map import (
@@ -31,10 +31,10 @@ jsons.suppress_warnings(True)
 # )
 import secrets
 
-from manager_v2 import GameManager
+from manager import GameManager
 from gameboard import GameBoard
 from game_factory import GameFactory
-from game_board_v2 import GameBoardV2
+from gameboard import GameBoard
 from player_system import PlayerManager
 from config import Config
 from app_core import (
@@ -214,7 +214,7 @@ def game_load(token):
             # First, check if this is a v2 game (has army_to_player mapping)
             if 'army_to_player' in board_dict:
                 # This is a v2 game, reconstruct properly
-                from game_board_v2 import GameBoardV2
+                from gameboard import GameBoard
                 from player_system import PlayerManager, SpriteColor
                 
                 # Create player manager from saved data
@@ -245,7 +245,7 @@ def game_load(token):
                         )
                 
                 # Create v2 board
-                board = GameBoardV2()
+                board = GameBoard()
                 
                 # Deserialize board data
                 try:
@@ -533,7 +533,7 @@ def game_save(mngr, token):
         # Prepare board for serialization
         board_data = None
         if hasattr(mngr.board, 'to_dict'):
-            # Use custom serialization for GameBoardV2
+            # Use custom serialization for GameBoard
             board_dict = mngr.board.to_dict()
             # Add grid data with proper serialization
             grid_data = []
@@ -826,13 +826,14 @@ def game_v2_new():
 @app.route('/game/<token>')
 def game(token: str):
     app_logger.info(f"Game page accessed: {token}")
-    # Use full v2 game renderer with all UI features
-    return render_template('render_v2.html', token=token)
+    # Use full game renderer with all UI features
+    return render_template('render.html', token=token)
 
-@app.route('/game2x/<token>')
-def game_2x(token: str):
-    app_logger.info(f"Game 2x page accessed: {token}")
-    return render_template('render_2x.html', token=token)
+# Legacy route - archived
+# @app.route('/game2x/<token>')
+# def game_2x(token: str):
+#     app_logger.info(f"Game 2x page accessed: {token}")
+#     return render_template('render_2x.html', token=token)
 
 @app.route('/templates/<path:filename>')
 def serve_template_files(filename):
@@ -1530,7 +1531,7 @@ def create_optimized_test_game():
     try:
         # Import everything we need explicitly
         from config import Config
-        from manager_v2 import GameManager
+        from manager import GameManager
         # from tests.debug.optimized_test_map import create_optimized_test_map
         
         # Create configuration
@@ -1664,7 +1665,7 @@ def create_triangle_map_game():
     token = secrets.token_urlsafe(6)
     
     try:
-        from manager_v2 import GameManager
+        from manager import GameManager
         from config import Config
         from map_system import map_repository
         
@@ -1702,7 +1703,7 @@ def create_cross_map_game():
     token = secrets.token_urlsafe(6)
     
     try:
-        from manager_v2 import GameManager
+        from manager import GameManager
         from config import Config
         from map_system import map_repository
         
@@ -1739,7 +1740,7 @@ def create_pentagon_map_game():
     token = secrets.token_urlsafe(6)
     
     try:
-        from manager_v2 import GameManager
+        from manager import GameManager
         from config import Config
         from map_system import map_repository
         
@@ -2524,6 +2525,93 @@ def army_end_turn_rpc(token: str) -> dict:
         app_logger.error(f'army_end_turn error: {ex}')
         return handle_rpc_error('army_end_turn', token, ex)
 
+@jsonrpc.method('end_game')
+@log_rpc_performance
+def end_game_rpc(token: str) -> dict:
+    """Allow current player to resign/surrender the game
+    
+    The current player resigns, making the next player in turn order the winner.
+    In a 2-player game, the opponent wins. In multi-player games, the game
+    continues with remaining players.
+    
+    Args:
+        token: Game identifier
+        
+    Returns:
+        dict: Result with winner information
+        
+    Example:
+        rpc('end_game', {token: 'mygame'})
+    """
+    try:
+        mngr = game_load(token)
+        
+        # Check if game is already ended
+        if not mngr.board.game_active:
+            return {
+                "success": False,
+                "error": "Game has already ended",
+                "winner": getattr(mngr.board, 'winner', 'Unknown')
+            }
+        
+        # Get current player info
+        current_army = mngr.board.current_turn
+        current_player_id = mngr.board.current_player if hasattr(mngr.board, 'current_player') else None
+        resigning_player_name = current_army.name
+        
+        if current_player_id is not None and hasattr(mngr, 'player_manager'):
+            player = mngr.player_manager.get_player(current_player_id)
+            if player:
+                resigning_player_name = player.name
+        
+        # Mark game as ended
+        mngr.board.game_active = False
+        
+        # In 2-player game, other player wins
+        # In multi-player, would need more complex logic
+        remaining_armies = [army for army in mngr.board.turn_order if army != current_army]
+        
+        if remaining_armies:
+            winner_army = remaining_armies[0]  # Simple case: first remaining player wins
+            
+            # Get winner player info if using player system
+            if hasattr(mngr.board, 'army_to_player'):
+                winner_player_id = mngr.board.army_to_player.get(winner_army)
+                if winner_player_id is not None and hasattr(mngr, 'player_manager'):
+                    winner_player = mngr.player_manager.get_player(winner_player_id)
+                    mngr.board.winner = winner_player.name if winner_player else winner_army.name
+                else:
+                    mngr.board.winner = winner_army.name
+            else:
+                mngr.board.winner = winner_army.name
+        else:
+            mngr.board.winner = "No Winner"
+            
+        mngr.board.victory_type = "Resignation"
+        
+        # Save game state
+        game_save(mngr, token)
+        
+        # Broadcast update
+        ws_board_update(token)
+        
+        app_logger.info(f"Game {token} ended by resignation: {resigning_player_name} resigned, {mngr.board.winner} wins")
+        
+        return {
+            "success": True,
+            "message": f"{resigning_player_name} has resigned",
+            "winner": mngr.board.winner,
+            "victory_type": "Resignation"
+        }
+        
+    except Exception as ex:
+        app_logger.error(f'end_game failed for {token}: {str(ex)}')
+        return {
+            "error": True,
+            "error_code": "END_GAME_ERROR",
+            "message": str(ex)
+        }
+
 # =============================================================================
 # 🗺️ MAP & TILE INFORMATION RPC METHODS
 # =============================================================================
@@ -2622,7 +2710,9 @@ def capture_tile_rpc(token: str, x: int, y: int) -> dict:
         
         # Enhanced logging
         new_tile = mngr.tile_get(x, y)
-        if new_tile.capture_hp <= 0:
+        captured = new_tile.capture_hp == 20 and old_hp < 20  # Property was captured (HP reset to 20)
+        
+        if captured:
             log_game_event('PROPERTY_CAPTURED', token, {
                 'position': {'x': x, 'y': y},
                 'unit': unit_info,
@@ -2630,12 +2720,22 @@ def capture_tile_rpc(token: str, x: int, y: int) -> dict:
                 'army': tile.unit.army.name if tile.unit else 'unknown'
             })
             app_logger.info(f'Property captured: {token} - {unit_info} captured {property_type} at ({x},{y})')
+            message = f"{property_type} captured!"
         else:
-            app_logger.info(f'Capture progress: {token} - {unit_info} at ({x},{y}) HP: {old_hp} -> {new_tile.capture_hp}')
+            remaining_hp = new_tile.capture_hp
+            app_logger.info(f'Capture progress: {token} - {unit_info} at ({x},{y}) HP: {old_hp} -> {remaining_hp}')
+            message = f"Capture in progress... {remaining_hp} HP remaining"
         
         game_save(mngr, token)
         ws_board_update(token)
-        return jsons.dump(mngr.tile_get(x, y))
+        
+        return {
+            'success': True,
+            'message': message,
+            'captured': captured,
+            'capture_hp': new_tile.capture_hp,
+            'tile': jsons.dump(new_tile)
+        }
     except Exception as ex:
         app_logger.error(f'capture_tile failed for {token} at ({x},{y}): {str(ex)}')
         return handle_rpc_error('capture_tile', token, ex)
@@ -3035,6 +3135,85 @@ def unit_select_rpc(token: str, x: int, y: int) -> dict:
 # =============================================================================
 # ⚔️ COMBAT SYSTEM RPC METHODS
 # =============================================================================
+
+@jsonrpc.method('unit_wait')
+@log_rpc_performance
+def unit_wait_rpc(token: str, x: int, y: int) -> dict:
+    """Mark a unit as having finished its turn (wait action)
+    
+    Args:
+        token: Game identifier
+        x: X coordinate of unit
+        y: Y coordinate of unit
+        
+    Returns:
+        dict: Success status and unit state
+    """
+    try:
+        mngr = game_load(token)
+        
+        # Validate game is active
+        if not mngr.board.game_active:
+            return {
+                "success": False,
+                "error": "Game has ended",
+                "error_code": "GAME_ENDED"
+            }
+        
+        # Validate coordinates
+        if not (0 <= x < mngr.board.width and 0 <= y < mngr.board.height):
+            return {
+                "success": False,
+                "error": f"Invalid coordinates ({x}, {y})",
+                "error_code": "INVALID_COORDINATES"
+            }
+        
+        # Get unit
+        unit = mngr.unit_at(x, y)
+        if not unit:
+            return {
+                "success": False,
+                "error": f"No unit at ({x}, {y})",
+                "error_code": "NO_UNIT"
+            }
+        
+        # Check if it's the unit's turn
+        if unit.army != mngr.board.current_turn:
+            return {
+                "success": False,
+                "error": "Not this unit's turn",
+                "error_code": "WRONG_TURN"
+            }
+        
+        # Execute wait action
+        mngr.unit_wait(x, y)
+        
+        # Save game state
+        game_save(mngr, token)
+        ws_board_update(token)
+        
+        # Log action
+        app_logger.info(f"Unit wait: {token} - {unit.type.name} at ({x},{y})")
+        
+        return {
+            "success": True,
+            "message": f"{unit.type.name} is waiting",
+            "unit": {
+                "type": unit.type.name,
+                "army": unit.army.name,
+                "can_move": unit.can_move,
+                "can_attack": unit.can_attack,
+                "can_capture": unit.can_capture
+            }
+        }
+        
+    except Exception as e:
+        app_logger.error(f"unit_wait failed for {token} at ({x},{y}): {str(e)}")
+        return {
+            "success": False,
+            "error": str(e),
+            "error_code": "WAIT_ERROR"
+        }
 
 # Removed duplicate unit_attack method - using the one at line 4706 instead
 
@@ -4998,11 +5177,21 @@ def combat_targets_rpc(token: str, unit_x: int, unit_y: int) -> dict:
                 "error": "No unit at specified position"
             }
         
-        if unit.army != mngr.board.current_turn:
-            return {
-                "success": False,
-                "error": "Not your turn"
-            }
+        # Check ownership - handle both V1 (army) and V2 (player_id) systems
+        if hasattr(mngr.board, 'current_player') and unit.player_id is not None:
+            # V2 system
+            if unit.player_id != mngr.board.current_player:
+                return {
+                    "success": False,
+                    "error": "Not your turn"
+                }
+        else:
+            # V1 system
+            if unit.army != mngr.board.current_turn:
+                return {
+                    "success": False,
+                    "error": "Not your turn"
+                }
         
         if not unit.can_attack:
             return {
@@ -5790,11 +5979,21 @@ def movement_range_rpc(token: str, unit_x: int, unit_y: int) -> dict:
                 "error": "No unit at specified position"
             }
         
-        if unit.army != mngr.board.current_turn:
-            return {
-                "success": False,
-                "error": "Not your turn"
-            }
+        # Check ownership - handle both V1 (army) and V2 (player_id) systems
+        if hasattr(mngr.board, 'current_player') and unit.player_id is not None:
+            # V2 system
+            if unit.player_id != mngr.board.current_player:
+                return {
+                    "success": False,
+                    "error": "Not your turn"
+                }
+        else:
+            # V1 system
+            if unit.army != mngr.board.current_turn:
+                return {
+                    "success": False,
+                    "error": "Not your turn"
+                }
         
         if not unit.can_move:
             return {
