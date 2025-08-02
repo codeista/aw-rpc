@@ -702,7 +702,7 @@ def get_unit_costs_rpc(token: str) -> Dict[str, Any]:
     """Get cost information for all unit types"""
     try:
         # Import unit cost data
-        from unit import UnitConfig, UnitType
+        from core.unit import UnitConfig, UnitType
         
         costs = {}
         for unit_type in UnitType:

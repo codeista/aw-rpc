@@ -298,7 +298,7 @@ def create_board_from_dict(board_dict):
     """
     try:
         from gameboard import GameBoard
-        from map_system import Army
+        from core.map_system import Army
         
         # Extract basic board properties
         width = board_dict.get('width', 7)
@@ -308,7 +308,7 @@ def create_board_from_dict(board_dict):
         try:
             default_map = map_repository.get_map('test')
         except:
-            from map_system import Map
+            from core.map_system import Map
             default_map = Map()
         
         board = GameBoard.create(default_map)
@@ -372,7 +372,7 @@ def create_board_from_dict(board_dict):
         
         # Final fallback - create completely new board but try to preserve basic state
         try:
-            from map_system import Map
+            from core.map_system import Map
             default_map = Map()
             board = GameBoard.create(default_map)
             
@@ -392,7 +392,7 @@ def create_board_from_dict(board_dict):
         except Exception as e2:
             app_logger.error(f"Even minimal fallback failed: {e2}")
             # Absolute last resort
-            from map_system import Map
+            from core.map_system import Map
             return GameBoard.create(Map())
 
 def reconstruct_unit_from_dict(unit_dict: dict):
@@ -401,7 +401,7 @@ def reconstruct_unit_from_dict(unit_dict: dict):
     """
     try:
         from core.unit import Unit, UnitType, UnitConfig, UnitClass
-        from map_system import Army
+        from core.map_system import Army
         
         # Extract basic data from the serialized dict
         unit_type_name = unit_dict.get('type', 'INFANTRY')
@@ -496,7 +496,7 @@ def reconstruct_unit_from_dict(unit_dict: dict):
         try:
             # Create a fallback unit with basic UnitConfig
             from core.unit import Unit, UnitType, UnitConfig, UnitClass
-            from map_system import Army
+            from core.map_system import Army
             
             fallback_config = UnitConfig(
                 cls=UnitClass.FOOT,
@@ -991,7 +991,7 @@ def test_movement_scenario():
         
         from core.unit import Unit, UnitType
         from config import Config
-        from map_system import Army
+        from core.map_system import Army
         
         config_game = Config()
         
@@ -1670,7 +1670,7 @@ def create_triangle_map_game():
     try:
         from manager import GameManager
         from config import Config
-        from map_system import map_repository
+        from core.map_system import map_repository
         
         # Load configuration and triangle map
         config_game = Config()
@@ -1708,7 +1708,7 @@ def create_cross_map_game():
     try:
         from manager import GameManager
         from config import Config
-        from map_system import map_repository
+        from core.map_system import map_repository
         
         # Load configuration and cross map
         config_game = Config()
@@ -1745,7 +1745,7 @@ def create_pentagon_map_game():
     try:
         from manager import GameManager
         from config import Config
-        from map_system import map_repository
+        from core.map_system import map_repository
         
         # Load configuration and pentagon map
         config_game = Config()
@@ -2442,7 +2442,7 @@ def game_board_rpc(token: str) -> dict:
                         # Add player_id to map tiles
                         if 'mapTile' in tile and tile['mapTile'].get('army'):
                             army = tile['mapTile']['army']
-                            from map_system import Army
+                            from core.map_system import Army
                             player_id = mngr.board.army_to_player.get(Army[army])
                             if player_id is not None:
                                 tile['mapTile']['player_id'] = player_id
@@ -2649,7 +2649,7 @@ def tile_rpc(token: str, x: int, y: int) -> dict:
         tile = mngr.tile_get(x, y)
         
         # Add terrain defense stars before serialization
-        from map_system import TERRAIN_DEFENSE_STARS
+        from core.map_system import TERRAIN_DEFENSE_STARS
         defense_stars = 0
         if tile.mapTile:
             defense_stars = TERRAIN_DEFENSE_STARS.get(tile.mapTile.type, 0)
@@ -5051,7 +5051,7 @@ def combat_preview_consolidated_rpc(token: str, attacker_x: int, attacker_y: int
         defender_tile = mngr.tile_at(defender_x, defender_y)
         terrain_defense = 0
         if defender_tile and defender_tile.mapTile:
-            from map_system import TERRAIN_DEFENSE_STARS
+            from core.map_system import TERRAIN_DEFENSE_STARS
             terrain_defense = TERRAIN_DEFENSE_STARS.get(defender_tile.mapTile.type, 0)
         
         # Calculate damage ranges (±10% luck)
@@ -6156,7 +6156,7 @@ def movement_info_rpc(token: str, unit_type: str) -> dict:
             }
         
         # Get movement costs
-        from map_system import get_movement_cost, MapType, INF
+        from core.map_system import get_movement_cost, MapType, INF
         from core.unit import UnitClass
         
         # Get unit class

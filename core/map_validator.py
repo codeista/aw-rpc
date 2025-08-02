@@ -3,8 +3,8 @@ Map Validator - Ensures maps are balanced and well-designed
 """
 from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass
-from map_parser_v2 import MapParserV2
-from map_system import MapType
+from core.map_parser_v2 import MapParserV2
+from core.map_system import MapType
 import math
 
 

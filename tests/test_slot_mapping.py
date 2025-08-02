@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Simple test to verify slot mapping works correctly"""
 
-from map_parser_v2 import MapParserV2
-from player_system import PlayerManager, SpriteColor
-from map_system import Army
+from core.map_parser_v2 import MapParserV2
+from core.player_system import PlayerManager, SpriteColor
+from core.map_system import Army
 
 # Simple test map with player 0 and player 1 properties
 test_map = """2

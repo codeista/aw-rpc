@@ -115,7 +115,7 @@ class GameManager:
             
     def unit_create(self, army: str, unit_type: str, x: int, y: int) -> Unit:
         """Create a new unit at the specified coordinates."""
-        from production_system import ProductionSystem
+        from core.production_system import ProductionSystem
         
         # Validation
         self._validate_coordinates(x, y)
@@ -279,8 +279,8 @@ class GameManager:
     
     def can_afford_unit(self, unit_type: str, army: Army) -> bool:
         """Check if army can afford a unit type."""
-        from production_system import ProductionSystem
-        from unit import UnitType
+        from core.production_system import ProductionSystem
+        from core.unit import UnitType
         
         try:
             unit_type_enum = UnitType[unit_type] if isinstance(unit_type, str) else unit_type
@@ -1090,8 +1090,8 @@ class GameManager:
         }
         
         # Get unit costs from production system
-        from production_system import ProductionSystem
-        from unit import UnitType
+        from core.production_system import ProductionSystem
+        from core.unit import UnitType
         
         # Use default costs from production system
         production_system = ProductionSystem(self)
