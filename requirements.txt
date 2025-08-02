@@ -1,10 +1,10 @@
 # Core Flask dependencies
-Flask==3.0.3
+Flask==2.3.3
 Flask-CORS==5.0.0
 Flask-JSONRPC==2.2.2
 Flask-SocketIO==5.3.6
 Flask-SQLAlchemy==3.1.1
-Werkzeug==3.0.3
+Werkzeug==2.3.7
 
 # SocketIO and async support
 python-socketio==5.11.3
