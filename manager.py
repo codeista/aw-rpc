@@ -6,15 +6,15 @@ from dataclasses import dataclass
 import math
 import configparser
 
-from map_system import Army, MapType, get_movement_cost, INF, TERRAIN_DEFENSE_STARS
+from core.map_system import Army, MapType, get_movement_cost, INF, TERRAIN_DEFENSE_STARS
 from gameboard import GameBoard, GameTile
-from unit import UnitType, Unit, UnitClass, UnitConfig, UnitStatus
-from player_system import PlayerManager
-from transport_system import CompleteTransportSystem
-from production_system import ProductionSystem
-from enhanced_movement_validation import EnhancedMovementValidator
-from enhanced_combat_system import EnhancedCombatSystem
-from dijkstra import dijkstra
+from core.unit import UnitType, Unit, UnitClass, UnitConfig, UnitStatus
+from core.player_system import PlayerManager
+from core.transport_system import CompleteTransportSystem
+from core.production_system import ProductionSystem
+from core.enhanced_movement_validation import EnhancedMovementValidator
+from core.enhanced_combat_system import EnhancedCombatSystem
+from core.dijkstra import dijkstra
 from config import Config
 
 class GameManager:

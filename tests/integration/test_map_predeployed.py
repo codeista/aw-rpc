@@ -7,8 +7,8 @@ import os
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 sys.path.insert(0, project_root)
 
-from map_system import Map, MapType, Army, MapTile, map_repository
-from unit import Unit, UnitType, Army
+from core.map_system import Map, MapType, Army, MapTile, map_repository
+from core.unit import Unit, UnitType, Army
 from gameboard import GameBoard, GameTile
 
 def create_test_map_with_units():
@@ -293,7 +293,7 @@ def get_predeployed_test_game(token: str = None):
     Function to integrate with your existing game creation system.
     Call this instead of the normal game creation to get a test game with units.
     """
-    from game_factory import GameFactory
+    from core.game_factory import GameFactory
     
     # Create v2 game using factory
     players = [
@@ -313,7 +313,7 @@ def get_comprehensive_test_game(token: str = None):
     """
     Get a comprehensive test game with all unit types and terrain scenarios
     """
-    from game_factory import GameFactory
+    from core.game_factory import GameFactory
     
     # Create v2 game using factory
     players = [

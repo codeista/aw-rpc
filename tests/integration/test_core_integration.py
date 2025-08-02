@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from manager import GameManager
 from gameboard import GameBoard
 from config import Config
-from map_system import map_repository, Army
+from core.map_system import map_repository, Army
 
 class TestCoreIntegration:
     """Test core game functionality"""

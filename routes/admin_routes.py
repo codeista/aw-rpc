@@ -7,7 +7,7 @@ from flask import Blueprint, redirect, jsonify
 import secrets
 import os
 from app_core import app_logger, jsonrpc, ENHANCED_LOGGING
-from map_system import map_repository
+from core.map_system import map_repository
 
 # Create blueprint for admin routes
 admin_bp = Blueprint('admin', __name__)

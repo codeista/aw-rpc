@@ -14,8 +14,8 @@ from typing import Dict, List, Any, Optional, Tuple
 from manager import GameManager
 from gameboard import GameBoard
 from config import Config
-from map_system import map_repository, Army
-from unit import UnitType
+from core.map_system import map_repository, Army
+from core.unit import UnitType
 from tests.integration.test_map_predeployed import get_predeployed_test_game, get_comprehensive_test_game
 
 class TestComplexScenarios:

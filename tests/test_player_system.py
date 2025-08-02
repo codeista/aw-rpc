@@ -6,8 +6,8 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from unit import Unit, UnitType
-from map_system import MapV2, MapTileV2, MapType
+from core.unit import Unit, UnitType
+from core.map_system import MapV2, MapTileV2, MapType
 from config import Config
 
 def test_unit_with_player():

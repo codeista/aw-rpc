@@ -1,6 +1,6 @@
 from configparser import ConfigParser
 
-from unit import UnitType, UnitClass, UnitConfig
+from core.unit import UnitType, UnitClass, UnitConfig
 
 
 class Config:

@@ -3,9 +3,9 @@ GameBoard V2 - Color-agnostic game board with backward compatibility
 """
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
-from map_system import Army, MapTile, Map
-from player_system import PlayerManager
-from unit import Unit
+from core.map_system import Army, MapTile, Map
+from core.player_system import PlayerManager
+from core.unit import Unit
 
 
 @dataclass

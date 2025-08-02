@@ -34,6 +34,9 @@ static/img/backup_*/
 
 # Archive directories
 archive_cleanup_*/
+archive/
+old_*/
+temp_*/
 
 # Verification outputs
 verify_*.json
@@ -45,3 +48,27 @@ sprite_index_*.json
 test-env/
 venv/
 env/
+
+# Database
+instance/
+*.sqlite
+*.sqlite3
+
+# Log files
+server.log
+app.log
+
+# Debug and test files  
+debug_*.py
+test_*.py
+!tests/**/*.py
+
+# IDE
+.idea/
+
+# Production
+*.pem
+*.key
+*.cert
+.env
+.env.local

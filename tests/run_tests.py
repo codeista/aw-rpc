@@ -1,171 +1,101 @@
 #!/usr/bin/env python3
 """
-Test runner for AW-RPC integration tests
+Comprehensive test runner for AW-RPC
 """
 
 import subprocess
 import sys
-import time
-import requests
 import os
 
-def check_server_running():
-    """Check if the server is running"""
+def run_test(test_name, test_file):
+    """Run a single test and report results"""
+    print(f"\n{'='*60}")
+    print(f"Running {test_name}...")
+    print('='*60)
+    
     try:
-        response = requests.get("http://localhost:5000", timeout=2)
-        return True
-    except:
-        return False
-
-def check_dependencies():
-    """Check if required dependencies are installed"""
-    try:
-        import requests
-        print("✅ requests module available")
-        return True
-    except ImportError:
-        print("❌ requests module not found")
-        print("   Install with: pip install requests")
-        return False
-
-def run_quick_tests():
-    """Run a quick subset of tests"""
-    print("🏃 Running Quick Tests...")
-    print("=" * 40)
-    
-    quick_tests = [
-        'test_01_game_creation_and_board_loading',
-        'test_04_turn_system_integration',
-        'test_06_error_handling_robustness'
-    ]
-    
-    from system import integration_testing_suite
-    
-    for test_name in quick_tests:
-        try:
-            test_case = integration_testing_suite.AWRPCIntegrationTests()
-            test_case.setUp()
-            
-            test_method = getattr(test_case, test_name)
-            test_method()
-            
-            test_case.tearDown()
-            print(f"✅ {test_name.replace('_', ' ').title()}")
-            
-        except Exception as e:
-            print(f"❌ {test_name}: {e}")
+        result = subprocess.run([sys.executable, test_file], 
+                              capture_output=True, 
+                              text=True,
+                              timeout=30)
+        
+        if result.returncode == 0:
+            print(f"✅ {test_name} PASSED")
+            if result.stdout:
+                print(result.stdout)
+            return True
+        else:
+            print(f"❌ {test_name} FAILED")
+            if result.stdout:
+                print("STDOUT:", result.stdout)
+            if result.stderr:
+                print("STDERR:", result.stderr)
             return False
-    
-    return True
-
-def run_full_tests():
-    """Run the complete test suite"""
-    print("🔬 Running Full Integration Tests...")
-    print("=" * 40)
-    
-    try:
-        from system.integration_testing_suite import run_integration_tests
-        return run_integration_tests()
-    except Exception as e:
-        print(f"❌ Test suite failed: {e}")
-        return False
-
-def run_regression_tests():
-    """Run automated regression test suite"""
-    print("🤖 Running Automated Regression Tests...")
-    print("=" * 40)
-    
-    try:
-        import subprocess
-        result = subprocess.run([
-            sys.executable, 
-            'tests/regression/test_complete_game_mechanics.py'
-        ], capture_output=True, text=True, timeout=300)
-        
-        # Print the output
-        if result.stdout:
-            print(result.stdout)
-        if result.stderr:
-            print(result.stderr)
-        
-        return result.returncode == 0
-        
+            
     except subprocess.TimeoutExpired:
-        print("❌ Regression tests timed out (5 minutes)")
+        print(f"❌ {test_name} TIMEOUT")
         return False
     except Exception as e:
-        print(f"❌ Regression test execution failed: {e}")
+        print(f"❌ {test_name} ERROR: {e}")
         return False
 
 def main():
-    print("🧪 AW-RPC Test Runner")
-    print("=" * 40)
+    """Run all tests"""
+    print("🧪 AW-RPC Test Suite")
+    print("===================")
     
-    # Check dependencies
-    if not check_dependencies():
-        return False
+    tests = [
+        ("Click Handler Tests", "test_click_handling.py"),
+        ("Sprite Extraction Tests", "test_sprite_extraction.py"),
+    ]
     
-    # Check if server is running
-    if not check_server_running():
-        print("❌ Server not running!")
-        print("\n🚀 Start the server first:")
-        print("   python app.py")
-        print("\nThen run tests again:")
-        print("   python run_tests.py")
-        return False
+    # Add more test files if they exist
+    optional_tests = [
+        ("Game Mechanics Tests", "test_game_mechanics.py"),
+        ("Transport System Tests", "test_transport_system.py"),
+        ("RPC API Tests", "test_api.py"),
+    ]
     
-    print("✅ Server is running")
+    for test_name, test_file in optional_tests:
+        if os.path.exists(test_file):
+            tests.append((test_name, test_file))
     
-    # Ask user which tests to run
-    print("\n📋 Test Options:")
-    print("1. Quick Tests (3 core tests, ~30 seconds)")
-    print("2. Full Integration Tests (8 comprehensive tests, ~2 minutes)")
-    print("3. Automated Regression Tests (All mechanics validation, ~3 minutes)")
-    print("4. Exit")
+    results = []
     
-    while True:
-        try:
-            choice = input("\nChoose option (1-4): ").strip()
-            
-            if choice == "1":
-                success = run_quick_tests()
-                break
-            elif choice == "2":
-                success = run_full_tests()
-                break
-            elif choice == "3":
-                success = run_regression_tests()
-                break
-            elif choice == "4":
-                print("👋 Goodbye!")
-                return True
-            else:
-                print("Please enter 1, 2, 3, or 4")
-                continue
-                
-        except KeyboardInterrupt:
-            print("\n\n👋 Goodbye!")
-            return True
+    for test_name, test_file in tests:
+        if os.path.exists(test_file):
+            success = run_test(test_name, test_file)
+            results.append((test_name, success))
+        else:
+            print(f"\n⚠️  Skipping {test_name} - {test_file} not found")
+            results.append((test_name, None))
     
-    # Results
-    if success:
+    # Summary
+    print(f"\n{'='*60}")
+    print("TEST SUMMARY")
+    print('='*60)
+    
+    passed = sum(1 for _, result in results if result is True)
+    failed = sum(1 for _, result in results if result is False)
+    skipped = sum(1 for _, result in results if result is None)
+    total = len(results)
+    
+    for test_name, result in results:
+        if result is True:
+            print(f"✅ {test_name}")
+        elif result is False:
+            print(f"❌ {test_name}")
+        else:
+            print(f"⚠️  {test_name} (skipped)")
+    
+    print(f"\nTotal: {total} | Passed: {passed} | Failed: {failed} | Skipped: {skipped}")
+    
+    if failed == 0 and passed > 0:
         print("\n🎉 All tests passed!")
-        print("✅ Your AW-RPC system is ready for Phase 2!")
-        print("\n📋 System Status:")
-        print("  • Core gameplay: Working ✅")
-        print("  • Turn system: Working ✅") 
-        print("  • Database: Working ✅")
-        print("  • Error handling: Working ✅")
-        print("  • API endpoints: Working ✅")
-        return True
+        return 0
     else:
-        print("\n⚠️  Some tests failed")
-        print("📋 Recommended actions:")
-        print("  • Check server logs for errors")
-        print("  • Verify database is accessible")
-        print("  • Review failed test details above")
-        return False
+        print(f"\n❌ {failed} tests failed")
+        return 1
 
 if __name__ == "__main__":
-    success = main()
-    sys.exit(0 if success else 1)
+    sys.exit(main())

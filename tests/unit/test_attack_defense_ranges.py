@@ -11,11 +11,11 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 
 from manager import GameManager
 from gameboard import GameBoard, GameTile
-from player_system import PlayerManager, Player, SpriteColor
-from game_factory import GameFactory
+from core.player_system import PlayerManager, Player, SpriteColor
+from core.game_factory import GameFactory
 from config import Config
-from unit import Unit, UnitType
-from map_system import MapTile, MapType, Army
+from core.unit import Unit, UnitType
+from core.map_system import MapTile, MapType, Army
 
 class TestAttackDefenseRanges(unittest.TestCase):
     """Test attack ranges, defense capabilities, and counter-attack rules"""

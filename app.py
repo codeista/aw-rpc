@@ -33,9 +33,9 @@ import secrets
 
 from manager import GameManager
 from gameboard import GameBoard
-from game_factory import GameFactory
+from core.game_factory import GameFactory
 from gameboard import GameBoard
-from player_system import PlayerManager
+from core.player_system import PlayerManager
 from config import Config
 from app_core import (
     app, jsonrpc, db, socketio,
@@ -44,20 +44,20 @@ from app_core import (
     production_economic_api, information_api, communication_api
 )
 from models import Game
-from map_system import map_repository, Map, Army
-from enhanced_combat_system import EnhancedCombatSystem, CombatPreview, EnhancedCombatResult
-from transport_system import CompleteTransportSystem, TransportResult
+from core.map_system import map_repository, Map, Army
+from core.enhanced_combat_system import EnhancedCombatSystem, CombatPreview, EnhancedCombatResult
+from core.transport_system import CompleteTransportSystem, TransportResult
 from tests.integration.test_map_predeployed import get_predeployed_test_game, get_comprehensive_test_game
 from routes.unified_test_route import unified_test_bp
 from routes.unified_test_api import unified_test_api_bp
-import api_docs_route  # Import the custom API documentation
+from routes import api_docs_route  # Import the custom API documentation
 
 # Import the new clean API v2
-from api_v2 import GameAPIv2
+# from archive.legacy.api_v2 import GameAPIv2  # Disabled - legacy code
 
 # Import our fixed logging system
 try:
-    from logging_config import setup_application_logging, GameEventLogger, PerformanceLogger
+    from middleware.logging_config import setup_application_logging, GameEventLogger, PerformanceLogger
     app_logger, game_logger = setup_application_logging()
     game_event_logger = GameEventLogger()
     perf_logger = PerformanceLogger()
@@ -65,11 +65,14 @@ try:
 except ImportError:
     # Fallback to your existing logging if new system not available
     app_logger = logging.getLogger(__name__)
-    logging.basicConfig(filename='app.log', level=logging.INFO)
+    logging.basicConfig(
+        handlers=[logging.FileHandler('logs/awrpc_app.log'), logging.StreamHandler()],
+        level=logging.INFO
+    )
     
     game_logger = logging.getLogger('game_events')
     game_logger.setLevel(logging.INFO)
-    event_handler = logging.FileHandler('game_events.log')
+    event_handler = logging.FileHandler('logs/game_events.log')
     event_formatter = logging.Formatter('%(asctime)s | %(levelname)s | %(message)s')
     event_handler.setFormatter(event_formatter)
     if not game_logger.handlers:
@@ -78,14 +81,14 @@ except ImportError:
     ENHANCED_LOGGING = False
 
 # Initialize the new clean API v2
-api_v2 = GameAPIv2(app, jsonrpc)
+# api_v2 = GameAPIv2(app, jsonrpc)  # Disabled - legacy code
 app_logger.info("Clean API v2 initialized with 8 core methods")
 
 # Blueprint registration disabled - routes implemented directly in app.py
 # This avoids Flask's "can't register after first request" error in debug mode
 # The test_game route is now implemented directly in this file
 
-from error_handling import (
+from middleware.error_handling import (
     setup_error_handlers, setup_logging, validate_rpc_params,
     validate_token, validate_coordinates, validate_army, 
     validate_unit_type, safe_rpc_call, log_game_event, AWRPCError,
@@ -146,7 +149,7 @@ def log_game_event(event_type, token, details):
         game_logger.info(f"{event_type} | {token} | {json.dumps(details)}")
 
 # Map system
-from map_system import Map, MapType, Army, MapTile, map_repository
+from core.map_system import Map, MapType, Army, MapTile, map_repository
 app_logger.info("Using map_system for map data")
             
 # Maps are now loaded from files
@@ -397,7 +400,7 @@ def reconstruct_unit_from_dict(unit_dict: dict):
     CRITICAL FIX: Reconstruct Unit object from dictionary using proper Unit.create method
     """
     try:
-        from unit import Unit, UnitType, UnitConfig, UnitClass
+        from core.unit import Unit, UnitType, UnitConfig, UnitClass
         from map_system import Army
         
         # Extract basic data from the serialized dict
@@ -449,7 +452,7 @@ def reconstruct_unit_from_dict(unit_dict: dict):
             )
         
         # Create UnitStatus from the saved status data
-        from unit import UnitStatus
+        from core.unit import UnitStatus
         if isinstance(status_data, dict):
             # Reconstruct UnitStatus from saved data
             unit_status = UnitStatus(
@@ -492,7 +495,7 @@ def reconstruct_unit_from_dict(unit_dict: dict):
         
         try:
             # Create a fallback unit with basic UnitConfig
-            from unit import Unit, UnitType, UnitConfig, UnitClass
+            from core.unit import Unit, UnitType, UnitConfig, UnitClass
             from map_system import Army
             
             fallback_config = UnitConfig(
@@ -507,7 +510,7 @@ def reconstruct_unit_from_dict(unit_dict: dict):
                 max_ammo=99
             )
             
-            from unit import UnitStatus
+            from core.unit import UnitStatus
             fallback_status = UnitStatus.from_config(fallback_config)
             
             return Unit(
@@ -769,7 +772,7 @@ def create_game_api():
         
         # Use v2 game creation if available
         try:
-            from game_factory import GameFactory
+            from core.game_factory import GameFactory
             app_logger.info(f"Creating v2 game with map: {data['map']}, players: {len(v2_players)}")
             manager, _ = GameFactory.create_game_with_players(data['map'], v2_players)
             
@@ -986,7 +989,7 @@ def test_movement_scenario():
         game_manager = games[token]
         board = game_manager.board
         
-        from unit import Unit, UnitType
+        from core.unit import Unit, UnitType
         from config import Config
         from map_system import Army
         
@@ -1130,7 +1133,7 @@ def test_game():
                 return f"Map not found: {map_name}", 404
                 
             # Create v2 game with GameFactory
-            from game_factory import GameFactory
+            from core.game_factory import GameFactory
             
             # Default 2 players for test games
             players = [
@@ -1162,7 +1165,7 @@ def test_game():
             map_name = custom_map or config.get('map', 'test')
             
             # Create v2 game
-            from game_factory import GameFactory
+            from core.game_factory import GameFactory
             players = [
                 {"name": "Player 1", "color": "Red", "sprite_color": "RED"},
                 {"name": "Player 2", "color": "Blue", "sprite_color": "BLUE"}
@@ -2290,7 +2293,7 @@ def game_create_rpc(token: str) -> str:
 def game_create_test_rpc(token: str, use_optimized: bool = True) -> str:
     '''Create a test game with v2 system and high starting funds'''
     try:
-        from game_factory import GameFactory
+        from core.game_factory import GameFactory
         
         if use_optimized:
             # Create v2 game with high starting funds
@@ -2773,7 +2776,7 @@ def unit_create_rpc(token: str, army: str, unit_type: str, x: int, y: int) -> di
     """
     
     # Import validation functions at the top
-    from error_handling import validate_army, validate_unit_type, validate_coordinates, ValidationError
+    from middleware.error_handling import validate_army, validate_unit_type, validate_coordinates, ValidationError
     
     try:
         # CHECK GAME ACTIVE FIRST
@@ -2798,8 +2801,8 @@ def unit_create_rpc(token: str, army: str, unit_type: str, x: int, y: int) -> di
         # Log successful creation with cost
         if ENHANCED_LOGGING:
             # Get unit cost from production system
-            from production_system import ProductionSystem
-            from unit import UnitType
+            from core.production_system import ProductionSystem
+            from core.unit import UnitType
             unit_cost = ProductionSystem.UNIT_COSTS.get(UnitType[unit_type], 0)
             game_event_logger.log_unit_created(token, army, unit_type, x, y, unit_cost)
         
@@ -2893,7 +2896,7 @@ def admin_unit_create_rpc(token: str, army: str, unit_type: str, x: int, y: int,
             }
         
         # Validate inputs
-        from error_handling import validate_army, validate_unit_type, validate_coordinates
+        from middleware.error_handling import validate_army, validate_unit_type, validate_coordinates
         
         try:
             validate_army(army)
@@ -2924,7 +2927,7 @@ def admin_unit_create_rpc(token: str, army: str, unit_type: str, x: int, y: int,
             }
         
         # Create unit directly without factory/funds check
-        from unit import Unit, UnitType, Army
+        from core.unit import Unit, UnitType, Army
         army_enum = Army[army.upper()]
         unit_type_enum = UnitType[unit_type.upper()]
         
@@ -3057,7 +3060,7 @@ def unit_select_rpc(token: str, x: int, y: int) -> dict:
                 "details": {"winner": getattr(mngr.board, 'winner', 'Unknown')}
             }
             
-        from error_handling import ValidationError
+        from middleware.error_handling import ValidationError
         
         # Load game first to get actual board dimensions
         mngr = game_load(token)
@@ -3482,8 +3485,8 @@ def can_afford_unit_rpc(token: str, unit_type: str) -> dict:
         current_funds = mngr._get_army_funds(current_army)
         
         # Get unit cost for reference
-        from production_system import ProductionSystem
-        from unit import UnitType
+        from core.production_system import ProductionSystem
+        from core.unit import UnitType
         
         try:
             unit_type_enum = UnitType[unit_type.upper()]
@@ -3519,8 +3522,8 @@ def get_unit_costs_rpc(token: str) -> dict:
     
     """Get all unit costs for reference"""
     try:
-        from production_system import ProductionSystem
-        from unit import UnitType
+        from core.production_system import ProductionSystem
+        from core.unit import UnitType
         
         # Get unit costs from production system
         production_system = ProductionSystem(None)  # Manager not needed for costs
@@ -5249,7 +5252,7 @@ def combat_chart_rpc(token: str) -> dict:
     """
     try:
         # Import damage tables directly from unit module
-        from unit import UnitType, DAMAGE_TABLE, SECONDARY_DAMAGE_TABLE
+        from core.unit import UnitType, DAMAGE_TABLE, SECONDARY_DAMAGE_TABLE
         
         # Build damage chart from the static tables
         organized_chart = {}
@@ -6143,7 +6146,7 @@ def movement_info_rpc(token: str, unit_type: str) -> dict:
         mngr = game_load(token)
         
         # Validate unit type
-        from unit import UnitType
+        from core.unit import UnitType
         try:
             unit_type_enum = UnitType[unit_type.upper()]
         except KeyError:
@@ -6154,7 +6157,7 @@ def movement_info_rpc(token: str, unit_type: str) -> dict:
         
         # Get movement costs
         from map_system import get_movement_cost, MapType, INF
-        from unit import UnitClass
+        from core.unit import UnitClass
         
         # Get unit class
         unit_config = mngr.config.units.get(unit_type.upper())
@@ -6223,7 +6226,7 @@ def movement_info_rpc(token: str, unit_type: str) -> dict:
 def get_damage_chart_rpc(token: str) -> dict:
     """Get the complete damage chart for reference"""
     try:
-        from unit import DAMAGE_TABLE, UnitType
+        from core.unit import DAMAGE_TABLE, UnitType
         
         # Convert damage table to readable format
         damage_chart = {}

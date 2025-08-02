@@ -7,7 +7,7 @@ import time
 from manager import GameManager
 from gameboard import GameBoard
 from config import Config
-from map_system import map_repository
+from core.map_system import map_repository
 import logging
 
 app_logger = logging.getLogger('aw-rpc')

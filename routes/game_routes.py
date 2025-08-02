@@ -6,7 +6,7 @@ Handles all game-related HTTP routes including creation, maps, and game pages
 from flask import Blueprint, render_template, request, jsonify
 import secrets
 from app_core import app_logger
-from map_system import map_repository
+from core.map_system import map_repository
 
 # Create blueprint for game routes
 game_bp = Blueprint('game', __name__)
