@@ -36,7 +36,7 @@ def log_rpc_performance(func):
 def cargo_board_transport_rpc(token: str, cargo_x: int, cargo_y: int, transport_x: int, transport_y: int) -> Dict[str, Any]:
     """Board a cargo unit onto a transport"""
     # Import here to avoid circular imports
-    from game_utils import game_load, games
+    from core.game_utils import game_load, games
     
     mngr = game_load(token)
     
@@ -82,7 +82,7 @@ def cargo_board_transport_rpc(token: str, cargo_x: int, cargo_y: int, transport_
 def cargo_exit_transport_rpc(token: str, transport_x: int, transport_y: int, exit_x: int, exit_y: int, cargo_index: int = 0) -> Dict[str, Any]:
     """Exit a cargo unit from a transport"""
     # Import here to avoid circular imports
-    from game_utils import game_load, games
+    from core.game_utils import game_load, games
     
     mngr = game_load(token)
     
@@ -124,7 +124,7 @@ def cargo_exit_transport_rpc(token: str, transport_x: int, transport_y: int, exi
 def get_loadable_transports_rpc(token: str, cargo_x: int, cargo_y: int) -> Dict[str, Any]:
     """Get transports that can load the specified cargo unit"""
     # Import here to avoid circular imports
-    from game_utils import game_load
+    from core.game_utils import game_load
     
     mngr = game_load(token)
     
@@ -250,7 +250,7 @@ def get_loadable_transports_rpc(token: str, cargo_x: int, cargo_y: int) -> Dict[
 def get_exit_positions_rpc(token: str, transport_x: int, transport_y: int) -> Dict[str, Any]:
     """Get valid exit positions for a transport"""
     # Import here to avoid circular imports
-    from game_utils import game_load
+    from core.game_utils import game_load
     
     mngr = game_load(token)
     
@@ -278,7 +278,7 @@ def get_exit_positions_rpc(token: str, transport_x: int, transport_y: int) -> Di
 def can_cargo_exit_transport_rpc(token: str, transport_x: int, transport_y: int, exit_x: int, exit_y: int) -> Dict[str, Any]:
     """Check if cargo can exit transport at specified position"""
     # Import here to avoid circular imports
-    from game_utils import game_load
+    from core.game_utils import game_load
     
     mngr = game_load(token)
     
@@ -302,7 +302,7 @@ def can_cargo_exit_transport_rpc(token: str, transport_x: int, transport_y: int,
 def can_transport_move_rpc(token: str, transport_x: int, transport_y: int, to_x: int, to_y: int) -> Dict[str, Any]:
     """Check if a transport can move to specified position"""
     # Import here to avoid circular imports
-    from game_utils import game_load
+    from core.game_utils import game_load
     
     mngr = game_load(token)
     
@@ -319,7 +319,7 @@ def can_transport_move_rpc(token: str, transport_x: int, transport_y: int, to_x:
 def load_transport_unit_rpc(token: str, cargo_x: int, cargo_y: int, transport_x: int, transport_y: int) -> Dict[str, Any]:
     """Load a unit into a transport (enhanced version)"""
     # Import here to avoid circular imports
-    from game_utils import game_load, games
+    from core.game_utils import game_load, games
     
     mngr = game_load(token)
     
@@ -344,7 +344,7 @@ def load_transport_unit_rpc(token: str, cargo_x: int, cargo_y: int, transport_x:
 def unload_transport_unit_rpc(token: str, transport_x: int, transport_y: int, unload_x: int, unload_y: int) -> Dict[str, Any]:
     """Unload a unit from a transport (enhanced version)"""
     # Import here to avoid circular imports
-    from game_utils import game_load, games
+    from core.game_utils import game_load, games
     
     mngr = game_load(token)
     
@@ -369,7 +369,7 @@ def unload_transport_unit_rpc(token: str, transport_x: int, transport_y: int, un
 def get_transport_info_rpc(token: str, transport_x: int, transport_y: int) -> Dict[str, Any]:
     """Get detailed information about a transport"""
     # Import here to avoid circular imports
-    from game_utils import game_load
+    from core.game_utils import game_load
     
     mngr = game_load(token)
     
@@ -385,7 +385,7 @@ def get_transport_info_rpc(token: str, transport_x: int, transport_y: int) -> Di
         transport_info = {
             'type': unit.type.name,
             'army': unit.army.name,
-            'health': unit.status.health,
+            'health': unit.status.hp,
             'fuel': unit.status.fuel,
             'cargo_capacity': getattr(unit, 'cargo_capacity', 0),
             'cargo_units': []
@@ -397,7 +397,7 @@ def get_transport_info_rpc(token: str, transport_x: int, transport_y: int) -> Di
                 transport_info['cargo_units'].append({
                     'type': cargo_unit.type.name,
                     'army': cargo_unit.army.name,
-                    'health': cargo_unit.status.health
+                    'health': cargo_unit.status.hp
                 })
         
         return transport_info
@@ -411,12 +411,27 @@ def get_transport_info_rpc(token: str, transport_x: int, transport_y: int) -> Di
 def get_valid_unload_positions_rpc(token: str, transport_x: int, transport_y: int) -> Dict[str, Any]:
     """Get all valid unload positions for a transport"""
     # Import here to avoid circular imports
-    from game_utils import game_load
+    from core.game_utils import game_load
     
     mngr = game_load(token)
     
     try:
-        positions = mngr.get_unload_positions(transport_x, transport_y)
+        if hasattr(mngr, 'transport_system'):
+            positions = mngr.transport_system.get_valid_exit_positions(transport_x, transport_y)
+        else:
+            # Fallback - get adjacent empty positions
+            positions = []
+            for dx in [-1, 0, 1]:
+                for dy in [-1, 0, 1]:
+                    if dx == 0 and dy == 0:
+                        continue
+                    pos_x = transport_x + dx
+                    pos_y = transport_y + dy
+                    if (0 <= pos_x < mngr.board.width and 
+                        0 <= pos_y < mngr.board.height and
+                        not mngr.unit_at(pos_x, pos_y)):
+                        positions.append([pos_x, pos_y])
+        
         return {
             'positions': positions,
             'count': len(positions)
@@ -431,7 +446,7 @@ def get_valid_unload_positions_rpc(token: str, transport_x: int, transport_y: in
 def get_transport_summary_rpc(token: str) -> Dict[str, Any]:
     """Get summary of all transports in the game"""
     # Import here to avoid circular imports
-    from game_utils import game_load
+    from core.game_utils import game_load
     
     mngr = game_load(token)
     
@@ -466,7 +481,7 @@ def get_transport_summary_rpc(token: str) -> Dict[str, Any]:
 def get_cargo_info_rpc(token: str, transport_x: int, transport_y: int) -> Dict[str, Any]:
     """Get information about cargo units in a transport"""
     # Import here to avoid circular imports
-    from game_utils import game_load
+    from core.game_utils import game_load
     
     mngr = game_load(token)
     
@@ -486,7 +501,7 @@ def get_cargo_info_rpc(token: str, transport_x: int, transport_y: int) -> Dict[s
                     'slot': i,
                     'type': cargo_unit.type.name,
                     'army': cargo_unit.army.name,
-                    'health': cargo_unit.status.health,
+                    'health': cargo_unit.status.hp,
                     'fuel': cargo_unit.status.fuel,
                     'ammo': cargo_unit.status.ammo
                 })
@@ -526,7 +541,7 @@ def get_cargo_info_rpc(token: str, transport_x: int, transport_y: int) -> Dict[s
 def get_loadable_units_rpc(token: str, transport_x: int, transport_y: int) -> Dict[str, Any]:
     """Get units that can be loaded into a transport"""
     # Import here to avoid circular imports
-    from game_utils import game_load
+    from core.game_utils import game_load
     
     mngr = game_load(token)
     
@@ -570,7 +585,7 @@ def get_loadable_units_rpc(token: str, transport_x: int, transport_y: int) -> Di
 def load_unit_rpc(token: str, unit_x: int, unit_y: int, transport_x: int, transport_y: int) -> Dict[str, Any]:
     """Load a unit into a transport (wrapper method)"""
     # Import here to avoid circular imports
-    from game_utils import game_load, games
+    from core.game_utils import game_load, games
     
     mngr = game_load(token)
     
@@ -592,7 +607,7 @@ def load_unit_rpc(token: str, unit_x: int, unit_y: int, transport_x: int, transp
 def unload_unit_rpc(token: str, transport_x: int, transport_y: int, target_x: int, target_y: int) -> Dict[str, Any]:
     """Unload a unit from a transport (wrapper method)"""
     # Import here to avoid circular imports
-    from game_utils import game_load, games
+    from core.game_utils import game_load, games
     
     mngr = game_load(token)
     
@@ -614,7 +629,7 @@ def unload_unit_rpc(token: str, transport_x: int, transport_y: int, target_x: in
 def get_transport_units_rpc(token: str) -> Dict[str, Any]:
     """Get all transport units in the game"""
     # Import here to avoid circular imports
-    from game_utils import game_load
+    from core.game_utils import game_load
     
     mngr = game_load(token)
     
@@ -651,7 +666,7 @@ def get_transport_units_rpc(token: str) -> Dict[str, Any]:
 def can_load_unit_rpc(token: str, unit_x: int, unit_y: int, transport_x: int, transport_y: int) -> Dict[str, Any]:
     """Check if a unit can be loaded into a transport"""
     # Import here to avoid circular imports
-    from game_utils import game_load
+    from core.game_utils import game_load
     
     mngr = game_load(token)
     
@@ -690,7 +705,7 @@ def can_load_unit_rpc(token: str, unit_x: int, unit_y: int, transport_x: int, tr
 def can_unload_unit_rpc(token: str, transport_x: int, transport_y: int, target_x: int, target_y: int) -> Dict[str, Any]:
     """Check if a unit can be unloaded from a transport"""
     # Import here to avoid circular imports
-    from game_utils import game_load
+    from core.game_utils import game_load
     
     mngr = game_load(token)
     
