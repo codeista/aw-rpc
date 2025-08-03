@@ -212,7 +212,15 @@ class Game {
             const x = Math.floor((e.clientX - rect.left) / this.tileSize);
             const y = Math.floor((e.clientY - rect.top) / this.tileSize);
             
+            const clickedTile = this.getTile(x, y);
             log(`Click at (${x},${y}), selected:`, this.board?.selected);
+            log(`Clicked tile:`, {
+                type: clickedTile?.type,
+                army: clickedTile?.army,
+                hasUnit: !!clickedTile?.unit,
+                x: clickedTile?.x,
+                y: clickedTile?.y
+            });
             
             // Simple click handling based on board state
             if (this.board && this.board.selected) {
@@ -358,15 +366,15 @@ class Game {
                 }
                 
                 // PRIORITY 3: Check if clicking on empty production building (ONLY if not a move target)
-                if (clickedTile && !clickedTile.unit && clickedTile.mapTile && 
-                    ['FACTORY', 'AIRPORT', 'PORT'].includes(clickedTile.mapTile.type) &&
+                if (clickedTile && !clickedTile.unit && clickedTile.type && 
+                    ['FACTORY', 'AIRPORT', 'PORT'].includes(clickedTile.type) &&
                     !clickedTile.can_be_moved_to) {  // Only show production if NOT a valid move destination
                     // Check ownership
                     let isOwner = false;
                     if (this.board.current_player !== undefined) {
-                        isOwner = clickedTile.mapTile.player_id === this.board.current_player;
+                        isOwner = clickedTile.player_id === this.board.current_player;
                     } else {
-                        isOwner = clickedTile.mapTile.army === this.board.current_turn;
+                        isOwner = clickedTile.army === this.board.current_turn;
                     }
                     
                     if (isOwner) {
@@ -477,14 +485,14 @@ class Game {
             if (tile && tile.unit) {
                 // Check if unit can capture (infantry/mech on capturable building)
                 if ((tile.unit.type === 'INFANTRY' || tile.unit.type === 'MECH') &&
-                    tile.mapTile && ['CITY', 'FACTORY', 'AIRPORT', 'PORT', 'HQ'].includes(tile.mapTile.type)) {
+                    tile && ['CITY', 'FACTORY', 'AIRPORT', 'PORT', 'HQ'].includes(tile.type)) {
                     
                     // Check if building is enemy or neutral (not owned by current player)
                     let canCapture = false;
                     if (this.board.current_player !== undefined) {
-                        canCapture = tile.mapTile.player_id !== this.board.current_player;
+                        canCapture = tile.player_id !== this.board.current_player;
                     } else {
-                        canCapture = tile.mapTile.army !== this.board.current_turn;
+                        canCapture = tile.army !== this.board.current_turn;
                     }
                     
                     if (canCapture) {
@@ -521,7 +529,7 @@ class Game {
             const info = document.getElementById('tile-info');
             
             if (tile) {
-                let text = `(${x},${y}) ${tile.mapTile?.type || ''}`;
+                let text = `(${x},${y}) ${tile?.type || ''}`;
                 if (tile.unit) {
                     // HP is in status object
                     const hp = tile.unit.status ? tile.unit.status.hp : 100;
@@ -903,7 +911,13 @@ class Game {
         // First check if there's a unit to select
         if (tile && tile.unit) {
             log(`Selecting unit: ${tile.unit.type} at (${x},${y})`);
-            await this.rpc('unit_select', { x, y });
+            const selectResult = await this.rpc('unit_select', { x, y });
+            
+            // Set board.selected if the unit belongs to current player
+            if (selectResult && tile.unit.army === this.board.current_turn) {
+                this.board.selected = { x, y };
+                log('Set board.selected to:', this.board.selected);
+            }
             
             // Check if selection was successful
             log('After unit_select, board.selected:', this.board?.selected);
@@ -931,13 +945,13 @@ class Game {
             }
         }
         // Then check if it's an empty production building
-        else if (tile && tile.mapTile && ['FACTORY', 'AIRPORT', 'PORT'].includes(tile.mapTile.type)) {
+        else if (tile && tile && ['FACTORY', 'AIRPORT', 'PORT'].includes(tile.type)) {
             // Check ownership
             let isOwner = false;
             if (this.board.current_player !== undefined) {
-                isOwner = tile.mapTile.player_id === this.board.current_player;
+                isOwner = tile.player_id === this.board.current_player;
             } else {
-                isOwner = tile.mapTile.army === this.board.current_turn;
+                isOwner = tile.army === this.board.current_turn;
             }
             
             if (isOwner && !tile.unit) {
@@ -957,6 +971,7 @@ class Game {
             // Clear all highlights when clicking on empty tile
             this.clearHighlights();
             this.clearUIPanels();
+            this.board.selected = null; // Clear selection
             await this.rpc('unit_select', { x, y });
             this.render(); // Force re-render to clear highlights visually
         }
@@ -986,7 +1001,7 @@ class Game {
             const result = await this.rpc('get_production_options', { x, y });
             log('Production options result:', result);
             
-            if (result && result.success && result.production_options && result.production_options.units) {
+            if (result && result.units) {
                 const select = document.getElementById('unit-select');
                 const modal = document.getElementById('modal');
                 
@@ -997,9 +1012,9 @@ class Game {
                 
                 select.innerHTML = '';
                 
-                log(`Loading ${result.production_options.units.length} units into production menu`);
+                log(`Loading ${result.units.length} units into production menu`);
                 
-                result.production_options.units.forEach(opt => {
+                result.units.forEach(opt => {
                     const option = document.createElement('option');
                     option.value = opt.type;
                     option.textContent = `${opt.type} - ${opt.cost}G`;
@@ -1011,6 +1026,13 @@ class Game {
                 });
                 
                 this.productionCoords = { x, y };
+                
+                // Update modal title to show player funds
+                const modalTitle = modal.querySelector('h3');
+                if (modalTitle && result.player_funds !== undefined) {
+                    modalTitle.textContent = `Unit Production (${result.player_funds}G)`;
+                }
+                
                 showFlexElement(modal);
                 log('Production modal displayed');
             } else {
@@ -1079,13 +1101,13 @@ class Game {
         // Hide menu if clicking on empty tile
         if (!tile || !tile.unit) {
             // Check if it's a production building
-            if (tile && tile.mapTile && ['FACTORY', 'AIRPORT', 'PORT'].includes(tile.mapTile.type)) {
+            if (tile && tile && ['FACTORY', 'AIRPORT', 'PORT'].includes(tile.type)) {
                 // Check ownership
                 let isOwner = false;
                 if (this.board.current_player !== undefined) {
-                    isOwner = tile.mapTile.player_id === this.board.current_player;
+                    isOwner = tile.player_id === this.board.current_player;
                 } else {
-                    isOwner = tile.mapTile.army === this.board.current_turn;
+                    isOwner = tile.army === this.board.current_turn;
                 }
                 
                 if (isOwner && !tile.unit) {
@@ -1134,15 +1156,15 @@ class Game {
                     // Only for infantry/mech on capturable buildings
                     if (!['INFANTRY', 'MECH'].includes(tile.unit.type)) {
                         hideElement(item);
-                    } else if (!tile.mapTile || !['CITY', 'FACTORY', 'AIRPORT', 'PORT', 'HQ', 'BASE_TOWER_0', 'BASE_TOWER_1', 'BASE_TOWER_2', 'BASE_TOWER_3', 'BASE_TOWER_4'].includes(tile.mapTile.type)) {
+                    } else if (!tile || !['CITY', 'FACTORY', 'AIRPORT', 'PORT', 'HQ', 'BASE_TOWER_0', 'BASE_TOWER_1', 'BASE_TOWER_2', 'BASE_TOWER_3', 'BASE_TOWER_4'].includes(tile.type)) {
                         item.disabled = true;
                     } else {
                         // Check if building belongs to enemy
                         let canCapture = false;
                         if (this.board.current_player !== undefined) {
-                            canCapture = tile.mapTile.player_id !== this.board.current_player;
+                            canCapture = tile.player_id !== this.board.current_player;
                         } else {
-                            canCapture = tile.mapTile.army !== this.board.current_turn;
+                            canCapture = tile.army !== this.board.current_turn;
                         }
                         item.disabled = !canCapture || tile.unit.has_moved || tile.unit.done;
                     }
@@ -1403,20 +1425,20 @@ class Game {
                 const px = x * this.tileSize;
                 const py = y * this.tileSize;
                 
-                if (tile.mapTile && !tallTypes.includes(tile.mapTile.type)) {
-                        let spriteName = tile.mapTile.type;
+                if (tile.type && !tallTypes.includes(tile.type)) {
+                        let spriteName = tile.type;
                         
                         // Beach tiles are now correctly mapped
                         
-                        if (tile.mapTile.army && tile.mapTile.army !== 'NEUTRAL') {
-                            let army = tile.mapTile.army;
+                        if (tile.army && tile.army !== 'NEUTRAL') {
+                            let army = tile.army;
                             
                             // For v2 games, convert player ID to sprite color
-                            if (this.spriteMapper && tile.mapTile.player_id !== undefined) {
-                                army = this.spriteMapper.getSpriteColor(tile.mapTile.player_id);
+                            if (this.spriteMapper && tile.player_id !== undefined) {
+                                army = this.spriteMapper.getSpriteColor(tile.player_id);
                             }
                             
-                            const armySprite = `${army}_${tile.mapTile.type}`;
+                            const armySprite = `${army}_${tile.type}`;
                             if (this.sprites.terrain.data[armySprite]) {
                                 spriteName = armySprite;
                             }
@@ -1439,19 +1461,19 @@ class Game {
                 const py = y * this.tileSize;
                 
                 // Draw tall terrain objects
-                if (tile.mapTile && tallTypes.includes(tile.mapTile.type)) {
-                        let spriteName = tile.mapTile.type;
+                if (tile && tallTypes.includes(tile.type)) {
+                        let spriteName = tile.type;
                         
                         // Handle army buildings
-                        if (tile.mapTile.army && tile.mapTile.army !== 'NEUTRAL') {
-                            let army = tile.mapTile.army;
+                        if (tile.army && tile.army !== 'NEUTRAL') {
+                            let army = tile.army;
                             
                             // For v2 games, convert player ID to sprite color
-                            if (this.spriteMapper && tile.mapTile.player_id !== undefined) {
-                                army = this.spriteMapper.getSpriteColor(tile.mapTile.player_id);
+                            if (this.spriteMapper && tile.player_id !== undefined) {
+                                army = this.spriteMapper.getSpriteColor(tile.player_id);
                             }
                             
-                            const armySprite = `${army}_${tile.mapTile.type}`;
+                            const armySprite = `${army}_${tile.type}`;
                             if (this.sprites.terrain.data[armySprite]) {
                                 spriteName = armySprite;
                             }
@@ -1926,7 +1948,7 @@ class Game {
         document.getElementById('combat-counter').textContent = 'N/A';
         
         // Show terrain defense
-        const terrainDefense = tile.mapTile?.defense || 0;
+        const terrainDefense = tile?.defense || 0;
         document.getElementById('combat-terrain').textContent = `${terrainDefense} stars`;
         
         document.getElementById('combat-result').textContent = 'Cannot attack';
@@ -1951,14 +1973,14 @@ class Game {
         
         // Check if can capture
         if (['INFANTRY', 'MECH'].includes(tile.unit.type) &&
-            tile.mapTile && ['CITY', 'FACTORY', 'AIRPORT', 'PORT', 'HQ', 'BASE_TOWER_0', 'BASE_TOWER_1', 'BASE_TOWER_2', 'BASE_TOWER_3', 'BASE_TOWER_4'].includes(tile.mapTile.type)) {
+            tile && ['CITY', 'FACTORY', 'AIRPORT', 'PORT', 'HQ', 'BASE_TOWER_0', 'BASE_TOWER_1', 'BASE_TOWER_2', 'BASE_TOWER_3', 'BASE_TOWER_4'].includes(tile.type)) {
             
             // Check if building belongs to enemy or neutral
             let canCapture = false;
             if (this.board.current_player !== undefined) {
-                canCapture = tile.mapTile.player_id !== this.board.current_player;
+                canCapture = tile.player_id !== this.board.current_player;
             } else {
-                canCapture = tile.mapTile.army !== this.board.current_turn;
+                canCapture = tile.army !== this.board.current_turn;
             }
             
             if (canCapture && !tile.unit.has_moved && !tile.unit.done) {
@@ -2501,13 +2523,13 @@ class Game {
             }
             
             // Count properties
-            if (tile.mapTile && ['CITY', 'FACTORY', 'AIRPORT', 'PORT', 'HQ', 'BASE_TOWER_0', 'BASE_TOWER_1', 'BASE_TOWER_2', 'BASE_TOWER_3', 'BASE_TOWER_4'].includes(tile.mapTile.type)) {
+            if (tile && ['CITY', 'FACTORY', 'AIRPORT', 'PORT', 'HQ', 'BASE_TOWER_0', 'BASE_TOWER_1', 'BASE_TOWER_2', 'BASE_TOWER_3', 'BASE_TOWER_4'].includes(tile.type)) {
                 let playerId;
-                if (tile.mapTile.player_id !== undefined) {
-                    playerId = tile.mapTile.player_id;
-                } else if (tile.mapTile.army) {
+                if (tile.player_id !== undefined) {
+                    playerId = tile.player_id;
+                } else if (tile.army) {
                     // Legacy: map army to player ID
-                    playerId = tile.mapTile.army === 'RED' ? 0 : 1;
+                    playerId = tile.army === 'RED' ? 0 : 1;
                 } else {
                     return; // Neutral property
                 }
