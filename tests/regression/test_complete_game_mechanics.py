@@ -231,7 +231,7 @@ class AdvanceWarsRegressionTester:
         # Test combat preview between the created units
         result = self.rpc_call('combat_preview', {
             'attacker_x': 6, 'attacker_y': 8,
-            'defender_x': 7, 'defender_y': 8
+            'target_x': 7, 'target_y': 8
         })
         if not self.assert_success(result, "Combat Preview"):
             return False
@@ -287,12 +287,12 @@ class AdvanceWarsRegressionTester:
             return False
         
         # Test getting transport info
-        result = self.rpc_call('get_transport_info', {'x': 4, 'y': 8})
+        result = self.rpc_call('get_transport_info', {'transport_x': 4, 'transport_y': 8})
         if not self.assert_success(result, "Get Transport Info"):
             return False
         
         # Test getting valid unload positions
-        result = self.rpc_call('get_valid_unload_positions', {'x': 4, 'y': 8})
+        result = self.rpc_call('get_valid_unload_positions', {'transport_x': 4, 'transport_y': 8})
         if not self.assert_success(result, "Get Valid Unload Positions"):
             return False
         
@@ -339,7 +339,7 @@ class AdvanceWarsRegressionTester:
             return False
         
         tile = result['result']
-        if tile['mapTile']['type'] not in ['CITY', 'FACTORY', 'AIRPORT', 'PORT']:
+        if tile['type'] not in ['CITY', 'FACTORY', 'AIRPORT', 'PORT']:
             self.record_test("Capture Test Skipped", True, "No capturable property at test location")
             return True
         

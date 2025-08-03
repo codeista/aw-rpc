@@ -120,7 +120,7 @@ class RecentFeaturesRegressionTester:
         # Test 1: Normal combat preview (should fail due to range)
         result = self.rpc_call('combat_preview', {
             'attacker_x': 2, 'attacker_y': 2,
-            'defender_x': 6, 'defender_y': 2
+            'target_x': 6, 'target_y': 2
         })
         # This should fail with "out of range"
         if 'error' in result or (result.get('result', {}).get('success') == False):
@@ -131,7 +131,7 @@ class RecentFeaturesRegressionTester:
         # Test 2: Combat preview with skip_range_check
         result = self.rpc_call('combat_preview', {
             'attacker_x': 2, 'attacker_y': 2,
-            'defender_x': 6, 'defender_y': 2,
+            'target_x': 6, 'target_y': 2,
             'skip_range_check': True
         })
         if not self.assert_success(result, "Combat preview with skip_range_check"):
@@ -152,7 +152,7 @@ class RecentFeaturesRegressionTester:
         # Note: Even with skip_range_check, defender can't counter if out of their range
         result = self.rpc_call('combat_preview', {
             'attacker_x': 2, 'attacker_y': 2,
-            'defender_x': 7, 'defender_y': 2,
+            'target_x': 7, 'target_y': 2,
             'skip_range_check': True
         })
         if not self.assert_success(result, "Direct vs Direct preview"):
@@ -187,7 +187,7 @@ class RecentFeaturesRegressionTester:
         # Test adjacent combat (should show counter)
         result = self.rpc_call('combat_preview', {
             'attacker_x': 2, 'attacker_y': 2,
-            'defender_x': 3, 'defender_y': 2
+            'target_x': 3, 'target_y': 2
         })
         if not self.assert_success(result, "Adjacent combat preview"):
             return False
