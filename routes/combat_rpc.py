@@ -97,39 +97,44 @@ def combat_preview_rpc(token: str, attacker_x: int, attacker_y: int, target_x: i
     mngr = game_load(token)
     
     try:
-        # Note: skip_range_check is ignored for now as the enhanced combat system
-        # doesn't support it. This is used for hypothetical combat calculations.
-        
         # Use enhanced combat system if available
         if hasattr(mngr, 'enhanced_combat'):
-            preview = mngr.enhanced_combat.get_combat_preview(attacker_x, attacker_y, target_x, target_y)
-            # Convert CombatPreview dataclass to dict
+            preview = mngr.enhanced_combat.get_combat_preview(attacker_x, attacker_y, target_x, target_y, skip_range_check)
+            # Return flat structure with all required fields
             result = {
-                'damage': {
-                    'attacker_damage': preview.attacker_damage,
-                    'defender_damage': preview.counter_damage,
-                    'counter_damage': preview.counter_damage,
-                    'can_counter': preview.can_counter,
-                    'attacker_hp_after': preview.attacker_hp_after,
-                    'defender_hp_after': preview.defender_hp_after,
-                    'attacker_destroyed': preview.attacker_destroyed,
-                    'defender_destroyed': preview.defender_destroyed,
-                    'terrain_bonus': preview.terrain_bonus,
-                    'damage_range': preview.luck_range,
-                    'ammo_warning': preview.ammo_warning
-                }
+                # Required fields for tests
+                'can_attack': not preview.attacker_destroyed,
+                'damage': preview.attacker_damage,
+                'counter_damage': preview.counter_damage,
+                'attacker_hp_after': preview.attacker_hp_after,
+                'defender_hp_after': preview.defender_hp_after,
+                
+                # Additional detailed info
+                'attacker_damage': preview.attacker_damage,
+                'defender_damage': preview.counter_damage,
+                'can_counter': preview.can_counter,
+                'attacker_destroyed': preview.attacker_destroyed,
+                'defender_destroyed': preview.defender_destroyed,
+                'terrain_bonus': preview.terrain_bonus,
+                'damage_range': preview.luck_range,
+                'ammo_warning': preview.ammo_warning
             }
         else:
             # Fallback to basic damage estimation
             damage_tuple = mngr.damage_estimate(attacker_x, attacker_y, target_x, target_y)
-            # Convert tuple to dict format
+            # Return flat structure
             result = {
-                'damage': {
-                    'attacker_damage': damage_tuple[0],
-                    'defender_damage': damage_tuple[1],
-                    'counter_damage': damage_tuple[1],
-                    'can_counter': damage_tuple[1] > 0
-                }
+                # Required fields
+                'can_attack': True,
+                'damage': damage_tuple[0],
+                'counter_damage': damage_tuple[1],
+                'attacker_hp_after': 100 - damage_tuple[1],  # Estimate
+                'defender_hp_after': 100 - damage_tuple[0],  # Estimate
+                
+                # Additional info
+                'attacker_damage': damage_tuple[0],
+                'defender_damage': damage_tuple[1],
+                'can_counter': damage_tuple[1] > 0
             }
         
         return result

@@ -54,8 +54,8 @@ class TestMultiplayerArmies(unittest.TestCase):
         
         # Check all armies have funds
         for army in board.turn_order:
-            self.assertIn(army, board.army_funds, f"Army {army.name} should have funds initialized")
-            self.assertGreater(board.army_funds[army], 0, f"Army {army.name} should have starting funds")
+            self.assertIn(army, board.player_funds, f"Army {army.name} should have funds initialized")
+            self.assertGreater(board.player_funds[army], 0, f"Army {army.name} should have starting funds")
         
         print("✅ Triangle map army setup correct")
         
@@ -78,8 +78,8 @@ class TestMultiplayerArmies(unittest.TestCase):
         
         # Check all armies have funds
         for army in board.turn_order:
-            self.assertIn(army, board.army_funds, f"Army {army.name} should have funds initialized")
-            self.assertGreater(board.army_funds[army], 0, f"Army {army.name} should have starting funds")
+            self.assertIn(army, board.player_funds, f"Army {army.name} should have funds initialized")
+            self.assertGreater(board.player_funds[army], 0, f"Army {army.name} should have starting funds")
         
         print("✅ Cross map army setup correct")
         
@@ -102,8 +102,8 @@ class TestMultiplayerArmies(unittest.TestCase):
         
         # Check all armies have funds
         for army in board.turn_order:
-            self.assertIn(army, board.army_funds, f"Army {army.name} should have funds initialized")
-            self.assertGreater(board.army_funds[army], 0, f"Army {army.name} should have starting funds")
+            self.assertIn(army, board.player_funds, f"Army {army.name} should have funds initialized")
+            self.assertGreater(board.player_funds[army], 0, f"Army {army.name} should have starting funds")
         
         print("✅ Pentagon map army setup correct")
         
@@ -115,19 +115,19 @@ class TestMultiplayerArmies(unittest.TestCase):
         cross_map = map_repository.get_map('cross')
         
         # Count properties owned by each army
-        army_properties = {}
+        player_properties = {}
         for tile in cross_map.tiles:
             if tile.army and tile.type.name in ['FACTORY', 'BASE_TOWER_1', 'CITY']:
                 army_name = tile.army.name
-                army_properties[army_name] = army_properties.get(army_name, 0) + 1
+                player_properties[army_name] = player_properties.get(army_name, 0) + 1
         
         # Each army should own some properties
         expected_armies = ['RED', 'BLUE', 'GREEN', 'YELLOW']
         for army in expected_armies:
-            self.assertIn(army, army_properties, f"{army} should own properties")
-            self.assertGreater(army_properties[army], 0, f"{army} should own at least 1 property")
+            self.assertIn(army, player_properties, f"{army} should own properties")
+            self.assertGreater(player_properties[army], 0, f"{army} should own at least 1 property")
         
-        print(f"   Property distribution: {army_properties}")
+        print(f"   Property distribution: {player_properties}")
         print("✅ Army property ownership correct")
         
     def test_frontend_army_routes(self):

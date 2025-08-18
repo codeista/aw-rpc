@@ -99,7 +99,7 @@ def benchmark_unit_creation():
     def create_unit():
         return rpc_call("unit_create", {
             "token": token,
-            "army": "RED",
+            "player_id": 0,
             "unit_type": "INFANTRY",
             "x": random.randint(0, 9),
             "y": random.randint(0, 11)
@@ -129,14 +129,14 @@ def benchmark_combat_preview():
     # Create units for combat
     rpc_call("unit_create", {
         "token": token,
-        "army": "RED",
+        "player_id": 0,
         "unit_type": "TANK",
         "x": 4, "y": 4
     })
     
     rpc_call("unit_create", {
         "token": token,
-        "army": "BLUE",
+        "player_id": 1,
         "unit_type": "TANK",
         "x": 5, "y": 4
     })
@@ -163,7 +163,7 @@ def benchmark_board_retrieval():
     for i in range(5):
         rpc_call("unit_create", {
             "token": token,
-            "army": "RED" if i % 2 == 0 else "BLUE",
+            "player_id": 0 if i % 2 == 0 else "BLUE",
             "unit_type": ["INFANTRY", "TANK", "RECON", "ARTILLERY", "TCOPTER"][i],
             "x": i * 2,
             "y": i
@@ -182,7 +182,7 @@ def benchmark_unit_movement():
     # Create a unit
     rpc_call("unit_create", {
         "token": token,
-        "army": "RED",
+        "player_id": 0,
         "unit_type": "INFANTRY",
         "x": 0, "y": 0
     })

@@ -50,7 +50,7 @@ def create_repair_test_scenario():
     print("\n1️⃣ Creating Black Boat at RED port (0,0)")
     bb_result = rpc_call("unit_create", {
         "token": game_id,
-        "army": "RED",
+        "player_id": 0,
         "unit_type": "BLACKBOAT",
         "x": 0,
         "y": 0
@@ -65,7 +65,7 @@ def create_repair_test_scenario():
     print("\n2️⃣ Creating Infantry at RED factory (0,4)")
     inf_result = rpc_call("unit_create", {
         "token": game_id,
-        "army": "RED",
+        "player_id": 0,
         "unit_type": "INFANTRY",
         "x": 0,
         "y": 4
@@ -118,7 +118,7 @@ def create_repair_test_scenario():
     # Create BLUE tank to attack the infantry
     tank_result = rpc_call("unit_create", {
         "token": game_id,
-        "army": "BLUE",
+        "player_id": 1,
         "unit_type": "TANK",
         "x": 9,
         "y": 4  # BLUE factory
@@ -182,7 +182,7 @@ def create_repair_test_scenario():
     for y in range(len(tiles)):
         for x in range(len(tiles[y])):
             tile = tiles[y][x]
-            if tile.get("unit") and tile["unit"]["type"] == "INFANTRY" and tile["unit"]["army"] == "RED":
+            if tile.get("unit") and tile["unit"]["type"] == "INFANTRY" and tile["unit"]["army"] == 0:
                 infantry_hp = tile["unit"].get("hp", tile["unit"].get("status", {}).get("hp", 100))
                 print(f"📊 Infantry found at ({x},{y}) with {infantry_hp} HP")
                 break

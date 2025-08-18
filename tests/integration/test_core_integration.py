@@ -12,6 +12,8 @@ from manager import GameManager
 from gameboard import GameBoard
 from config import Config
 from core.map_system import map_repository, Army
+from core.game_factory import GameFactory
+from core.player_system import PlayerManager
 
 class TestCoreIntegration:
     """Test core game functionality"""
@@ -19,9 +21,11 @@ class TestCoreIntegration:
     def setup_method(self):
         """Setup for each test"""
         self.config = Config()
-        self.map = map_repository.get_map('test')
-        self.board = GameBoard.create(self.map)
-        self.manager = GameManager(self.config, self.board)
+        
+        # Create game using GameFactory
+        player_manager = PlayerManager.create_default_2_player()
+        self.manager, self.token = GameFactory._create_game('test', player_manager)
+        self.board = self.manager.board
         
         # Set up logger to avoid AttributeError
         import logging
@@ -42,19 +46,19 @@ class TestCoreIntegration:
         
         # End turn to BLUE
         self.manager.army_end_turn()
-        assert self.board.current_turn == Army.BLUE
+        assert self.board.current_player == 1  # Player 1 is BLUE
         
-        # Create BLUE unit
-        infantry = self.manager.unit_create("BLUE", "INFANTRY", 6, 3)
+        # Create BLUE unit closer for melee attack
+        infantry = self.manager.unit_create("BLUE", "INFANTRY", 2, 3)
         assert infantry is not None, "Should create BLUE infantry"
         assert infantry.type.name == "INFANTRY", "Unit should be infantry"
         
         # End turn back to RED
         self.manager.army_end_turn()
-        assert self.board.current_turn == Army.RED
+        assert self.board.current_player == 0  # Player 0 is RED
         
-        # Move RED tank
-        moved_unit = self.manager.unit_move(0, 3, 3, 3)
+        # Move RED tank adjacent to infantry
+        moved_unit = self.manager.unit_move(0, 3, 1, 3)
         assert moved_unit is not None, "Tank should move"
         assert moved_unit.type.name == "TANK", "Should be the tank that moved"
         
@@ -65,11 +69,11 @@ class TestCoreIntegration:
         # Attack with tank
         try:
             # Get infantry HP before attack
-            target_tile = self.board.grid[3 * self.board.width + 6]
+            target_tile = self.board.grid[3 * self.board.width + 2]
             hp_before = target_tile.unit.status.hp if target_tile.unit else 100
             
             # Attack returns the attacking unit
-            attacker = self.manager.unit_attack(3, 3, 6, 3)
+            attacker = self.manager.unit_attack(1, 3, 2, 3)
             assert attacker is not None, "Tank should attack infantry"
             
             # Check target took damage

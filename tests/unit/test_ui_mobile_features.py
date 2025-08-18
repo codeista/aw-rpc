@@ -193,7 +193,7 @@ def test_context_menu_support():
     # Create Black Boat for repair context menu
     result = rpc_call("unit_create", {
         "token": game_id,
-        "army": "RED",
+        "player_id": 0,
         "unit_type": "BLACKBOAT",
         "x": 0,
         "y": 0

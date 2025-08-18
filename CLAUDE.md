@@ -20,6 +20,8 @@ This is a complete implementation of Advance Wars as a web-based RPC game. Key s
    - Damage based on unit matchups + terrain defense
    - Counter-attacks if defender survives and in range
    - HP affects damage output
+   - **Combat Preview**: Can be used even when units are out of range (for planning/UI purposes)
+   - The `skip_range_check` parameter explicitly supports hypothetical combat calculations
 
 3. **Testing**
    - Use `game_create_test` RPC for high starting funds (50k)
@@ -128,6 +130,21 @@ This is a complete implementation of Advance Wars as a web-based RPC game. Key s
    - Fixed: Carriers can carry ANY air unit (not just copters)
    - Fixed: Transports can always unload (even after moving)
    - Labs enable advanced unit production (don't provide funds)
+
+### Recent Code Fixes (2025-08-04) - PLAYER-BASED SYSTEM MIGRATION
+1. **Complete Player-Based System Migration** - Migrated from army-based to player-based system
+   - **API BREAKING CHANGES**: All RPC methods now use `player_id` instead of `army` parameter
+   - **Game State Changes**: `current_turn` → `current_player`, `army_funds` → `player_funds`
+   - **Unit Data Changes**: Units now have `player_id` field instead of `army`
+   - **Property Ownership**: Properties owned by `player_id` (0, 1, 2...) instead of army colors
+   - **Response Format**: Game board responses restructured for player arrays
+   - **Backward Compatibility**: Army-based methods deprecated but redirected where possible
+
+2. **Player System Benefits**:
+   - Support for 2-4 players (previously limited to 2)
+   - Players can choose any visual army color (RED, BLUE, GREEN, YELLOW)
+   - Cleaner API with integer player IDs instead of string army colors
+   - Foundation for team games and advanced multiplayer features
 
 ### Recent Code Fixes (2025-07-30)
 1. **V2 Player System Migration** - Fixed test compatibility issues
@@ -270,6 +287,47 @@ When making combat-related changes, ALWAYS test:
 - **API Docs**: http://localhost:5000/api/docs - Categorized API reference
 - **API Browser**: http://localhost:5000/api/browse - Interactive RPC testing
 - **RPC Methods**: See README.md for complete list of 60+ RPC methods
+
+## API Migration Notes (IMPORTANT)
+
+### Player-Based System Migration (2025-08-04)
+**BREAKING CHANGES**: The API has migrated from army-based to player-based system.
+
+#### Updated Method Parameters:
+```javascript
+// OLD (Army-based) - NO LONGER WORKS
+rpc('unit_create', {token: 'game', army: 'RED', unit_type: 'TANK', x: 5, y: 5})
+rpc('vision_info', {token: 'game', army: 'BLUE'})
+
+// NEW (Player-based) - CURRENT API
+rpc('unit_create', {token: 'game', player_id: 0, unit_type: 'TANK', x: 5, y: 5})
+rpc('vision_info', {token: 'game', player_id: 1})
+```
+
+#### Updated Response Formats:
+```javascript
+// OLD game_board response
+{
+  current_turn: 'RED',
+  army_funds: {RED: 10000, BLUE: 8000},
+  units: [{x: 5, y: 5, army: 'RED', type: 'TANK'}]
+}
+
+// NEW game_board response  
+{
+  current_player: 0,
+  player_funds: [10000, 8000],
+  players: [{id: 0, name: 'Player 1', army: 'RED'}, {id: 1, name: 'Player 2', army: 'BLUE'}],
+  units: [{x: 5, y: 5, player_id: 0, type: 'TANK'}]
+}
+```
+
+#### Migration Checklist:
+- ✅ Update all `army` parameters to `player_id`
+- ✅ Update response parsing for `current_player` instead of `current_turn`
+- ✅ Update unit/property ownership checks to use `player_id`
+- ✅ Update frontend to handle `players` array structure
+- ✅ Test multiplayer games with more than 2 players
 - RPC endpoints: `app.py`
 - Frontend rendering: `render.js`
 - **Sprite and tile guide: `SPRITE_AND_TILE_GUIDE.md`** (consolidated guide)
@@ -330,3 +388,44 @@ When verifying sprite coverage, always check against the complete MapType enum i
 - **API Docs**: http://localhost:5000/api/docs - Categorized API reference
 - **API Browser**: http://localhost:5000/api/browse - Interactive RPC testing
 - **RPC Methods**: See README.md for complete list of 60+ RPC methods
+
+## API Migration Notes (IMPORTANT)
+
+### Player-Based System Migration (2025-08-04)
+**BREAKING CHANGES**: The API has migrated from army-based to player-based system.
+
+#### Updated Method Parameters:
+```javascript
+// OLD (Army-based) - NO LONGER WORKS
+rpc('unit_create', {token: 'game', army: 'RED', unit_type: 'TANK', x: 5, y: 5})
+rpc('vision_info', {token: 'game', army: 'BLUE'})
+
+// NEW (Player-based) - CURRENT API
+rpc('unit_create', {token: 'game', player_id: 0, unit_type: 'TANK', x: 5, y: 5})
+rpc('vision_info', {token: 'game', player_id: 1})
+```
+
+#### Updated Response Formats:
+```javascript
+// OLD game_board response
+{
+  current_turn: 'RED',
+  army_funds: {RED: 10000, BLUE: 8000},
+  units: [{x: 5, y: 5, army: 'RED', type: 'TANK'}]
+}
+
+// NEW game_board response  
+{
+  current_player: 0,
+  player_funds: [10000, 8000],
+  players: [{id: 0, name: 'Player 1', army: 'RED'}, {id: 1, name: 'Player 2', army: 'BLUE'}],
+  units: [{x: 5, y: 5, player_id: 0, type: 'TANK'}]
+}
+```
+
+#### Migration Checklist:
+- ✅ Update all `army` parameters to `player_id`
+- ✅ Update response parsing for `current_player` instead of `current_turn`
+- ✅ Update unit/property ownership checks to use `player_id`
+- ✅ Update frontend to handle `players` array structure
+- ✅ Test multiplayer games with more than 2 players

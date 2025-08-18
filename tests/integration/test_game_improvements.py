@@ -50,7 +50,7 @@ rpc('game_create_test', {'token': game3})
 # Create Black Boat at port
 create_result = rpc('unit_create', {
     'token': game3,
-    'army': 'RED',
+    'player_id': 0,
     'unit_type': 'BLACKBOAT',
     'x': 0,
     'y': 0

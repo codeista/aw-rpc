@@ -167,7 +167,7 @@ class VictoryTester:
                     unit_type_name = str(unit_type)
                 
                 if unit_type_name in ["INFANTRY", "MECH"]:
-                    army = unit.get("army")
+                    army = unit.get("player_id")
                     if isinstance(army, dict):
                         army_name = army.get("name", "")
                     else:
@@ -222,7 +222,7 @@ class VictoryTester:
             # Try to create infantry near the building
             create_result = rpc_call("unit_create", {
                 "token": self.game_id,
-                "army": board.get("current_turn", "RED"),
+                "army": board.get("current_player", 0),
                 "unit_type": "INFANTRY",
                 "x": building["x"],
                 "y": max(0, building["y"] - 1)  # Place adjacent to building
@@ -235,7 +235,7 @@ class VictoryTester:
                     "x": building["x"],
                     "y": max(0, building["y"] - 1),
                     "type": "INFANTRY",
-                    "army": board.get("current_turn", "RED")
+                    "army": board.get("current_player", 0)
                 }]
             else:
                 print("   ⚠️  Could not create capture unit - testing capture mechanics skipped")
@@ -409,9 +409,9 @@ class VictoryTester:
             "current_turn": board.get("current_turn", "UNKNOWN"),
             "days": board.get("days", 0),
             "game_active": board.get("game_active", False),
-            "army_funds": board.get("army_funds", {}),
-            "army_properties": board.get("army_properties", {}),
-            "army_troops": board.get("army_troops", {}),
+            "player_funds": board.get("player_funds", {}),
+            "player_properties": board.get("player_properties", {}),
+            "player_troops": board.get("player_troops", {}),
             "total_tiles": len(board.get("grid", [])),
             "turn_order": board.get("turn_order", [])
         }
@@ -464,29 +464,29 @@ class VictoryTester:
             return False
         
         # Check current army status
-        army_troops = board.get("army_troops", {})
-        army_properties = board.get("army_properties", {})
+        player_troops = board.get("player_troops", {})
+        player_properties = board.get("player_properties", {})
         
         # Look for potential victory scenarios
         victory_scenarios = []
         
         # Scenario 1: Property domination
-        total_properties = sum(army_properties.values()) if army_properties else 0
+        total_properties = sum(player_properties.values()) if player_properties else 0
         if total_properties > 0:
             victory_scenarios.append({
                 "type": "property_control",
-                "red_properties": army_properties.get("RED", 0),
-                "blue_properties": army_properties.get("BLUE", 0),
+                "red_properties": player_properties.get("RED", 0),
+                "blue_properties": player_properties.get("BLUE", 0),
                 "total_properties": total_properties
             })
         
         # Scenario 2: Unit elimination
-        total_troops = sum(army_troops.values()) if army_troops else 0
+        total_troops = sum(player_troops.values()) if player_troops else 0
         if total_troops > 0:
             victory_scenarios.append({
                 "type": "unit_elimination",
-                "red_troops": army_troops.get("RED", 0),
-                "blue_troops": army_troops.get("BLUE", 0),
+                "red_troops": player_troops.get("RED", 0),
+                "blue_troops": player_troops.get("BLUE", 0),
                 "total_troops": total_troops
             })
         
@@ -602,10 +602,10 @@ def test_non_traditional_armies():
                     # Get board to verify armies
                     board = rpc_call("game_board", {"token": game_id})
                     if "error" not in board:
-                        army_troops = board.get("army_troops", {})
-                        green_units = army_troops.get("GREEN", 0)
-                        red_units = army_troops.get("RED", 0)
-                        blue_units = army_troops.get("BLUE", 0)
+                        player_troops = board.get("player_troops", {})
+                        green_units = player_troops.get("GREEN", 0)
+                        red_units = player_troops.get("RED", 0)
+                        blue_units = player_troops.get("BLUE", 0)
                         
                         print(f"📊 Army units - RED: {red_units}, BLUE: {blue_units}, GREEN: {green_units}")
                         
@@ -630,12 +630,12 @@ def test_non_traditional_armies():
                     # Get board to verify armies
                     board = rpc_call("game_board", {"token": game_id})
                     if "error" not in board:
-                        army_troops = board.get("army_troops", {})
+                        player_troops = board.get("player_troops", {})
                         all_armies = ['RED', 'BLUE', 'GREEN', 'YELLOW', 'GREY']
                         
                         army_summary = {}
                         for army in all_armies:
-                            units = army_troops.get(army, 0)
+                            units = player_troops.get(army, 0)
                             if units > 0:
                                 army_summary[army] = units
                         

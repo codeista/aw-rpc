@@ -143,7 +143,7 @@ class AdvanceWarsRegressionTester:
         
         # Test getting game board
         result = self.rpc_call('game_board')
-        if not self.assert_success(result, "Get Game Board", ['current_turn', 'game_active', 'grid']):
+        if not self.assert_success(result, "Get Game Board", ['current_player', 'game_active', 'grid']):
             return False
         
         board = result['result']
@@ -169,9 +169,9 @@ class AdvanceWarsRegressionTester:
         
         # Test unit creation at a valid plain tile
         result = self.rpc_call('unit_create', {
-            'army': 'RED',
             'unit_type': 'INFANTRY', 
-            'x': 0, 'y': 8  # PLAIN tile
+            'x': 0, 'y': 8,  # PLAIN tile
+            'player_id': 0  # Player 0 (RED)
         })
         if not self.assert_success(result, "Unit Creation"):
             return False
@@ -208,18 +208,18 @@ class AdvanceWarsRegressionTester:
         # Create units for combat testing
         # Create RED tank
         result = self.rpc_call('unit_create', {
-            'army': 'RED',
             'unit_type': 'TANK',
-            'x': 6, 'y': 8  # Plain tile
+            'x': 6, 'y': 8,  # Plain tile
+            'player_id': 0  # Player 0 (RED)
         })
         if not self.assert_success(result, "Create RED Tank"):
             return False
         
         # Create BLUE infantry as target
         result = self.rpc_call('unit_create', {
-            'army': 'BLUE',
             'unit_type': 'INFANTRY',
-            'x': 7, 'y': 8  # Adjacent plain tile
+            'x': 7, 'y': 8,  # Adjacent plain tile
+            'player_id': 1  # Player 1 (BLUE)
         })
         if not self.assert_success(result, "Create BLUE Infantry"):
             return False
@@ -258,18 +258,18 @@ class AdvanceWarsRegressionTester:
         
         # Create APC transport on a plain tile
         result = self.rpc_call('unit_create', {
-            'army': 'RED',
             'unit_type': 'APC',
-            'x': 4, 'y': 8  # MOUNTAIN tile but units can be created there
+            'x': 4, 'y': 8,  # MOUNTAIN tile but units can be created there
+            'player_id': 0  # Player 0 (RED)
         })
         if not self.assert_success(result, "Create APC Transport"):
             return False
         
         # Create infantry cargo adjacent
         result = self.rpc_call('unit_create', {
-            'army': 'RED', 
             'unit_type': 'INFANTRY',
-            'x': 5, 'y': 8  # MOUNTAIN tile adjacent
+            'x': 5, 'y': 8,  # MOUNTAIN tile adjacent
+            'player_id': 0  # Player 0 (RED)
         })
         if not self.assert_success(result, "Create Infantry Cargo"):
             return False
@@ -317,9 +317,9 @@ class AdvanceWarsRegressionTester:
         
         # Create infantry for capture near a city
         result = self.rpc_call('unit_create', {
-            'army': 'RED',
             'unit_type': 'INFANTRY',
-            'x': 2, 'y': 4  # Near city at (3,4)
+            'x': 2, 'y': 4,  # Near city at (3,4)
+            'player_id': 0  # Player 0 (RED)
         })
         if not self.assert_success(result, "Create Infantry for Capture"):
             return False
@@ -361,9 +361,9 @@ class AdvanceWarsRegressionTester:
         """Test economic mechanics"""
         print("\n💰 Testing Economic System...")
         
-        # Test getting army economy
-        result = self.rpc_call('get_army_economy')
-        if not self.assert_success(result, "Get Army Economy"):
+        # Test getting player economy
+        result = self.rpc_call('get_player_economy')
+        if not self.assert_success(result, "Get Player Economy"):
             return False
         
         # Test unit cost information
@@ -393,9 +393,9 @@ class AdvanceWarsRegressionTester:
         
         # Create Black Boat for repair testing
         result = self.rpc_call('unit_create', {
-            'army': 'RED',
             'unit_type': 'BLACKBOAT',
-            'x': 0, 'y': 0
+            'x': 0, 'y': 0,
+            'player_id': 0  # Player 0 (RED)
         })
         if not self.assert_success(result, "Create Black Boat"):
             return False

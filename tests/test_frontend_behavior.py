@@ -33,9 +33,9 @@ result = rpc_call('game_create_v2', {
 })
 
 # Create units
-rpc_call('unit_create', {'token': game_id, 'army': 'RED', 'unit_type': 'INFANTRY', 'x': 2, 'y': 3})
+rpc_call('unit_create', {'token': game_id, 'player_id': 0, 'unit_type': 'INFANTRY', 'x': 2, 'y': 3})
 rpc_call('army_end_turn', {'token': game_id})
-rpc_call('unit_create', {'token': game_id, 'army': 'BLUE', 'unit_type': 'INFANTRY', 'x': 3, 'y': 3})
+rpc_call('unit_create', {'token': game_id, 'player_id': 1, 'unit_type': 'INFANTRY', 'x': 3, 'y': 3})
 rpc_call('army_end_turn', {'token': game_id})
 
 # Setup browser

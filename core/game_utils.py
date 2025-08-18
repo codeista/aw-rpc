@@ -22,14 +22,15 @@ def game_load(token):
     from app_core import db
     from manager import GameManager
     from gameboard import GameBoard
+    from core.game_factory import GameFactory
+    from core.player_system import PlayerManager, SpriteColor
+    from core.map_system import Army
     from config import Config
-    from map_system import map_repository
-    import jsons
     import json
     
     app_logger.info(f"Loading game: {token}")
     
-    # CHECK IN-MEMORY GAMES FIRST
+    # Check in-memory games first
     if token in games:
         app_logger.info(f"Game found in memory: {token}")
         return games[token]
@@ -39,49 +40,74 @@ def game_load(token):
         app_logger.info(f"Game found in database: {token}")
         
         try:
-            # Handle board data format
-            board_data = game.board
-            
-            # Convert to dict if it's a string
-            if isinstance(board_data, str):
-                board_dict = json.loads(board_data)
-                app_logger.debug(f"Parsed JSON string to dict")
+            # Handle different types of board data
+            import jsons
+            if isinstance(game.board, str):
+                # It's a JSON string, parse it
+                board_dict = jsons.loads(game.board)
             else:
-                board_dict = board_data
-                app_logger.debug(f"Board data is already a dict")
+                # Already parsed or some other format
+                board_dict = game.board
             
-            # Try to deserialize with jsons
-            try:
-                board = jsons.loads(board_dict, GameBoard)
-                app_logger.debug(f"jsons.loads succeeded")
-            except Exception as jsons_error:
-                app_logger.debug(f"jsons.loads failed: {jsons_error}")
-                # Use simple fallback
-                from map_system import Map
-                default_map = Map()
-                board = GameBoard.create(default_map)
-            
-            config_game = Config()
-            mngr = GameManager(config_game, board)
-            mngr.app_logger = app_logger
-            return mngr
+            # Check if this is a valid game with player data
+            app_logger.info(f"Board dict keys: {list(board_dict.keys()) if board_dict else 'None'}")
+            if 'player_funds' in board_dict and 'turn_order' in board_dict:
+                # Create player manager from saved data
+                player_manager = PlayerManager()
+                
+                # Reconstruct players based on turn order
+                for player_id in board_dict.get('turn_order', []):
+                    if player_id not in player_manager.players:
+                        # For now, use default colors - this should be saved in game data
+                        colors = ['RED', 'BLUE', 'GREEN', 'YELLOW']
+                        color = colors[player_id % len(colors)]
+                        sprite_color = SpriteColor[color]
+                        player_manager.add_player(
+                            player_id=player_id,
+                            name=f"Player {player_id + 1}",
+                            color=color,
+                            sprite_color=sprite_color
+                        )
+                
+                # Use the new from_dict method for proper deserialization
+                board = GameBoard.from_dict(board_dict, player_manager)
+                
+                # Create v2 game manager
+                config_game = Config()
+                mngr = GameManager(config_game, board, player_manager)
+                mngr.app_logger = app_logger
+                games[token] = mngr  # Cache in memory
+                return mngr
+            else:
+                # Invalid game format
+                app_logger.error(f"Invalid game format for {token} - creating new game")
+                db.session.delete(game)
+                db.session.commit()
             
         except Exception as e:
             app_logger.error(f"Failed to deserialize game {token}: {str(e)}")
+            # Delete corrupted game
+            try:
+                db.session.delete(game)
+                db.session.commit()
+            except:
+                pass
     
-    app_logger.info(f"Creating new game: {token}")   
-    # Create new game with default map 
-    try:
-        default_map = map_repository.get_map('test')
-        if not default_map:
-            default_map = map_repository.get_map('scorpion')  
-    except:
-        from map_system import Map
-        default_map = Map()
-    
-    config_game = Config()
-    board = GameBoard.create(default_map)
-    mngr = GameManager(config_game, board)
+    # Create new game if none found or deserialization failed
+    app_logger.info(f"Creating new game: {token}")
+    mngr, _ = GameFactory.create_standard_game(token)
     mngr.app_logger = app_logger
+    games[token] = mngr  # Cache in memory
+    
+    # Save the new game to database
+    try:
+        board_dict = mngr.board.to_dict() if hasattr(mngr.board, 'to_dict') else {}
+        new_game = Game(board_dict, token)
+        db.session.add(new_game)
+        db.session.commit()
+        app_logger.info(f"Saved new game to database: {token}")
+    except Exception as e:
+        app_logger.error(f"Failed to save new game to database: {str(e)}")
+        db.session.rollback()
     
     return mngr

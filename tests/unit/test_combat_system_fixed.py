@@ -202,9 +202,9 @@ def test_combat_system():
     for tile in board.get("grid", []):
         if tile.get("unit"):
             unit = tile["unit"]
-            if unit["army"] == "RED" and tile["x"] == 4 and tile["y"] == 4:
+            if unit["army"] == 0 and tile["x"] == 4 and tile["y"] == 4:
                 red_unit = unit
-            elif unit["army"] == "BLUE" and tile["x"] == 4 and tile["y"] == 3:
+            elif unit["army"] == 1 and tile["x"] == 4 and tile["y"] == 3:
                 blue_unit = unit
     
     print(f"\n📊 Combat Results:")

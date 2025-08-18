@@ -95,7 +95,48 @@ class Game {
         this.canvasInitialized = false;
         this.lastActedUnit = null;
         
+        // PRODUCTION ISSUE TRACKER: Log data type issues for debugging
+        this.typeIssueCount = 0;
+        this.setupDataValidation();
+        
         this.init();
+    }
+    
+    setupDataValidation() {
+        // PRODUCTION MONITORING: Track data type issues
+        window.gameDataValidator = this;
+        this.logTypeIssue = (message, data) => {
+            this.typeIssueCount++;
+            console.error(`DATA TYPE ISSUE #${this.typeIssueCount}: ${message}`, data);
+            
+            // Send to error reporting if available
+            if (window.errorNotification) {
+                window.errorNotification.showError(`Frontend data issue: ${message}`);
+            }
+        };
+        
+        /**
+         * EXPECTED DATA FORMATS FOR FRONTEND:
+         * 
+         * Board Object:
+         * - current_player: number (0, 1, 2...) - PRIMARY field to use
+         * - current_turn: string ("RED", "BLUE") - LEGACY, avoid using
+         * - players: Array of {id: number, name: string, army: string}
+         * 
+         * Tile Object:
+         * - player_id: number|null (0, 1, 2... or null for neutral)
+         * - unit.player_id: number (0, 1, 2...)
+         * 
+         * CRITICAL: All player identification should use INTEGER player_id
+         * AVOID: Using army string names like "RED", "BLUE" 
+         * 
+         * Frontend Testing Strategy:
+         * 1. Check console for "DATA TYPE ISSUE" logs
+         * 2. Verify current_player is always a number
+         * 3. Test unit creation displays immediately after creation
+         * 4. Test turn changes don't show type mismatch errors
+         * 5. All player comparisons use integers, not strings
+         */
     }
     
     updateActionPrompt(message) {
@@ -216,7 +257,7 @@ class Game {
             log(`Click at (${x},${y}), selected:`, this.board?.selected);
             log(`Clicked tile:`, {
                 type: clickedTile?.type,
-                army: clickedTile?.army,
+                player_id: clickedTile?.player_id,
                 hasUnit: !!clickedTile?.unit,
                 x: clickedTile?.x,
                 y: clickedTile?.y
@@ -287,16 +328,7 @@ class Game {
                                     await this.rpc('unit_wait', { x: x, y: y });
                                     this.updateActionPrompt('Indirect unit moved and waited');
                                     
-                                    // Manually update the unit to show as unavailable
-                                    const waitedTile = this.getTile(x, y);
-                                    if (waitedTile && waitedTile.unit) {
-                                        waitedTile.unit.can_move = false;
-                                        waitedTile.unit.can_attack = false;
-                                        waitedTile.unit.can_capture = false;
-                                        waitedTile.unit.done = true;
-                                    }
-                                    
-                                    // Force re-render to show greyed out state
+                                    // Backend handles unit state - just re-render
                                     this.render();
                                 }, 100);
                             } else {
@@ -320,16 +352,7 @@ class Game {
                                         await this.rpc('unit_wait', { x: x, y: y });
                                         this.updateActionPrompt('Unit moved and waited');
                                         
-                                        // Manually update the unit to show as unavailable
-                                        const waitedTile = this.getTile(x, y);
-                                        if (waitedTile && waitedTile.unit) {
-                                            waitedTile.unit.can_move = false;
-                                            waitedTile.unit.can_attack = false;
-                                            waitedTile.unit.can_capture = false;
-                                            waitedTile.unit.done = true;
-                                        }
-                                        
-                                        // Force re-render to show greyed out state
+                                        // Backend handles unit state - just re-render
                                         this.render();
                                     }, 100);
                                 }
@@ -373,8 +396,6 @@ class Game {
                     let isOwner = false;
                     if (this.board.current_player !== undefined) {
                         isOwner = clickedTile.player_id === this.board.current_player;
-                    } else {
-                        isOwner = clickedTile.army === this.board.current_turn;
                     }
                     
                     if (isOwner) {
@@ -384,14 +405,12 @@ class Game {
                     }
                 }
                 
-                // PRIORITY 4: Try attack if clicking on enemy unit
-                if (clickedTile && clickedTile.unit) {
-                    // Check if it's an enemy unit
+                // PRIORITY 4: Try attack if clicking on red-highlighted enemy unit
+                if (clickedTile && clickedTile.unit && clickedTile.can_be_attacked) {
+                    // Only proceed if this tile is highlighted for attack
                     let isEnemy = false;
                     if (this.board.current_player !== undefined) {
                         isEnemy = clickedTile.unit.player_id !== this.board.current_player;
-                    } else {
-                        isEnemy = clickedTile.unit.army !== this.board.current_turn;
                     }
                     
                     if (isEnemy) {
@@ -410,17 +429,21 @@ class Game {
                                 
                                 if (isValidTarget) {
                                     log('Valid target confirmed, executing attack');
-                                    const attackResult = await this.rpc('combat_attack', {
-                                        attacker_x: this.board.selected.x,
-                                        attacker_y: this.board.selected.y,
-                                        defender_x: x,
-                                        defender_y: y
+                                    
+                                    // Store attacker position BEFORE any RPC calls
+                                    const attackerX = this.board.selected.x;
+                                    const attackerY = this.board.selected.y;
+                                    
+                                    const attackResult = await this.rpc('unit_attack', {
+                                        attacker_x: attackerX,
+                                        attacker_y: attackerY,
+                                        target_x: x,
+                                        target_y: y
                                     });
                                     log('Attack result:', attackResult);
                                     
-                                    // Store attacker position
-                                    const attackerX = this.board.selected.x;
-                                    const attackerY = this.board.selected.y;
+                                    // Update board to get new HP values
+                                    await this.updateBoard();
                                     
                                     // Clear ALL highlights after attack
                                     this.clearHighlights();
@@ -439,16 +462,9 @@ class Game {
                                     // Auto-wait the attacking unit
                                     setTimeout(async () => {
                                         await this.rpc('unit_wait', { x: attackerX, y: attackerY });
+                                        await this.updateBoard();
                                         
-                                        // Update unit to show as unavailable
-                                        const attackerTile = this.getTile(attackerX, attackerY);
-                                        if (attackerTile && attackerTile.unit) {
-                                            attackerTile.unit.can_move = false;
-                                            attackerTile.unit.can_attack = false;
-                                            attackerTile.unit.can_capture = false;
-                                            attackerTile.unit.done = true;
-                                        }
-                                        
+                                        // Backend handles unit state - just update UI
                                         this.updateActionPrompt('Unit attacked and waited');
                                         this.render();
                                     }, 100);
@@ -491,8 +507,6 @@ class Game {
                     let canCapture = false;
                     if (this.board.current_player !== undefined) {
                         canCapture = tile.player_id !== this.board.current_player;
-                    } else {
-                        canCapture = tile.army !== this.board.current_turn;
                     }
                     
                     if (canCapture) {
@@ -531,21 +545,21 @@ class Game {
             if (tile) {
                 let text = `(${x},${y}) ${tile?.type || ''}`;
                 if (tile.unit) {
-                    // HP is in status object
-                    const hp = tile.unit.status ? tile.unit.status.hp : 100;
+                    // HP is directly on unit object
+                    const hp = tile.unit.hp !== undefined ? tile.unit.hp : 100;
                     text += ` | ${tile.unit.type} HP:${hp}`;
                     // Add fuel and ammo status
-                    if (tile.unit.status) {
-                        const fuel = tile.unit.status.fuel;
-                        const ammo = tile.unit.status.ammo;
+                    if (tile.unit) {
+                        const fuel = tile.unit.fuel;
+                        const ammo = tile.unit.ammo;
                         text += ` F:${fuel}`;
                         if (ammo !== null && ammo !== undefined) {
                             text += ` A:${ammo}`;
                         }
                         // Add warnings
                         if (fuel < 20) text += ' ⚠️LOW FUEL';
-                        // Only show ammo warning for units that can attack (have range > 0)
-                        const canAttack = tile.unit.rangemax > 0 || (tile.unit.status.rangemax && tile.unit.status.rangemax > 0);
+                        // Only show ammo warning for units that can attack
+                        const canAttack = tile.unit.can_attack === true;
                         if (canAttack && ammo !== null && ammo <= 1) text += ' ⚠️LOW AMMO';
                     }
                     
@@ -569,9 +583,6 @@ class Game {
                                 if (this.board.current_player !== undefined) {
                                     isEnemy = tile.unit.player_id !== this.board.current_player;
                                     log(`Enemy check (v2): unit.player_id=${tile.unit.player_id}, current_player=${this.board.current_player}, isEnemy=${isEnemy}`);
-                                } else {
-                                    isEnemy = tile.unit.army !== this.board.current_turn;
-                                    log(`Enemy check (v1): unit.army=${tile.unit.army}, current_turn=${this.board.current_turn}, isEnemy=${isEnemy}`);
                                 }
                                 
                                 if (isEnemy) {
@@ -633,7 +644,7 @@ class Game {
                 await this.rpc('army_end_turn');
                 // Show success notification with new turn info
                 if (window.errorNotification && this.board) {
-                    const currentPlayer = this.board.current_turn || 'Player';
+                    const currentPlayer = this.board.players?.[this.board.current_player]?.name || 'Player';
                     const day = this.board.day || '?';
                     window.errorNotification.showSuccess(`Turn ended. ${currentPlayer}'s turn - Day ${day}`);
                 }
@@ -658,13 +669,30 @@ class Game {
                     log('Creating unit:', select.value, 'at', this.productionCoords);
                     try {
                         const result = await this.rpc('unit_create', {
-                            army: this.board.current_turn,
+                            player_id: this.board.current_player || 0,
                             unit_type: select.value,
                             x: this.productionCoords.x,
                             y: this.productionCoords.y
                         });
                         log('Unit creation result:', result);
                         hideElement(modal);
+                        
+                        // CRITICAL FIX: Refresh board to show new unit
+                        await this.updateBoard();
+                        
+                        // Debug: Check if unit is on the tile after update
+                        const updatedTile = this.getTile(this.productionCoords.x, this.productionCoords.y);
+                        if (updatedTile && updatedTile.unit) {
+                            log('Unit successfully added to tile:', updatedTile.unit.type);
+                        } else {
+                            console.error('ERROR: Unit not found on tile after creation!', {
+                                x: this.productionCoords.x, 
+                                y: this.productionCoords.y,
+                                tile: updatedTile
+                            });
+                        }
+                        
+                        this.render();
                         
                         // Show success notification
                         if (window.errorNotification) {
@@ -707,7 +735,7 @@ class Game {
                         await this.rpc('army_end_turn');
                         // Show success notification with new turn info
                         if (window.errorNotification && this.board) {
-                            const currentPlayer = this.board.current_turn || 'Player';
+                            const currentPlayer = this.board.players?.[this.board.current_player]?.name || 'Player';
                             const day = this.board.day || '?';
                             window.errorNotification.showSuccess(`Turn ended. ${currentPlayer}'s turn - Day ${day}`);
                         }
@@ -794,6 +822,11 @@ class Game {
                 await this.checkPostActionSelection();
             }
             
+            // DEFENSIVE: Validate critical data types if this was a board update
+            if (shouldUpdateBoard && this.board) {
+                this.validateBoardData();
+            }
+            
             return data.result;
         } catch (e) {
             console.error('RPC error:', e);
@@ -852,9 +885,16 @@ class Game {
         
         const data = await response.json();
         if (data.result) {
-            // Check for turn change
-            const previousTurn = this.board?.current_turn;
+            // Check for turn change - FIXED: Use current_player consistently
+            const previousPlayer = this.board?.current_player;
             this.board = data.result;
+            
+            // Add defensive type checking
+            if (typeof this.board.current_player !== 'number') {
+                console.error(`CRITICAL: current_player should be number, got ${typeof this.board.current_player}:`, this.board.current_player);
+                // Fallback to prevent crashes
+                this.board.current_player = parseInt(this.board.current_player) || 0;
+            }
             
             // Restore highlights
             Object.entries(savedHighlights).forEach(([idx, highlights]) => {
@@ -865,10 +905,10 @@ class Game {
                 }
             });
             
-            // Reset last acted unit on turn change
-            if (previousTurn && previousTurn !== this.board.current_turn) {
+            // Reset last acted unit on turn change - FIXED: Compare same types
+            if (previousPlayer !== undefined && previousPlayer !== this.board.current_player) {
                 this.lastActedUnit = null;
-                log(`Turn changed from ${previousTurn} to ${this.board.current_turn}`);
+                log(`Turn changed from Player ${previousPlayer} to Player ${this.board.current_player}`);
             }
             
             // Debug log for selected unit
@@ -876,14 +916,9 @@ class Game {
                 log('Board updated with selected unit:', this.board.selected);
             }
             
-            // Handle v2 games with player data
-            if (this.board.players && this.board.sprite_mapping) {
-                log('V2 game detected with players:', this.board.players);
-                
-                // Create sprite mapper if available
-                if (typeof SpriteMapper !== 'undefined') {
-                    this.spriteMapper = new SpriteMapper(this.board.players, this.board.sprite_mapping);
-                }
+            // Initialize sprite mapper for player-based games
+            if (this.board.players && this.board.sprite_mapping && typeof SpriteMapper !== 'undefined') {
+                this.spriteMapper = new SpriteMapper(this.board.players, this.board.sprite_mapping);
             }
             
             this.render();
@@ -914,7 +949,7 @@ class Game {
             const selectResult = await this.rpc('unit_select', { x, y });
             
             // Set board.selected if the unit belongs to current player
-            if (selectResult && tile.unit.army === this.board.current_turn) {
+            if (selectResult && tile.unit.player_id === this.board.current_player) {
                 this.board.selected = { x, y };
                 log('Set board.selected to:', this.board.selected);
             }
@@ -943,6 +978,12 @@ class Game {
             } else {
                 log(`Unit cannot move: has_moved=${tile.unit.has_moved}, done=${tile.unit.done}`);
             }
+            
+            // Also show attack range if unit can attack
+            if (tile.unit.can_attack && !tile.unit.done) {
+                log(`Unit can attack, showing attack range...`);
+                await this.showAttackRange(x, y);
+            }
         }
         // Then check if it's an empty production building
         else if (tile && tile && ['FACTORY', 'AIRPORT', 'PORT'].includes(tile.type)) {
@@ -950,8 +991,6 @@ class Game {
             let isOwner = false;
             if (this.board.current_player !== undefined) {
                 isOwner = tile.player_id === this.board.current_player;
-            } else {
-                isOwner = tile.army === this.board.current_turn;
             }
             
             if (isOwner && !tile.unit) {
@@ -1056,8 +1095,6 @@ class Game {
                     let isCurrentPlayer = false;
                     if (this.board.current_player !== undefined) {
                         isCurrentPlayer = tile.unit.player_id === this.board.current_player;
-                    } else {
-                        isCurrentPlayer = tile.unit.army === this.board.current_turn;
                     }
                     
                     // Check if unit can still act
@@ -1106,8 +1143,6 @@ class Game {
                 let isOwner = false;
                 if (this.board.current_player !== undefined) {
                     isOwner = tile.player_id === this.board.current_player;
-                } else {
-                    isOwner = tile.army === this.board.current_turn;
                 }
                 
                 if (isOwner && !tile.unit) {
@@ -1125,8 +1160,6 @@ class Game {
         let isOwnUnit = false;
         if (this.board.current_player !== undefined) {
             isOwnUnit = tile.unit.player_id === this.board.current_player;
-        } else {
-            isOwnUnit = tile.unit.army === this.board.current_turn;
         }
         
         if (!isOwnUnit) {
@@ -1163,8 +1196,6 @@ class Game {
                         let canCapture = false;
                         if (this.board.current_player !== undefined) {
                             canCapture = tile.player_id !== this.board.current_player;
-                        } else {
-                            canCapture = tile.army !== this.board.current_turn;
                         }
                         item.disabled = !canCapture || tile.unit.has_moved || tile.unit.done;
                     }
@@ -1189,8 +1220,6 @@ class Game {
                                 let isEnemy = false;
                                 if (this.board.current_player !== undefined) {
                                     isEnemy = adjTile.unit.player_id !== this.board.current_player;
-                                } else {
-                                    isEnemy = adjTile.unit.army !== this.board.current_turn;
                                 }
                                 if (isEnemy) {
                                     hasAttackTargets = true;
@@ -1208,8 +1237,6 @@ class Game {
                                     let isEnemy = false;
                                     if (this.board.current_player !== undefined) {
                                         isEnemy = gridTile.unit.player_id !== this.board.current_player;
-                                    } else {
-                                        isEnemy = gridTile.unit.army !== this.board.current_turn;
                                     }
                                     if (isEnemy) {
                                         hasAttackTargets = true;
@@ -1282,8 +1309,6 @@ class Game {
                 let isFriendly = false;
                 if (this.board.current_player !== undefined) {
                     isFriendly = tile.unit.player_id === this.board.current_player;
-                } else {
-                    isFriendly = tile.unit.army === this.board.current_turn;
                 }
                 
                 if (isFriendly && ['APC', 'LANDER', 'CRUISER', 'T_COPTER', 'BLACK_BOAT'].includes(tile.unit.type)) {
@@ -1418,6 +1443,12 @@ class Game {
     renderTerrainBase() {
         const tallTypes = ['CITY', 'FACTORY', 'AIRPORT', 'PORT', 'HQ', 'BASE_TOWER_0', 'BASE_TOWER_1', 'BASE_TOWER_2', 'BASE_TOWER_3', 'BASE_TOWER_4', 'MOUNTAIN', 'WOOD'];
         
+        // Debug: Check if sprites are loaded
+        if (!this.sprites || !this.sprites.terrain) {
+            console.error('Terrain sprites not loaded!');
+            return;
+        }
+        
         // First pass: Draw non-tall terrain only
         for (let y = 0; y < this.board.height; y++) {
             for (let x = 0; x < this.board.width; x++) {
@@ -1425,18 +1456,16 @@ class Game {
                 const px = x * this.tileSize;
                 const py = y * this.tileSize;
                 
-                if (tile.type && !tallTypes.includes(tile.type)) {
+                if (tile && tile.type && !tallTypes.includes(tile.type)) {
                         let spriteName = tile.type;
                         
                         // Beach tiles are now correctly mapped
                         
-                        if (tile.army && tile.army !== 'NEUTRAL') {
-                            let army = tile.army;
-                            
-                            // For v2 games, convert player ID to sprite color
-                            if (this.spriteMapper && tile.player_id !== undefined) {
-                                army = this.spriteMapper.getSpriteColor(tile.player_id);
-                            }
+                        if (tile.player_id !== undefined && tile.player_id >= 0) {
+                            // Get army color from sprite mapper or fallback
+                            const army = this.spriteMapper ? 
+                                this.spriteMapper.getSpriteColor(tile.player_id) :
+                                ['RED', 'BLUE', 'GREEN', 'YELLOW'][tile.player_id] || 'RED';
                             
                             const armySprite = `${army}_${tile.type}`;
                             if (this.sprites.terrain.data[armySprite]) {
@@ -1465,19 +1494,18 @@ class Game {
                         let spriteName = tile.type;
                         
                         // Handle army buildings
-                        if (tile.army && tile.army !== 'NEUTRAL') {
-                            let army = tile.army;
-                            
-                            // For v2 games, convert player ID to sprite color
-                            if (this.spriteMapper && tile.player_id !== undefined) {
-                                army = this.spriteMapper.getSpriteColor(tile.player_id);
-                            }
+                        if (tile.player_id !== undefined && tile.player_id !== null && tile.player_id >= 0) {
+                            // Get army color from sprite mapper or fallback
+                            const army = this.spriteMapper ? 
+                                this.spriteMapper.getSpriteColor(tile.player_id) :
+                                ['RED', 'BLUE', 'GREEN', 'YELLOW'][tile.player_id] || 'RED';
                             
                             const armySprite = `${army}_${tile.type}`;
                             if (this.sprites.terrain.data[armySprite]) {
                                 spriteName = armySprite;
                             }
                         }
+                        // If player_id is null or undefined, use neutral sprite (just the base type name)
                         this.drawSprite('terrain', spriteName, px, py);
                 }
             }
@@ -1526,109 +1554,99 @@ class Game {
         // 3. It's explicitly marked as done
         const isEnemy = this.board.current_player !== undefined ? 
             tile.unit.player_id !== this.board.current_player :
-            tile.unit.army !== this.board.current_turn;
+            false;
         
-        // A unit has no actions if it can't move, attack, or capture
-        const hasNoActions = !tile.unit.can_move && !tile.unit.can_attack && !tile.unit.can_capture;
+        // A unit is done if the done flag is set
         const isDone = tile.unit.done || false;
-        const isUnavailable = isEnemy || hasNoActions || isDone;
+        const isUnavailable = isEnemy || isDone;
         
-        // Debug newly created units
-        if (tile.x === 0 && tile.y === 4 && tile.unit) {
-            log('Unit state debug at factory:', {
-                type: tile.unit.type,
-                can_move: tile.unit.can_move,
-                can_attack: tile.unit.can_attack,
-                can_capture: tile.unit.can_capture,
-                done: tile.unit.done,
-                hasNoActions,
-                isUnavailable,
-                sprite: isUnavailable ? 'unavailable' : 'idle'
+        
+        // Build unit sprite using sprite mapper
+        const state = isUnavailable ? 'unavailable' : 'idle';
+        if (this.spriteMapper) {
+            unitSprite = this.spriteMapper.buildUnitSprite(tile.unit, state);
+        } else {
+            // Fallback if sprite mapper not initialized (shouldn't happen)
+            const spriteColor = ['RED', 'BLUE', 'GREEN', 'YELLOW'][tile.unit.player_id] || 'RED';
+            unitSprite = `${tile.unit.type}_${spriteColor}_${state}_0`;
+        }
+        
+        // Debug sprite drawing
+        const spriteDrawn = this.drawSprite('units', unitSprite, px, py);
+        if (!spriteDrawn) {
+            console.error(`Failed to draw unit sprite at (${tile.x}, ${tile.y}):`, {
+                unitSprite,
+                px, py,
+                unit: tile.unit
             });
         }
         
-        // For v2 games, use sprite mapper
-        if (this.spriteMapper && tile.unit.player_id !== undefined) {
-            const state = isUnavailable ? 'unavailable' : 'idle';
-            unitSprite = this.spriteMapper.buildUnitSprite(tile.unit, state);
-        } else {
-            // Legacy path for non-v2 games
-            unitSprite = `${tile.unit.type}_${tile.unit.army}`;
-            if (isUnavailable) {
-                unitSprite += '_unavailable';
-            } else {
-                unitSprite += '_idle';
+        // Draw HP or status icon
+        // Get army color from sprite mapper
+        const army = this.spriteMapper ? 
+            this.spriteMapper.getSpriteColor(tile.unit.player_id) : 
+            ['RED', 'BLUE', 'GREEN', 'YELLOW'][tile.unit.player_id] || 'RED';
+        
+        const armyLower = army.toLowerCase();
+        // Unit is available if it belongs to current player and has actions left
+        const isOwnUnit = this.board.current_player !== undefined ? 
+            tile.unit.player_id === this.board.current_player :
+            true;
+        const hasActions = tile.unit.can_move || tile.unit.can_attack || tile.unit.can_capture;
+        const unitIsAvailable = isOwnUnit && hasActions && !isDone;
+        let statusSprite = null;
+        
+        // Check for special status conditions
+        // 1. Check if unit is capturing (tile has capture_hp < 20)
+        if (tile.capture_hp !== undefined && tile.capture_hp < 20) {
+            // Show capturing icon - use available or unavailable version
+            statusSprite = unitIsAvailable ? 
+                `status_${armyLower}_capturing` :
+                `hp_${armyLower}_capturing`;
+        }
+        // 2. TODO: Check for submerged submarines
+        // else if (tile.unit.type === 'SUB' && tile.unit.is_submerged) {
+        //     statusSprite = unitIsAvailable ?
+        //         `status_${armyLower}_submerged` :
+        //         `hp_${armyLower}_submerged`;
+        // }
+        // 3. TODO: Check for loaded units (though they're usually off-map)
+        
+        // If unit has special status, show status icon
+        if (statusSprite && this.sprites.ui.data[statusSprite]) {
+            this.drawSprite('ui', statusSprite, px + 16, py + 2);
+        } 
+        // Otherwise show HP if damaged
+        else if (tile.unit.hp < 100) {
+            const hp = Math.ceil(tile.unit.hp / 10);
+            const hpNum = hp === 10 ? 9 : hp; // Max is 9 in sprite sheet
+            
+            // Available units use white HP numbers, unavailable use colored
+            const hpSprite = unitIsAvailable ? 
+                `hp_${hpNum}` :
+                `hp_${armyLower}_${hpNum}`;
+            
+            // Debug logging for HP rendering
+            console.log(`Drawing HP indicator: ${hpSprite} for unit with ${tile.unit.hp} HP at (${tile.x}, ${tile.y})`);
+            
+            if (!this.drawSprite('ui', hpSprite, px + 16, py + 2)) {
+                console.error(`Failed to draw HP sprite: ${hpSprite}`);
             }
-            unitSprite += '_0';
         }
         
-        this.drawSprite('units', unitSprite, px, py);
+        // Draw fuel/ammo warnings from spritesheet
+        const fuel = tile.unit.fuel;
+        const ammo = tile.unit.ammo;
         
-        // Draw HP or status icon
-        if (tile.unit.status) {
-            let army = tile.unit.army;
-            // For v2 games, get army from sprite mapping
-            if (this.spriteMapper && tile.unit.player_id !== undefined) {
-                const spriteColor = this.spriteMapper.getSpriteColor(tile.unit.player_id);
-                army = spriteColor; // Use sprite color as army name
-            }
-            
-            const armyLower = army.toLowerCase();
-            // Unit is available if it belongs to current player and has actions left
-            const isOwnUnit = this.board.current_player !== undefined ? 
-                tile.unit.player_id === this.board.current_player :
-                tile.unit.army === this.board.current_turn;
-            const hasActions = tile.unit.can_move || tile.unit.can_attack || tile.unit.can_capture;
-            const isDone = tile.unit.done || false;
-            const unitIsAvailable = isOwnUnit && hasActions && !isDone;
-            let statusSprite = null;
-            
-            // Check for special status conditions
-            // 1. Check if unit is capturing (tile has capture_hp < 20)
-            if (tile.capture_hp !== undefined && tile.capture_hp < 20) {
-                // Show capturing icon - use available or unavailable version
-                statusSprite = unitIsAvailable ? 
-                    `status_${armyLower}_capturing` :
-                    `hp_${armyLower}_capturing`;
-            }
-            // 2. TODO: Check for submerged submarines
-            // else if (tile.unit.type === 'SUB' && tile.unit.is_submerged) {
-            //     statusSprite = unitIsAvailable ?
-            //         `status_${armyLower}_submerged` :
-            //         `hp_${armyLower}_submerged`;
-            // }
-            // 3. TODO: Check for loaded units (though they're usually off-map)
-            
-            // If unit has special status, show status icon
-            if (statusSprite && this.sprites.ui.data[statusSprite]) {
-                this.drawSprite('ui', statusSprite, px + 16, py + 2);
-            } 
-            // Otherwise show HP if damaged
-            else if (tile.unit.status.hp < 100) {
-                const hp = Math.ceil(tile.unit.status.hp / 10);
-                const hpNum = hp === 10 ? 9 : hp; // Max is 9 in sprite sheet
-                
-                // Available units use white HP numbers, unavailable use colored
-                const hpSprite = unitIsAvailable ? 
-                    `hp_${hpNum}` :
-                    `hp_${armyLower}_${hpNum}`;
-                this.drawSprite('ui', hpSprite, px + 16, py + 2);
-            }
-            
-            // Draw fuel/ammo warnings from spritesheet
-            const fuel = tile.unit.status.fuel;
-            const ammo = tile.unit.status.ammo;
-            
-            // Low fuel warning (bottom left)
-            if (fuel < 20) {
-                this.drawSprite('ui', 'fuel_warning', px + 2, py + 14);
-            }
-            
-            // Low ammo warning (bottom right) - only for units that can attack
-            const canAttack = tile.unit.rangemax > 0 || (tile.unit.status.rangemax && tile.unit.status.rangemax > 0);
-            if (canAttack && ammo !== null && ammo !== undefined && ammo <= 1) {
-                this.drawSprite('ui', 'ammo_warning', px + 14, py + 14);
-            }
+        // Low fuel warning (bottom left)
+        if (fuel < 20) {
+            this.drawSprite('ui', 'fuel_warning', px + 2, py + 14);
+        }
+        
+        // Low ammo warning (bottom right) - only for units that can attack
+        const canAttack = tile.unit.can_attack === true;
+        if (canAttack && ammo !== null && ammo !== undefined && ammo <= 1) {
+            this.drawSprite('ui', 'ammo_warning', px + 14, py + 14);
         }
     }
     
@@ -1645,22 +1663,65 @@ class Game {
         this.updateUIDisplays();
     }
     
+    validateBoardData() {
+        // DEFENSIVE: Validate critical board data types
+        if (!this.board) return;
+        
+        // Validate current_player is a number
+        if (typeof this.board.current_player !== 'number') {
+            console.error(`CRITICAL: current_player should be number, got ${typeof this.board.current_player}:`, this.board.current_player);
+            this.board.current_player = parseInt(this.board.current_player) || 0;
+        }
+        
+        // Validate grid tiles have proper player_id types
+        if (this.board.grid) {
+            this.board.grid.forEach((tile, index) => {
+                if (tile.player_id !== null && tile.player_id !== undefined && typeof tile.player_id !== 'number') {
+                    console.error(`CRITICAL: tile[${index}].player_id should be number or null, got ${typeof tile.player_id}:`, tile.player_id);
+                    tile.player_id = parseInt(tile.player_id);
+                }
+                
+                if (tile.unit && tile.unit.player_id !== undefined && typeof tile.unit.player_id !== 'number') {
+                    console.error(`CRITICAL: tile[${index}].unit.player_id should be number, got ${typeof tile.unit.player_id}:`, tile.unit.player_id);
+                    tile.unit.player_id = parseInt(tile.unit.player_id);
+                }
+            });
+        }
+        
+        // Validate players array
+        if (this.board.players && Array.isArray(this.board.players)) {
+            this.board.players.forEach((player, index) => {
+                if (player && typeof player.id !== 'number') {
+                    console.error(`CRITICAL: player[${index}].id should be number, got ${typeof player.id}:`, player.id);
+                    player.id = parseInt(player.id);
+                }
+            });
+        }
+    }
+    
     updateUIDisplays() {
-        document.getElementById('current-turn').textContent = this.board.current_turn || '-';
+        // Defensive type checking for current_player
+        if (typeof this.board.current_player !== 'number') {
+            console.error(`CRITICAL: current_player should be number, got ${typeof this.board.current_player}:`, this.board.current_player);
+            this.board.current_player = parseInt(this.board.current_player) || 0;
+        }
+        
+        const currentPlayerName = this.board.players?.[this.board.current_player]?.name || `Player ${this.board.current_player + 1}`;
+        document.getElementById('current-turn').textContent = currentPlayerName;
         
         // Days can be 0 at game start, display as 1
         const displayDay = this.board.days === 0 ? 1 : (this.board.days || 1);
         document.getElementById('day').textContent = `Day ${displayDay}`;
         
-        // For v2 games with player funds
-        if (this.board.player_funds) {
-            // Assuming player 0 is RED, player 1 is BLUE for now
-            document.getElementById('red-funds').textContent = this.board.player_funds['0'] || '-';
-            document.getElementById('blue-funds').textContent = this.board.player_funds['1'] || '-';
-        } else {
-            // Legacy
-            document.getElementById('red-funds').textContent = this.board.red_funds || '-';
-            document.getElementById('blue-funds').textContent = this.board.blue_funds || '-';
+        // Display player funds
+        if (this.board.players && this.board.players.length > 0) {
+            // Update each player's funds display
+            this.board.players.forEach(player => {
+                const fundsElement = document.getElementById(`player-${player.id}-funds`);
+                if (fundsElement) {
+                    fundsElement.textContent = player.funds || '0';
+                }
+            });
         }
         
         // Update map name if available
@@ -1678,7 +1739,7 @@ class Game {
         this.updatePlayerStatsPanel();
         
         // Update browser title
-        const turn = this.board.current_turn || 'Loading';
+        const turn = this.board.players?.[this.board.current_player]?.name || 'Loading';
         const titleDay = this.board.days === 0 ? 1 : (this.board.days || 1);
         if (this.board.game_active) {
             document.title = `Advance Wars RPC - Day ${titleDay} - ${turn}'s Turn`;
@@ -1791,6 +1852,11 @@ class Game {
         // Update action prompt when clearing highlights
         this.updateActionPrompt('Select a unit');
         this.hasHighlights = hadHighlights;
+        
+        // CRITICAL FIX: Always render to update visual state
+        if (hadHighlights) {
+            this.render();
+        }
     }
     
     updateUnitInfoPanel(unit) {
@@ -1803,10 +1869,10 @@ class Game {
         panel.style.display = 'block';
         
         document.getElementById('unit-type').textContent = unit.type;
-        document.getElementById('unit-hp').textContent = unit.status?.hp || '100';
-        document.getElementById('unit-fuel').textContent = unit.status?.fuel || '0';
-        document.getElementById('unit-ammo').textContent = unit.status?.ammo || 'N/A';
-        document.getElementById('unit-move').textContent = unit.status?.move || '0';
+        document.getElementById('unit-hp').textContent = unit.hp || '100';
+        document.getElementById('unit-fuel').textContent = unit.fuel || '0';
+        document.getElementById('unit-ammo').textContent = unit.ammo || 'N/A';
+        document.getElementById('unit-move').textContent = unit.move || '0';
         
         const rangeMin = unit.status?.rangemin || 1;
         const rangeMax = unit.status?.rangemax || 1;
@@ -1962,8 +2028,6 @@ class Game {
         let isOwnUnit = false;
         if (this.board.current_player !== undefined) {
             isOwnUnit = tile.unit.player_id === this.board.current_player;
-        } else {
-            isOwnUnit = tile.unit.army === this.board.current_turn;
         }
         
         if (!isOwnUnit) return;
@@ -1979,8 +2043,6 @@ class Game {
             let canCapture = false;
             if (this.board.current_player !== undefined) {
                 canCapture = tile.player_id !== this.board.current_player;
-            } else {
-                canCapture = tile.army !== this.board.current_turn;
             }
             
             if (canCapture && !tile.unit.has_moved && !tile.unit.done) {
@@ -2001,8 +2063,6 @@ class Game {
                         let isEnemy = false;
                         if (this.board.current_player !== undefined) {
                             isEnemy = adjTile.unit.player_id !== this.board.current_player;
-                        } else {
-                            isEnemy = adjTile.unit.army !== this.board.current_turn;
                         }
                         if (isEnemy) {
                             hasAttackTargets = true;
@@ -2026,8 +2086,6 @@ class Game {
                                     let isEnemy = false;
                                     if (this.board.current_player !== undefined) {
                                         isEnemy = targetTile.unit.player_id !== this.board.current_player;
-                                    } else {
-                                        isEnemy = targetTile.unit.army !== this.board.current_turn;
                                     }
                                     if (isEnemy) {
                                         hasAttackTargets = true;
@@ -2094,12 +2152,14 @@ class Game {
                 const target = attackTargets[0];
                 log(`Attacking ${target.unit.type} at (${target.x},${target.y})`);
                 try {
-                    await this.rpc('combat_attack', {
+                    await this.rpc('unit_attack', {
                         attacker_x: x,
                         attacker_y: y,
-                        defender_x: target.x,
-                        defender_y: target.y
+                        target_x: target.x,
+                        target_y: target.y
                     });
+                    // Update board to get new HP values
+                    await this.updateBoard();
                 } catch (error) {
                     console.error('Attack failed:', error);
                 }
@@ -2204,13 +2264,16 @@ class Game {
                 });
                 
                 try {
-                    const result = await this.rpc('combat_attack', {
+                    const result = await this.rpc('unit_attack', {
                         attacker_x: this.pendingAttackData.attackerX,
                         attacker_y: this.pendingAttackData.attackerY,
-                        defender_x: targetX,
-                        defender_y: targetY
+                        target_x: targetX,
+                        target_y: targetY
                     });
                     log('Attack result:', result);
+                    
+                    // Update board to get new HP values
+                    await this.updateBoard();
                     
                     // Auto-wait the attacking unit
                     const attackerX = this.pendingAttackData.attackerX;
@@ -2218,16 +2281,9 @@ class Game {
                     
                     setTimeout(async () => {
                         await this.rpc('unit_wait', { x: attackerX, y: attackerY });
+                        await this.updateBoard();
                         
-                        // Update unit to show as unavailable
-                        const attackerTile = this.getTile(attackerX, attackerY);
-                        if (attackerTile && attackerTile.unit) {
-                            attackerTile.unit.can_move = false;
-                            attackerTile.unit.can_attack = false;
-                            attackerTile.unit.can_capture = false;
-                            attackerTile.unit.done = true;
-                        }
-                        
+                        // Backend handles unit state - just update UI
                         this.updateActionPrompt('Unit attacked and waited');
                         this.render();
                     }, 100);
@@ -2303,8 +2359,6 @@ class Game {
                 let isFriendly = false;
                 if (this.board.current_player !== undefined) {
                     isFriendly = tile.unit.player_id === this.board.current_player;
-                } else {
-                    isFriendly = tile.unit.army === this.board.current_turn;
                 }
                 
                 if (isFriendly) {
@@ -2378,10 +2432,17 @@ class Game {
     }
     
     drawSprite(type, name, x, y) {
+        if (!this.sprites || !this.sprites[type]) {
+            console.error(`Sprite type not loaded: ${type}`);
+            return false;
+        }
+        
         const sprite = this.sprites[type].data[name];
         if (!sprite) {
-            console.warn(`Sprite not found: ${type}/${name}`);
-            return;
+            console.warn(`Sprite not found: ${type}/${name}`, {
+                availableSprites: Object.keys(this.sprites[type].data || {}).filter(k => k.includes(name.split('_')[0])).slice(0, 5)
+            });
+            return false;
         }
         
         // Debug HP sprites
@@ -2414,6 +2475,7 @@ class Game {
                 x, drawY, sprite.w, fullHeight
             );
         }
+        return true;
     }
     
     updateGameStatusPanel() {
@@ -2448,6 +2510,45 @@ class Game {
         }
     }
     
+    // Test method to verify rendering is working
+    testRenderUnit(x, y, unitType = 'INFANTRY', playerId = 0) {
+        console.log('=== RENDER TEST START ===');
+        
+        // Create a fake tile with unit
+        const testTile = {
+            x: x,
+            y: y,
+            unit: {
+                type: unitType,
+                player_id: playerId,
+                army: 'RED',
+                can_move: false,
+                can_attack: false,
+                can_capture: false,
+                done: false,
+                status: {
+                    hp: 100,
+                    fuel: 99,
+                    ammo: 99
+                }
+            }
+        };
+        
+        const px = x * this.tileSize;
+        const py = y * this.tileSize;
+        
+        console.log('Test tile:', testTile);
+        console.log('Pixel position:', px, py);
+        console.log('Sprite mapper available:', !!this.spriteMapper);
+        console.log('Units sprite sheet loaded:', !!this.sprites?.units?.img);
+        
+        // Try to render the unit
+        this.renderUnit(testTile, px, py);
+        
+        console.log('=== RENDER TEST END ===');
+        console.log('To see if unit appeared, check canvas at position', px, py);
+    }
+    
     updatePlayerStatsPanel() {
         const content = document.getElementById('player-stats-content');
         if (!content || !this.board) return;
@@ -2479,7 +2580,7 @@ class Game {
         } else {
             // Legacy game
             playerStats[0] = {
-                name: 'Red Army',
+                name: 'Player 1',
                 color: '#e74c3c',
                 units: 0,
                 unitValue: 0,
@@ -2487,7 +2588,7 @@ class Game {
                 funds: this.board.red_funds || 0
             };
             playerStats[1] = {
-                name: 'Blue Army',
+                name: 'Player 2',
                 color: '#3498db',
                 units: 0,
                 unitValue: 0,
@@ -2504,8 +2605,8 @@ class Game {
                 if (tile.unit.player_id !== undefined) {
                     playerId = tile.unit.player_id;
                 } else {
-                    // Legacy: map army to player ID
-                    playerId = tile.unit.army === 'RED' ? 0 : 1;
+                    // Legacy: default to player 0
+                    playerId = 0;
                 }
                 
                 if (playerStats[playerId]) {
@@ -2527,9 +2628,6 @@ class Game {
                 let playerId;
                 if (tile.player_id !== undefined) {
                     playerId = tile.player_id;
-                } else if (tile.army) {
-                    // Legacy: map army to player ID
-                    playerId = tile.army === 'RED' ? 0 : 1;
                 } else {
                     return; // Neutral property
                 }

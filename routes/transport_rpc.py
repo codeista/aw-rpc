@@ -201,7 +201,7 @@ def get_loadable_transports_rpc(token: str, cargo_x: int, cargo_y: int) -> Dict[
                                     'x': check_x,
                                     'y': check_y,
                                     'unit_type': tile.unit.type.name,
-                                    'army': tile.unit.army.name,
+                                    'player_id': mngr.board_v2.get_player_for_army(tile.unit.army) if hasattr(mngr, 'board_v2') else 0,
                                     'cargo_space': cargo_capacity - current_cargo,
                                     'cargo_info': {
                                         'current_cargo': current_cargo,
@@ -215,7 +215,7 @@ def get_loadable_transports_rpc(token: str, cargo_x: int, cargo_y: int) -> Dict[
             debug_info = {
                 'cargo_exists': cargo_tile is not None and cargo_tile.unit is not None,
                 'cargo_type': cargo_tile.unit.type.name if cargo_tile and cargo_tile.unit else "None",
-                'cargo_army': cargo_tile.unit.army.name if cargo_tile and cargo_tile.unit else "None",
+                'cargo_player_id': mngr.board_v2.get_player_for_army(cargo_tile.unit.army) if cargo_tile and cargo_tile.unit and hasattr(mngr, 'board_v2') else None,
                 'checked_positions': []
             }
             
@@ -384,7 +384,7 @@ def get_transport_info_rpc(token: str, transport_x: int, transport_y: int) -> Di
         unit = tile.unit
         transport_info = {
             'type': unit.type.name,
-            'army': unit.army.name,
+            'player_id': mngr.board_v2.get_player_for_army(unit.army) if hasattr(mngr, 'board_v2') else 0,
             'health': unit.status.hp,
             'fuel': unit.status.fuel,
             'cargo_capacity': getattr(unit, 'cargo_capacity', 0),
@@ -396,7 +396,7 @@ def get_transport_info_rpc(token: str, transport_x: int, transport_y: int) -> Di
             for cargo_unit in unit.cargo:
                 transport_info['cargo_units'].append({
                     'type': cargo_unit.type.name,
-                    'army': cargo_unit.army.name,
+                    'player_id': mngr.board_v2.get_player_for_army(cargo_unit.army) if hasattr(mngr, 'board_v2') else 0,
                     'health': cargo_unit.status.hp
                 })
         
@@ -461,7 +461,7 @@ def get_transport_summary_rpc(token: str) -> Dict[str, Any]:
                 transport_data = {
                     'position': (x, y),
                     'type': tile.unit.type.name,
-                    'army': tile.unit.army.name,
+                    'player_id': mngr.board_v2.get_player_for_army(tile.unit.army) if hasattr(mngr, 'board_v2') else 0,
                     'health': tile.unit.status.health,
                     'cargo_count': len(getattr(tile.unit, 'cargo', []))
                 }
@@ -500,7 +500,7 @@ def get_cargo_info_rpc(token: str, transport_x: int, transport_y: int) -> Dict[s
                 cargo_info.append({
                     'slot': i,
                     'type': cargo_unit.type.name,
-                    'army': cargo_unit.army.name,
+                    'player_id': mngr.board_v2.get_player_for_army(cargo_unit.army) if hasattr(mngr, 'board_v2') else 0,
                     'health': cargo_unit.status.hp,
                     'fuel': cargo_unit.status.fuel,
                     'ammo': cargo_unit.status.ammo
@@ -512,7 +512,7 @@ def get_cargo_info_rpc(token: str, transport_x: int, transport_y: int) -> Dict[s
                     cargo_info.append({
                         'slot': i,
                         'type': cargo_unit.type.name if hasattr(cargo_unit.type, 'name') else str(cargo_unit.type),
-                        'army': cargo_unit.army.name if hasattr(cargo_unit.army, 'name') else str(cargo_unit.army),
+                        'player_id': mngr.board_v2.get_player_for_army(cargo_unit.army) if hasattr(mngr, 'board_v2') else 0,
                         'health': cargo_unit.status.hp if hasattr(cargo_unit.status, 'hp') else cargo_unit.status.health,
                         'fuel': cargo_unit.status.fuel,
                         'ammo': cargo_unit.status.ammo
@@ -566,7 +566,7 @@ def get_loadable_units_rpc(token: str, transport_x: int, transport_y: int) -> Di
                         unit_info = {
                             'position': (check_x, check_y),
                             'type': tile.unit.type.name,
-                            'army': tile.unit.army.name,
+                            'player_id': mngr.board_v2.get_player_for_army(tile.unit.army) if hasattr(mngr, 'board_v2') else 0,
                             'health': tile.unit.status.health
                         }
                         loadable_units.append(unit_info)
@@ -590,6 +590,8 @@ def load_unit_rpc(token: str, unit_x: int, unit_y: int, transport_x: int, transp
     mngr = game_load(token)
     
     try:
+        # Note: mngr.unit_load expects cargo_x, cargo_y as first parameters
+        # So we pass unit_x as cargo_x and unit_y as cargo_y
         result = mngr.unit_load(unit_x, unit_y, transport_x, transport_y)
         
         if result.get('success'):
@@ -644,7 +646,7 @@ def get_transport_units_rpc(token: str) -> Dict[str, Any]:
                 unit_info = {
                     'position': (x, y),
                     'type': tile.unit.type.name,
-                    'army': tile.unit.army.name,
+                    'player_id': mngr.board_v2.get_player_for_army(tile.unit.army) if hasattr(mngr, 'board_v2') else 0,
                     'health': tile.unit.status.health,
                     'fuel': tile.unit.status.fuel,
                     'cargo_capacity': getattr(tile.unit, 'cargo_capacity', 0),

@@ -34,8 +34,8 @@ class TestAttackDefenseRanges(unittest.TestCase):
         # Give lots of funds for testing
         self.manager.board_v2.player_funds[0] = 500000
         self.manager.board_v2.player_funds[1] = 500000
-        self.manager._update_army_funds(Army.RED, 0)  # Update to 500000
-        self.manager._update_army_funds(Army.BLUE, 0)  # Update to 500000
+        self.manager._update_player_funds(Army.RED, 0)  # Update to 500000
+        self.manager._update_player_funds(Army.BLUE, 0)  # Update to 500000
     
     def create_unit(self, unit_type, army, x, y):
         """Helper to create a unit at position"""

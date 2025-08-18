@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advance Wars RPC</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 90%;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .subtitle {
+            text-align: center;
+            margin-bottom: 40px;
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+        }
+
+        .form-section h3 {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            opacity: 0.9;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        select option {
+            background: #2a5298;
+            color: #fff;
+        }
+
+        .player-setup {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .player-number {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .color-select {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .color-option {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            border: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+
+        .color-option.selected {
+            border-color: #fff;
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+        }
+
+        .color-option.selected::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .color-red { background: #e74c3c; }
+        .color-blue { background: #3498db; }
+        .color-green { background: #2ecc71; }
+        .color-yellow { background: #f1c40f; }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: #27ae60;
+            color: white;
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: #229954;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid #fff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .quick-start {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .quick-start button {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 10px 20px;
+            font-size: 14px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 30px 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚔️ Advance Wars RPC</h1>
+        <p class="subtitle">Strategic Turn-Based Combat</p>
+
+        <form id="gameSetupForm">
+            <div class="form-section">
+                <h3>🗺️ Game Settings</h3>
+                
+                <div class="form-group">
+                    <label for="mapSelect">Select Map</label>
+                    <select id="mapSelect" name="map">
+                        <option value="test">Test Map (Basic)</option>
+                        <option value="duel_balanced">Balanced Duel</option>
+                        <option value="small_test">Small Battle</option>
+                        <option value="comprehensive_test">Comprehensive Test</option>
+                        <option value="combat_test">Combat Test</option>
+                        <option value="land_test">Land Combat</option>
+                        <option value="naval_test">Naval Combat</option>
+                        <option value="air_test">Air Combat</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="playerCount">Number of Players</label>
+                    <select id="playerCount" name="playerCount" onchange="updatePlayerSetup()">
+                        <option value="2">2 Players</option>
+                        <option value="3">3 Players</option>
+                        <option value="4">4 Players</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>👥 Player Setup</h3>
+                <div id="playerSetup">
+                    <!-- Player setup will be generated here -->
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button type="submit" class="btn-primary">Start Game</button>
+                <button type="button" class="btn-secondary" onclick="quickStart()">Quick Battle</button>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Creating your game...</p>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const colors = ['red', 'blue', 'green', 'yellow'];
+        let selectedColors = {};
+
+        function updatePlayerSetup() {
+            const playerCount = parseInt(document.getElementById('playerCount').value);
+            const container = document.getElementById('playerSetup');
+            container.innerHTML = '';
+            selectedColors = {};
+
+            for (let i = 0; i < playerCount; i++) {
+                const playerDiv = document.createElement('div');
+                playerDiv.className = 'player-setup';
+                playerDiv.innerHTML = `
+                    <div class="player-number">${i + 1}</div>
+                    <div class="form-group">
+                        <label>Player ${i + 1} Name</label>
+                        <input type="text" id="player${i}Name" placeholder="Enter name" value="Player ${i + 1}">
+                    </div>
+                    <div class="form-group">
+                        <label>Army Color</label>
+                        <div class="color-select" id="colorSelect${i}">
+                            ${colors.map((color, index) => `
+                                <div class="color-option color-${color}" 
+                                     data-color="${color}" 
+                                     data-player="${i}"
+                                     onclick="selectColor(${i}, '${color}')"
+                                     ${i < colors.length && index === i ? 'data-default="true"' : ''}>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(playerDiv);
+                
+                // Auto-select default colors
+                if (i < colors.length) {
+                    selectColor(i, colors[i]);
+                }
+            }
+        }
+
+        function selectColor(playerId, color) {
+            // Check if color is already taken
+            for (let p in selectedColors) {
+                if (p != playerId && selectedColors[p] === color) {
+                    alert('This color is already taken!');
+                    return;
+                }
+            }
+
+            // Clear previous selection for this player
+            document.querySelectorAll(`#colorSelect${playerId} .color-option`).forEach(opt => {
+                opt.classList.remove('selected');
+            });
+
+            // Set new selection
+            document.querySelector(`#colorSelect${playerId} .color-option[data-color="${color}"]`).classList.add('selected');
+            selectedColors[playerId] = color;
+        }
+
+        async function createGame(players) {
+            const token = 'game-' + Math.random().toString(36).substr(2, 9);
+            const mapName = document.getElementById('mapSelect').value;
+
+            const response = await fetch('/api', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    jsonrpc: '2.0',
+                    method: 'game_create_with_setup',
+                    params: {
+                        token: token,
+                        setup_data: {
+                            map_id: mapName,
+                            players: players
+                        }
+                    },
+                    id: 1
+                })
+            });
+
+            const result = await response.json();
+            if (result.error) {
+                throw new Error(result.error.message);
+            }
+
+            return token;
+        }
+
+        document.getElementById('gameSetupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const playerCount = parseInt(document.getElementById('playerCount').value);
+            const players = [];
+
+            // Validate all players have colors
+            for (let i = 0; i < playerCount; i++) {
+                if (!selectedColors[i]) {
+                    alert(`Please select a color for Player ${i + 1}`);
+                    return;
+                }
+
+                const name = document.getElementById(`player${i}Name`).value || `Player ${i + 1}`;
+                const color = selectedColors[i];
+                
+                players.push({
+                    name: name,
+                    color: color.charAt(0).toUpperCase() + color.slice(1),
+                    sprite_color: color.toUpperCase()
+                });
+            }
+
+            // Show loading
+            document.getElementById('loading').classList.add('active');
+            document.querySelector('.btn-primary').disabled = true;
+
+            try {
+                const gameToken = await createGame(players);
+                // Redirect to game
+                window.location.href = `/game/${gameToken}`;
+            } catch (error) {
+                alert('Failed to create game: ' + error.message);
+                document.getElementById('loading').classList.remove('active');
+                document.querySelector('.btn-primary').disabled = false;
+            }
+        });
+
+        async function quickStart() {
+            const players = [
+                { name: 'Player 1', color: 'Red', sprite_color: 'RED' },
+                { name: 'Player 2', color: 'Blue', sprite_color: 'BLUE' }
+            ];
+
+            document.getElementById('loading').classList.add('active');
+
+            try {
+                const gameToken = await createGame(players);
+                window.location.href = `/game/${gameToken}`;
+            } catch (error) {
+                alert('Failed to create game: ' + error.message);
+                document.getElementById('loading').classList.remove('active');
+            }
+        }
+
+        // Initialize with 2 players
+        updatePlayerSetup();
+    </script>
+</body>
+</html>

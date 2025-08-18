@@ -197,7 +197,8 @@ class EnhancedCombatSystem:
     # =============================================================================
     
     def get_combat_preview(self, attacker_x: int, attacker_y: int,
-                          defender_x: int, defender_y: int) -> CombatPreview:
+                          defender_x: int, defender_y: int, 
+                          skip_range_check: bool = False) -> CombatPreview:
         """Get detailed combat preview for UI display"""
         attacker = self.manager.unit_at(attacker_x, attacker_y)
         defender = self.manager.unit_at(defender_x, defender_y)
@@ -213,9 +214,17 @@ class EnhancedCombatSystem:
         attacker_luck_range = self.get_damage_range(attacker, defender, defender_tile)
         
         # Check counter-attack possibility
-        can_counter = self.can_counter_attack(attacker, defender, 
-                                            (attacker_x, attacker_y), 
-                                            (defender_x, defender_y))
+        # When skip_range_check is True, assume hypothetical distance of 1 for counter calculations
+        if skip_range_check:
+            # For hypothetical combat, check if defender could counter at close range
+            hypothetical_distance = 1
+            can_counter = (not self._is_indirect_unit(defender) and 
+                          hypothetical_distance >= defender.status.rangemin and
+                          hypothetical_distance <= defender.status.rangemax)
+        else:
+            can_counter = self.can_counter_attack(attacker, defender, 
+                                                (attacker_x, attacker_y), 
+                                                (defender_x, defender_y))
         
         counter_damage = 0
         if can_counter:

@@ -43,14 +43,26 @@ class APIResponse:
     @staticmethod
     def game_context(manager) -> Dict[str, Any]:
         """Extract game context from manager"""
+        # Get current player info
+        current_player = manager.board.current_player
+        
+        # Count units per player
+        player_units = {}
+        for player_id in manager.board.turn_order:
+            player_units[player_id] = 0
+            
+        for tile in manager.board.grid:
+            if tile.unit:
+                player_id = tile.unit.player_id
+                if player_id in player_units:
+                    player_units[player_id] += 1
+        
         return {
-            "current_turn": manager.board.current_turn.name,
+            "current_player": current_player,
             "day": manager.board.days,
             "game_active": manager.board.game_active,
-            "red_funds": manager.board.red_funds,
-            "blue_funds": manager.board.blue_funds,
-            "red_troops": manager.board.total_red_troops,
-            "blue_troops": manager.board.total_blue_troops
+            "player_funds": dict(manager.board.player_funds),
+            "player_units": player_units
         }
     
     @staticmethod
@@ -59,18 +71,25 @@ class APIResponse:
         if not unit:
             return None
             
+        # Check if unit can capture (only INFANTRY and MECH)
+        can_capture = unit.type.name in ['INFANTRY', 'MECH'] and not getattr(unit.status, 'action_taken', False)
+        
         return {
             "id": getattr(unit, 'id', 'unknown'),
             "type": unit.type.name,
-            "army": unit.army.name,
-            "health": unit.status.hp,
+            "player_id": getattr(unit, 'player_id', None),
+            "x": getattr(unit, 'x', None),
+            "y": getattr(unit, 'y', None),
+            "hp": unit.status.hp,
             "fuel": unit.status.fuel,
             "ammo": unit.status.ammo,
-            "moved": getattr(unit.status, 'moved', False),
             "can_move": getattr(unit, 'can_move', False),
             "can_attack": getattr(unit, 'can_attack', False),
+            "can_capture": can_capture,
             "has_moved": getattr(unit.status, 'has_moved_this_turn', False),
-            "done": getattr(unit.status, 'action_taken', False)
+            "done": getattr(unit.status, 'action_taken', False),
+            "action_taken": getattr(unit.status, 'action_taken', False),
+            "is_hidden": getattr(unit, 'is_hidden', False)
         }
     
     @staticmethod
@@ -177,7 +196,7 @@ class RPCResponseBuilder:
             "unit": APIResponse.unit_info(unit),
             "position": {"x": x, "y": y},
             "cost": getattr(unit, 'cost', 0),
-            "remaining_funds": getattr(self.manager.board, f'{self.manager.board.current_turn.name.lower()}_funds', 0)
+            "remaining_funds": self.manager.board.player_funds.get(unit.player_id, 0)
         }
         
         return APIResponse.success(

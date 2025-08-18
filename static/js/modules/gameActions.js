@@ -409,12 +409,15 @@ function showUnitCreationModal(tile, type) {
     btn.onclick = () => {
         modal.style.display = 'none';
         const unitType = select.value;
-        const army = tile.mapTile.army;
+        
+        // Get player_id from tile or current player
+        const playerId = tile.player_id !== undefined ? tile.player_id : 
+                        (getBoard()?.current_player !== undefined ? getBoard().current_player : 0);
         
         // Use operation queue if available
         if (window.operationQueue) {
             window.operationQueue.add(
-                () => jsonrpc('unit_create', {army: army, unit_type: unitType, x: tile.x, y: tile.y}),
+                () => jsonrpc('unit_create', {player_id: playerId, unit_type: unitType, x: tile.x, y: tile.y}),
                 {
                     id: `create-${unitType}-${tile.x}-${tile.y}`,
                     description: `Creating ${unitType}`,
@@ -432,7 +435,7 @@ function showUnitCreationModal(tile, type) {
         } else {
             // Fallback without operation queue
             jsonrpc('unit_create', {
-                army: army,
+                player_id: playerId,
                 unit_type: unitType,
                 x: tile.x,
                 y: tile.y

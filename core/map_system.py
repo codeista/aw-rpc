@@ -6,16 +6,17 @@ from enum import Enum
 from dataclasses import dataclass
 import os
 
-
+# Define UnitClass locally to avoid circular import
+# This MUST match the values in core.unit.UnitClass
 class UnitClass(Enum):
-    FOOT = 'FOOT'
-    BOOTS = 'BOOTS'
-    TYRES = 'TYRES'
-    TREADS = 'TREADS'
-    AIR = 'AIR'
-    SEA = 'SEA'
-    LANDER = 'LANDER'
-    PIPE = 'PIPE'
+    BOOTS = 0
+    TREADS = 1
+    TYRES = 2
+    SEA = 3
+    AIR = 4
+    LANDER = 5
+    FOOT = 6
+    PIPE = 7
 
 
 class MapType(Enum):
@@ -93,7 +94,8 @@ class Army(Enum):
 class MapTile:
     """Individual map tile"""
     type: MapType
-    army: Optional[Army] = None
+    army: Optional[Army] = None  # DEPRECATED: Use player_id instead
+    player_id: Optional[int] = None  # Primary ownership field
     
     def is_property(self) -> bool:
         """Check if tile is a capturable property"""
@@ -275,6 +277,41 @@ TERRAIN_DEFENSE_STARS = {
     MapType.ROAD_SW: 0,
     MapType.BRIDGE_HORT: 0,
     MapType.BRIDGE_VERT: 0,
+    # Beach terrain - minimal defense like plains
+    MapType.BEACH_N: 0,
+    MapType.BEACH_S: 0,
+    MapType.BEACH_E: 0,
+    MapType.BEACH_W: 0,
+    MapType.BEACH_NE: 0,
+    MapType.BEACH_NW: 0,
+    MapType.BEACH_SE: 0,
+    MapType.BEACH_SW: 0,
+    # River terrain - minimal defense
+    MapType.RIVER_HORT: 0,
+    MapType.RIVER_VERT: 0,
+    MapType.RIVER_NW: 0,
+    MapType.RIVER_NE: 0,
+    MapType.RIVER_SE: 0,
+    MapType.RIVER_SW: 0,
+    # Pipe terrain - moderate defense
+    MapType.PIPE_HORT: 2,
+    MapType.PIPE_VERT: 2,
+    MapType.PIPE_N: 2,
+    MapType.PIPE_S: 2,
+    MapType.PIPE_E: 2,
+    MapType.PIPE_W: 2,
+    MapType.PIPE_NE: 2,
+    MapType.PIPE_NW: 2,
+    MapType.PIPE_SE: 2,
+    MapType.PIPE_SW: 2,
+    MapType.BROKEN_PIPE_HORT: 2,
+    MapType.BROKEN_PIPE_VERT: 2,
+    MapType.BROKEN_PIPE_N: 2,
+    MapType.BROKEN_PIPE_S: 2,
+    MapType.BROKEN_PIPE_E: 2,
+    MapType.BROKEN_PIPE_W: 2,
+    MapType.EMPTY_SILO: 3,
+    MapType.MISSILE_SILO: 3,
 }
 
 
@@ -306,22 +343,69 @@ MOVEMENT_COSTS = {
     MapType.REEF: [INF, INF, INF, INF, 1, 2, 2, INF],
     MapType.BRIDGE_HORT: [1, 1, 1, 1, 1, 1, 1, INF],
     MapType.BRIDGE_VERT: [1, 1, 1, 1, 1, 1, 1, INF],
+    # Beach terrain - same as roads for movement
+    MapType.BEACH_N: [1, 1, 1, 1, 1, INF, 1, INF],
+    MapType.BEACH_S: [1, 1, 1, 1, 1, INF, 1, INF],
+    MapType.BEACH_E: [1, 1, 1, 1, 1, INF, 1, INF],
+    MapType.BEACH_W: [1, 1, 1, 1, 1, INF, 1, INF],
+    MapType.BEACH_NE: [1, 1, 1, 1, 1, INF, 1, INF],
+    MapType.BEACH_NW: [1, 1, 1, 1, 1, INF, 1, INF],
+    MapType.BEACH_SE: [1, 1, 1, 1, 1, INF, 1, INF],
+    MapType.BEACH_SW: [1, 1, 1, 1, 1, INF, 1, INF],
+    # River terrain - only infantry/mech can cross, cost of 2. Air can fly over, sea units cannot enter
+    MapType.RIVER_HORT: [2, 1, INF, INF, 1, INF, INF, INF],
+    MapType.RIVER_VERT: [2, 1, INF, INF, 1, INF, INF, INF],
+    MapType.RIVER_NW: [2, 1, INF, INF, 1, INF, INF, INF],
+    MapType.RIVER_NE: [2, 1, INF, INF, 1, INF, INF, INF],
+    MapType.RIVER_SE: [2, 1, INF, INF, 1, INF, INF, INF],
+    MapType.RIVER_SW: [2, 1, INF, INF, 1, INF, INF, INF],
+    # Pipe terrain - only pipe units can traverse
+    MapType.PIPE_HORT: [INF, INF, INF, INF, INF, INF, INF, 1],
+    MapType.PIPE_VERT: [INF, INF, INF, INF, INF, INF, INF, 1],
+    MapType.PIPE_N: [INF, INF, INF, INF, INF, INF, INF, 1],
+    MapType.PIPE_S: [INF, INF, INF, INF, INF, INF, INF, 1],
+    MapType.PIPE_E: [INF, INF, INF, INF, INF, INF, INF, 1],
+    MapType.PIPE_W: [INF, INF, INF, INF, INF, INF, INF, 1],
+    MapType.PIPE_NE: [INF, INF, INF, INF, INF, INF, INF, 1],
+    MapType.PIPE_NW: [INF, INF, INF, INF, INF, INF, INF, 1],
+    MapType.PIPE_SE: [INF, INF, INF, INF, INF, INF, INF, 1],
+    MapType.PIPE_SW: [INF, INF, INF, INF, INF, INF, INF, 1],
+    # Broken pipes - all units can traverse like plains
+    MapType.BROKEN_PIPE_HORT: [1, 1, 2, 1, 1, INF, 1, INF],
+    MapType.BROKEN_PIPE_VERT: [1, 1, 2, 1, 1, INF, 1, INF],
+    MapType.BROKEN_PIPE_N: [1, 1, 2, 1, 1, INF, 1, INF],
+    MapType.BROKEN_PIPE_S: [1, 1, 2, 1, 1, INF, 1, INF],
+    MapType.BROKEN_PIPE_E: [1, 1, 2, 1, 1, INF, 1, INF],
+    MapType.BROKEN_PIPE_W: [1, 1, 2, 1, 1, INF, 1, INF],
+    MapType.EMPTY_SILO: [1, 1, 1, 1, 1, INF, 1, INF],
+    MapType.MISSILE_SILO: [1, 1, 1, 1, 1, INF, 1, INF],
 }
 
 
-def get_movement_cost(unit_class: UnitClass, terrain: MapType) -> int:
-    """Get movement cost for unit class on terrain"""
-    class_map = {
-        UnitClass.FOOT: 0,
-        UnitClass.BOOTS: 1,
-        UnitClass.TYRES: 2,
-        UnitClass.TREADS: 3,
-        UnitClass.AIR: 4,
-        UnitClass.SEA: 5,
-        UnitClass.LANDER: 6,
-        UnitClass.PIPE: 7
-    }
+def get_movement_cost(unit_class, terrain: MapType) -> int:
+    """Get movement cost for unit class on terrain
+    
+    Args:
+        unit_class: Can be either map_system.UnitClass or unit.UnitClass
+        terrain: Terrain type
+    """
+    # Handle both enum types by using the value
+    if hasattr(unit_class, 'value'):
+        # Map unit class values to movement class indices
+        value_to_idx = {
+            0: 1,  # BOOTS -> index 1
+            1: 3,  # TREADS -> index 3
+            2: 2,  # TYRES -> index 2
+            3: 5,  # SEA -> index 5
+            4: 4,  # AIR -> index 4
+            5: 6,  # LANDER -> index 6
+            6: 0,  # FOOT -> index 0
+            7: 7   # PIPE -> index 7
+        }
+        idx = value_to_idx.get(unit_class.value, 0)
+    else:
+        # Fallback for direct integer
+        idx = 0
     
     costs = MOVEMENT_COSTS.get(terrain, [INF] * 8)
-    idx = class_map.get(unit_class, 0)
     return costs[idx]

@@ -92,27 +92,27 @@ class RecentFeaturesRegressionTester:
         # Create units for testing
         # Create a direct unit (TANK)
         result = self.rpc_call('unit_create', {
-            'army': 'RED',
             'unit_type': 'TANK',
-            'x': 2, 'y': 2
+            'x': 2, 'y': 2,
+            'player_id': 0  # Player 0 (RED)
         })
         if not self.assert_success(result, "Create TANK for combat test"):
             return False
             
         # Create an indirect unit (ROCKET) 
         result = self.rpc_call('unit_create', {
-            'army': 'BLUE',
             'unit_type': 'ROCKET',
-            'x': 6, 'y': 2
+            'x': 6, 'y': 2,
+            'player_id': 1  # Player 1 (BLUE)
         })
         if not self.assert_success(result, "Create ROCKET for combat test"):
             return False
             
         # Create another direct unit (ANTIAIR)
         result = self.rpc_call('unit_create', {
-            'army': 'BLUE',
             'unit_type': 'ANTIAIR',
-            'x': 7, 'y': 2
+            'x': 7, 'y': 2,
+            'player_id': 1  # Player 1 (BLUE)
         })
         if not self.assert_success(result, "Create ANTIAIR for combat test"):
             return False
@@ -173,9 +173,9 @@ class RecentFeaturesRegressionTester:
         # Test 4: Adjacent direct units should show counter damage
         # Create units next to each other for proper counter test
         result = self.rpc_call('unit_create', {
-            'army': 'BLUE',
             'unit_type': 'TANK',
-            'x': 3, 'y': 2
+            'x': 3, 'y': 2,
+            'player_id': 1  # Player 1 (BLUE)
         })
         if not self.assert_success(result, "Create adjacent BLUE TANK"):
             return False
@@ -216,18 +216,18 @@ class RecentFeaturesRegressionTester:
         
         # Create units for testing
         result = self.rpc_call('unit_create', {
-            'army': 'RED',
             'unit_type': 'INFANTRY',
-            'x': 3, 'y': 3
+            'x': 3, 'y': 3,
+            'player_id': 0  # Player 0 (RED)
         })
         if not self.assert_success(result, "Create unit for delete test"):
             return False
             
         # Create enemy unit
         result = self.rpc_call('unit_create', {
-            'army': 'BLUE',
             'unit_type': 'INFANTRY',
-            'x': 4, 'y': 3
+            'x': 4, 'y': 3,
+            'player_id': 1  # Player 1 (BLUE)
         })
         if not self.assert_success(result, "Create enemy unit"):
             return False
@@ -271,27 +271,27 @@ class RecentFeaturesRegressionTester:
         # Create multiple units
         # Unit 1: Infantry
         result = self.rpc_call('unit_create', {
-            'army': 'RED',
             'unit_type': 'INFANTRY',
-            'x': 0, 'y': 4
+            'x': 0, 'y': 4,
+            'player_id': 0  # Player 0 (RED)
         })
         if not self.assert_success(result, "Create Infantry for turn test"):
             return False
             
         # Unit 2: Tank
         result = self.rpc_call('unit_create', {
-            'army': 'RED',
             'unit_type': 'TANK',
-            'x': 1, 'y': 4
+            'x': 1, 'y': 4,
+            'player_id': 0  # Player 0 (RED)
         })
         if not self.assert_success(result, "Create Tank for turn test"):
             return False
             
         # Unit 3: APC (transport)
         result = self.rpc_call('unit_create', {
-            'army': 'RED',
             'unit_type': 'APC',
-            'x': 2, 'y': 4
+            'x': 2, 'y': 4,
+            'player_id': 0  # Player 0 (RED)
         })
         if not self.assert_success(result, "Create APC for turn test"):
             return False
@@ -333,9 +333,9 @@ class RecentFeaturesRegressionTester:
         
         # Create infantry next to APC for loading test
         result = self.rpc_call('unit_create', {
-            'army': 'RED',
             'unit_type': 'INFANTRY',
-            'x': 3, 'y': 5
+            'x': 3, 'y': 5,
+            'player_id': 0  # Player 0 (RED)
         })
         if not self.assert_success(result, "Create Infantry next to APC"):
             return False
@@ -398,9 +398,9 @@ class RecentFeaturesRegressionTester:
         else:
             # Create transport to test
             result = self.rpc_call('unit_create', {
-                'army': 'RED',
                 'unit_type': 'APC',
-                'x': 5, 'y': 5
+                'x': 5, 'y': 5,
+                'player_id': 0  # Player 0 (RED)
             })
             if self.assert_success(result, "Create APC for display test"):
                 # Check its properties

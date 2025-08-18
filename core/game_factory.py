@@ -149,11 +149,11 @@ class GameFactory:
         # Initialize with player manager
         board.initialize_from_player_manager(player_manager)
         
-        # Set turn order based on players
-        board.turn_order = [board.get_army_for_player(i) 
-                           for i in range(player_manager.get_player_count())
-                           if board.get_army_for_player(i) is not None]
-        board.current_turn = board.turn_order[0] if board.turn_order else Army.RED
+        # Turn order is already set by initialize_from_player_manager
+        # Just ensure current_player is set
+        if not board.turn_order:
+            board.turn_order = list(range(player_manager.get_player_count()))
+        board.current_player = 0
         
         # Create config
         config = Config()  # Will be set by setup_initial_economy
@@ -163,9 +163,9 @@ class GameFactory:
         manager.setup_initial_economy()
         
         # Distribute initial income to the first player
-        manager._update_army_statistics()  # Ensure property counts are updated
-        current_army = manager.board.current_turn
-        manager._apply_turn_start_effects(current_army)  # Give first player their income
+        manager._update_player_statistics()  # Ensure property counts are updated
+        current_player_id = manager.board_v2.current_player
+        manager._apply_turn_start_effects(current_player_id)  # Give first player their income
         
         return manager, token
         

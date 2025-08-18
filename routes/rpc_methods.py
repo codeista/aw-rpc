@@ -14,6 +14,22 @@ from middleware.error_handling import (
     AWRPCError, ValidationError, GameStateError, UnitError, MovementError
 )
 
+def save_game_state(mngr, token):
+    """Save game state to memory and database"""
+    from core.game_utils import games
+    
+    # Save to memory
+    games[token] = mngr
+    
+    # Persist to database - import here to avoid circular import issues
+    import sys
+    app_module = sys.modules.get('app')
+    if app_module and hasattr(app_module, 'game_save'):
+        app_module.game_save(mngr, token)
+    else:
+        # Fallback: just save to memory
+        pass
+
 # Import decorator - define here to avoid circular imports
 from functools import wraps
 import time
@@ -86,7 +102,7 @@ def game_create_with_setup(token: str, setup_data: Dict[str, Any]) -> Dict[str, 
         # Create manager and store game
         mngr = GameManager(config_game, board)
         mngr.app_logger = app_logger
-        games[token] = mngr
+        save_game_state(mngr, token)
         
         app_logger.info(f"Game created successfully: {token}")
         return {
@@ -141,14 +157,20 @@ def game_create_rpc(token: str) -> Dict[str, Any]:
     from core.game_utils import game_load, games
     
     mngr = game_load(token)
-    games[token] = mngr
+    save_game_state(mngr, token)
     app_logger.info(f"Created game: {token}")
     return {'success': True, 'token': token}
 
 @log_rpc_performance
 @jsonrpc.method('game_board')
-def game_board_rpc(token: str) -> Dict[str, Any]:
-    """Get the current game board state"""
+def game_board_rpc(token: str, viewing_player_id: int = None) -> Dict[str, Any]:
+    """Get the current game board state
+    
+    Args:
+        token: Game token
+        viewing_player_id: ID of the player viewing the board (optional)
+                          If not provided, shows all units (backward compatibility)
+    """
     # Import here to avoid circular imports
     from core.game_utils import game_load
     
@@ -164,25 +186,71 @@ def game_board_rpc(token: str) -> Dict[str, Any]:
             'x': x,
             'y': y,
             'type': tile.mapTile.type.name if (tile.mapTile and hasattr(tile.mapTile.type, 'name')) else 'PLAIN',
-            'army': tile.mapTile.army.name if (tile.mapTile and tile.mapTile.army) else None,
-            'unit': None
+            'player_id': None,  # Will be set below with proper logic
+            'unit': None,
+            'capture_progress': getattr(tile, 'capture_hp', 20) if tile.mapTile else None,  # Add capture progress
+            'can_be_attacked': getattr(tile, 'can_be_attacked', False),  # Include attack highlight
+            'can_be_moved_to': getattr(tile, 'can_be_moved_to', False)  # Include movement highlight
         }
         
+        # Add player_id for owned tiles
+        if tile.mapTile and tile.mapTile.army:
+            player_id = mngr.board.get_player_for_army(tile.mapTile.army)
+            tile_data['player_id'] = player_id
+        
         if tile.unit:
-            from core.api_response import APIResponse
-            tile_data['unit'] = APIResponse.unit_info(tile.unit)
+            # Set position for API response
+            tile.unit.x = x
+            tile.unit.y = y
+            
+            # Check visibility if viewing_player_id is provided
+            if viewing_player_id is not None:
+                # Only include unit if visible to the viewing player
+                if mngr.is_unit_visible_to_player(tile.unit, viewing_player_id):
+                    from core.api_response import APIResponse
+                    tile_data['unit'] = APIResponse.unit_info(tile.unit)
+            else:
+                # No viewing_player_id provided - show all units (backward compatibility)
+                from core.api_response import APIResponse
+                tile_data['unit'] = APIResponse.unit_info(tile.unit)
             
         grid_data.append(tile_data)
+    
+    # Get player information
+    players = []
+    if hasattr(mngr.board, 'player_manager'):
+        for player_id in range(mngr.board.player_manager.get_player_count()):
+            player = mngr.board.player_manager.get_player(player_id)
+            if player:
+                army = mngr.board.get_army_for_player(player_id)
+                players.append({
+                    'id': player_id,
+                    'name': player.name,
+                    'army': army.name if army else None,
+                    'funds': mngr.board.player_funds.get(player_id, 0)
+                })
+    
+    # Get sprite mapping from player manager
+    sprite_mapping = {}
+    if hasattr(mngr, 'player_manager') and mngr.player_manager:
+        player_data = mngr.player_manager.to_dict()
+        sprite_mapping = player_data.get('sprite_mapping', {})
+    
+    # Build player_funds array
+    player_funds = []
+    for player_id in range(len(players)):
+        player_funds.append(mngr.board.player_funds.get(player_id, 0))
     
     return {
         'width': mngr.board.width,
         'height': mngr.board.height,
         'grid': grid_data,
-        'current_turn': mngr.board.current_turn.name if mngr.board.current_turn else 'RED',
-        'days': mngr.board.days,
-        'red_funds': mngr.board.red_funds,
-        'blue_funds': mngr.board.blue_funds,
-        'game_active': mngr.board.game_active
+        'current_player': mngr.board.current_player,
+        'day': mngr.board.days,
+        'player_funds': player_funds,
+        'game_active': mngr.board.game_active,
+        'players': players,
+        'sprite_mapping': sprite_mapping
     }
 
 @log_rpc_performance
@@ -202,7 +270,7 @@ def army_end_turn_rpc(token: str) -> Dict[str, Any]:
         mngr.army_end_turn()
         
         # Save game state
-        games[token] = mngr
+        save_game_state(mngr, token)
         
         # Log the turn change
         log_game_event(app_logger, 'TURN_ENDED', {
@@ -258,7 +326,7 @@ def tile_rpc(token: str, x: int, y: int) -> Dict[str, Any]:
         'x': x,
         'y': y,
         'type': tile_type,
-        'army': tile.mapTile.army.name if (tile.mapTile and tile.mapTile.army) else None,
+        'player_id': None,  # Will be set properly
         'unit': None
     }
     
@@ -270,7 +338,7 @@ def tile_rpc(token: str, x: int, y: int) -> Dict[str, Any]:
         
         tile_info['unit'] = {
             'type': tile.unit.type.name,
-            'army': tile.unit.army.name,
+            'player_id': getattr(tile.unit, 'player_id', 0),  # Use unit's player_id directly
             'health': tile.unit.status.hp,
             'fuel': tile.unit.status.fuel,
             'ammo': tile.unit.status.ammo,
@@ -303,7 +371,7 @@ def capture_tile_rpc(token: str, x: int, y: int) -> Dict[str, Any]:
             })
             
             # Save game state
-            games[token] = mngr
+            save_game_state(mngr, token)
         
         return result
         
@@ -313,7 +381,7 @@ def capture_tile_rpc(token: str, x: int, y: int) -> Dict[str, Any]:
 
 @log_rpc_performance
 @jsonrpc.method('unit_create')
-def unit_create_rpc(token: str, unit_type: str, x: int, y: int, army: str = None) -> Dict[str, Any]:
+def unit_create_rpc(token: str, unit_type: str, x: int, y: int, player_id: int = None) -> Dict[str, Any]:
     """Create a new unit at the specified position
     
     Args:
@@ -321,7 +389,7 @@ def unit_create_rpc(token: str, unit_type: str, x: int, y: int, army: str = None
         unit_type: Type of unit to create
         x: X coordinate
         y: Y coordinate
-        army: Army name (optional, defaults to current turn)
+        player_id: Player ID (optional, defaults to current player)
     """
     # Import here to avoid circular imports
     from core.game_utils import game_load, games
@@ -330,15 +398,14 @@ def unit_create_rpc(token: str, unit_type: str, x: int, y: int, army: str = None
     mngr = game_load(token)
     
     try:
-        # Use provided army or default to current turn
-        if army is None:
-            current_turn = mngr.board.current_turn
-            if current_turn is None:
-                # Fallback to player 0's army if no current turn set
-                army = mngr.board.player_to_army.get(0, Army.RED).name
-            else:
-                army = current_turn.name
-        unit = mngr.unit_create(army, unit_type, x, y)
+        # Use provided player_id or default to current player
+        if player_id is None:
+            player_id = mngr.board.current_player
+            if player_id is None:
+                player_id = 0  # Fallback to player 0
+        
+        # Use the new player-based method
+        unit = mngr.unit_create_v2(player_id, unit_type, x, y)
         
         # Build response
         response_builder = RPCResponseBuilder(mngr)
@@ -347,7 +414,7 @@ def unit_create_rpc(token: str, unit_type: str, x: int, y: int, army: str = None
         # Log unit creation
         log_game_event(app_logger, 'UNIT_CREATED', {
             'token': token,
-            'army': army,
+            'player_id': player_id,
             'unit_type': unit_type,
             'x': x,
             'y': y,
@@ -355,7 +422,7 @@ def unit_create_rpc(token: str, unit_type: str, x: int, y: int, army: str = None
         })
         
         # Save game state
-        games[token] = mngr
+        save_game_state(mngr, token)
         
         return response
         
@@ -386,7 +453,7 @@ def unit_move_rpc(token: str, from_x: int, from_y: int, to_x: int, to_y: int) ->
             })
             
             # Save game state
-            games[token] = mngr
+            save_game_state(mngr, token)
         
         return result
         
@@ -422,52 +489,79 @@ def unit_attack_rpc(token: str, attacker_x: int, attacker_y: int, target_x: int,
     """Have one unit attack another"""
     # Import here to avoid circular imports
     from core.game_utils import game_load, games
+    from core.enhanced_combat_system import EnhancedCombatResult
     
     mngr = game_load(token)
     
     try:
         result = mngr.unit_attack(attacker_x, attacker_y, target_x, target_y)
         
-        if result.get('success'):
-            # Log combat
-            log_game_event(app_logger, 'COMBAT_OCCURRED', {
-                'token': token,
-                'attacker_pos': (attacker_x, attacker_y),
-                'target_pos': (target_x, target_y),
-                'damage_dealt': result.get('damage_dealt', 0),
-                'counter_damage': result.get('counter_damage', 0)
-            })
+        # Convert EnhancedCombatResult to dict
+        if isinstance(result, EnhancedCombatResult):
+            result_dict = {
+                'success': True,
+                'attacker_damage_dealt': result.attacker_damage_dealt,
+                'defender_damage_dealt': result.defender_damage_dealt,
+                'counter_damage': result.defender_damage_dealt,  # For backward compatibility
+                'damage_dealt': result.attacker_damage_dealt,    # For backward compatibility
+                'attacker_hp_before': result.attacker_hp_before,
+                'attacker_hp_after': result.attacker_hp_after,
+                'defender_hp_before': result.defender_hp_before,
+                'defender_hp_after': result.defender_hp_after,
+                'attacker_destroyed': result.attacker_destroyed,
+                'defender_destroyed': result.defender_destroyed,
+                'target_destroyed': result.defender_destroyed,   # For backward compatibility
+                'counter_attack_occurred': result.counter_attack_occurred,
+                'terrain_bonus_used': result.terrain_bonus_used,
+                'luck_bonus_attacker': result.luck_bonus_attacker,
+                'luck_bonus_defender': result.luck_bonus_defender
+            }
+            
+            # Log combat if damage was dealt
+            if result.attacker_damage_dealt > 0:
+                log_game_event(app_logger, 'COMBAT_OCCURRED', {
+                    'token': token,
+                    'attacker_pos': (attacker_x, attacker_y),
+                    'target_pos': (target_x, target_y),
+                    'damage_dealt': result.attacker_damage_dealt,
+                    'counter_damage': result.defender_damage_dealt
+                })
             
             # Save game state
-            games[token] = mngr
-        
-        return result
+            save_game_state(mngr, token)
+            
+            return result_dict
+        else:
+            # Fallback for unexpected result type
+            return {'success': False, 'error': 'Invalid combat result type'}
         
     except Exception as e:
         app_logger.error(f"Error in combat at ({attacker_x},{attacker_y}) -> ({target_x},{target_y}) for {token}: {e}")
         return {'success': False, 'error': str(e)}
 
-@log_rpc_performance
-@jsonrpc.method('unit_load')
-def unit_load_rpc(token: str, cargo_x: int, cargo_y: int, transport_x: int, transport_y: int) -> Dict[str, Any]:
-    """Load a unit into a transport"""
-    # Import here to avoid circular imports
-    from core.game_utils import game_load, games
-    
-    mngr = game_load(token)
-    
-    try:
-        result = mngr.unit_load(cargo_x, cargo_y, transport_x, transport_y)
-        
-        if result.get('success'):
-            # Save game state
-            games[token] = mngr
-        
-        return result
-        
-    except Exception as e:
-        app_logger.error(f"Error loading unit at ({cargo_x},{cargo_y}) into transport at ({transport_x},{transport_y}) for {token}: {e}")
-        return {'success': False, 'error': str(e)}
+# REMOVED - Duplicate method exists in transport_rpc.py with different parameter names
+# The transport_rpc.py version uses unit_x, unit_y which matches frontend usage
+# @log_rpc_performance
+# @jsonrpc.method('unit_load')
+# def unit_load_rpc(token: str, cargo_x: int, cargo_y: int, transport_x: int, transport_y: int) -> Dict[str, Any]:
+#     """Load a unit into a transport"""
+#     # Import here to avoid circular imports
+#     from core.game_utils import game_load, games
+#     
+#     mngr = game_load(token)
+#     
+#     try:
+#         result = mngr.unit_load(cargo_x, cargo_y, transport_x, transport_y)
+#         
+#         if result.get('success'):
+#             # Save game state
+#             games[token] = mngr
+#         
+#         return result
+#         
+#     except Exception as e:
+#         app_logger.error(f"Error loading unit at ({cargo_x},{cargo_y}) into transport at ({transport_x},{transport_y}) for {token}: {e}")
+#         return {'success': False, 'error': str(e)}
 
 @log_rpc_performance
 @jsonrpc.method('unit_unload')
@@ -483,7 +577,7 @@ def unit_unload_rpc(token: str, transport_x: int, transport_y: int, unload_x: in
         
         if result.get('success'):
             # Save game state
-            games[token] = mngr
+            save_game_state(mngr, token)
         
         return result
         
@@ -546,52 +640,45 @@ def damage_estimate_rpc(token: str, attacker_x: int, attacker_y: int, target_x: 
 
 @log_rpc_performance
 @jsonrpc.method('check_turn')
-def check_turn_rpc(token: str, army: str = None) -> Dict[str, Any]:
+def check_turn_rpc(token: str, player_id: int = None) -> Dict[str, Any]:
     """Check turn status and game information"""
     # Import here to avoid circular imports
     from core.game_utils import game_load
-    from core.map_system import Army
     from core.api_response import APIResponse
     
     mngr = game_load(token)
     
     try:
-        # Get current turn info
-        current_turn_army = mngr.board.current_turn
-        current_turn_name = current_turn_army.name if hasattr(current_turn_army, 'name') else str(current_turn_army)
+        # Get current turn info  
+        current_player = mngr.board.current_player
         
-        # Get turn order as army names
-        turn_order_names = []
-        for player_id in mngr.board.turn_order:
-            player_army = mngr.board.get_army_for_player(player_id)
-            if player_army:
-                turn_order_names.append(player_army.name)
+        # Get turn order as player IDs
+        turn_order = mngr.board.turn_order
         
         result = {
-            'current_turn': current_turn_name,
-            'turn_order': turn_order_names,
+            'current_player': current_player,
+            'turn_order': turn_order,
             'day': mngr.board.days,
             'game_active': mngr.board.game_active
         }
         
-        # If army is specified, check if it's their turn and count units
-        if army:
-            army_enum = Army[army]
-            is_turn = mngr.board.current_turn == army_enum
+        # If player_id is specified, check if it's their turn and count units
+        if player_id is not None:
+            is_turn = mngr.board.current_player == player_id
             
-            # Count active units for the army
+            # Count active units for the player
             active_units = 0
             available_actions = 0
             
             for tile in mngr.board.grid:
-                if tile.unit and tile.unit.army == army_enum:
+                if tile.unit and tile.unit.player_id == player_id:
                     active_units += 1
-                    if not getattr(tile.unit.status, 'moved', False):
+                    if tile.unit.can_move or tile.unit.can_attack:
                         available_actions += 1
             
             result.update({
                 'is_turn': is_turn,
-                'requested_army': army,
+                'requested_player': player_id,
                 'active_units': active_units,
                 'available_actions': available_actions
             })
@@ -599,8 +686,8 @@ def check_turn_rpc(token: str, army: str = None) -> Dict[str, Any]:
         return result
         
     except Exception as e:
-        app_logger.error(f"Error checking turn for army {army} in {token}: {e}")
-        return APIResponse.error(str(e), code='INVALID_ARMY')
+        app_logger.error(f"Error checking turn for player {player_id} in {token}: {e}")
+        return {'error': str(e)}
 
 @log_rpc_performance
 @jsonrpc.method('damage_preview')
@@ -685,11 +772,18 @@ def produce_unit_rpc(token: str, unit_type: str, x: int, y: int) -> Dict[str, An
     """Produce a unit at a factory"""
     # Import here to avoid circular imports
     from core.game_utils import game_load, games
+    from core.api_response import APIResponse
     
     mngr = game_load(token)
     
     try:
-        result = mngr.produce_unit(unit_type, x, y)
+        # Call the correct method with proper parameter order
+        unit = mngr.produce_unit_at_facility(x, y, unit_type)
+        result = {
+            'success': True,
+            'unit': APIResponse.unit_info(unit) if unit else None,
+            'cost': mngr.get_unit_cost(unit_type) if hasattr(mngr, 'get_unit_cost') else 0
+        }
         
         if result.get('success'):
             # Log unit production
@@ -702,7 +796,7 @@ def produce_unit_rpc(token: str, unit_type: str, x: int, y: int) -> Dict[str, An
             })
             
             # Save game state
-            games[token] = mngr
+            save_game_state(mngr, token)
         
         return result
         
@@ -720,9 +814,13 @@ def get_production_options_rpc(token: str, x: int, y: int) -> Dict[str, Any]:
     mngr = game_load(token)
     
     try:
-        # Get current player's army
-        current_player_id = mngr.board_v2.current_player
-        army_enum = mngr.board_v2.get_army_for_player(current_player_id)
+        # Get current player ID
+        current_player_id = mngr.board.current_player
+        if current_player_id is None:
+            return {'available_units': [], 'error': 'No current player'}
+            
+        # For now, convert to army for the legacy method
+        army_enum = mngr.board.get_army_for_player(current_player_id)
         if not army_enum:
             return {'available_units': [], 'error': 'No army found for current player'}
             
@@ -734,84 +832,137 @@ def get_production_options_rpc(token: str, x: int, y: int) -> Dict[str, Any]:
         return {'available_units': [], 'error': str(e)}
 
 @log_rpc_performance
-@jsonrpc.method('get_army_economy')
-def get_army_economy_rpc(token: str, army: str = None) -> Dict[str, Any]:
-    """Get economic information for an army (defaults to current player)"""
+@jsonrpc.method('test_damage_unit')
+def test_damage_unit_rpc(token: str, x: int, y: int, hp: int) -> Dict[str, Any]:
+    """Test method to set unit HP for testing damage display"""
     # Import here to avoid circular imports
-    from core.game_utils import game_load
-    from core.map_system import Army
+    from core.game_utils import game_load, games
     
     mngr = game_load(token)
     
     try:
-        if army:
-            army_enum = Army[army]
-        else:
-            # Use current player's army
-            current_player_id = mngr.board_v2.current_player
-            army_enum = mngr.board_v2.get_army_for_player(current_player_id)
-            if not army_enum:
-                return {'error': 'No army found for current player'}
+        # Find unit at position
+        tile = mngr.tile_at(x, y)
+        if not tile or not tile.unit:
+            return {'success': False, 'error': f'No unit at ({x},{y})'}
+        
+        # Set HP
+        old_hp = tile.unit.status.hp
+        tile.unit.status.hp = hp
+        
+        # Save game state
+        games[token] = mngr
+        
+        return {
+            'success': True,
+            'message': f'Unit HP changed from {old_hp} to {hp}',
+            'unit': {
+                'type': tile.unit.type.name,
+                'x': x,
+                'y': y,
+                'hp': tile.unit.status.hp
+            }
+        }
+    except Exception as e:
+        app_logger.error(f"Error damaging unit at ({x},{y}): {e}")
+        return {'success': False, 'error': str(e)}
+
+@log_rpc_performance
+@jsonrpc.method('get_player_economy')
+def get_player_economy_rpc(token: str, player_id: int = None) -> Dict[str, Any]:
+    """Get economic information for a player (defaults to current player)"""
+    # Import here to avoid circular imports
+    from core.game_utils import game_load
+    
+    mngr = game_load(token)
+    
+    try:
+        if player_id is None:
+            player_id = mngr.board.current_player
+            if player_id is None:
+                return {'error': 'No current player'}
                 
-        result = mngr.get_army_economy(army_enum)
-        return result
+        # Get player economy data
+        funds = mngr.board.player_funds.get(player_id, 0)
+        income = mngr.get_player_income(player_id) if hasattr(mngr, 'get_player_income') else 0
+        
+        return {
+            'player_id': player_id,
+            'funds': funds,
+            'income': income
+        }
         
     except Exception as e:
-        app_logger.error(f"Error getting economy for army {army} in {token}: {e}")
+        app_logger.error(f"Error getting economy for player {player_id} in {token}: {e}")
         return {'error': str(e)}
 
 @log_rpc_performance
-@jsonrpc.method('get_army_facilities')
-def get_army_facilities_rpc(token: str, army: str = None) -> Dict[str, Any]:
-    """Get facilities owned by an army (defaults to current player)"""
+@jsonrpc.method('get_player_facilities')
+def get_player_facilities_rpc(token: str, player_id: int = None) -> Dict[str, Any]:
+    """Get facilities owned by a player (defaults to current player)"""
     # Import here to avoid circular imports
     from core.game_utils import game_load
-    from core.map_system import Army
     
     mngr = game_load(token)
     
     try:
-        if army:
-            army_enum = Army[army]
-        else:
-            # Use current player's army
-            current_player_id = mngr.board_v2.current_player
-            army_enum = mngr.board_v2.get_army_for_player(current_player_id)
-            if not army_enum:
-                return {'error': 'No army found for current player'}
+        if player_id is None:
+            player_id = mngr.board.current_player
+            if player_id is None:
+                return {'error': 'No current player'}
                 
-        result = mngr.get_army_facilities(army_enum)
-        return result
+        # Get player facilities
+        facilities = []
+        for tile in mngr.board.grid:
+            if mngr.board.is_tile_owned_by_player(tile, player_id):
+                if tile.mapTile and tile.mapTile.is_production_facility():
+                    facilities.append({
+                        'type': tile.mapTile.type.name,
+                        'x': tile.x,
+                        'y': tile.y
+                    })
+        
+        return {
+            'player_id': player_id,
+            'facilities': facilities,
+            'count': len(facilities)
+        }
         
     except Exception as e:
-        app_logger.error(f"Error getting facilities for army {army} in {token}: {e}")
+        app_logger.error(f"Error getting facilities for player {player_id} in {token}: {e}")
         return {'error': str(e)}
 
 @log_rpc_performance
 @jsonrpc.method('can_afford_unit')
-def can_afford_unit_rpc(token: str, unit_type: str, army: str = None) -> Dict[str, Any]:
-    """Check if an army can afford a specific unit (defaults to current player)"""
+def can_afford_unit_rpc(token: str, unit_type: str, player_id: int = None) -> Dict[str, Any]:
+    """Check if a player can afford a specific unit (defaults to current player)"""
     # Import here to avoid circular imports
     from core.game_utils import game_load
-    from core.map_system import Army
+    from core.production_system import ProductionSystem
+    from core.unit import UnitType
     
     mngr = game_load(token)
     
     try:
-        if army:
-            army_enum = Army[army]
-        else:
-            # Use current player's army
-            current_player_id = mngr.board_v2.current_player
-            army_enum = mngr.board_v2.get_army_for_player(current_player_id)
-            if not army_enum:
-                return {'can_afford': False, 'error': 'No army found for current player'}
+        if player_id is None:
+            player_id = mngr.board.current_player
+            if player_id is None:
+                return {'can_afford': False, 'error': 'No current player'}
                 
-        can_afford = mngr.can_afford_unit(unit_type, army_enum)
-        return {'can_afford': can_afford}
+        # Get player funds and unit cost
+        funds = mngr.board.player_funds.get(player_id, 0)
+        unit_type_enum = UnitType[unit_type] if isinstance(unit_type, str) else unit_type
+        cost = ProductionSystem.UNIT_COSTS.get(unit_type_enum, 99999)
+        
+        can_afford = funds >= cost
+        return {
+            'can_afford': can_afford,
+            'player_funds': funds,
+            'unit_cost': cost
+        }
         
     except Exception as e:
-        app_logger.error(f"Error checking if army {army} can afford {unit_type} in {token}: {e}")
+        app_logger.error(f"Error checking if player {player_id} can afford {unit_type} in {token}: {e}")
         return {'can_afford': False, 'error': str(e)}
 
 @log_rpc_performance
@@ -863,7 +1014,7 @@ def unit_move_enhanced_rpc(token: str, from_x: int, from_y: int, to_x: int, to_y
             })
             
             # Save game state
-            games[token] = mngr
+            save_game_state(mngr, token)
         
         return result
         
@@ -911,7 +1062,7 @@ def unit_delete_rpc(token: str, x: int, y: int) -> Dict[str, Any]:
         })
         
         # Save game state
-        games[token] = mngr
+        save_game_state(mngr, token)
         
         return {'success': True, 'message': 'Unit deleted successfully'}
         
@@ -939,7 +1090,7 @@ def game_create_test_rpc(token: str, use_optimized: bool = True) -> Dict[str, An
         mngr.app_logger = app_logger
         
         # Store the game
-        games[token] = mngr
+        save_game_state(mngr, token)
         
         # Log the game creation
         log_game_event(app_logger, 'GAME_CREATED_TEST', {

@@ -268,6 +268,13 @@ class CompleteTransportSystem:
         if unload_tile and unload_tile.unit is not None:
             return False, "Unload position is occupied"
         
+        # Check Carrier/Cruiser attack+unload restriction
+        transport_type = transport.type.name if hasattr(transport.type, 'name') else str(transport.type)
+        if transport_type in ['CARRIER', 'CRUISER']:
+            # Check if the transport has attacked this turn
+            if hasattr(transport, 'has_attacked') and transport.has_attacked:
+                return False, f"{transport_type} cannot unload after attacking"
+        
         # CRITICAL FIX: Check transport positioning requirements for unloading
         transport_tile = self.game_manager.tile_at(transport_x, transport_y)
         transport_type = transport.type.name if hasattr(transport.type, 'name') else str(transport.type)

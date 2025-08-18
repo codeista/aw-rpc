@@ -61,7 +61,7 @@ def create_test_game() -> str:
 
 def get_player_funds(board: dict, player: str = "RED") -> int:
     """Get funds for a player, handling both v1 and v2 board formats"""
-    if player == "RED":
+    if player == 0:
         # Try red_funds first
         funds = board.get("red_funds", 0)
         if funds == 0 or funds is None:
@@ -69,7 +69,7 @@ def get_player_funds(board: dict, player: str = "RED") -> int:
             player_funds = board.get("player_funds", {})
             funds = int(player_funds.get("0", 0))  # Player 0 is RED
         return funds
-    elif player == "BLUE":
+    elif player == 1:
         # Try blue_funds first
         funds = board.get("blue_funds", 0)
         if funds == 0 or funds is None:
@@ -133,7 +133,7 @@ def test_factory_production():
         # Create unit
         result = rpc_call("unit_create", {
             "token": game_id,
-            "army": "RED",
+            "player_id": 0,
             "unit_type": unit_type,
             "x": factory_x,
             "y": factory_y
@@ -239,7 +239,7 @@ def test_airport_production():
         # Create unit
         result = rpc_call("unit_create", {
             "token": game_id,
-            "army": "RED",
+            "player_id": 0,
             "unit_type": unit_type,
             "x": airport_x,
             "y": airport_y
@@ -335,7 +335,7 @@ def test_port_production():
         # Create unit
         result = rpc_call("unit_create", {
             "token": game_id,
-            "army": "RED",
+            "player_id": 0,
             "unit_type": unit_type,
             "x": port_x,
             "y": port_y
@@ -455,7 +455,7 @@ def test_facility_occupation():
     ensure_correct_turn(game_id, "RED")
     result = rpc_call("unit_create", {
         "token": game_id,
-        "army": "RED",
+        "player_id": 0,
         "unit_type": "INFANTRY",
         "x": 0,
         "y": 4  # Factory position
@@ -471,7 +471,7 @@ def test_facility_occupation():
     # Try to create another unit on the same factory (should fail)
     result2 = rpc_call("unit_create", {
         "token": game_id,
-        "army": "RED",
+        "player_id": 0,
         "unit_type": "TANK",
         "x": 0,
         "y": 4  # Same factory
@@ -520,7 +520,7 @@ def test_insufficient_funds():
         if funds >= cost:
             result = rpc_call("unit_create", {
                 "token": game_id,
-                "army": "RED",
+                "player_id": 0,
                 "unit_type": unit_type,
                 "x": x,
                 "y": y
@@ -552,7 +552,7 @@ def test_insufficient_funds():
     
     result = rpc_call("unit_create", {
         "token": game_id,
-        "army": "RED",
+        "player_id": 0,
         "unit_type": unit_to_try,
         "x": x,
         "y": y

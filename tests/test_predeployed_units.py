@@ -65,12 +65,12 @@ def test_combat_map():
     for tile in board.get("grid", []):
         if tile.get("unit"):
             unit = tile["unit"]
-            army = unit.get("army", {}).get("name", "") if isinstance(unit.get("army"), dict) else str(unit.get("army", ""))
+            army = unit.get("army", {}).get("name", "") if isinstance(unit.get("player_id"), dict) else str(unit.get("army", ""))
             unit_type = unit.get("type", {}).get("name", "") if isinstance(unit.get("type"), dict) else str(unit.get("type", ""))
             
-            if army == "RED":
+            if army == 0:
                 red_units += 1
-            elif army == "BLUE":
+            elif army == 1:
                 blue_units += 1
             
             unit_positions.append({
@@ -96,7 +96,7 @@ def test_combat_map():
     
     # Test attack targets for first RED unit
     if unit_positions:
-        red_unit = next((u for u in unit_positions if u['army'] == 'RED'), None)
+        red_unit = next((u for u in unit_positions if u['army'] == 0), None)
         if red_unit:
             print(f"\n⚔️ Testing attack targets for {red_unit['type']} at ({red_unit['x']},{red_unit['y']})")
             targets = rpc_call("combat_targets", {
@@ -140,7 +140,7 @@ def test_admin_unit_create():
     # Try admin unit creation
     admin_result = rpc_call("admin_unit_create", {
         "token": game_id,
-        "army": "RED",
+        "player_id": 0,
         "unit_type": "MEGATANK",
         "x": 5,
         "y": 5,

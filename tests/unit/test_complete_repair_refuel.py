@@ -48,9 +48,9 @@ def create_complete_test_scenario():
     red_port = None
     red_factory = None
     for tile in board['grid']:
-        if tile['mapTile']['type'] == 'PORT' and tile['mapTile'].get('army') == 'RED':
+        if tile['mapTile']['type'] == 'PORT' and tile['mapTile'].get('army') == 0:
             red_port = (tile['x'], tile['y'])
-        elif tile['mapTile']['type'] == 'FACTORY' and tile['mapTile'].get('army') == 'RED':
+        elif tile['mapTile']['type'] == 'FACTORY' and tile['mapTile'].get('army') == 0:
             red_factory = (tile['x'], tile['y'])
     
     if not red_port or not red_factory:
@@ -70,7 +70,7 @@ def create_complete_test_scenario():
     print(f"\n1️⃣ Creating Black Boat at RED port {red_port}")
     bb_result = rpc_call("unit_create", {
         "token": game_id,
-        "army": "RED",
+        "player_id": 0,
         "unit_type": "BLACKBOAT",
         "x": red_port[0],
         "y": red_port[1]
@@ -85,7 +85,7 @@ def create_complete_test_scenario():
     print(f"\n2️⃣ Creating Infantry for repair test at RED factory {red_factory}")
     inf_result = rpc_call("unit_create", {
         "token": game_id,
-        "army": "RED",
+        "player_id": 0,
         "unit_type": "INFANTRY",
         "x": red_factory[0],
         "y": red_factory[1]
@@ -112,7 +112,7 @@ def create_complete_test_scenario():
     
     tank_result = rpc_call("unit_create", {
         "token": game_id,
-        "army": "RED", 
+        "player_id": 0, 
         "unit_type": "TANK",
         "x": red_factory[0],
         "y": red_factory[1]
@@ -161,7 +161,7 @@ def create_complete_test_scenario():
     
     enemy_result = rpc_call("unit_create", {
         "token": game_id,
-        "army": "BLUE",
+        "player_id": 1,
         "unit_type": "TANK",
         "x": 9,
         "y": 4  # BLUE factory
@@ -241,9 +241,9 @@ def create_complete_test_scenario():
                 
                 units_found.append(f"{army} {unit_type} at ({x},{y}) - {hp} HP")
                 
-                if army == "RED":
+                if army == 0:
                     red_units += 1
-                elif army == "BLUE":
+                elif army == 1:
                     blue_units += 1
     
     print(f"🎯 Units found: RED={red_units}, BLUE={blue_units}")

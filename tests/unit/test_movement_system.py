@@ -70,7 +70,7 @@ def get_test_game():
                 for unit_data in unit_positions:
                     result = rpc_call("unit_create", {
                         "token": token,
-                        "army": "RED",
+                        "player_id": 0,
                         "unit_type": unit_data["type"],
                         "x": unit_data["x"],
                         "y": unit_data["y"]

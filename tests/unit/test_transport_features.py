@@ -87,8 +87,8 @@ def test_apc_auto_resupply(game_id: str) -> bool:
     print(f"   Creating APC at {apc_pos} and Infantry at {inf_pos}...")
     
     # Create units
-    apc_result = rpc_call("unit_create", {"token": game_id, "army": "RED", "unit_type": "APC", "x": apc_pos[0], "y": apc_pos[1]})
-    inf_result = rpc_call("unit_create", {"token": game_id, "army": "RED", "unit_type": "INFANTRY", "x": inf_pos[0], "y": inf_pos[1]})
+    apc_result = rpc_call("unit_create", {"token": game_id, "player_id": 0, "unit_type": "APC", "x": apc_pos[0], "y": apc_pos[1]})
+    inf_result = rpc_call("unit_create", {"token": game_id, "player_id": 0, "unit_type": "INFANTRY", "x": inf_pos[0], "y": inf_pos[1]})
     
     if "error" in apc_result or "error" in inf_result:
         print("   ❌ Failed to create units")
@@ -128,7 +128,7 @@ def test_apc_auto_resupply(game_id: str) -> bool:
     tiles = board_before.get("tiles", [])
     for y, row in enumerate(tiles):
         for x, tile in enumerate(row):
-            if tile.get("unit") and tile["unit"]["type"] == "INFANTRY" and tile["unit"]["army"] == "RED":
+            if tile.get("unit") and tile["unit"]["type"] == "INFANTRY" and tile["unit"]["army"] == 0:
                 infantry_before = tile["unit"]
                 infantry_before["x"] = x
                 infantry_before["y"] = y
@@ -152,7 +152,7 @@ def test_apc_auto_resupply(game_id: str) -> bool:
     # Search through grid
     grid_after = board_after.get("grid", [])
     for tile in grid_after:
-        if tile.get("unit") and tile["unit"]["type"] == "INFANTRY" and tile["unit"]["army"] == "RED":
+        if tile.get("unit") and tile["unit"]["type"] == "INFANTRY" and tile["unit"]["army"] == 0:
             # Check if adjacent to APC
             if abs(tile["x"] - apc_pos[0]) + abs(tile["y"] - apc_pos[1]) == 1:
                 infantry_after = tile["unit"]
@@ -217,8 +217,8 @@ def test_cruiser_carrier_resupply(game_id: str) -> bool:
     
     # Create Carrier and Fighter
     print(f"   Creating Carrier at {carrier_pos} and Fighter at {fighter_pos}...")
-    carrier_result = rpc_call("unit_create", {"token": game_id, "army": "RED", "unit_type": "CARRIER", "x": carrier_pos[0], "y": carrier_pos[1]})
-    fighter_result = rpc_call("unit_create", {"token": game_id, "army": "RED", "unit_type": "FIGHTER", "x": fighter_pos[0], "y": fighter_pos[1]})
+    carrier_result = rpc_call("unit_create", {"token": game_id, "player_id": 0, "unit_type": "CARRIER", "x": carrier_pos[0], "y": carrier_pos[1]})
+    fighter_result = rpc_call("unit_create", {"token": game_id, "player_id": 0, "unit_type": "FIGHTER", "x": fighter_pos[0], "y": fighter_pos[1]})
     
     if "error" in carrier_result or "error" in fighter_result:
         print("   ⚠️ Could not create Carrier/Fighter (insufficient funds)")
@@ -309,8 +309,8 @@ def test_lander_transport(game_id: str) -> bool:
     print(f"   Creating LANDER at {water_pos} and TANK at {land_pos}...")
     
     # Create lander and tank
-    lander_result = rpc_call("unit_create", {"token": game_id, "army": "RED", "unit_type": "LANDER", "x": water_pos[0], "y": water_pos[1]})
-    tank_result = rpc_call("unit_create", {"token": game_id, "army": "RED", "unit_type": "TANK", "x": land_pos[0], "y": land_pos[1]})
+    lander_result = rpc_call("unit_create", {"token": game_id, "player_id": 0, "unit_type": "LANDER", "x": water_pos[0], "y": water_pos[1]})
+    tank_result = rpc_call("unit_create", {"token": game_id, "player_id": 0, "unit_type": "TANK", "x": land_pos[0], "y": land_pos[1]})
     
     if "error" in lander_result or "error" in tank_result:
         print("   ❌ Failed to create LANDER or TANK")
@@ -366,8 +366,8 @@ def test_tcopter_transport(game_id: str) -> bool:
     print(f"   Creating TCOPTER at {plain_pos1} and INFANTRY at {plain_pos2}...")
     
     # Create tcopter and infantry
-    tcopter_result = rpc_call("unit_create", {"token": game_id, "army": "RED", "unit_type": "TCOPTER", "x": plain_pos1[0], "y": plain_pos1[1]})
-    infantry_result = rpc_call("unit_create", {"token": game_id, "army": "RED", "unit_type": "INFANTRY", "x": plain_pos2[0], "y": plain_pos2[1]})
+    tcopter_result = rpc_call("unit_create", {"token": game_id, "player_id": 0, "unit_type": "TCOPTER", "x": plain_pos1[0], "y": plain_pos1[1]})
+    infantry_result = rpc_call("unit_create", {"token": game_id, "player_id": 0, "unit_type": "INFANTRY", "x": plain_pos2[0], "y": plain_pos2[1]})
     
     if "error" in tcopter_result or "error" in infantry_result:
         print("   ❌ Failed to create TCOPTER or INFANTRY")
@@ -400,7 +400,7 @@ def test_blackboat_repair(game_id: str) -> bool:
                 # Move the unit off the port
                 unit = port_tile["unit"]
                 current_turn = board.get("current_turn", "")
-                if unit.get("army") == current_turn and unit.get("can_move", False):
+                if unit.get("player_id") == current_turn and unit.get("can_move", False):
                     print(f"   Moving {unit.get('type')} off port at ({x},{y})...")
                     # Try to move to adjacent tile
                     for adj_tile in grid:
@@ -427,7 +427,7 @@ def test_blackboat_repair(game_id: str) -> bool:
     
     # Create Black Boat at port
     print(f"   Creating BLACKBOAT at port ({port_x},{port_y})...")
-    blackboat_result = rpc_call("unit_create", {"token": game_id, "army": "RED", "unit_type": "BLACKBOAT", "x": port_x, "y": port_y})
+    blackboat_result = rpc_call("unit_create", {"token": game_id, "player_id": 0, "unit_type": "BLACKBOAT", "x": port_x, "y": port_y})
     
     if "error" in blackboat_result:
         print(f"   ❌ Could not create BLACKBOAT: {blackboat_result.get('error')}")
@@ -437,7 +437,7 @@ def test_blackboat_repair(game_id: str) -> bool:
     inf_x = port_x + 1 if port_x < 11 else port_x - 1
     inf_y = port_y
     print(f"   Creating Infantry at ({inf_x},{inf_y})...")
-    infantry_result = rpc_call("unit_create", {"token": game_id, "army": "RED", "unit_type": "INFANTRY", "x": inf_x, "y": inf_y})
+    infantry_result = rpc_call("unit_create", {"token": game_id, "player_id": 0, "unit_type": "INFANTRY", "x": inf_x, "y": inf_y})
     
     if "error" in infantry_result:
         print(f"   ❌ Could not create Infantry: {infantry_result.get('error')}")
@@ -451,7 +451,7 @@ def test_blackboat_repair(game_id: str) -> bool:
     print("   Creating enemy Tank to damage Infantry...")
     tank_x = inf_x + 1 if inf_x < 10 else inf_x - 2
     tank_y = inf_y
-    tank_result = rpc_call("unit_create", {"token": game_id, "army": "BLUE", "unit_type": "TANK", "x": tank_x, "y": tank_y})
+    tank_result = rpc_call("unit_create", {"token": game_id, "player_id": 1, "unit_type": "TANK", "x": tank_x, "y": tank_y})
     
     if "error" not in tank_result:
         # Attack infantry to damage it

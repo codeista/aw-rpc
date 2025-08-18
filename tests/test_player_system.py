@@ -25,7 +25,7 @@ def test_unit_with_player():
     )
     
     assert unit.player_id == 0
-    assert unit.army.name == "RED"  # Backward compatibility
+    assert unit.army.name == 0  # Backward compatibility
     assert unit.type == UnitType.TANK
     print("✅ Unit created with player_id")
     

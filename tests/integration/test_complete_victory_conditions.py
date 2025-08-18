@@ -133,7 +133,7 @@ def test_victory_condition_functionality(token, armies):
         print(f"     ❌ Could not get board state: {board['error']}")
         return False
     
-    army_troops = board.get("army_troops", {})
+    player_troops = board.get("player_troops", {})
     game_active = board.get("game_active", True)
     current_turn = board.get("current_turn", "UNKNOWN")
     
@@ -144,7 +144,7 @@ def test_victory_condition_functionality(token, armies):
     total_units = 0
     armies_with_units = 0
     for army in armies:
-        units = army_troops.get(army, 0)
+        units = player_troops.get(army, 0)
         total_units += units
         if units > 0:
             armies_with_units += 1
@@ -155,7 +155,7 @@ def test_victory_condition_functionality(token, armies):
         print(f"     ⚠️  No units present - elimination victory cannot be tested")
         return True
     elif armies_with_units == 1:
-        winner_army = [army for army in armies if army_troops.get(army, 0) > 0][0]
+        winner_army = [army for army in armies if player_troops.get(army, 0) > 0][0]
         expected_game_over = True
         print(f"     🏆 Expected winner: {winner_army} (only army with units)")
     elif armies_with_units > 1:
@@ -217,13 +217,13 @@ def test_property_control_scenario():
         print("   ❌ Could not get board state")
         return False
     
-    army_properties = board.get("army_properties", {})
-    army_funds = board.get("army_funds", {})
+    player_properties = board.get("player_properties", {})
+    player_funds = board.get("player_funds", {})
     
     print("   📊 Initial property ownership:")
     for army in ["GREEN", "YELLOW"]:
-        properties = army_properties.get(army, 0)
-        funds = army_funds.get(army, 0)
+        properties = player_properties.get(army, 0)
+        funds = player_funds.get(army, 0)
         print(f"     {army}: {properties} properties, {funds} funds")
     
     # Add some units for capturing

@@ -54,14 +54,14 @@ def test_cross_map_income():
                 print(f"❌ Could not get board: {board['error']}")
                 return False
             
-            initial_funds = board.get("army_funds", {})
-            army_properties = board.get("army_properties", {})
+            initial_funds = board.get("player_funds", {})
+            player_properties = board.get("player_properties", {})
             current_turn = board.get("current_turn", "UNKNOWN")
             
             print(f"🏁 Initial State:")
             print(f"   Current turn: {current_turn}")
             for army, funds in initial_funds.items():
-                properties = army_properties.get(army, 0)
+                properties = player_properties.get(army, 0)
                 print(f"   {army}: {funds} funds, {properties} properties")
             
             # If no properties, armies won't get income. Let's try multiple turns to see if income works
@@ -70,8 +70,8 @@ def test_cross_map_income():
             for turn_num in range(3):
                 current_board = rpc_call("game_board", {"token": game_id})
                 current_turn = current_board.get("current_turn", "UNKNOWN")
-                current_funds = current_board.get("army_funds", {})
-                current_properties = current_board.get("army_properties", {})
+                current_funds = current_board.get("player_funds", {})
+                current_properties = current_board.get("player_properties", {})
                 
                 print(f"\nTurn {turn_num + 1}: {current_turn}'s turn")
                 for army, funds in current_funds.items():
@@ -86,8 +86,8 @@ def test_cross_map_income():
             
             # Check final state
             final_board = rpc_call("game_board", {"token": game_id})
-            final_funds = final_board.get("army_funds", {})
-            final_properties = final_board.get("army_properties", {})
+            final_funds = final_board.get("player_funds", {})
+            final_properties = final_board.get("player_properties", {})
             
             print(f"\n📊 Final State:")
             income_working = False

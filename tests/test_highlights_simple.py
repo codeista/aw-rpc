@@ -26,7 +26,7 @@ token = 'test-highlights'
 
 # Create a tank
 print("\nCreating RED tank at (3,3)...")
-rpc('unit_create', {'token': token, 'army': 'RED', 'unit_type': 'TANK', 'x': 3, 'y': 3})
+rpc('unit_create', {'token': token, 'player_id': 0, 'unit_type': 'TANK', 'x': 3, 'y': 3})
 
 # End turn twice to enable movement
 rpc('army_end_turn', {'token': token})
@@ -70,7 +70,7 @@ print(f"  Attack: {attack_highlights}")
 
 # Create enemy for attack test
 print("\n\nCreating BLUE infantry at (6,3)...")
-rpc('unit_create', {'token': token, 'army': 'BLUE', 'unit_type': 'INFANTRY', 'x': 6, 'y': 3})
+rpc('unit_create', {'token': token, 'player_id': 1, 'unit_type': 'INFANTRY', 'x': 6, 'y': 3})
 
 # Attack the enemy
 print("Attacking enemy...")

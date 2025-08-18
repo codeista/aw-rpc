@@ -97,7 +97,7 @@ class CombatTester:
         try:
             # Get current turn
             board = rpc_call("game_board", {"token": self.game_id})
-            current_turn = board.get("current_turn", "RED")
+            current_turn = board.get("current_player", 0)
             
             # End turn multiple times to cycle through all armies and reset states
             # Need to cycle through at least 2 full rounds to ensure all units can act
@@ -568,13 +568,13 @@ class CombatTester:
                     "y": tile["y"],
                     "type": unit.get("type", {}).get("name", "") if isinstance(unit.get("type"), dict) else str(unit.get("type", "")),
                     "hp": unit.get("status", {}).get("hp", 100) if isinstance(unit.get("status"), dict) else unit.get("hp", 100),
-                    "army": unit.get("army", {}).get("name", "") if isinstance(unit.get("army"), dict) else str(unit.get("army", "")),
+                    "army": unit.get("army", {}).get("name", "") if isinstance(unit.get("player_id"), dict) else str(unit.get("army", "")),
                     "terrain": tile.get("mapTile", {}).get("type", {}).get("name", "") if isinstance(tile.get("mapTile", {}).get("type"), dict) else str(tile.get("mapTile", {}).get("type", ""))
                 }
                 
-                if unit_info["army"] == "RED":
+                if unit_info["army"] == 0:
                     red_units.append(unit_info)
-                elif unit_info["army"] == "BLUE":
+                elif unit_info["army"] == 1:
                     blue_units.append(unit_info)
         
         # Find combat pairs using actual attack target information
@@ -666,7 +666,7 @@ class CombatTester:
                         "y": tile["y"],
                         "type": unit.get("type", {}).get("name", "") if isinstance(unit.get("type"), dict) else str(unit.get("type", "")),
                         "hp": unit.get("status", {}).get("hp", 100) if isinstance(unit.get("status"), dict) else unit.get("hp", 100),
-                        "army": unit.get("army", {}).get("name", "") if isinstance(unit.get("army"), dict) else str(unit.get("army", "")),
+                        "army": unit.get("army", {}).get("name", "") if isinstance(unit.get("player_id"), dict) else str(unit.get("army", "")),
                         "terrain": terrain_type
                     }
         return None
@@ -677,7 +677,7 @@ class CombatTester:
             return None
         
         target_army = target['army']
-        enemy_army = "BLUE" if target_army == "RED" else "RED"
+        enemy_army = "BLUE" if target_army == 0 else "RED"
         
         for tile in board.get("grid", []):
             # Handle string tiles
@@ -697,7 +697,7 @@ class CombatTester:
                     except json.JSONDecodeError:
                         continue
                 
-                army = unit.get("army", {}).get("name", "") if isinstance(unit.get("army"), dict) else str(unit.get("army", ""))
+                army = unit.get("army", {}).get("name", "") if isinstance(unit.get("player_id"), dict) else str(unit.get("army", ""))
                 
                 if army == enemy_army:
                     distance = abs(tile["x"] - target['x']) + abs(tile["y"] - target['y'])

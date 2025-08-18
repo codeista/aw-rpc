@@ -38,12 +38,12 @@ def test_cross_map_victory():
                     if isinstance(result, str):
                         result = json.loads(result)
                     
-                    army_troops = result.get("army_troops", {})
-                    print(f"📊 Army units: {army_troops}")
+                    player_troops = result.get("player_troops", {})
+                    print(f"📊 Army units: {player_troops}")
                     
                     # Check if GREEN and YELLOW armies exist
-                    green_units = army_troops.get("GREEN", 0)
-                    yellow_units = army_troops.get("YELLOW", 0)
+                    green_units = player_troops.get("GREEN", 0)
+                    yellow_units = player_troops.get("YELLOW", 0)
                     
                     if green_units > 0 and yellow_units > 0:
                         print("✅ GREEN and YELLOW armies both have units")

@@ -301,9 +301,9 @@ class TestUnitDeselection(unittest.TestCase):
         for tile in board.get('grid', []):
             if tile.get('unit'):
                 unit = tile['unit']
-                if unit.get('army') == 'RED':
+                if unit.get('player_id') == 0:
                     red_unit = {'x': tile['x'], 'y': tile['y'], 'type': unit.get('type')}
-                elif unit.get('army') == 'BLUE':
+                elif unit.get('player_id') == 1:
                     blue_unit = {'x': tile['x'], 'y': tile['y'], 'type': unit.get('type')}
         
         print(f"DEBUG: RED unit at {red_unit}, BLUE unit at {blue_unit}")

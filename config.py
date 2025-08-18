@@ -6,7 +6,10 @@ from core.unit import UnitType, UnitClass, UnitConfig
 class Config:
     def __init__(self):
         cfg = ConfigParser()
-        cfg.read('config.ini')
+        # Use absolute path to config.ini
+        import os
+        config_path = os.path.join(os.path.dirname(__file__), 'config.ini')
+        cfg.read(config_path)
 
         # get unit configs
         self.units = {}

@@ -49,9 +49,10 @@ def main():
     
     try:
         # Run the complete regression test suite (including recent features)
+        test_path = os.path.join(os.path.dirname(__file__), 'regression', 'test_complete_with_recent.py')
         result = subprocess.run([
             sys.executable, 
-            'regression/test_complete_with_recent.py'
+            test_path
         ], timeout=300)  # 5 minute timeout
         
         # Return success/failure based on exit code

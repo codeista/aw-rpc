@@ -168,6 +168,7 @@ class UnitStatus:
     ammo: int
     cargo: List['Unit'] = field(default_factory=list)
     has_moved_this_turn: bool = False
+    action_taken: bool = False  # Whether unit has completed its turn
     
     # Copy all the static attributes from config for easy access
     cls: UnitClass = None
@@ -186,6 +187,7 @@ class UnitStatus:
             ammo=config.max_ammo,
             cargo=[],
             has_moved_this_turn=False,
+            action_taken=False,
             # Copy static attributes
             cls=config.cls,
             cost=config.cost,
@@ -208,6 +210,8 @@ class Unit:
     can_attack: bool
     can_capture: bool
     player_id: Optional[int] = None  # Player who owns this unit
+    has_attacked: bool = False  # Track if unit has attacked this turn
+    is_hidden: bool = False  # Track if stealth/sub is hidden
 
     def attack_damage(self, target, tile):
         '''Returns the attack damage using authentic Advance Wars formula.
@@ -342,7 +346,7 @@ class Unit:
         '''Returns true if the unit is a sea unit.'''
         return self.type in ({UnitType.LANDER, UnitType.BLACKBOAT,
                               UnitType.CARRIER, UnitType.BATTLESHIP,
-                              UnitType.CRUISER})
+                              UnitType.CRUISER, UnitType.SUB})
 
     def is_stealth_sea(self):
         '''Returns true if the unit is an stealth sea unit.'''
@@ -385,14 +389,20 @@ class Unit:
     def fuel_use(self):
         '''Returns the daily fuel use for the unit type.'''
         fuel = 0
-        if self.is_sea_unit():
+        
+        # Check special cases first
+        if self.type == UnitType.SUB:
+            # Submarines use 1 fuel normally, 5 when submerged (hidden)
+            fuel = 5 if self.is_hidden else 1
+        elif self.is_stealth_air():
+            # Stealth uses 5 fuel normally, 8 when hidden
+            fuel = 8 if self.is_hidden else 5
+        elif self.is_sea_unit():
             fuel = 1
         elif self.is_copter_unit():
             fuel = 2
         elif self.is_air_unit():
             fuel = 5
-        elif self.is_stealth_air():
-            fuel = 8
         else:
             fuel = 0
         return fuel
@@ -507,10 +517,14 @@ class Unit:
     @classmethod
     def create_with_player(cls, player_id: int, unit_type: UnitType, unit_config: UnitConfig, sprite_color: str = None):
         '''Creates a unit for the new player system.'''
-        # Map player to army for backward compatibility
-        # This will be removed once full migration is complete
-        army_map = {0: Army.RED, 1: Army.BLUE, 2: Army.GREEN, 3: Army.YELLOW, 4: Army.GREY}
-        army = army_map.get(player_id, Army.GREY)
+        # Map sprite color to army for rendering
+        if sprite_color:
+            sprite_to_army = {"RED": Army.RED, "BLUE": Army.BLUE, "GREEN": Army.GREEN, "YELLOW": Army.YELLOW, "GREY": Army.GREY}
+            army = sprite_to_army.get(sprite_color, Army.GREY)
+        else:
+            # Fallback to simple mapping if no sprite color provided
+            army_map = {0: Army.RED, 1: Army.BLUE, 2: Army.GREEN, 3: Army.YELLOW, 4: Army.GREY}
+            army = army_map.get(player_id, Army.GREY)
         
         unit = cls.create(army, unit_type, unit_config)
         unit.player_id = player_id

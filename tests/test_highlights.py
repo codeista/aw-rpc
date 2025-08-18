@@ -76,7 +76,7 @@ def find_unit_position(board, unit_type=None, army=None):
         if tile.get('unit'):
             unit = tile['unit']
             if (not unit_type or unit['type'] == unit_type) and \
-               (not army or unit.get('army') == army):
+               (not army or unit.get('player_id') == army):
                 return tile['x'], tile['y']
     return None, None
 
@@ -97,7 +97,7 @@ def test_movement_highlights():
     
     # Create a tank
     rpc_call('unit_create', params_with_token({
-        'army': 'RED',
+        'player_id': 0,
         'unit_type': 'TANK',
         'x': 3,
         'y': 3
@@ -144,7 +144,7 @@ def test_move_attack_flow():
     
     # Create attacker and target
     rpc_call('unit_create', params_with_token({
-        'army': 'RED',
+        'player_id': 0,
         'unit_type': 'TANK',
         'x': 2,
         'y': 2
@@ -155,7 +155,7 @@ def test_move_attack_flow():
     
     # Create enemy
     rpc_call('unit_create', params_with_token({
-        'army': 'BLUE',
+        'player_id': 1,
         'unit_type': 'INFANTRY',
         'x': 4,
         'y': 2
@@ -222,7 +222,7 @@ def test_highlight_persistence():
     
     # Create unit
     rpc_call('unit_create', params_with_token({
-        'army': 'RED',
+        'player_id': 0,
         'unit_type': 'RECON',
         'x': 5,
         'y': 5
@@ -282,7 +282,7 @@ def test_indirect_unit_flow():
     
     # Create artillery
     rpc_call('unit_create', params_with_token({
-        'army': 'RED',
+        'player_id': 0,
         'unit_type': 'ARTILLERY',
         'x': 3,
         'y': 4
@@ -292,7 +292,7 @@ def test_indirect_unit_flow():
     
     # Create target
     rpc_call('unit_create', params_with_token({
-        'army': 'BLUE',
+        'player_id': 1,
         'unit_type': 'TANK',
         'x': 3,
         'y': 7

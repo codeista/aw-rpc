@@ -247,7 +247,7 @@ class TestUIComplexScenarios(BaseSeleniumTest):
             self.click_end_turn()
             self.wait_for_turn_change("BLUE" if turn % 2 == 0 else "RED")
             
-            if self.get_current_turn() == "RED":
+            if self.get_current_turn() == 0:
                 # Move units to deplete fuel
                 try:
                     # Move tank

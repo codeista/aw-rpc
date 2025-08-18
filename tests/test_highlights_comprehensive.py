@@ -40,7 +40,7 @@ print("\n2. Creating units:")
 # RED infantry at (2,3)
 r1 = rpc_call('unit_create', {
     'token': game_id,
-    'army': 'RED',
+    'player_id': 0,
     'unit_type': 'INFANTRY',
     'x': 2,
     'y': 3
@@ -50,7 +50,7 @@ print(f"   RED infantry at (2,3): {'✅' if r1 else '❌'}")
 # RED tank at (5,3)
 r2 = rpc_call('unit_create', {
     'token': game_id,
-    'army': 'RED', 
+    'player_id': 0, 
     'unit_type': 'TANK',
     'x': 5,
     'y': 3
@@ -63,7 +63,7 @@ rpc_call('army_end_turn', {'token': game_id})
 # BLUE infantry at (3,3) - adjacent to RED infantry
 r3 = rpc_call('unit_create', {
     'token': game_id,
-    'army': 'BLUE',
+    'player_id': 1,
     'unit_type': 'INFANTRY',
     'x': 3,
     'y': 3
@@ -102,7 +102,7 @@ if selected:
     print(f"   Selected position: ({selected.get('x')}, {selected.get('y')})")
     if selected.get('unit'):
         unit = selected['unit']
-        print(f"   Selected unit: {unit.get('type')} ({unit.get('army')})")
+        print(f"   Selected unit: {unit.get('type')} ({unit.get('player_id')})")
         print(f"   Can move: {unit.get('can_move')}")
         print(f"   Can attack: {unit.get('can_attack')}")
 else:

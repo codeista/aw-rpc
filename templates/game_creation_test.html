@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Game Creation Test - Player System</title>
+    <style>
+        body {
+            font-family: monospace;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #00ff00;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #00ff00;
+            background: #0a0a0a;
+        }
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: monospace;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #00aa00;
+        }
+        .error {
+            color: #ff0000;
+        }
+        .success {
+            color: #00ff00;
+        }
+        .info {
+            color: #ffff00;
+        }
+        pre {
+            background: #000;
+            padding: 10px;
+            overflow-x: auto;
+        }
+        h2 {
+            border-bottom: 2px solid #00ff00;
+            padding-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 Game Creation Test - Player System</h1>
+    
+    <div class="section">
+        <h2>Available Game Creation Methods</h2>
+        <button onclick="createTestGame()">Create Test Game (High Funds)</button>
+        <button onclick="createBasicGame()">Create Basic Game</button>
+        <button onclick="createCustomGame()">Create Custom Game</button>
+    </div>
+
+    <div class="section">
+        <h2>Current Game Info</h2>
+        <div id="gameInfo">No game created yet</div>
+    </div>
+
+    <div class="section">
+        <h2>Test Unit Creation</h2>
+        <button onclick="testOldWay()">❌ Test Old Way (army)</button>
+        <button onclick="testNewWay()">✅ Test New Way (player_id)</button>
+        <button onclick="createUnitForCurrentPlayer()">Create Unit for Current Player</button>
+    </div>
+
+    <div class="section">
+        <h2>Output Log</h2>
+        <pre id="output"></pre>
+    </div>
+
+    <script>
+        let currentToken = null;
+        let currentBoard = null;
+
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const time = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#ff0000' : 
+                         type === 'success' ? '#00ff00' : '#ffff00';
+            output.innerHTML += `<span style="color: ${color}">[${time}] ${message}</span>\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        async function rpc(method, params) {
+            const payload = {
+                jsonrpc: '2.0',
+                method: method,
+                params: params || {},
+                id: Date.now()
+            };
+            
+            log(`→ Calling ${method}...`);
+            
+            try {
+                const response = await fetch('/api', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                
+                if (result.error) {
+                    log(`✗ Error: ${result.error.message}`, 'error');
+                    return null;
+                } else {
+                    log(`✓ Success`, 'success');
+                    return result.result;
+                }
+            } catch (error) {
+                log(`✗ Network error: ${error}`, 'error');
+                return null;
+            }
+        }
+
+        async function createTestGame() {
+            currentToken = 'test-' + Date.now();
+            const result = await rpc('game_create_test', {
+                token: currentToken,
+                use_optimized: true
+            });
+            
+            if (result) {
+                log(`Created test game: ${currentToken}`, 'success');
+                await updateGameInfo();
+            }
+        }
+
+        async function createBasicGame() {
+            currentToken = 'basic-' + Date.now();
+            const result = await rpc('game_create', {
+                token: currentToken
+            });
+            
+            if (result) {
+                log(`Created basic game: ${currentToken}`, 'success');
+                await updateGameInfo();
+            }
+        }
+
+        async function createCustomGame() {
+            currentToken = 'custom-' + Date.now();
+            const result = await rpc('game_create_with_setup', {
+                token: currentToken,
+                setup_data: {
+                    map_id: 'test',
+                    players: [
+                        {
+                            name: 'Alice',
+                            color: 'Red',
+                            sprite_color: 'RED'
+                        },
+                        {
+                            name: 'Bob',
+                            color: 'Blue',
+                            sprite_color: 'BLUE'
+                        },
+                        {
+                            name: 'Charlie',
+                            color: 'Green',
+                            sprite_color: 'GREEN'
+                        }
+                    ]
+                }
+            });
+            
+            if (result) {
+                log(`Created custom 3-player game: ${currentToken}`, 'success');
+                await updateGameInfo();
+            }
+        }
+
+        async function updateGameInfo() {
+            if (!currentToken) {
+                document.getElementById('gameInfo').innerHTML = 'No game created yet';
+                return;
+            }
+            
+            const board = await rpc('game_board', { token: currentToken });
+            if (board) {
+                currentBoard = board;
+                let info = `<div class="info">`;
+                info += `<b>Token:</b> ${currentToken}<br>`;
+                info += `<b>Current Player:</b> ${board.current_player}<br>`;
+                info += `<b>Current Turn:</b> ${board.current_turn}<br>`;
+                info += `<b>Day:</b> ${board.days}<br>`;
+                info += `<b>Players:</b><br>`;
+                
+                if (board.players) {
+                    board.players.forEach(p => {
+                        info += `&nbsp;&nbsp;Player ${p.id}: ${p.name} (${p.army}) - ${p.funds} funds<br>`;
+                    });
+                } else {
+                    info += `&nbsp;&nbsp;No player info available<br>`;
+                }
+                
+                info += `</div>`;
+                document.getElementById('gameInfo').innerHTML = info;
+            }
+        }
+
+        async function testOldWay() {
+            if (!currentToken) {
+                log('Create a game first!', 'error');
+                return;
+            }
+            
+            log('Testing old way with army parameter...', 'info');
+            await rpc('unit_create', {
+                token: currentToken,
+                army: 'RED',  // This should fail!
+                unit_type: 'INFANTRY',
+                x: 1,
+                y: 1
+            });
+        }
+
+        async function testNewWay() {
+            if (!currentToken) {
+                log('Create a game first!', 'error');
+                return;
+            }
+            
+            log('Testing new way with player_id parameter...', 'info');
+            await rpc('unit_create', {
+                token: currentToken,
+                player_id: 0,  // Player 0
+                unit_type: 'TANK',
+                x: 2,
+                y: 2
+            });
+        }
+
+        async function createUnitForCurrentPlayer() {
+            if (!currentToken || !currentBoard) {
+                log('Create a game first!', 'error');
+                return;
+            }
+            
+            const playerId = currentBoard.current_player;
+            log(`Creating unit for current player (${playerId})...`, 'info');
+            
+            await rpc('unit_create', {
+                token: currentToken,
+                player_id: playerId,
+                unit_type: 'MECH',
+                x: 3,
+                y: 3
+            });
+            
+            await updateGameInfo();
+        }
+    </script>
+</body>
+</html>

@@ -64,14 +64,14 @@ def test_com_tower_bonus():
     # Create tanks to test damage - place them adjacent
     tank1 = rpc_call("unit_create", {
         "token": token,
-        "army": "RED",
+        "player_id": 0,
         "unit_type": "TANK",
         "x": 5, "y": 5  # Open area
     })
     
     tank2 = rpc_call("unit_create", {
         "token": token,
-        "army": "BLUE",
+        "player_id": 1,
         "unit_type": "TANK",
         "x": 6, "y": 5  # Adjacent to RED tank
     })
@@ -96,7 +96,7 @@ def test_com_tower_bonus():
         # Create infantry to capture COM_TOWER
         infantry = rpc_call("unit_create", {
             "token": token,
-            "army": "RED",
+            "player_id": 0,
             "unit_type": "INFANTRY",
             "x": 4, "y": 10  # Lower factory
         })
@@ -200,14 +200,14 @@ def test_transport_system():
     # Use actual RED factory position from test map
     apc = rpc_call("unit_create", {
         "token": token,
-        "army": "RED",
+        "player_id": 0,
         "unit_type": "APC",
         "x": 0, "y": 4  # RED Factory at (0,4)
     })
     
     infantry = rpc_call("unit_create", {
         "token": token,
-        "army": "RED",
+        "player_id": 0,
         "unit_type": "INFANTRY",
         "x": 1, "y": 4  # Adjacent on road
     })
@@ -255,14 +255,14 @@ def test_transport_system():
     print("\n   Testing Naval Transport:")
     lander = rpc_call("unit_create", {
         "token": token,
-        "army": "RED",
+        "player_id": 0,
         "unit_type": "LANDER",
         "x": 0, "y": 0  # Port
     })
     
     tank = rpc_call("unit_create", {
         "token": token,
-        "army": "RED",
+        "player_id": 0,
         "unit_type": "TANK",
         "x": 0, "y": 4  # RED Factory
     })
@@ -275,7 +275,7 @@ def test_transport_system():
     print("\n   Testing Air Transport:")
     tcopter = rpc_call("unit_create", {
         "token": token,
-        "army": "RED",
+        "player_id": 0,
         "unit_type": "TCOPTER",
         "x": 0, "y": 7  # RED Airport
     })
@@ -339,7 +339,7 @@ def test_production_variety():
         # Create unit
         result = rpc_call("unit_create", {
             "token": token,
-            "army": "RED",
+            "player_id": 0,
             "unit_type": unit_type,
             "x": x, "y": y
         })
@@ -400,14 +400,14 @@ def test_combat_scenarios():
     print("\n   Testing Direct Combat:")
     tank1 = rpc_call("unit_create", {
         "token": token,
-        "army": "RED",
+        "player_id": 0,
         "unit_type": "TANK",
         "x": 0, "y": 4  # RED Factory
     })
     
     tank2 = rpc_call("unit_create", {
         "token": token,
-        "army": "BLUE",
+        "player_id": 1,
         "unit_type": "TANK",
         "x": 8, "y": 4  # BLUE Factory
     })
@@ -424,14 +424,14 @@ def test_combat_scenarios():
     # Create new tanks adjacent to each other in the center
     tank1_new = rpc_call("unit_create", {
         "token": token,
-        "army": "RED",
+        "player_id": 0,
         "unit_type": "TANK",
         "x": 4, "y": 4  # Center area
     })
     
     tank2_new = rpc_call("unit_create", {
         "token": token,
-        "army": "BLUE", 
+        "player_id": 1, 
         "unit_type": "TANK",
         "x": 5, "y": 4  # Adjacent to RED tank
     })
@@ -470,7 +470,7 @@ def test_combat_scenarios():
     print("\n   Testing Indirect Combat:")
     artillery = rpc_call("unit_create", {
         "token": token,
-        "army": "RED",
+        "player_id": 0,
         "unit_type": "ARTILLERY",
         "x": 2, "y": 2
     })
@@ -483,14 +483,14 @@ def test_combat_scenarios():
     print("\n   Testing Air Combat:")
     fighter = rpc_call("unit_create", {
         "token": token,
-        "army": "RED",
+        "player_id": 0,
         "unit_type": "FIGHTER",
         "x": 0, "y": 7  # RED Airport
     })
     
     bomber = rpc_call("unit_create", {
         "token": token,
-        "army": "BLUE",
+        "player_id": 1,
         "unit_type": "BOMBER",
         "x": 8, "y": 7  # BLUE Airport
     })
@@ -503,14 +503,14 @@ def test_combat_scenarios():
     print("\n   Testing Naval Combat:")
     cruiser = rpc_call("unit_create", {
         "token": token,
-        "army": "RED",
+        "player_id": 0,
         "unit_type": "CRUISER",
         "x": 0, "y": 0  # RED Port
     })
     
     sub = rpc_call("unit_create", {
         "token": token,
-        "army": "BLUE",
+        "player_id": 1,
         "unit_type": "SUB",
         "x": 8, "y": 0  # BLUE Port
     })

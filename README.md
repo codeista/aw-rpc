@@ -59,7 +59,7 @@ rpc('game_board', {token})
 rpc('army_end_turn', {token})
 
 // Unit Operations
-rpc('unit_create', {token, army, unit_type, x, y})
+rpc('unit_create', {token, player_id, unit_type, x, y})
 rpc('unit_move', {token, x, y, x2, y2})
 rpc('unit_attack', {token, x, y, x2, y2})
 

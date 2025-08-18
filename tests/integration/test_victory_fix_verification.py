@@ -53,11 +53,11 @@ def test_victory_fix():
                 print(f"❌ Could not get board: {board['error']}")
                 return False
             
-            army_troops = board.get("army_troops", {})
-            print(f"📊 Current armies: {army_troops}")
+            player_troops = board.get("player_troops", {})
+            print(f"📊 Current armies: {player_troops}")
             
             # Create units for testing if none exist
-            if sum(army_troops.values()) == 0:
+            if sum(player_troops.values()) == 0:
                 print("🔨 Creating test units...")
                 
                 # Create some RED and BLUE units 
@@ -65,7 +65,7 @@ def test_victory_fix():
                     "token": game_id,
                     "x": 1, "y": 1, 
                     "unit_type": "INFANTRY",
-                    "army": "RED"
+                    "player_id": 0
                 })
                 
                 if "error" not in create_result:
@@ -75,7 +75,7 @@ def test_victory_fix():
                     "token": game_id,
                     "x": 2, "y": 2,
                     "unit_type": "INFANTRY", 
-                    "army": "BLUE"
+                    "player_id": 1
                 })
                 
                 if "error" not in create_result:
@@ -87,9 +87,9 @@ def test_victory_fix():
             # The fix ensures victory conditions check all armies in turn_order
             # rather than hardcoded RED/BLUE only
             board = rpc_call("game_board", {"token": game_id})
-            army_troops = board.get("army_troops", {})
+            player_troops = board.get("player_troops", {})
             
-            armies_with_units = [army for army, count in army_troops.items() if count > 0]
+            armies_with_units = [army for army, count in player_troops.items() if count > 0]
             print(f"✅ Armies with units: {armies_with_units}")
             
             if len(armies_with_units) >= 2:
