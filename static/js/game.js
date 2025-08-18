@@ -209,7 +209,13 @@ class Game {
                 const savedSelection = this.board?.selected;
                 
                 // Update board
+                const previousSelected = this.board?.selected; // Preserve selection
                 this.board = msg.board;
+                
+                // Restore selection if it was preserved
+                if (previousSelected) {
+                    this.board.selected = previousSelected;
+                }
                 
                 // Restore selection if it still exists
                 if (savedSelection) {
@@ -266,7 +272,7 @@ class Game {
             // Simple click handling based on board state
             if (this.board && this.board.selected) {
                 // Check if clicking on same tile as selected - deselect
-                if (this.board.selected.x === x && this.board.selected.y === y) {
+                if (this.board.selected && this.board.selected.x === x && this.board.selected.y === y) {
                     this.clearHighlights();
                     await this.rpc('unit_select', { x, y });
                     this.render();
@@ -277,7 +283,7 @@ class Game {
                 
                 // PRIORITY 1: Check if this is a valid movement destination
                 // First check if highlights are set, otherwise try movement anyway for empty tiles
-                const selectedUnit = this.getTile(this.board.selected.x, this.board.selected.y)?.unit;
+                const selectedUnit = this.board.selected ? this.getTile(this.board.selected.x, this.board.selected.y)?.unit : null;
                 const canTryMove = selectedUnit && !selectedUnit.done && selectedUnit.can_move;
                 const isEmptyTile = clickedTile && !clickedTile.unit;
                 
@@ -285,6 +291,9 @@ class Game {
                     // This might be a valid move target - try movement
                     log('Attempting move to', x, y);
                     try {
+                        if (!this.board.selected) {
+                            throw new Error('No unit selected for movement');
+                        }
                         const moveResult = await this.rpc('movement_execute', {
                             from_x: this.board.selected.x,
                             from_y: this.board.selected.y,
@@ -294,8 +303,8 @@ class Game {
                         log('Move result:', moveResult);
                         
                         // Store the original position before moving
-                        const originalX = this.board.selected.x;
-                        const originalY = this.board.selected.y;
+                        const originalX = this.board.selected ? this.board.selected.x : null;
+                        const originalY = this.board.selected ? this.board.selected.y : null;
                         
                         // IMPORTANT: Keep the unit selected after moving
                         this.board.selected = { x: x, y: y };
@@ -367,6 +376,12 @@ class Game {
                 }
                 
                 // PRIORITY 2: Check if unit has already moved/acted
+                if (!this.board.selected) {
+                    // No unit selected, fall through to fresh click
+                    await this.handleFreshClick(x, y);
+                    return;
+                }
+                
                 const selectedTile = this.getTile(this.board.selected.x, this.board.selected.y);
                 if (selectedTile?.unit) {
                     log('Selected unit state:', {
@@ -417,6 +432,9 @@ class Game {
                         log('Clicked on enemy unit, attempting direct attack');
                         try {
                             // First check if this is a valid target
+                            if (!this.board.selected) {
+                                throw new Error('No unit selected for attack');
+                            }
                             const targetsResult = await this.rpc('combat_targets', { 
                                 unit_x: this.board.selected.x, 
                                 unit_y: this.board.selected.y 
@@ -431,8 +449,13 @@ class Game {
                                     log('Valid target confirmed, executing attack');
                                     
                                     // Store attacker position BEFORE any RPC calls
-                                    const attackerX = this.board.selected.x;
-                                    const attackerY = this.board.selected.y;
+                                    const attackerX = this.board.selected ? this.board.selected.x : null;
+                                    const attackerY = this.board.selected ? this.board.selected.y : null;
+                                    
+                                    if (!attackerX || !attackerY) {
+                                        log('No attacker selected for attack');
+                                        return;
+                                    }
                                     
                                     const attackResult = await this.rpc('unit_attack', {
                                         attacker_x: attackerX,
@@ -887,7 +910,13 @@ class Game {
         if (data.result) {
             // Check for turn change - FIXED: Use current_player consistently
             const previousPlayer = this.board?.current_player;
+            const previousSelected = this.board?.selected; // Preserve selection
             this.board = data.result;
+            
+            // Restore selection if it was preserved
+            if (previousSelected) {
+                this.board.selected = previousSelected;
+            }
             
             // Add defensive type checking
             if (typeof this.board.current_player !== 'number') {
@@ -1651,7 +1680,7 @@ class Game {
     }
     
     renderSelection() {
-        if (!this.board.selected) return;
+        if (!this.board.selected || this.board.selected.x === undefined || this.board.selected.y === undefined) return;
         
         const px = this.board.selected.x * this.tileSize;
         const py = this.board.selected.y * this.tileSize;

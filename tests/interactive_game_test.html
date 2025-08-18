@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Game Test Suite</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+            border-bottom: 2px solid #00ff00;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            background: #0a0a0a;
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .test-header {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #00ffff;
+        }
+        .test-item {
+            padding: 8px;
+            margin: 5px 0;
+            background: #1a1a1a;
+            border-left: 3px solid #333;
+            transition: all 0.3s;
+        }
+        .test-item.pass {
+            border-left-color: #00ff00;
+            background: #001100;
+        }
+        .test-item.fail {
+            border-left-color: #ff0000;
+            background: #110000;
+        }
+        .test-item.running {
+            border-left-color: #ffff00;
+            background: #111100;
+        }
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: #00ff88;
+            box-shadow: 0 0 10px #00ff00;
+        }
+        button:disabled {
+            background: #333;
+            color: #666;
+            cursor: not-allowed;
+        }
+        .log-area {
+            background: #000;
+            border: 1px solid #00ff00;
+            padding: 10px;
+            height: 200px;
+            overflow-y: auto;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        .log-entry {
+            margin: 2px 0;
+        }
+        .log-success { color: #00ff00; }
+        .log-error { color: #ff0000; }
+        .log-info { color: #00ffff; }
+        .log-action { color: #ffff00; }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            padding: 15px;
+            background: #0a0a0a;
+            border: 1px solid #00ff00;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #00ffff;
+        }
+        .game-link {
+            display: inline-block;
+            margin-top: 10px;
+            color: #00ffff;
+            text-decoration: none;
+            border: 1px solid #00ffff;
+            padding: 5px 10px;
+        }
+        .game-link:hover {
+            background: #003333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Interactive Game Test Suite</h1>
+        
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="stat-passed">0</div>
+                <div>Passed</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="stat-failed">0</div>
+                <div>Failed</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="stat-total">0</div>
+                <div>Total</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="stat-rate">0%</div>
+                <div>Success Rate</div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button onclick="runAllTests()">🚀 Run All Tests</button>
+            <button onclick="runQuickTest()">⚡ Quick Test</button>
+            <button onclick="clearLog()">🗑️ Clear Log</button>
+            <a id="game-link" class="game-link" href="#" target="_blank" style="display:none">
+                🎮 Open Game in New Tab
+            </a>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-header">📋 Test Checklist</div>
+            <div id="test-list"></div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-header">📝 Test Log</div>
+            <div class="log-area" id="log-area"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        let token = null;
+        let passed = 0;
+        let failed = 0;
+        
+        const tests = [
+            { id: 'game-creation', name: 'Game Creation', func: testGameCreation },
+            { id: 'unit-production', name: 'Unit Production', func: testUnitProduction },
+            { id: 'unit-movement', name: 'Unit Movement', func: testUnitMovement },
+            { id: 'combat', name: 'Combat System', func: testCombat },
+            { id: 'capture', name: 'Property Capture', func: testCapture },
+            { id: 'transport', name: 'Transport Mechanics', func: testTransport },
+            { id: 'turn-management', name: 'Turn Management', func: testTurnManagement },
+            { id: 'ui-interaction', name: 'UI Interaction', func: testUIInteraction }
+        ];
+        
+        // Initialize test list
+        function initTestList() {
+            const listEl = document.getElementById('test-list');
+            tests.forEach(test => {
+                const div = document.createElement('div');
+                div.className = 'test-item';
+                div.id = `test-${test.id}`;
+                div.innerHTML = `<span>▶</span> ${test.name}`;
+                listEl.appendChild(div);
+            });
+        }
+        
+        // RPC helper
+        async function rpc(method, params = {}) {
+            if (!params.token && token) {
+                params.token = token;
+            }
+            
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    jsonrpc: '2.0',
+                    method: method,
+                    params: params,
+                    id: 1
+                })
+            });
+            
+            const data = await response.json();
+            if (data.error) {
+                throw new Error(data.error.message || 'RPC Error');
+            }
+            return data.result;
+        }
+        
+        // Logging
+        function log(message, type = 'info') {
+            const logArea = document.getElementById('log-area');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            entry.textContent = `[${timestamp}] ${message}`;
+            logArea.appendChild(entry);
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+        
+        function clearLog() {
+            document.getElementById('log-area').innerHTML = '';
+            passed = 0;
+            failed = 0;
+            updateStats();
+        }
+        
+        // Test status
+        function setTestStatus(testId, status) {
+            const el = document.getElementById(`test-${testId}`);
+            if (el) {
+                el.className = `test-item ${status}`;
+                const icon = status === 'pass' ? '✅' : status === 'fail' ? '❌' : '⏳';
+                el.innerHTML = `<span>${icon}</span> ${el.textContent.substring(2)}`;
+            }
+        }
+        
+        function updateStats() {
+            document.getElementById('stat-passed').textContent = passed;
+            document.getElementById('stat-failed').textContent = failed;
+            document.getElementById('stat-total').textContent = passed + failed;
+            const rate = (passed + failed) > 0 ? ((passed / (passed + failed)) * 100).toFixed(1) : 0;
+            document.getElementById('stat-rate').textContent = rate + '%';
+        }
+        
+        function assert(condition, message) {
+            if (condition) {
+                passed++;
+                log(`✅ ${message}`, 'success');
+            } else {
+                failed++;
+                log(`❌ ${message}`, 'error');
+                throw new Error(message);
+            }
+            updateStats();
+        }
+        
+        // Test functions
+        async function testGameCreation() {
+            log('Testing game creation...', 'action');
+            token = 'test-' + Date.now();
+            
+            const result = await rpc('game_create_test', { token });
+            assert(result.success, 'Game created successfully');
+            
+            const board = await rpc('game_board');
+            assert(board.width > 0, 'Board has valid width');
+            assert(board.height > 0, 'Board has valid height');
+            assert(board.game_active, 'Game is active');
+            assert(board.current_player === 0, 'Starting player is 0');
+            
+            // Show game link
+            document.getElementById('game-link').href = `/game/${token}`;
+            document.getElementById('game-link').style.display = 'inline-block';
+            
+            return true;
+        }
+        
+        async function testUnitProduction() {
+            log('Testing unit production...', 'action');
+            
+            const result = await rpc('unit_create', {
+                player_id: 0,
+                unit_type: 'TANK',
+                x: 2, y: 2
+            });
+            assert(!result.error, 'Tank created');
+            
+            const board = await rpc('game_board');
+            const unit = board.grid.find(t => t.x === 2 && t.y === 2)?.unit;
+            assert(unit && unit.type === 'TANK', 'Tank exists on board');
+            
+            return true;
+        }
+        
+        async function testUnitMovement() {
+            log('Testing unit movement...', 'action');
+            
+            // End turn to enable movement
+            await rpc('army_end_turn');
+            await rpc('army_end_turn');
+            
+            // Select unit
+            await rpc('unit_select', { x: 2, y: 2 });
+            
+            // Get movement range
+            const moveResult = await rpc('movement_range', { unit_x: 2, unit_y: 2 });
+            assert(moveResult.moves && moveResult.moves.length > 0, 'Movement range calculated');
+            
+            // Move unit
+            if (moveResult.moves.length > 0) {
+                const target = moveResult.moves[0];
+                const result = await rpc('movement_execute', {
+                    from_x: 2, from_y: 2,
+                    to_x: target.x, to_y: target.y
+                });
+                assert(result.success, 'Unit moved successfully');
+            }
+            
+            return true;
+        }
+        
+        async function testCombat() {
+            log('Testing combat system...', 'action');
+            
+            // Create enemy unit
+            await rpc('unit_create', {
+                player_id: 0,
+                unit_type: 'TANK',
+                x: 4, y: 4
+            });
+            
+            await rpc('army_end_turn');
+            
+            await rpc('unit_create', {
+                player_id: 1,
+                unit_type: 'INFANTRY',
+                x: 5, y: 4
+            });
+            
+            await rpc('army_end_turn');
+            
+            // Get combat preview
+            const preview = await rpc('combat_preview', {
+                attacker_x: 4, attacker_y: 4,
+                target_x: 5, target_y: 4
+            });
+            assert(preview.attacker_damage !== undefined, 'Combat preview calculated');
+            
+            // Execute attack
+            const result = await rpc('unit_attack', {
+                attacker_x: 4, attacker_y: 4,
+                target_x: 5, target_y: 4
+            });
+            assert(result.success, 'Attack executed');
+            
+            return true;
+        }
+        
+        async function testCapture() {
+            log('Testing property capture...', 'action');
+            
+            // Create infantry
+            await rpc('unit_create', {
+                player_id: 0,
+                unit_type: 'INFANTRY',
+                x: 1, y: 1
+            });
+            
+            await rpc('army_end_turn');
+            await rpc('army_end_turn');
+            
+            // Move to neutral property
+            await rpc('movement_execute', {
+                from_x: 1, from_y: 1,
+                to_x: 1, to_y: 0
+            });
+            
+            // Start capture
+            const result = await rpc('unit_capture', { x: 1, y: 0 });
+            assert(!result.error, 'Capture started');
+            
+            return true;
+        }
+        
+        async function testTransport() {
+            log('Testing transport mechanics...', 'action');
+            
+            // Create APC and infantry
+            await rpc('unit_create', {
+                player_id: 0,
+                unit_type: 'APC',
+                x: 6, y: 6
+            });
+            
+            await rpc('unit_create', {
+                player_id: 0,
+                unit_type: 'INFANTRY',
+                x: 6, y: 7
+            });
+            
+            await rpc('army_end_turn');
+            await rpc('army_end_turn');
+            
+            // Load infantry
+            const result = await rpc('transport_load', {
+                transport_x: 6, transport_y: 6,
+                cargo_x: 6, cargo_y: 7
+            });
+            assert(result.success, 'Infantry loaded into APC');
+            
+            return true;
+        }
+        
+        async function testTurnManagement() {
+            log('Testing turn management...', 'action');
+            
+            const board1 = await rpc('game_board');
+            const player1 = board1.current_player;
+            const day1 = board1.day;
+            
+            await rpc('army_end_turn');
+            
+            const board2 = await rpc('game_board');
+            assert(board2.current_player !== player1, 'Player changed after turn');
+            
+            await rpc('army_end_turn');
+            
+            const board3 = await rpc('game_board');
+            assert(board3.day > day1, 'Day incremented after full round');
+            
+            return true;
+        }
+        
+        async function testUIInteraction() {
+            log('Testing UI interaction...', 'action');
+            
+            // Test selection
+            const result = await rpc('unit_select', { x: 2, y: 2 });
+            assert(!result.error, 'Unit selection works');
+            
+            // Test board refresh
+            const board = await rpc('game_board');
+            assert(board.grid && board.grid.length > 0, 'Board data retrieved');
+            
+            // Check for highlight flags
+            const hasHighlights = board.grid.some(t => 
+                t.can_be_moved_to !== undefined || t.can_be_attacked !== undefined
+            );
+            assert(hasHighlights, 'Board includes highlight flags');
+            
+            return true;
+        }
+        
+        // Test runners
+        async function runAllTests() {
+            clearLog();
+            log('Starting full test suite...', 'action');
+            
+            for (const test of tests) {
+                setTestStatus(test.id, 'running');
+                try {
+                    await test.func();
+                    setTestStatus(test.id, 'pass');
+                } catch (error) {
+                    setTestStatus(test.id, 'fail');
+                    log(`Test ${test.name} failed: ${error.message}`, 'error');
+                }
+            }
+            
+            log(`Test suite complete: ${passed} passed, ${failed} failed`, 'action');
+        }
+        
+        async function runQuickTest() {
+            clearLog();
+            log('Running quick test...', 'action');
+            
+            try {
+                await testGameCreation();
+                await testUnitProduction();
+                log('Quick test complete!', 'success');
+            } catch (error) {
+                log(`Quick test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        // Initialize
+        initTestList();
+        log('Test suite ready. Click "Run All Tests" to begin.', 'info');
+    </script>
+</body>
+</html>
